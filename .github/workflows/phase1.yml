@@ -68,7 +68,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y iverilog
+      - run: sudo apt-get update && sudo apt-get install -y iverilog cc65
+      - name: Compile and assemble the generated register headers
+        env:
+          KAGURA_REQUIRE_CA65: 1
+        run: bash tools/test-headers.sh
       - name: Verify pinned dependency hashes
         shell: pwsh
         run: ./tools/check-dependencies.ps1

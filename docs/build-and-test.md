@@ -29,6 +29,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-design.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-dependencies.ps1
 ```
 
+レジスタ定義`spec/registers.json`を変更したら定数を再生成し、文書表との一致を確認する。生成物（SV package、Cヘッダ、ca65 include）は手で編集しない。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Check
+```
+
+WSL/LinuxではCヘッダとca65 includeを`bash tools/test-headers.sh`でコンパイル・アセンブルする。ca65（cc65パッケージ）がなければその部分はSKIPとなり、CIでは`KAGURA_REQUIRE_CA65=1`で必須にしている。
+
 Icarus VerilogとvvpがPATHにあれば`tools/test-phase1.ps1`で基礎source/TMDS試験も実行できる。これは全Verilator回帰の代替ではない。別配置なら`-Iverilog`と`-Vvp`へ実行ファイルのパスを渡す。上流ソースのIcarus用変換はbuild内の試験用コピーにだけ適用する。
 
 ## Gowinビルド

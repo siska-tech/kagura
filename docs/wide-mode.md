@@ -119,7 +119,7 @@ GW1NR-9 C6のOSER10とエミュレートLVDSで742.5Mbpsが少なくとも1台�
 **検証**
 
 - `tb_vdp_frame720` / `tb_vdp_sprites720`: 1280×720の4フレーム×921600画素を参照モデルと全画素比較。背景のみとスプライト付き、scroll、behind、16個/ライン超過、VBLANK/RASTER/COMMIT_DONE、systemだけのreset。SCREEN_HEIGHT=180も読む。最悪描画は1985 cycles（上限2633、論理ライン4800 cycles）。
-- VIC1側は従来の全試験がそのまま合格（720p導入時`1c1dcd8`の全回帰30件。`918e4f7`で`tb_demo_shooter720`を追加し現行31件）。
+- VIC1側は従来の全試験がそのまま合格（720p導入時`1c1dcd8`の全回帰30件。`918e4f7`で`tb_demo_shooter720`を追加。現行の一覧は`tools/test-verilator.sh`）。
 
 【実測】Gowin 1.9.11.03 Education。全11構成（dviは480pのみ）でbitstream生成、解析対象のsetup/hold/recovery/removal違反0。16:9版は上記OSER10 RESET経路を除外しており、そのrecovery/removalを保証する結果ではない。数値は[M0基準記録](baseline.md)（`9f595f7`）の再測定値。demo720は自機配置の変更（`918e4f7`）後の値で、導入時の記録（Logic 6301、+0.085ns）から変わった。
 

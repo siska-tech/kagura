@@ -94,7 +94,7 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 6. IRQ handlerはIRQ_STATUSを読み、処理したbitsだけ1を書いてclear。同cycle再イベントは残る。
 7. 音源はAUDIO_REG_INDEX/DATAで全chのshadowを設定し、wave shadow（009800..0099FF）を転送してCOMMAND=4。AUDIO_STATUS.APPLY_BUSYまたは後置FENCEで反映完了を確認する。設定だけの更新でもwave bankが交換される点に注意。[音源仕様](audio-spec.md)を参照。
 
-レジスタ機械可読化とca65/SystemVerilog定数生成はPhase 2でこの規約から作り、CIでoffset・reset・bit幅・副作用の差分をレビューする。Phase 0では未実装の生成器を動作済みと扱わない。
+【実装】offset・名前・access・bit・reset値・コマンド・VRAM領域の機械可読定義は`spec/registers.json`。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）、Cヘッダ（`software/include/kagura_regs.h`）、ca65 include（`software/w65c02/kagura_regs.inc`）を生成する。副作用の規範はこの文書の本文のまま残す。文書の表は生成せず、`-Check`で本書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致、生成物が最新であることをCIで検査する。`tb_register_abi`は生成packageとRTLのreset値・access可否を照合する。
 
 ## ABI 0.2（2026-10-23）
 

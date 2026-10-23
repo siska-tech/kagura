@@ -46,7 +46,7 @@ topのinoutは`data_in/data_out/data_oe`へ分けてテストし、board wrapper
 
 ## CIの段階導入
 
-現在は文書リンク・数値整合性・依存hash、Icarus基礎試験、HDMI decoder・VDP・音源・ホストを含むVerilator回帰をworkflowで実行する。Verilator版の固定と失敗時artifactは実装済み（[ビルドガイド](build-and-test.md)）。register機械可読定義からのSV/ca65定数生成と差分検査は残課題。[ロードマップ](implementation-roadmap.md)を参照。
+現在は文書リンク・数値整合性・依存hash、Icarus基礎試験、HDMI decoder・VDP・音源・ホストを含むVerilator回帰をworkflowで実行する。Verilator版の固定と失敗時artifactは実装済み（[ビルドガイド](build-and-test.md)）。register定義`spec/registers.json`からのSV/C/ca65定数生成と、文書表・生成物の差分検査も実行する（[レジスタABI](register-map.md)）。[ロードマップ](implementation-roadmap.md)を参照。
 
 各testに固定seed、タイムアウト、失敗時VCD/画像/PCM差分を用意する。未実装testをpass/skipで隠して総合合格にしない。Gowin P&Rはlicensed/self-hosted環境で独立ジョブとし、一般CIで利用不能なら「未実施」を明示する。
 
