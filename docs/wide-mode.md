@@ -119,14 +119,14 @@ GW1NR-9 C6のOSER10とエミュレートLVDSで742.5Mbpsが少なくとも1台�
 **検証**
 
 - `tb_vdp_frame720` / `tb_vdp_sprites720`: 1280×720の4フレーム×921600画素を参照モデルと全画素比較。背景のみとスプライト付き、scroll、behind、16個/ライン超過、VBLANK/RASTER/COMMIT_DONE、systemだけのreset。SCREEN_HEIGHT=180も読む。最悪描画は1985 cycles（上限2633、論理ライン4800 cycles）。
-- VIC1側は従来の全試験がそのまま合格（全回帰30件）。
+- VIC1側は従来の全試験がそのまま合格（720p導入時`1c1dcd8`の全回帰30件。`918e4f7`で`tb_demo_shooter720`を追加し現行31件）。
 
-【実測】Gowin 1.9.11.03 Education。全10構成でbitstream生成、解析対象のsetup/hold/recovery/removal違反0。16:9版は上記OSER10 RESET経路を除外しており、そのrecovery/removalを保証する結果ではない。
+【実測】Gowin 1.9.11.03 Education。全11構成（dviは480pのみ）でbitstream生成、解析対象のsetup/hold/recovery/removal違反0。16:9版は上記OSER10 RESET経路を除外しており、そのrecovery/removalを保証する結果ではない。数値は[M0基準記録](baseline.md)（`9f595f7`）の再測定値。demo720は自機配置の変更（`918e4f7`）後の値で、導入時の記録（Logic 6301、+0.085ns）から変わった。
 
 | 構成 | Logic | Register | BSRAM | 最小setup slack | pixel Fmax |
 |---|---:|---:|---:|---:|---:|
 | hdmi720（カラーバー） | 811 | 416 | — | +0.391ns | 80.4MHz |
-| demo720 | 6301 | 3634 | 26/26 | +0.085ns | 74.7MHz |
+| demo720 | 6280 | 3634 | 26/26 | +0.030ns | 74.9MHz |
 | phase2720 | 4332 | 3211 | 24/26 | +0.058ns | 74.9MHz |
 | spi720 | 4437 | 3244 | 24/26 | +0.029ns | 74.4MHz |
 | qspi720 | 4432 | 3246 | 24/26 | +0.095ns | 74.9MHz |

@@ -23,16 +23,16 @@
 
 Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値でありLUT単独の数ではない。版・構成が異なる数値を単純加算しない。
 
-| 構成・測定時点 | Logic | Register | BSRAM | 最小setup slack |
-|---|---:|---:|---:|---:|
-| 6ch統合CPU版（720p対応前） | 4327 | 3067 | 24/26 | 統合記録では数値違反0 |
-| 480pタイトル・sprite上限デモ（720p対応前） | 6268 | 3490 | 26/26 | +0.013ns |
-| demo720 | 6301 | 3634 | 26/26 | +0.085ns |
-| phase2720 | 4332 | 3211 | 24/26 | +0.058ns |
-| spi720 | 4437 | 3244 | 24/26 | +0.029ns |
-| qspi720 | 4432 | 3246 | 24/26 | +0.095ns |
+以下は[M0基準記録](baseline.md)（`9f595f7`）の再測定値。全11構成でsetup/hold違反endpoint 0、TNS 0。
 
-720p導入時には480pを含む全10構成でbitstream生成と解析対象の数値違反0を記録した。**720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。1台のモニターではreset後のレーン整列に異常は見られなかった。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[16:9測定表](wide-mode.md)を参照。
+| 構成 | Logic | Register | BSRAM | 最小setup slack |
+|---|---:|---:|---:|---:|
+| phase2 / phase2720 | 4306 / 4332 | 3210 / 3211 | 24/26 | +0.077ns / +0.058ns |
+| spi / spi720 | 4397 / 4437 | 3243 / 3244 | 24/26 | +0.019ns / +0.029ns |
+| qspi / qspi720 | 4391 / 4432 | 3245 / 3246 | 24/26 | +0.072ns / +0.095ns |
+| demo / demo720 | 6270 / 6280 | 3633 / 3634 | 26/26 | +0.020ns / +0.030ns |
+
+**720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。1台のモニターではreset後のレーン整列に異常は見られなかった。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[16:9測定表](wide-mode.md)を参照。
 
 CPU/ホスト版は24 BSRAM、art ROMを含むデモは26 BSRAMで予備がない。設計予算25 BSRAMと実装使用量は区別する。単体の比較根拠は[HDMI評価](hdmi-synthesis-evaluation.md)、[音声packet評価](audio-packet-integration.md)、[BSRAM評価](bsram-evaluation.md)に残している。
 
