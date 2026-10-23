@@ -50,6 +50,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-nano9k-timing.ps
 | `phase2` | W65C02S接続用のVDP・音源 | `kagura_phase2` |
 | `spi` / `qspi` | SPI/QSPI接続用のVDP・音源 | `kagura_spi` / `kagura_qspi` |
 
+全構成をまとめてビルドし、構成ごとの証拠manifestを`reports/`へ保存するには`tools/run-baseline.ps1`を使う（[M0基準記録](baseline.md)）。
+
 `dvi`以外は引数に`720`を付けると16:9版になる。例: `demo720`、`phase2720`、`spi720`。basenameも末尾に`720`が付き、`hdmi720`だけは`kagura_hdmi720`となる。第2引数`bars`（既定）/`stress`は単体映像sourceを選ぶ。デモ・ホスト版の描画内容を切り替える指定ではない。
 
 bitstreamは各buildディレクトリの`impl/pnr/<basename>.fs`。CST/SDC断片とビルド設定packageはスクリプトが生成する。`timing-status.json`には最悪slackと経路・レポートhashを保存する。`-ReportOnly`は結果出力用であり、合否の自動ゲートではない。指定しない場合は数値違反に加えて実機互換性試験が未完了であることでも失敗する。720pのOSER10 RESET除外は[タイミング仕様](timing.md)を参照。
