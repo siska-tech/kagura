@@ -47,3 +47,7 @@ J6,21,31,IOB15A,2,3.3V,PIN31_IOB15A_RGBINIT,RGB LCD init,A0,RGB LCD must not be 
 J6,22,32,IOB15B,2,3.3V,PIN32_IOB15B_RGBINIT,RGB LCD init,A1,RGB LCD must not be connected
 J6,23,,,,,GND,power,GND,
 J6,24,,,,,+3V3,power,power,
+U3,1,60,IOR12A,1,3.3V,PIN60_IOR12A_MCS,on-board SPI flash P25Q32U CS#,reserved (asset flash candidate),not on header; WP#/IO2 and RESET#/IO3 are pulled up (4.7k) and not wired to the FPGA
+U3,6,59,IOR12B,1,3.3V,PIN59_IOR12B_MCLK,on-board SPI flash P25Q32U SCLK,reserved (asset flash candidate),not on header; R3 pull-down is NC
+U3,5,61,IOR11B,1,3.3V,PIN61_IOR11B_MOSI,on-board SPI flash P25Q32U SI/IO0,reserved (asset flash candidate),not on header
+U3,2,62,IOR11A,1,3.3V,PIN62_IOR11A_MISO,on-board SPI flash P25Q32U SO/IO1,reserved (asset flash candidate),not on header

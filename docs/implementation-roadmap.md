@@ -101,8 +101,9 @@ SPI/QSPI、320×180表示とABI 0.2は実装済み。機材待ちのCPU試験を
 - 目的: ホストの起動時転送の削減、ホストなしの起動・診断画面、デモart ROMの置換によるBSRAM回復、1024 patternに収まらない日本語fontの必要文字だけの読込み。
 - 方式: 描画中にFlashを直接読まない。Flashからpattern/palette/wave RAMへのコピーに限り、FILLと同様にVRAMの空き枠だけで進めてコマンド順を守る。1bpp格納から前景・背景index指定で4bppへ展開する形式を評価する。
 - ABI: コピーコマンド、CAPS bit、進捗・エラー状態を別仕様で定義し、互換性評価後に版番号を決める。
-- 着手前の確認: Flash（P25Q32想定）のFPGA接続pinを回路図で確認しpin一覧へ追加する。外部Flashへの書込み・照合手順を確立する（内蔵Flashの`Verify Failed at 0`と同様の未解決表示を照合成功と扱わない）。
-- 評価: 転送速度（単線SPI 27MHzで約3MB/s、pattern全体32KBで約10msの見込み）、LUT/FF増分、BSRAM削減量、STA、描画期限への影響を実測する。
+- 接続（回路図U3）: PUYA P25Q32U（32Mbit＝4MiB）。CS=60（IOR12A）、SCLK=59（IOR12B）、SI/IO0=61（IOR11B）、SO/IO1=62（IOR11A）、bank 1・3.3V。WP/IO2とRESET/IO3はFPGAへ配線されず4.7kΩで3.3Vへpull-up。**QSPIは使えず、単線SPIまたはdual output readに限る**。既存CSTでは未使用、ヘッダには出ていない。
+- 着手前の確認: pin 59〜62がMSPI兼用pinとしてGowinの「MSPIを通常I/Oに使う」設定を要するか確認する。外部Flashへの書込み・照合手順を確立する（内蔵Flashの`Verify Failed at 0`と同様の未解決表示を照合成功と扱わない）。
+- 評価: 転送速度（単線SPI 27MHzで約3.4MB/s、dualで約6.8MB/s。pattern全体32KBは単線で約10msの見込み）、LUT/FF増分、BSRAM削減量、STA、描画期限への影響を実測する。
 
 HMIは利用例として候補に置く段階とし、タッチ入力やウィジェット描画のFPGA実装は前提にしない。具体的な用途が決まった時点で、ホストソフトで実現する部分とVDPに必要な拡張を分ける。
 
