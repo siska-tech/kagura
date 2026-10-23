@@ -15,7 +15,7 @@
 
 ## 結果
 
-設計検査・依存hash検査は合格。Verilator回帰は31件すべて合格（`tools/test-verilator.sh`、exit 0、所要約21分）。Icarus基礎試験（`tools/test-phase1.ps1`）は今回実行していない。
+設計検査・依存hash検査は合格。Verilator回帰は31件すべて合格（`tools/test-verilator.sh`、exit 0、所要約21分）。Icarus基礎試験（`tools/test-phase1.ps1`、Icarus Verilog 10.1）はsource・TMDSの2件とも合格。
 
 Gowinは全11構成でbitstreamを生成し、setup/hold違反endpoint 0、TNS 0、recovery/removalの最悪slackも正。720pはOSER10 RESETのrecovery/removal経路を除外しており（[タイミング仕様](timing.md)）、その経路を含む保証ではない。
 
@@ -37,15 +37,17 @@ pixel Fmaxはpixel25（480p）またはpixel74（720p）。system54・pixel74で
 
 ## 既存記録との差異
 
-- **構成数**: 既存文書は「全10構成」と記載しているが、`build-nano9k.tcl`が受け付ける構成は上表の11個（dviの720版なし）。今回は11構成すべてを測定した。
-- **demo720**: 記録はLogic 6301・setup +0.085ns、再測定はLogic 6280・+0.030ns。他の720p構成（hdmi720、phase2720、spi720、qspi720）は資源・slackとも記録と一致した。記録が自機配置の修正（`bfd2178`）前の測定だった可能性が高いが、未確認。
+いずれも原因を確認し、各文書を現行値へ更新した。
+
+- **構成数**: 既存文書は「全10構成」と記載していたが、`build-nano9k.tcl`が受け付ける構成は上表の11個（dviの720版なし）。今回は11構成すべてを測定した。
+- **demo720**: 記録はLogic 6301・setup +0.085ns、再測定はLogic 6280・+0.030ns。記録は720p導入時の`1c1dcd8`の値で、その後`918e4f7`で`kagura_demo_sequencer`の自機配置が変わった。`1c1dcd8`を同じEDAで再ビルドすると6301 / 3634 / +0.085nsを再現した。他の720p構成は資源・slackとも記録と一致した。
 - **480pの余裕**: demo +0.020ns、spi +0.019nsで、720p各構成より小さい。M3のcritical path改善は720pだけでなく480pも対象にする。
-- **回帰件数**: [16:9仕様](wide-mode.md)の「全回帰30件」に対し、今回のPASS行は31件（demo sequencerは3構成で各1件）。
+- **回帰件数**: 「全回帰30件」は`1c1dcd8`時点の数。`918e4f7`で`tb_demo_shooter720`が追加され、現行は31件。
 
 ## 未測定・対象外
 
-- 実機試験全般（HDMI互換性、外部ホスト・W65C02S接続、電源投入反復）。
-- Icarus基礎試験、Verilatorの警告なしlint。
+- 実機試験全般（HDMI互換性、外部ホスト・W65C02S接続、電源投入反復）。必要な機材は[機材一覧](equipment.md)。
+- Verilatorの警告なしlint。
 - OSER10 RESET解除の720p実機評価。
 - CI上の再現（CIのVerilator版は未固定）。
 
