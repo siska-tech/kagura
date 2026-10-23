@@ -49,7 +49,7 @@ pixel Fmaxはpixel25（480p）またはpixel74（720p）。system54・pixel74で
 - 実機試験全般（HDMI互換性、外部ホスト・W65C02S接続、電源投入反復）。必要な機材は[機材一覧](equipment.md)。
 - Verilatorの警告なしlint。
 - OSER10 RESET解除の720p実機評価。
-- CI上の再現（CIのVerilator版は未固定）。
+- Gowin P&RのCI上の再現（ローカルのみ）。Verilator回帰は#11以降CIで5.032に固定して実行する。
 
 ## 再実行
 
