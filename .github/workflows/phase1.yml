@@ -1,20 +1,69 @@
 name: Phase 1 RTL sources
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      force_fail:
+        description: Testbench top to report as failed (checks failure artifacts)
+        required: false
+        default: ''
+      trace:
+        description: Space-separated testbench tops to dump as VCD
+        required: false
+        default: ''
 permissions:
   contents: read
+env:
+  # Commit of tag v5.032; tools/verilator.version holds the version string.
+  VERILATOR_COMMIT: 8ff77e9d47351b0a59114929880687839a51840b
 jobs:
   verilator-simulation:
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y verilator g++ make python3
+      - name: Read pinned Verilator version
+        id: verilator
+        run: echo "version=$(tr -d '[:space:]' < tools/verilator.version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/verilator
+          key: verilator-${{ steps.verilator.outputs.version }}-${{ env.VERILATOR_COMMIT }}-ubuntu-24.04
+      - name: Build Verilator from the pinned commit
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git help2man perl python3 make autoconf g++ flex bison libfl2 libfl-dev zlib1g-dev
+          git clone --depth 1 --branch "v${{ steps.verilator.outputs.version }}" https://github.com/verilator/verilator.git /tmp/verilator-src
+          test "$(git -C /tmp/verilator-src rev-parse HEAD)" = "$VERILATOR_COMMIT"
+          cd /tmp/verilator-src
+          autoconf
+          ./configure --prefix="$HOME/verilator"
+          make -j"$(nproc)"
+          make install
+      - run: echo "$HOME/verilator/bin" >> "$GITHUB_PATH"
       - name: Run native SystemVerilog tests with Verilator
+        env:
+          KAGURA_STRICT_VERSION: 1
+          KAGURA_SEED: 1
+          KAGURA_TEST_TIMEOUT: 1800
+          KAGURA_FORCE_FAIL: ${{ inputs.force_fail }}
+          KAGURA_TRACE: ${{ inputs.trace }}
         run: bash tools/test-verilator.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: verilator-logs
-          path: build/verilator/*.log
+          name: verilator-results
+          if-no-files-found: warn
+          path: |
+            build/verilator/*.log
+            build/verilator/*.tsv
+            build/verilator/*.ppm
+            build/verilator/*.raw
+            build/verilator/*.wav
+            build/verilator/*.vcd
   source-simulation:
     runs-on: ubuntu-24.04
     steps:

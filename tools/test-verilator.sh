@@ -3,15 +3,52 @@
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
-verilator --version
+# Environment:
+#   KAGURA_STRICT_VERSION=1  fail unless verilator matches tools/verilator.version (CI)
+#   KAGURA_SEED=<n>          runtime seed for $urandom (default 1)
+#   KAGURA_TEST_TIMEOUT=<s>  per-test run timeout in seconds (default 1800)
+#   KAGURA_TRACE="tb_a tb_b" dump build/verilator/<top>.vcd for these tops
+#   KAGURA_FORCE_FAIL=<top>  report that top as failed, to check failure artifacts
+expected_version="$(tr -d '[:space:]' < tools/verilator.version)"
+actual_version="$(verilator --version | awk '{print $2}')"
+echo "Verilator $actual_version (expected $expected_version)"
+if [ "$actual_version" != "$expected_version" ]; then
+    if [ "${KAGURA_STRICT_VERSION:-0}" = 1 ]; then echo "FAIL: Verilator version mismatch"; exit 1; fi
+    echo "WARNING: Verilator version differs from tools/verilator.version"
+fi
+seed="${KAGURA_SEED:-1}"
+test_timeout="${KAGURA_TEST_TIMEOUT:-1800}"
+echo "seed $seed, per-test timeout ${test_timeout}s"
 mkdir -p build/verilator
+# Stale outputs would be mistaken for this run's evidence.
+rm -f build/verilator/*.run.log build/verilator/*.raw build/verilator/*.wav build/verilator/*.ppm build/verilator/*.vcd
+summary=build/verilator/summary.tsv
+printf 'test\tresult\tseconds\n' > "$summary"
+failures=()
+# Records the result and continues, so one failure keeps the other tests' outputs.
 run_test() {
     local top="$1"; shift
     local dest="$root/build/verilator/$top"
-    verilator --binary --timing --timescale 1ns/1ps -Wno-fatal --top-module "$top" \
-        --Mdir "$dest" -j 2 "$@" > "build/verilator/$top.build.log" 2>&1
-    "$dest/V$top" | tee "build/verilator/$top.run.log"
-    grep -q '^PASS:' "build/verilator/$top.run.log"
+    local trace_args=() run_args=("+verilator+seed+$seed") result start=$SECONDS
+    if [[ " ${KAGURA_TRACE:-} " == *" $top "* ]]; then
+        printf 'bind %s kagura_trace kagura_trace_i();\n' "$top" > "build/verilator/$top.bind.sv"
+        trace_args=(--trace sim/support/kagura_trace.sv "build/verilator/$top.bind.sv")
+        run_args+=("+kagura_trace=build/verilator/$top.vcd")
+    fi
+    if ! verilator --binary --timing --timescale 1ns/1ps -Wno-fatal --top-module "$top" \
+        --Mdir "$dest" -j 2 "$@" "${trace_args[@]}" > "build/verilator/$top.build.log" 2>&1; then
+        result=build_failed
+        tail -20 "build/verilator/$top.build.log"
+    else
+        local status=0
+        timeout "$test_timeout" "$dest/V$top" "${run_args[@]}" | tee "build/verilator/$top.run.log" || status=$?
+        if [ "$status" = 124 ]; then result=timeout
+        elif [ "$status" != 0 ] || ! grep -q '^PASS:' "build/verilator/$top.run.log"; then result=failed
+        else result=pass; fi
+    fi
+    if [ "$result" = pass ] && [ "${KAGURA_FORCE_FAIL:-}" = "$top" ]; then result=forced_fail; fi
+    printf '%s\t%s\t%s\n' "$top" "$result" "$((SECONDS-start))" >> "$summary"
+    if [ "$result" != pass ]; then echo "FAIL: $top ($result)"; failures+=("$top"); fi
 }
 run_test tb_phase1_sources rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_test_pattern.sv \
     rtl/audio/kagura_test_tone.sv sim/tests/tb_phase1_sources.sv
@@ -72,7 +109,7 @@ run_test tb_demo_audio "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp
 # build/verilator/tb_demo_music/Vtb_demo_music +frames=1350 (about 15 minutes).
 run_test tb_demo_music "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_music.sv
-python3 tools/render-audio-wav.py build/verilator/demo-music.raw build/verilator/demo-music.wav
+[ ! -f build/verilator/demo-music.raw ] || python3 tools/render-audio-wav.py build/verilator/demo-music.raw build/verilator/demo-music.wav
 # Shooter scene of the board demo; checked frames are saved as build/verilator/shooter-<k>.ppm.
 # build/verilator/tb_demo_shooter/Vtb_demo_shooter +long also checks update 100.
 run_test tb_demo_shooter "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
@@ -91,4 +128,10 @@ run_test tb_vram_init rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv
 run_test tb_startup_cpu "${CORE_SOURCES[@]}" rtl/bus/kagura_w65c02_adapter.sv rtl/memory/kagura_ram_tdp.sv \
     rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv sim/tests/tb_startup_cpu.sv
 run_test tb_audio_synth rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_synth.sv
-python3 tools/render-audio-wav.py build/verilator/audio-synth.raw build/verilator/audio-synth.wav
+[ ! -f build/verilator/audio-synth.raw ] || python3 tools/render-audio-wav.py build/verilator/audio-synth.raw build/verilator/audio-synth.wav
+column -t "$summary" 2>/dev/null || cat "$summary"
+if [ "${#failures[@]}" -gt 0 ]; then
+    echo "FAIL: ${#failures[@]} test(s): ${failures[*]}"
+    exit 1
+fi
+echo "PASS: all $(($(wc -l < "$summary")-1)) tests"
