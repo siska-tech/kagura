@@ -9,6 +9,8 @@ W65C02SまたはSPI/QSPIホストから制御するTang Nano 9K向けHDMI VDP・
 
 *720pデモのRTLシミュレーション出力（論理320×180を1280×720へ4倍表示）。実機モニターの撮影ではありません。[画像の生成元](docs/images/README.md)。*
 
+[![サービス紹介動画](docs/images/demo-720p.png)](https://youtube.com/shorts/ZjfHmth6I0A)
+
 現行版（`bfd2178`時点）はABI 0.2に対応し、320×240を640×480へ2倍表示、または320×180を1280×720へ4倍表示します。CPU不要のシューティングデモは背景・スプライトを動かしながら6ch音源で曲を再生します。両表示モードの映像・音声と、720p版の自機配置をモニター1台で確認済みです。[16:9実装・検証記録](docs/wide-mode.md)を参照してください。
 
 起動時RAM初期化、AUDIO_COMMITの順序制御、波形RAMのbank交換、FIFOエラー通知を実装済みです。6ch音源は34770 stereo samplesの参照モデル比較に合格しています。確認範囲と未完了項目は[検証状況](docs/validation-status.md)、HDMI復号試験は[音声packet統合評価](docs/audio-packet-integration.md)に記録しています。
