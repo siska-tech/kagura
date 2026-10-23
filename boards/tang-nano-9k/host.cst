@@ -1,0 +1,21 @@
+// SPI / QSPI host pins (docs/host-interface.md), reusing 3.3V CPU header pins.
+IO_LOC "host_sck" 35;
+IO_LOC "host_cs_n" 42;
+IO_LOC "host_io[0]" 28;
+IO_LOC "host_io[1]" 29;
+IO_LOC "host_io[2]" 30;
+IO_LOC "host_io[3]" 33;
+IO_LOC "host_irq_n" 39;
+IO_LOC "host_busy" 26;
+IO_LOC "host_ready" 27;
+IO_PORT "host_sck" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+// Deselected when no host is attached.
+IO_PORT "host_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_PORT "host_io[0]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+IO_PORT "host_io[1]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+IO_PORT "host_io[2]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+IO_PORT "host_io[3]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+// Open drain by tri-state; the board needs an external 3.3V pull-up.
+IO_PORT "host_irq_n" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+IO_PORT "host_busy" IO_TYPE=LVCMOS33 DRIVE=8;
+IO_PORT "host_ready" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=DOWN;

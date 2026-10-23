@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+set -euo pipefail
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+verilator --version
+mkdir -p build/verilator
+run_test() {
+    local top="$1"; shift
+    local dest="$root/build/verilator/$top"
+    verilator --binary --timing --timescale 1ns/1ps -Wno-fatal --top-module "$top" \
+        --Mdir "$dest" -j 2 "$@" > "build/verilator/$top.build.log" 2>&1
+    "$dest/V$top" | tee "build/verilator/$top.run.log"
+    grep -q '^PASS:' "build/verilator/$top.run.log"
+}
+run_test tb_phase1_sources rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_test_pattern.sv \
+    rtl/audio/kagura_test_tone.sv sim/tests/tb_phase1_sources.sv
+# Compile unchanged upstream SystemVerilog; no Icarus compatibility rewriting.
+run_test tb_tmds_channel third_party/hdl-util-hdmi/src/tmds_channel.sv \
+    sim/tests/tb_tmds_channel.sv
+run_test tb_tmds_pipeline third_party/hdl-util-hdmi/src/tmds_channel.sv rtl/hdmi/kagura_tmds_channel.sv \
+    sim/tests/tb_tmds_pipeline.sv
+run_test tb_async_fifo rtl/memory/kagura_async_fifo.sv sim/tests/tb_async_fifo.sv
+run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
+    rtl/audio/kagura_audio_transport.sv rtl/hdmi/kagura_audio_packets.sv \
+    third_party/hdl-util-hdmi/src/audio_sample_packet.sv \
+    third_party/hdl-util-hdmi/src/audio_info_frame.sv \
+    third_party/hdl-util-hdmi/src/auxiliary_video_information_info_frame.sv \
+    third_party/hdl-util-hdmi/src/source_product_description_info_frame.sv \
+    third_party/hdl-util-hdmi/src/packet_assembler.sv sim/tests/tb_audio_packets.sv
+python3 tools/prepare-hdmi-stream.py
+# The same stream at VIC1 (640x480) and VIC4 (1280x720, docs/wide-mode.md).
+for stream_test in tb_hdmi_stream tb_hdmi_stream720; do
+    run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv \
+        rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv \
+        rtl/hdmi/kagura_audio_packets.sv rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv rtl/hdmi/kagura_hdmi_stream_eval.sv \
+        third_party/hdl-util-hdmi/src/audio_sample_packet.sv \
+        third_party/hdl-util-hdmi/src/audio_info_frame.sv \
+        third_party/hdl-util-hdmi/src/auxiliary_video_information_info_frame.sv \
+        third_party/hdl-util-hdmi/src/source_product_description_info_frame.sv \
+        third_party/hdl-util-hdmi/src/packet_assembler.sv \
+        third_party/hdl-util-hdmi/src/tmds_channel.sv sim/tests/tb_hdmi_stream.sv
+done
+run_test tb_bsram_wrappers rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_sdp.sv \
+    rtl/memory/kagura_ram_tdp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_line_banks.sv \
+    sim/tests/tb_bsram_wrappers.sv
+CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.sv
+    rtl/audio/kagura_audio_transport.sv rtl/memory/kagura_async_fifo.sv
+    rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv
+    rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv
+    rtl/core/kagura_core.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv)
+run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
+for host_test in tb_spi_bus tb_qspi_bus; do
+    run_test "$host_test" rtl/bus/kagura_spi_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_host_bus.sv
+done
+run_test tb_vram_core "${CORE_SOURCES[@]}" sim/tests/tb_vram_core.sv
+run_test tb_audio_core "${CORE_SOURCES[@]}" sim/tests/tb_audio_core.sv
+run_test tb_vdp_frame "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv
+# tb_vdp_frame720/tb_vdp_sprites720: 320x180 on 1280x720 (docs/wide-mode.md).
+for vdp_test in tb_vdp_sprites tb_vdp_frame720 tb_vdp_sprites720; do
+    run_test "$vdp_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+        rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv sim/tests/tb_vdp_sprites.sv
+done
+run_test tb_demo_sequencer "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv
+run_test tb_demo_sprites "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv sim/tests/tb_demo_sprites.sv
+run_test tb_demo_audio "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv sim/tests/tb_demo_audio.sv
+# Half a second of the demo song; for the whole loop with the lead run
+# build/verilator/tb_demo_music/Vtb_demo_music +frames=1350 (about 15 minutes).
+run_test tb_demo_music "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_music.sv
+python3 tools/render-audio-wav.py build/verilator/demo-music.raw build/verilator/demo-music.wav
+# Shooter scene of the board demo; checked frames are saved as build/verilator/shooter-<k>.ppm.
+# build/verilator/tb_demo_shooter/Vtb_demo_shooter +long also checks update 100.
+run_test tb_demo_shooter "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_shooter.sv
+# The same scene started inside the enemy-wall phases (16 sprites/line overflow, fixed and rotated order),
+# and on the 16:9 build (320x180 on 1280x720).
+for wall_test in tb_demo_wall tb_demo_flicker tb_demo_shooter720; do
+    run_test "$wall_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+        rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv \
+        sim/tests/tb_demo_shooter.sv sim/tests/tb_demo_wall.sv
+done
+run_test tb_sprite_selector rtl/vdp/kagura_sprite_selector.sv sim/tests/tb_sprite_selector.sv
+run_test tb_sprite_composite rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv sim/tests/tb_sprite_composite.sv
+run_test tb_sprite_irq rtl/core/kagura_registers.sv sim/tests/tb_sprite_irq.sv
+run_test tb_vram_init rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv sim/tests/tb_vram_init.sv
+run_test tb_startup_cpu "${CORE_SOURCES[@]}" rtl/bus/kagura_w65c02_adapter.sv rtl/memory/kagura_ram_tdp.sv \
+    rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv sim/tests/tb_startup_cpu.sv
+run_test tb_audio_synth rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_synth.sv
+python3 tools/render-audio-wav.py build/verilator/audio-synth.raw build/verilator/audio-synth.wav

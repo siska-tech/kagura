@@ -1,0 +1,57 @@
+{
+  "repository": "https://github.com/hdl-util/hdmi",
+  "revision": "83b1c9543a91b776671a44e68e130f81cae437b7",
+  "license": "MIT OR Apache-2.0",
+  "selected_license": "Apache-2.0",
+  "modified": false,
+  "files": [
+    {
+      "path": "LICENSE-APACHE",
+      "sha256": "7c6c1ea9fbe1f376e2fc1ff4b0e5fe3f9896dd41f9fff101b7e69994a55f0d56"
+    },
+    {
+      "path": "LICENSE-MIT",
+      "sha256": "b39d2287911147fbe58a5a288aa0f2a38b4459575e168551c2a3e3853e01536d"
+    },
+    {
+      "path": "src/audio_clock_regeneration_packet.sv",
+      "sha256": "a8b7f0c592ce8c871bf31986db293799f64893b18b5a6387e262a81b7ec22954"
+    },
+    {
+      "path": "src/audio_info_frame.sv",
+      "sha256": "dedd552fa988d9e2875bdadc54f3c08d5041d54637da1ff565d46078eeb2ea89"
+    },
+    {
+      "path": "src/audio_sample_packet.sv",
+      "sha256": "0e3a35ccb3e934eecfcd3916c5dac9ef269abea21472d66ebd2660a9d25e6a13"
+    },
+    {
+      "path": "src/auxiliary_video_information_info_frame.sv",
+      "sha256": "c151e2675ad97ef36254044e42657f2d758512d305040137859f9b8806135f64"
+    },
+    {
+      "path": "src/hdmi.sv",
+      "sha256": "82a8a7fb4c37a7d3a9b23338613e3eea91e06b94dedc7d13c8869b04a9d36788"
+    },
+    {
+      "path": "src/packet_assembler.sv",
+      "sha256": "00d143e3b4226cb8ac7418bab35b9ea6f3a963e81fd0f2f7f3109844f4bde2c6"
+    },
+    {
+      "path": "src/packet_picker.sv",
+      "sha256": "6c3e87c8221a5756393bdbff0c48988f03e4917e0f088b7cba5cda8d6e83f3ad"
+    },
+    {
+      "path": "src/serializer.sv",
+      "sha256": "b3142d3240b97306828f5432e989f072c121da8146275c13c9c6087921d6af2f"
+    },
+    {
+      "path": "src/source_product_description_info_frame.sv",
+      "sha256": "893269fdccd2dc147e8570519f35308ac5e5460ad7f54bf673b3c31e9a8259de"
+    },
+    {
+      "path": "src/tmds_channel.sv",
+      "sha256": "1e45e87703e2ab1790c13235822e8889fb016ad4c11cd9e5def0980d26a24637"
+    }
+  ]
+}

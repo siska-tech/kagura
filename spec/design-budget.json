@@ -1,0 +1,30 @@
+{
+  "abi": "0.1",
+  "evidence": "design-budget-not-synthesis",
+  "clocks": {"reference_hz":27000000,"system_hz":54000000,"pixel_hz":25200000,"serializer_hz":126000000,"cpu_divisor":16,"sample_divisor":1125},
+  "video": {"width":320,"height":240,"scale":2,"h_total":800,"v_total":525},
+  "capacity": {"lut":8640,"ff":6480,"bsram":26,"pll":2,"dsp":20},
+  "resources": [
+    {"name":"HDMI","lut":2000,"ff":1500,"bsram":1,"pll":0,"dsp":0},
+    {"name":"Bus","lut":650,"ff":650,"bsram":0,"pll":0,"dsp":0},
+    {"name":"VRAM","lut":500,"ff":350,"bsram":19,"pll":0,"dsp":0},
+    {"name":"Tile","lut":900,"ff":450,"bsram":3,"pll":0,"dsp":0},
+    {"name":"Sprite","lut":1300,"ff":650,"bsram":1,"pll":0,"dsp":0},
+    {"name":"PSG","lut":650,"ff":550,"bsram":0,"pll":0,"dsp":2},
+    {"name":"Wave","lut":300,"ff":250,"bsram":1,"pll":0,"dsp":0},
+    {"name":"Platform","lut":400,"ff":300,"bsram":0,"pll":2,"dsp":0}
+  ],
+  "memories": [
+    {"name":"pattern","depth":2048,"width":8,"blocks":16,"payload_bytes":32768},
+    {"name":"map","depth":1024,"width":16,"blocks":2,"payload_bytes":4096},
+    {"name":"oam","depth":1024,"width":16,"blocks":1,"payload_bytes":1024},
+    {"name":"palette","depth":1024,"width":16,"blocks":1,"payload_bytes":1024},
+    {"name":"wave","depth":2048,"width":8,"blocks":1,"payload_bytes":1024},
+    {"name":"line","depth":1024,"width":16,"blocks":2,"payload_bytes":1280},
+    {"name":"command","depth":1024,"width":16,"blocks":1,"payload_bytes":256},
+    {"name":"audio_fifo","depth":512,"width":32,"blocks":1,"payload_bytes":64}
+  ],
+  "renderer": {"registered_sprites":64,"line_sprites":16,"sprite_width":16,"oam_cycles_per_sprite":6,"bg_tiles":41,"bg_cycles_per_tile":17,"sprite_setup_fetch_cycles":13,"sprite_cycles_per_pixel":5,"control_cycles":64,"cdc_guard_cycles":64},
+  "acr": {"n":6144,"cts":25200},
+  "expected": {"bsram_blocks":25,"payload_bytes":41536,"mode_unused_bytes":9664,"renderer_cycles":2633,"available_cycles":3428,"cpu_cycles":731,"lut":6700,"ff":4700}
+}

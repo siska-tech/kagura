@@ -1,0 +1,8 @@
+build/
+obj_dir/
+tmp/
+reports/
+*.vcd
+*.fst
+*.fs
+*.bit

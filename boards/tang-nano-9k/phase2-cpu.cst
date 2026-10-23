@@ -1,0 +1,39 @@
+// W65C02S bus pins, see pin-inventory.csv. 3.3V banks 1/2 only.
+IO_LOC "cpu_phi2" 25;
+IO_LOC "cpu_reset_release" 27;
+IO_LOC "cpu_d[0]" 28;
+IO_LOC "cpu_d[1]" 29;
+IO_LOC "cpu_d[2]" 30;
+IO_LOC "cpu_d[3]" 33;
+IO_LOC "cpu_d[4]" 34;
+IO_LOC "cpu_d[5]" 40;
+IO_LOC "cpu_d[6]" 35;
+IO_LOC "cpu_d[7]" 41;
+IO_LOC "cpu_a[0]" 31;
+IO_LOC "cpu_a[1]" 32;
+IO_LOC "cpu_a[2]" 36;
+IO_LOC "cpu_a[3]" 37;
+IO_LOC "cpu_a[4]" 38;
+IO_LOC "cpu_cs_n" 42;
+IO_LOC "cpu_rwb" 48;
+IO_LOC "cpu_irq_n" 39;
+IO_PORT "cpu_phi2" IO_TYPE=LVCMOS33 DRIVE=8;
+IO_PORT "cpu_reset_release" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=DOWN;
+IO_PORT "cpu_d[0]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[1]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[2]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[3]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[4]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[5]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[6]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_d[7]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "cpu_a[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "cpu_a[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "cpu_a[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "cpu_a[3]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "cpu_a[4]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+// Deselected and read-direction when no CPU is attached.
+IO_PORT "cpu_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_PORT "cpu_rwb" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+// Open drain by tri-state; the board needs an external 3.3V pull-up.
+IO_PORT "cpu_irq_n" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;

@@ -1,0 +1,49 @@
+header,header_pin,package_pin,fpga_site,bank,vccio,schematic_net,shared_load,kagura_use,note
+J5,1,38,IOB31B,2,3.3V,PIN38_IOB31B_TF_CS,TF card CS (pull resistor),A4,TF card must not be inserted; pin 1 is at the USB end (silk 38)
+J5,2,37,IOB31A,2,3.3V,PIN37_IOB31A_TF_MOSI,TF card MOSI,A3,TF card must not be inserted
+J5,3,36,IOB29B,2,3.3V,PIN36_IOB29B_TF_SCLK,TF card SCLK; GCLKC_4,A2,TF card must not be inserted
+J5,4,39,IOB33A,2,3.3V,PIN39_IOB33A_TF_MISO,TF card MISO,/IRQ open drain,TF card must not be inserted
+J5,5,25,IOB8A,2,3.3V,PIN25_IOB8A,none,PHI2 output,
+J5,6,26,IOB8B,2,3.3V,PIN26_IOB8B,none,spare (RDY candidate),
+J5,7,27,IOB11A,2,3.3V,PIN27_IOB11A,none,CPU reset release control,drives external reset gate; not RESB directly
+J5,8,28,IOB11B,2,3.3V,PIN28_IOB11B,none,D0,
+J5,9,29,IOB13A,2,3.3V,PIN29_IOB13A,none,D1,
+J5,10,30,IOB13B,2,3.3V,PIN30_IOB13B,none,D2,
+J5,11,33,IOB23A,2,3.3V,PIN33_IOB23A_RGB_DE,RGB LCD DE,D3,RGB LCD must not be connected
+J5,12,34,IOB23B,2,3.3V,PIN34_IOB23B_RGB_VS,RGB LCD VSYNC,D4,RGB LCD must not be connected
+J5,13,40,IOB33B,2,3.3V,PIN40_IOB33B_RGB_HS,RGB LCD HSYNC,D5,RGB LCD must not be connected
+J5,14,35,IOB29A,2,3.3V,PIN35_IOB29A_RGB_CK,RGB LCD CLK; GCLKT_4,D6,RGB LCD must not be connected
+J5,15,41,IOB41A,2,3.3V,PIN41_IOB41A_RGB_B7,RGB LCD B7,D7,RGB LCD must not be connected
+J5,16,42,IOB41B,2,3.3V,PIN42_IOB41B_RGB_B6,RGB LCD B6,/CS,RGB LCD must not be connected
+J5,17,51,IOR17B,1,3.3V,PIN51_IOR17B_RGB_B5,RGB LCD B5; GCLKC_3 (pair of clk27 pin 52),unused,
+J5,18,53,IOR15B,1,3.3V,PIN53_IOR15B_RGB_B4,RGB LCD B4; DOUT/WE_N config pin,unused,
+J5,19,54,IOR15A,1,3.3V,PIN54_IOR15A_RGB_B3,RGB LCD B3; DIN/CLKHOLD_N config pin,unused,
+J5,20,55,IOR14B,1,3.3V,PIN55_IOR14B_RGB_G7,RGB LCD G7; SSPI_CS_N config pin,unused,
+J5,21,56,IOR14A,1,3.3V,PIN56_IOR14A_RGB_G6,RGB LCD G6; SO config pin,unused,
+J5,22,57,IOR13A,1,3.3V,PIN57_IOR13A_RGB_G5,RGB LCD G5; FASTRD_N config pin,unused,
+J5,23,68,IOT42B,1,3.3V,HDMI_CK_N,HDMI TMDS clock N,do not connect,TMDS stub; keep header pin open
+J5,24,69,IOT42A,1,3.3V,HDMI_CK_P,HDMI TMDS clock P,do not connect,TMDS stub; keep header pin open
+J6,1,63,IOR5A,1,3.3V,PIN63_IOR5A_RGBINIT,RGB LCD init; RPLL_T_in,unused,pin 1 is at the USB end (silk 63)
+J6,2,86,IOT8A,3,1.8V,PIN86_IOT8A_BL_PWM_1V8,LCD backlight PWM,excluded (1.8V),never connect to 3.3V CPU
+J6,3,85,IOT8B,3,1.8V,PIN85_IOT8B_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,4,84,IOT10A,3,1.8V,PIN84_IOT10A_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,5,83,IOT10B,3,1.8V,PIN83_IOT10B_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,6,82,IOT11A,3,1.8V,PIN82_IOT11A_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,7,81,IOT11B,3,1.8V,PIN81_IOT11B_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,8,80,IOT12A,3,1.8V,PIN80_IOT12A_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,9,79,IOT12B,3,1.8V,PIN79_IOT12B_1V8,none,excluded (1.8V),never connect to 3.3V CPU
+J6,10,77,IOT37A,1,3.3V,PIN77_IOT37A_SPILCD_MO,SPI LCD MOSI,unused,
+J6,11,76,IOT37B,1,3.3V,PIN76_IOT37B_SPILCD_MCLK,SPI LCD SCLK,unused,
+J6,12,74,IOT38B,1,3.3V,HDMI_D2_N,HDMI TMDS D2 N,do not connect,TMDS stub; keep header pin open
+J6,13,75,IOT38A,1,3.3V,HDMI_D2_P,HDMI TMDS D2 P,do not connect,TMDS stub; keep header pin open
+J6,14,72,IOT39B,1,3.3V,HDMI_D1_N,HDMI TMDS D1 N,do not connect,TMDS stub; keep header pin open
+J6,15,73,IOT39A,1,3.3V,HDMI_D1_P,HDMI TMDS D1 P,do not connect,TMDS stub; keep header pin open
+J6,16,70,IOT41B,1,3.3V,HDMI_D0_N,HDMI TMDS D0 N,do not connect,TMDS stub; keep header pin open
+J6,17,71,IOT41A,1,3.3V,HDMI_D0_P,HDMI TMDS D0 P,do not connect,TMDS stub; keep header pin open
+J6,18,,,,,+5V,power,do not connect to CPU signals,USB VBUS rail
+J6,19,48,IOR24B,1,3.3V,PIN48_IOR24B_SPILCD_CS,SPI LCD CS,RWB,SPI LCD must not be connected
+J6,20,49,IOR24A,1,3.3V,PIN49_IOR24A_SPILCD_RS,SPI LCD RS,unused,
+J6,21,31,IOB15A,2,3.3V,PIN31_IOB15A_RGBINIT,RGB LCD init,A0,RGB LCD must not be connected
+J6,22,32,IOB15B,2,3.3V,PIN32_IOB15B_RGBINIT,RGB LCD init,A1,RGB LCD must not be connected
+J6,23,,,,,GND,power,GND,
+J6,24,,,,,+3V3,power,power,

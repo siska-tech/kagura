@@ -1,0 +1,28 @@
+name: Phase 1 RTL sources
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verilator-simulation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y verilator g++ make python3
+      - name: Run native SystemVerilog tests with Verilator
+        run: bash tools/test-verilator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verilator-logs
+          path: build/verilator/*.log
+  source-simulation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Verify pinned dependency hashes
+        shell: pwsh
+        run: ./tools/check-dependencies.ps1
+      - name: Compile and run source RTL test
+        shell: pwsh
+        run: ./tools/test-phase1.ps1
