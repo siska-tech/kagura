@@ -60,4 +60,4 @@ Flashでは`Verify Failed at 0`表示が残る一方、電源再投入後の起�
 
 ## CIと証拠の限界
 
-GitHub Actionsは設計・リンク検査、依存hash、Icarus基礎試験、Verilator回帰を実行する。Gowin P&Rと実機試験はローカルで実施しておりCIでは再現しない。CIのVerilator版は固定していない。フルのログ・波形・bitstreamはGit管理外で、ここにある表は測定記録の要約である。リリース判断時には対象commit・EDA・構成・制約・生成物hashと実機記録を揃える。
+GitHub Actionsは設計・リンク検査、依存hash、Icarus基礎試験、Verilator回帰を実行する。Gowin P&Rと実機試験はローカルで実施しておりCIでは再現しない。CIのVerilatorは5.032の固定commitからビルドし、失敗時もログ・画像・音声・指定した波形をartifactに残す。bitstreamとローカルの証拠はGit管理外で、ここにある表は測定記録の要約である。リリース判断時には対象commit・EDA・構成・制約・生成物hashと実機記録を揃える。

@@ -4,13 +4,23 @@
 
 ## シミュレーション
 
-WSL/LinuxでVerilator、g++、make、python3を用意する。ローカル検証に使用したVerilatorは5.032。CIはUbuntuの配布パッケージを使用し、版を固定していない。
+WSL/LinuxでVerilator、g++、make、python3を用意する。基準のVerilator版は`tools/verilator.version`（5.032）。異なる版では警告を出して続行し、`KAGURA_STRICT_VERSION=1`では失敗にする。CIはタグv5.032の固定commitからビルドしてキャッシュする。
 
 ```sh
 bash tools/test-verilator.sh
 ```
 
-SystemVerilog testbenchを`--binary --timing`で実行する。ログ・画像・PCM/WAVは`build/verilator/`へ出力する。警告は`-Wno-fatal`で残しており、警告なしlintの合格を意味しない。テストの構成は[sim/README](../sim/README.md)を参照。
+SystemVerilog testbenchを`--binary --timing`で実行する。ログ・画像・PCM/WAVは`build/verilator/`へ出力する。テストが失敗しても残りを続行し、結果を`build/verilator/summary.tsv`に記録して最後に非0で終了する。開始時に前回の画像・音声・波形出力を削除する。警告は`-Wno-fatal`で残しており、警告なしlintの合格を意味しない。テストの構成は[sim/README](../sim/README.md)を参照。
+
+| 環境変数 | 既定 | 効果 |
+|---|---|---|
+| `KAGURA_SEED` | 1 | `$urandom`の実行時seed（`+verilator+seed+N`）。ログに記録する |
+| `KAGURA_TEST_TIMEOUT` | 1800 | テストごとの実行タイムアウト（秒）。超過は`timeout`として失敗 |
+| `KAGURA_TRACE` | なし | 空白区切りのtestbench top名。`build/verilator/<top>.vcd`へ全階層を出力する。大きくなるため対象を絞る |
+| `KAGURA_FORCE_FAIL` | なし | 指定topを失敗扱いにする。失敗時の資料が残ることの確認用 |
+| `KAGURA_STRICT_VERSION` | 0 | 1でVerilator版の不一致を失敗にする（CI） |
+
+CIでは失敗時も含めログ・`summary.tsv`・画像・PCM/WAV・VCDを`verilator-results` artifactとして保存する。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。
 
 PowerShellで文書・設計予算・依存ファイルを確認する。
 
