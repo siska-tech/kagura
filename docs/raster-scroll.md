@@ -93,3 +93,4 @@ Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、`bars`。BSRAMの増加�
 - 初回は`rs_table`をレジスタ値`rs_idx`の可変オフセットで書いたため、約+2200 LUTとなりdemoは配線不能、phase2もsetup −2.79nsだった。entryごとの定数オフセット書込みに変えて解消した。
 - phase2boot720は、既定のplace_option 1でupstreamのpacket_assembler（pixel74）が−1.001nsとなった。raster追加前（`b1e088d`）は+0.612ns。経路はraster回路と無関係で配置変動によるため、この構成だけ`tools/build-nano9k.tcl`でplace_option 0とした（[wide-mode.md](wide-mode.md)の16:9のoption指定と同様の扱い）。
 - 受入条件のWNS≥+0.10nsはdemo720（+0.066ns）とqspi（+0.094ns）で未達。ただしdemo720の追加前は+0.030ns、他は旧baseline（[baseline.md](baseline.md)）と同程度以上で、悪化ではない。
+- 最終HEADで13構成を再実行し、上表と同じ値を再現した。両構成の最悪経路はraster回路と無関係（demo720: 上流packet_assemblerのpixel74、qspi: audio_registersとスプライト合成）で、追加前から余裕が小さい経路。配置変動の範囲のため、追加改善はせず現状値を受け入れる。
