@@ -107,7 +107,7 @@ bash tools/test-verilator.sh
 | QSPI | 4358 | 3102 | 24/26 | +0.049ns（audio register） |
 | 参考: W65C02S top | 4327 | 3067 | 24/26 | — |
 
-上表はadapter導入時の測定。現行値は[M0基準記録](baseline.md)を参照。最小slackの経路はどちらも既存のコア内で、adapterではない。SCK/CS/IOは同期器入口までfalse path、出力のclock-to-outはP&Rのport timingで確認する。Pico用の診断firmwareとVRAM uploaderは[software/pico](../software/pico/README.md)。実機（Pico接続）試験は未実施。
+上表はadapter導入時の測定。現行値は[M0基準記録](baseline.md)を参照。最小slackの経路はどちらも既存のコア内で、adapterではない。SCK/CS/IOは同期器入口までfalse path、出力のclock-to-outはP&Rのport timingで確認する。Pico用の診断firmwareとVRAM uploaderは[software/pico](../software/pico/README.md)。2026-10-25のPico実機試験ではSPI/QSPIとも5MHzで診断合格、10MHzでbit化けを確認した。5MHzの32KiB upload＋全域読戻し照合はSPI 570.2KB/s、QSPI 1,023.1KB/sで、両方式ともheader/data途中中断の副作用なし・直後の通信復帰、S2 reset・Pico USB再接続後の再合格を確認した。配線条件・残項目を含む詳細は[検証状況](validation-status.md)を参照。
 
 ボード用topは`boards/tang-nano-9k/kagura_host_top.sv`。`tools/build-nano9k.tcl spi`または`qspi`でビルドする。LANESはビルドディレクトリに生成するpackage `kagura_build_config`で与え（16:9版は`spi720`/`qspi720`）、stream部のinstance名を`kagura_phase1_top`と揃えてphase1.cstの配置制約を共有する。
 

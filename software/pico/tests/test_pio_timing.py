@@ -93,7 +93,8 @@ def run(lanes, header, words, reply, busy_until_ns=0, seed=1):
     # nibble after each rise is the next one of the dummy byte (0) followed by `reply`.
     if lanes == 1:
         bits = [(b >> (7 - k)) & 1 for b in reply for k in range(8)]
-        set_pin(io0 + 1, 50.0, bits[0])
+        # t_CSS makes the first status bit valid before the first host clock.
+        set_pin(io0 + 1, -100.0, bits[0])
     else:
         nibbles = [0, 0] + [(b >> s) & 15 for b in reply for s in (4, 0)]
     nrise = 0; host_rel_time = None; contention = []

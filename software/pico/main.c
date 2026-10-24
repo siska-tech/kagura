@@ -51,6 +51,21 @@ static bool check(const char *step, kh_status s) {
     return false;
 }
 
+static void report_pressure_failure(const char *operation, int index, kh_status s) {
+    uint8_t status = 0xff, fifo = 0xff, error = kh_last_error();
+    // Diagnostic reads remain legal while the command queue is full. Preserve
+    // the error that caused the driver call to fail before reading it again.
+    kh_read_reg(KAGURA_REG_STATUS, &status);
+    kh_read_reg(KAGURA_REG_FIFO_STATUS, &fifo);
+    kh_read_reg(KAGURA_REG_ERROR_CODE, &error);
+    if (index >= 0)
+        report("busy", false, "%s %d failed: %s 0x%02x, STATUS 0x%02x FIFO_STATUS 0x%02x",
+               operation, index, status_name(s), error, status, fifo);
+    else
+        report("busy", false, "%s failed: %s 0x%02x, STATUS 0x%02x FIFO_STATUS 0x%02x",
+               operation, status_name(s), error, status, fifo);
+}
+
 static void apply_config(void) {
     kh_deinit();
     kh_init(&config);
@@ -85,6 +100,16 @@ static void oam_entry(uint8_t n, int x, int y, uint16_t tile, uint8_t palette, u
     uint8_t e[8] = {(uint8_t)x, (uint8_t)((x >> 8) & 3), (uint8_t)y, (uint8_t)((y >> 8) & 3),
                     (uint8_t)tile, (uint8_t)(((tile >> 8) & 3) | (palette << 2)), attr, 0};
     if (*s == KH_OK) *s = kh_vram_write(KAGURA_VRAM_OAM_BASE + 8u * n, e, 8);
+}
+
+static void audio_reg(unsigned ch, uint8_t off, uint8_t value, kh_status *s) {
+    if (*s == KH_OK) *s = kh_audio_write(KAGURA_AUDIO_INDEX(ch, off), value);
+}
+
+static void audio_step(unsigned ch, uint32_t step, kh_status *s) {
+    audio_reg(ch, KAGURA_AUDIO_STEP_L, (uint8_t)step, s);
+    audio_reg(ch, KAGURA_AUDIO_STEP_M, (uint8_t)(step >> 8), s);
+    audio_reg(ch, KAGURA_AUDIO_STEP_H, (uint8_t)(step >> 16), s);
 }
 
 static void diag(void) {
@@ -171,24 +196,51 @@ static void diag(void) {
                    frames, (unsigned long long)(dt / 1000), (uint8_t)(f1 - f0));
     }
 
-    // 6. Audio: 440Hz pulse on ch0 for one second.
-    uint32_t step = 153791u;   // round(440 * 2^24 / 48000), docs/audio-spec.md
-    uint8_t ch0[] = {KAGURA_AUDIO_STEP_L, (uint8_t)step, KAGURA_AUDIO_STEP_M, (uint8_t)(step >> 8),
-                     KAGURA_AUDIO_STEP_H, (uint8_t)(step >> 16), KAGURA_AUDIO_DUTY, 128,
-                     KAGURA_AUDIO_GAIN_L, 64, KAGURA_AUDIO_GAIN_R, 64,
-                     KAGURA_AUDIO_CONTROL, KAGURA_AUDIO_CONTROL_ENABLE};
+    // 6. All six voices and both wavetable banks. After committing A then B,
+    // A must be visible again in the shadow address range.
     s = KH_OK;
-    for (size_t i = 0; s == KH_OK && i < sizeof ch0; i += 2) s = kh_audio_write(KAGURA_AUDIO_INDEX(0, ch0[i]), ch0[i + 1]);
+    for (size_t i = 0; i < 512; i++) { buf[i] = (uint8_t)i; back[i] = (uint8_t)~i; }
+    const uint32_t steps[5] = {91669u, 115501u, 137349u, 183338u, 230999u};
+    for (unsigned ch = 0; ch < 3; ch++) {
+        audio_step(ch, steps[ch], &s);
+        audio_reg(ch, KAGURA_AUDIO_DUTY, 128, &s);
+        audio_reg(ch, KAGURA_AUDIO_GAIN_L, ch == 2 ? 24 : 48, &s);
+        audio_reg(ch, KAGURA_AUDIO_GAIN_R, ch == 0 ? 24 : 48, &s);
+        audio_reg(ch, KAGURA_AUDIO_CONTROL, KAGURA_AUDIO_CONTROL_ENABLE | KAGURA_AUDIO_CONTROL_PHASE_RESET, &s);
+    }
+    audio_reg(3, KAGURA_AUDIO_NOISE_PERIOD_L, 31, &s);
+    audio_reg(3, KAGURA_AUDIO_NOISE_PERIOD_H, 0, &s);
+    audio_reg(3, KAGURA_AUDIO_GAIN_L, 16, &s);
+    audio_reg(3, KAGURA_AUDIO_GAIN_R, 16, &s);
+    audio_reg(3, KAGURA_AUDIO_CONTROL, KAGURA_AUDIO_CONTROL_ENABLE | KAGURA_AUDIO_CONTROL_PHASE_RESET, &s);
+    for (unsigned ch = 4; ch < 6; ch++) {
+        audio_step(ch, steps[ch - 1], &s);
+        audio_reg(ch, KAGURA_AUDIO_LEN_LOG2, 8, &s);
+        audio_reg(ch, KAGURA_AUDIO_GAIN_L, ch == 4 ? 48 : 20, &s);
+        audio_reg(ch, KAGURA_AUDIO_GAIN_R, ch == 5 ? 48 : 20, &s);
+        audio_reg(ch, KAGURA_AUDIO_CONTROL, KAGURA_AUDIO_CONTROL_ENABLE | KAGURA_AUDIO_CONTROL_PHASE_RESET, &s);
+    }
+    if (s == KH_OK) s = kh_vram_write(KAGURA_VRAM_WAVE_BASE, buf, 512);
     if (s == KH_OK) s = kh_audio_commit(100000);
+    if (s == KH_OK) s = kh_vram_write(KAGURA_VRAM_WAVE_BASE, back, 512);
+    if (s == KH_OK) s = kh_audio_commit(100000);
+    if (s == KH_OK) s = kh_vram_read(KAGURA_VRAM_WAVE_BASE, back + 512, 512);
     if (check("audio", s)) {
         sleep_ms(1000);
-        s = kh_audio_write(KAGURA_AUDIO_INDEX(0, KAGURA_AUDIO_CONTROL), 0);
+        size_t wave_bad = 0;
+        for (size_t i = 0; i < 512; i++) wave_bad += back[512 + i] != buf[i];
+        report("wave-swap", wave_bad == 0, "512-byte previous bank read-back, %u mismatches", (unsigned)wave_bad);
+        // Put the current waveform in both banks, then disable all voices.
+        for (size_t i = 0; i < 512; i++) back[i] = (uint8_t)~i;
+        s = kh_vram_write(KAGURA_VRAM_WAVE_BASE, back, 512);
+        for (unsigned ch = 0; s == KH_OK && ch < KAGURA_AUDIO_CHANNELS; ch++)
+            s = kh_audio_write(KAGURA_AUDIO_INDEX(ch, KAGURA_AUDIO_CONTROL), 0);
         if (s == KH_OK) s = kh_audio_commit(100000);
         uint8_t ast = 0xff;
         if (s == KH_OK) s = kh_audio_read(KAGURA_AUDIO_STATUS, &ast);
         if (check("audio", s))
             report("audio", (ast & (KAGURA_AUDIO_STATUS_FIFO_UNDERFLOW | KAGURA_AUDIO_STATUS_OVERFLOW)) == 0,
-                   "440Hz on ch0 for 1s, AUDIO_STATUS 0x%02x (check: tone heard)", ast);
+                   "6 voices for 1s, AUDIO_STATUS 0x%02x (check: chord/noise heard)", ast);
     }
 
     // 7. VBLANK IRQ on the /IRQ pin: assert, then release after W1C.
@@ -210,11 +262,28 @@ static void diag(void) {
     // 8. Queue pressure: short FILLs back to back plus a long stream, no FIFO_FULL.
     uint64_t waits_before = st->busy_waits;
     s = KH_OK;
-    for (int i = 0; s == KH_OK && i < 64; i++) s = kh_fill(vaddr + 16u * i, 16, (uint8_t)i);
+    // Set the FILL parameters once, then send 64 COMMAND bytes in one
+    // transaction. With no parameter/header gaps between descriptors this
+    // must fill the 32-entry queue and exercise the BUSY gate in the PIO.
+    uint8_t fill_params[3] = {0x00, 0x04, 0x3c}; // length 1024, value 0x3c
+    uint8_t fill_commands[64];
+    memset(fill_commands, KAGURA_CMD_FILL, sizeof fill_commands);
+    s = kh_set_vram_addr(vaddr);
+    if (s == KH_OK) s = kh_write(KAGURA_REG_LENGTH_L, true, fill_params, sizeof fill_params);
+    if (s == KH_OK) s = kh_write(KAGURA_REG_COMMAND, false, fill_commands, sizeof fill_commands);
+    if (s == KH_OK) s = kh_check_errors();
     for (size_t i = 0; i < 4096; i++) buf[i] = (uint8_t)i;
-    if (s == KH_OK) s = kh_vram_write(vaddr - 4096u, buf, 4096);
-    if (s == KH_OK) s = kh_fence(0xa5, 500000);
-    if (check("busy", s)) {
+    if (s != KH_OK) {
+        report_pressure_failure("FILL burst", -1, s);
+    } else {
+        s = kh_vram_write(vaddr - 4096u, buf, 4096);
+        if (s != KH_OK) report_pressure_failure("VRAM_WRITE", -1, s);
+    }
+    if (s == KH_OK) {
+        s = kh_fence(0xa5, 500000);
+        if (s != KH_OK) report_pressure_failure("FENCE", -1, s);
+    }
+    if (s == KH_OK) {
         uint8_t mid = 0;
         if (check("busy", kh_vram_read(vaddr - 4096u + 1234u, &mid, 1)))
             report("busy", mid == (uint8_t)1234u, "64 FILLs + 4096-byte stream, BUSY waits %llu, read-back %02x",
@@ -224,10 +293,10 @@ static void diag(void) {
     // 9. Nothing left in ERROR_CODE.
     uint8_t e = 0xff;
     if (check("errors", kh_read_reg(KAGURA_REG_ERROR_CODE, &e))) report("errors", e == 0, "ERROR_CODE 0x%02x", e);
-    printf("  stats: %llu bytes, %llu transactions, %llu BUSY waits (%llu us, sampled by software)\n",
+    printf("  stats: %llu bytes, %llu transactions, %llu BUSY waits (%llu us, GPIO edge IRQ)\n",
            (unsigned long long)st->bytes_sent, (unsigned long long)st->transactions,
            (unsigned long long)st->busy_waits, (unsigned long long)st->busy_wait_us);
-    printf("  check LED1 on the board (adapter `late`): it must stay off\n");
+    printf("  check board LED2 (adapter `late`): it must stay off; LED1 (reset released) stays on\n");
     printf(failures ? "DIAG FAIL %d\n" : "DIAG PASS\n", failures);
 }
 
@@ -268,10 +337,33 @@ static void info(void) {
            id[0], id[1], id[2], id[3], id[4], st, fifo, err);
 }
 
+static void abort_test(void) {
+    const uint8_t sentinel = 0x5a, attempted = 0xa5;
+    uint8_t after_header = 0, after_data = 0, id[2] = {0};
+    kh_status s = kh_clear_errors();
+    if (s == KH_OK) s = kh_write_reg(KAGURA_REG_FILL_VALUE, sentinel);
+    if (s == KH_OK) {
+        kh_abort_write(true, KAGURA_REG_FILL_VALUE, attempted);
+        s = kh_read_reg(KAGURA_REG_FILL_VALUE, &after_header);
+    }
+    if (s == KH_OK) {
+        kh_abort_write(false, KAGURA_REG_FILL_VALUE, attempted);
+        s = kh_read_reg(KAGURA_REG_FILL_VALUE, &after_data);
+    }
+    if (s == KH_OK) s = kh_read(KAGURA_REG_ID0, true, id, sizeof id);
+    if (s == KH_OK) s = kh_check_errors();
+    bool ok = s == KH_OK && after_header == sentinel && after_data == sentinel &&
+              id[0] == KAGURA_ID0 && id[1] == KAGURA_ID1;
+    printf("%s abort: header %02x, data %02x, recovery ID %02x %02x%s\n",
+           ok ? "PASS" : "FAIL", after_header, after_data, id[0], id[1],
+           s == KH_OK ? "" : " (transport/error failure)");
+}
+
 static void help(void) {
     printf("commands:\n"
            "  info                 ID, ABI, CAPS, STATUS, pins\n"
            "  diag                 end-to-end check (ID, registers, VRAM, FILL/FENCE, sprite, audio, IRQ, BUSY)\n"
+           "  abort                abort mid-header and mid-data; verify no side effect and recovery\n"
            "  mode spi|qspi        must match the bitstream (build-nano9k.tcl spi / qspi)\n"
            "  div <n>              SCK = 10MHz / n (1..250, default 4)\n"
            "  rd <off> [n]         read n registers from offset (hex), INC\n"
@@ -306,6 +398,7 @@ int main(void) {
         if (!strcmp(cmd, "help")) help();
         else if (!strcmp(cmd, "info")) info();
         else if (!strcmp(cmd, "diag")) diag();
+        else if (!strcmp(cmd, "abort")) abort_test();
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {
             config.lanes = !strcmp(a1, "qspi") ? KH_QSPI : KH_SPI;

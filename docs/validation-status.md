@@ -19,6 +19,14 @@
 
 試験は[ビルド・テスト手順](build-and-test.md)で再実行できる。合格条件は[検証計画](verification-plan.md)、SPI/QSPIの具体値は[ホスト仕様](host-interface.md)、720pの試験範囲は[16:9仕様](wide-mode.md)を参照。
 
+### Pico外部ホスト実機試験（2026-10-25）
+
+Tang Nano 9KとRaspberry Pi Picoをブレッドボード配線し、SPI/QSPIとも5MHzでID/ABI、register、VRAM、FILL/FENCE、sprite、IRQ、BUSYを確認した。10MHzはSPI/QSPIともVRAM等の読戻しにbit化けがあり不合格のため、この配線での実測上限と運用値は5MHzとする。64 FILL＋4096byte streamではSPIでBUSYを41〜50回、QSPIで56〜59回（どちらも約2.3ms）観測し、FIFO errorなし。全6音源の同時発音を聴取し、512byte wave bank交換の読戻しも一致した。
+
+32KiB uploaderは4096byte×8 blockを全て読戻し照合し、SPIは2.19秒・570.2KB/s、QSPIは2.06秒・1,023.1KB/s。SPI/QSPIともS2 reset後とPico USB再接続後に診断が再合格した。両方式ともheader途中・data byte途中で/CSを上げる実機試験は、FILL_VALUEが`5a`のまま変化せず、直後のID `4b 39`読出しと全診断に合格した。試験中はLED1（reset解除）が点灯、LED2（adapter `late`）が消灯しており、deadline違反は観測しなかった。QSPI bitstreamをTang内蔵Flashへ書いた後のFlash bootでも診断に合格したが、Gowin Programmerは`Verify Failed at 0`を表示するため、機能的な起動確認とFlash readback照合は区別する。詳細・生成物hashは[Pico firmware記録](../software/pico/README.md)を参照。
+
+M2の完了条件（両方式のID/ABI、VRAM照合、IRQ、sprite・音源更新、BUSY待ち、途中中断、reset/USB再接続復帰、uploader）は実機で確認済み。ブレッドボード評価のためオシロによるSCK/IO・t_CSS測定は対象外とし、電気的マージンや量産配線の保証には用いない。LED1はreset解除表示であり、正常時の点灯を`late`と誤認しない。
+
 ## 配置配線と資源
 
 Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値でありLUT単独の数ではない。版・構成が異なる数値を単純加算しない。
@@ -43,7 +51,7 @@ CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以�
 未実施項目:
 
 - 異なるsink 2機種以上×ケーブル2本、起動20回、抜挿10回、各1時間の連続試験。
-- 実W65C02S・SPI/QSPIホストとの接続。CPU用外部reset保持回路、RAM/ROMのdecode/OEとbus turnaroundの確認。
+- 実W65C02Sとの接続。SPI/QSPIホストはPicoで5MHzまで確認済みだが、ブレッドボード配線の波形・電気的マージンは未測定。CPU用外部reset保持回路、RAM/ROMのdecode/OEとbus turnaroundの確認。
 - CPUのPHI2/data/OE/CS/reset/IRQの実測。FPGA未設定・電源不安定時にもRESBをlowへ保持する回路の電源投入試験。
 - TMDS信号品質、実周波数・ジッタ・消費電流、実機音声の完全性、入力停止時のmute/silence復帰。
 - 配置変動に対する小さいsetup余裕。720pのOSER10 reset解除は2 sink×20回で異常なしだが、STA除外経路の静的保証はない。

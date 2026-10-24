@@ -24,6 +24,22 @@ static uint pull_pc;            // wrap target: the SM idles stalled here
 static uint8_t last_error, last_fifo_status;
 static uint16_t program_buf[32];
 static pio_program_t loaded_program;
+static volatile bool busy_irq_active;
+static volatile uint64_t busy_irq_since;
+
+static void busy_edge_irq(uint gpio, uint32_t events) {
+    if (gpio != cfg.busy_pin) return;
+    uint64_t now = time_us_64();
+    if ((events & GPIO_IRQ_EDGE_RISE) && !busy_irq_active) {
+        busy_irq_active = true;
+        busy_irq_since = now;
+        stats.busy_waits++;
+    }
+    if ((events & GPIO_IRQ_EDGE_FALL) && busy_irq_active) {
+        stats.busy_wait_us += now - busy_irq_since;
+        busy_irq_active = false;
+    }
+}
 
 static inline void wait_ns(uint32_t ns) {
     uint64_t cycles = ((uint64_t)clock_get_hz(clk_sys) * ns + 999999999u) / 1000000000u;
@@ -53,6 +69,9 @@ void kh_init(const kh_config *config) {
     gpio_set_dir(cfg.cs_pin, GPIO_OUT);
     gpio_init(cfg.busy_pin);
     gpio_set_dir(cfg.busy_pin, GPIO_IN);
+    busy_irq_active = false;
+    gpio_set_irq_enabled_with_callback(cfg.busy_pin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
+                                       true, busy_edge_irq);
     gpio_init(cfg.ready_pin);
     gpio_set_dir(cfg.ready_pin, GPIO_IN);
     gpio_pull_down(cfg.ready_pin);   // unconfigured FPGA reads as not ready
@@ -67,6 +86,18 @@ void kh_init(const kh_config *config) {
     kagura_host_sm_config(pio, sm, prog_offset, &c, cfg.io0_pin, lanes,
                           cfg.lanes == KH_QSPI ? cfg.io0_pin : cfg.io0_pin + 1, cfg.sck_pin, clkdiv);
     for (unsigned i = 0; i < (cfg.lanes == KH_QSPI ? 4u : 2u); i++) pio_gpio_init(pio, cfg.io0_pin + i);
+    // Breadboard wiring is a high-impedance, unterminated load. Use the
+    // weakest/slowest RP2040 pad drive to reduce overshoot and crosstalk;
+    // keep Schmitt hysteresis enabled when the QSPI pins turn around to input.
+    gpio_set_drive_strength(cfg.sck_pin, GPIO_DRIVE_STRENGTH_2MA);
+    gpio_set_slew_rate(cfg.sck_pin, GPIO_SLEW_RATE_SLOW);
+    gpio_set_drive_strength(cfg.cs_pin, GPIO_DRIVE_STRENGTH_2MA);
+    gpio_set_slew_rate(cfg.cs_pin, GPIO_SLEW_RATE_SLOW);
+    for (unsigned i = 0; i < 4; i++) {
+        gpio_set_drive_strength(cfg.io0_pin + i, GPIO_DRIVE_STRENGTH_2MA);
+        gpio_set_slew_rate(cfg.io0_pin + i, GPIO_SLEW_RATE_SLOW);
+        gpio_set_input_hysteresis_enabled(cfg.io0_pin + i, true);
+    }
     pio_sm_set_pins_with_mask(pio, sm, 0, 0xfu << cfg.io0_pin);
     // SPI: IO0 (MOSI) driven, IO1 (MISO) input; IO2/IO3 stay plain inputs.
     // QSPI: all four released until a transaction starts.
@@ -77,6 +108,11 @@ void kh_init(const kh_config *config) {
 }
 
 void kh_deinit(void) {
+    gpio_set_irq_enabled(cfg.busy_pin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
+    if (busy_irq_active) {
+        stats.busy_wait_us += time_us_64() - busy_irq_since;
+        busy_irq_active = false;
+    }
     pio_sm_set_enabled(pio, sm, false);
     pio_remove_program(pio, &loaded_program, prog_offset);
     pio_sm_unclaim(pio, sm);
@@ -131,12 +167,11 @@ static kh_status xfer(const uint8_t *tx, uint8_t *rx, const uint8_t *flags, size
             if (cfg.lanes == KH_QSPI) word |= ((f & 2u) ? 1u << 30 : 0) | (uint32_t)b << 22;
             else word |= (uint32_t)b << 23;
             if ((f & 1u) && gpio_get(cfg.busy_pin)) {
-                // Statistics only: the PIO itself waits right before the byte.
-                uint64_t t0 = time_us_64();
-                stats.busy_waits++;
+                // The PIO performs the authoritative wait. Waiting here keeps
+                // its TX FIFO from filling while the GPIO IRQ records the
+                // complete BUSY pulse, including pulses shorter than polling.
                 while (gpio_get(cfg.busy_pin))
                     if (time_reached(end)) break;
-                stats.busy_wait_us += time_us_64() - t0;
             }
             pio_sm_put(pio, sm, word);
             sent++;
@@ -200,6 +235,53 @@ kh_status kh_read(uint8_t offset, bool inc, uint8_t *data, size_t n) {
 
 kh_status kh_write_reg(uint8_t offset, uint8_t value) { return kh_write(offset, false, &value, 1); }
 kh_status kh_read_reg(uint8_t offset, uint8_t *value) { return kh_read(offset, false, value, 1); }
+
+static void bitbang_unit(uint8_t value, unsigned width) {
+    uint32_t mask = ((1u << width) - 1u) << cfg.io0_pin;
+    gpio_put_masked(mask, (uint32_t)value << cfg.io0_pin);
+    busy_wait_us_32(1);
+    gpio_put(cfg.sck_pin, 1);
+    busy_wait_us_32(1);
+    gpio_put(cfg.sck_pin, 0);
+}
+
+void kh_abort_write(bool during_header, uint8_t offset, uint8_t value) {
+    kh_config saved = cfg;
+    kh_deinit();
+
+    gpio_init(saved.cs_pin);
+    gpio_put(saved.cs_pin, 1);
+    gpio_set_dir(saved.cs_pin, GPIO_OUT);
+    gpio_init(saved.sck_pin);
+    gpio_put(saved.sck_pin, 0);
+    gpio_set_dir(saved.sck_pin, GPIO_OUT);
+    unsigned width = saved.lanes == KH_QSPI ? 4u : 1u;
+    for (unsigned i = 0; i < width; i++) {
+        gpio_init(saved.io0_pin + i);
+        gpio_set_dir(saved.io0_pin + i, GPIO_OUT);
+    }
+
+    uint8_t header = offset & 31u; // write, no increment
+    gpio_put(saved.cs_pin, 0);
+    busy_wait_us_32(1);
+    if (saved.lanes == KH_QSPI) {
+        bitbang_unit(header >> 4, 4);
+        if (!during_header) {
+            bitbang_unit(header & 15u, 4);
+            bitbang_unit(value >> 4, 4);
+        }
+    } else {
+        unsigned bits = during_header ? 4u : 12u;
+        uint16_t stream = ((uint16_t)header << 8) | value;
+        for (unsigned i = 0; i < bits; i++) bitbang_unit((stream >> (15u - i)) & 1u, 1);
+    }
+    // The last clock ended low. Raising /CS here deliberately discards the
+    // half-finished header/data byte; no trailing clocks are supplied.
+    busy_wait_us_32(1);
+    gpio_put(saved.cs_pin, 1);
+    busy_wait_us_32(2);
+    kh_init(&saved);
+}
 
 kh_status kh_check_errors(void) {
     uint8_t e;
