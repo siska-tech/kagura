@@ -23,6 +23,13 @@ Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstream�
 
 SPI/QSPIで配線は同じ。bitstreamは`tools/build-nano9k.tcl spi`または`qspi`（[ビルドガイド](../../docs/build-and-test.md)）で作り、firmwareの`mode`を一致させる。
 
+### ブレッドボードで組む場合
+
+- ブレッドボードに挿すのはPicoだけにし、Tang Nano 9Kはオス-メスのジャンパ線でヘッダへつなぐ。基板ごと挿すとTMDSのヘッダpin（J5-23/24、J6-12〜17）が接点列に触れて容量の付いたstubになり、HDMI出力を乱すおそれがある（[ピン一覧](../../boards/tang-nano-9k/pin-inventory.csv)は開放を指定）。
+- 接点容量とジャンパ線の長さで10MHzの成否が変わる。`div 10`（1MHz）から上げ、ブレッドボード構成で合格した最大値として記録する。
+- SCKはほかの信号線と束ねない。高い速度で失敗したら、まずオシロでSCKのリンギングを見る。改善しなければPico側のSCKに33Ω程度の直列抵抗を入れて比較する。
+- 電源レールにはPicoの3V3(OUT)だけを出し、/IRQのpull-upに使う。Tang Nano 9Kの3V3・5Vはレールへつながない。
+
 ## ビルドと書込み
 
 Pico SDK 2.2.0、Arm GNU Toolchain 14.2.rel1、CMake 3.13以上。WSL/Linuxで:
