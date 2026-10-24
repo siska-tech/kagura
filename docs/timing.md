@@ -29,6 +29,8 @@ FIFOのGray同期は制御信号の同期であり、多bit PCM値を独立2FF�
 
 **720p（VIC4）のOSER10 RESETは例外**。lane別FFからOSER10 RESETへの配線がFCLK半周期に収まらないため、[phase1-720p.sdc](../boards/tang-nano-9k/phase1-720p.sdc)でこの経路をfalse pathとし、OSER10での解除はFCLK/PCLKに対して非同期として扱う。FCLK同期器とlane別FFまでの経路は1サイクルで解析する。VIC1ではOSER10 RESETのrecovery/removal検査も維持する。720p版の「STA違反0」は除外経路のタイミング保証を含まない。リセット後のレーン整列は実機確認項目であり、1台での確認と複数sink・長時間試験の残課題は[16:9記録](wide-mode.md)を参照。
 
+【設計】解除順序は、外部`reset_n`またはいずれかのPLL lock解除で即assertし、pixel clockの4段同期器が解除された後、serializer内でFCLKの2段同期器とlane別FFを通して4個のOSER10へ渡す。`tb_serializer_reset`はFCLKに対する入力resetの位相を変え、非同期assert、解除まで3 FCLK立上り、4 lane同時解除を確認する。この試験はFFまでのデジタルな順序だけが対象であり、Gowin OSER10端子のrecovery/removal、配線遅延、電源投入時のPLL挙動はモデル化しない。除外した物理境界は[実機試験表](p1-07-hardware-test.md)の720p reset反復で評価する。
+
 ## CPUバスタイミング案
 
 W65C02S 3.3V列: cycle>=125ns、PHI2 high>=62ns/low>=63ns、address setup最大40ns、write data delay最大40ns、read setup>=15ns、read hold>=10ns、write hold>=10ns、control setup>=15ns/hold>=10ns。立上り/立下り<=5ns、表の負荷条件35pFを参照。[W65C02S 表6-3/図6-3](https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf)
