@@ -68,3 +68,33 @@ IRQは`|(IRQ_STATUS & IRQ_ENABLE)`でlevelを作る。外部線はopen-drain相�
 ## STA受け入れ
 
 27MHz input clock、126MHz/25.2MHz/54MHz generated clocks、PHI2 outputとのI/O delays、RAMとOSER10関連clock、CDC例外を定義。setup/hold WNS>=0、TNS=0、未制約の同期パス0。Fmaxの1数値だけで3domainを評価しない。合成成功とP&Rのsetup/hold収束は別証拠として保存する。
+
+## 余裕の改善記録（M3）
+
+【実測】Gowin Education V1.9.11.03、`tools/run-baseline.ps1`。基準は[M0基準記録](baseline.md)の`9f595f7`、改善後は`443900a`（証拠は`reports/443900a/`、Git管理外）。全11構成でsetup/hold違反endpoint 0、TNS 0。720pのOSER10 RESET除外は上記のまま。
+
+| 構成 | 最小setup slack（9f595f7 → 443900a） | 改善後の最悪経路 |
+|---|---:|---|
+| phase2 | +0.077 → +0.105ns | 音源レジスタのindex → channel_dataキャッシュ |
+| demo | +0.020 → +0.095ns | q_addr → 音源 capture_pending |
+| spi | +0.019 → +0.147ns | pattern RAM出力 → sprite合成（visible_q） |
+| qspi | +0.072 → +0.063ns | pattern RAM出力 → sprite合成（pixels） |
+| phase2720 | +0.058 → +0.111ns | packet_assembler（pixel74、上流hdl-util） |
+| demo720 | +0.030 → +0.085ns | packet_assembler（pixel74） |
+| spi720 | +0.029 → +0.134ns | packet_assembler（pixel74） |
+| qspi720 | +0.095 → +0.099ns | packet_assembler（pixel74） |
+
+hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小値は+0.019ns（spi）から+0.063ns（qspi）になった。
+
+変更内容（機能・ABI・応答cycle数は不変）:
+
+- COMMANDのopcodeとREAD_REQUESTの値0判定を、要求の取込み時にflagへ前もって復号する。受付・error判定が高fanoutの`q_wdata`（fanout 54）を再度比較しなくなり、最悪だった`q_wdata`→`capture_pending`/`error_code`経路（論理7段）が消えた。
+- FILLの範囲検査を、加算と領域比較の2段に分けた。ADDR/LENGTH書込みとVRAM_WRITE/READのaddress進行の後は、`checks_stale`が次の要求を両段の更新後まで受け付けない。この前提はsimulation専用のassertionと、最大速度で要求を出す`tb_fill_timing`で検査する（3段に遅らせた改変版はassertionで失敗することを確認）。
+- demo sequencerの`req_wdata`を`syn_preserve`でfabricのFFに残した。art ROMのBSRAM出力レジスタへ吸収されると、遅いDOが上記の復号へ直結していた（demo720が+0.010nsへ悪化した原因）。副作用としてart ROMのpROMが2→1個になり、demo/demo720のBSRAMは26→25/26。シミュレーションの結果は同じ。ROM割付けの変更後のdemo（480p）の映像は、2026-10-24にTOSHIBA REGZA 32S5で正常表示を確認した（[検証状況](validation-status.md)）。
+
+残る経路と次の候補:
+
+- pattern RAM出力 → sprite合成: 16:1のbank選択の直後に`pixels`書込みと最初の画素の可視判定がある。最初の画素の判定を1cycle遅らせる（1 spriteあたり+1cycle、最大16cycles/line）か、pattern出力をregisterで受ける（背景を含め読出しlatencyが変わる）案がある。描画期限（2633 cycles）と参照モデルに影響するため別の変更とする。
+- packet_assembler（pixel74）: 上流hdl-utilのBCH/parity経路。[16:9仕様](wide-mode.md)のとおりpipeline化の候補。上流ファイルは無改変で固定しているため、派生ソース生成（`tools/prepare-hdmi-stream.py`）側での対応を検討する。
+
+当面の受入れは「全構成でWNS≥+0.05ns」とし、上の2件の対応後に目標値を見直す。

@@ -23,22 +23,22 @@
 
 Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値でありLUT単独の数ではない。版・構成が異なる数値を単純加算しない。
 
-以下は[M0基準記録](baseline.md)（`9f595f7`）の再測定値。全11構成でsetup/hold違反endpoint 0、TNS 0。
+以下は`443900a`の測定値（M0の`9f595f7`からの改善は[タイミング仕様](timing.md)の改善記録）。全11構成でsetup/hold違反endpoint 0、TNS 0。
 
 | 構成 | Logic | Register | BSRAM | 最小setup slack |
 |---|---:|---:|---:|---:|
-| phase2 / phase2720 | 4306 / 4332 | 3210 / 3211 | 24/26 | +0.077ns / +0.058ns |
-| spi / spi720 | 4397 / 4437 | 3243 / 3244 | 24/26 | +0.019ns / +0.029ns |
-| qspi / qspi720 | 4391 / 4432 | 3245 / 3246 | 24/26 | +0.072ns / +0.095ns |
-| demo / demo720 | 6270 / 6280 | 3633 / 3634 | 26/26 | +0.020ns / +0.030ns |
+| phase2 / phase2720 | 4329 / 4351 | 3235 / 3236 | 24/26 | +0.105ns / +0.111ns |
+| spi / spi720 | 4405 / 4468 | 3268 / 3269 | 24/26 | +0.147ns / +0.134ns |
+| qspi / qspi720 | 4399 / 4450 | 3270 / 3271 | 24/26 | +0.063ns / +0.099ns |
+| demo / demo720 | 6268 / 6253 | 3624 / 3625 | 25/26 | +0.095ns / +0.085ns |
 
 **720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。1台のモニターではreset後のレーン整列に異常は見られなかった。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[16:9測定表](wide-mode.md)を参照。
 
-CPU/ホスト版は24 BSRAM、art ROMを含むデモは26 BSRAMで予備がない。設計予算25 BSRAMと実装使用量は区別する。単体の比較根拠は[HDMI評価](hdmi-synthesis-evaluation.md)、[音声packet評価](audio-packet-integration.md)、[BSRAM評価](bsram-evaluation.md)に残している。
+CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以降。それ以前は26で予備なし）。設計予算25 BSRAMと実装使用量は区別する。単体の比較根拠は[HDMI評価](hdmi-synthesis-evaluation.md)、[音声packet評価](audio-packet-integration.md)、[BSRAM評価](bsram-evaluation.md)に残している。
 
 ## 実機互換性
 
-基板1台で480p/720pの映像・音声をPCモニター1台にて確認した。初期480p試験ではTCL製テレビが無信号で、Sipeed公式DVI相当サンプルでも同様だった。原因は未特定であり、KAGURA固有ともテレビ非対応とも断定しない。全体の互換性試験は未完了。[実機試験手順・記録表](p1-07-hardware-test.md)を使用する。
+基板1台で480p/720pの映像・音声をPCモニター1台にて確認した。初期480p試験ではTCL製テレビが無信号で、Sipeed公式DVI相当サンプルでも同様だった。原因は未特定であり、KAGURA固有ともテレビ非対応とも断定しない。2026-10-24に2機種目のTOSHIBA REGZA 32S5で、`443900a`のdemo bitstream（`kagura_demo.fs`、SHA256 `92bad474…`）の映像が正常に表示されることを確認した（art ROMのBSRAM割付け変更後の表示確認を兼ねる。音声・連続時間・回数は未記録）。全体の互換性試験は未完了。[実機試験手順・記録表](p1-07-hardware-test.md)を使用する。
 
 未実施項目:
 

@@ -22,7 +22,7 @@ VRAM行の19はpattern16＋map2＋queue1。Tile行の3はpalette1＋line2。Spri
 
 ## 実装の測定値
 
-全体の測定値は[検証状況](validation-status.md)、720pの構成別数値は[16:9仕様](wide-mode.md)を参照。CPU/ホスト版は24/26 BSRAM、art ROMを含むデモ版は26/26であり、上記25ブロックの設計予算とは区別する。
+全体の測定値は[検証状況](validation-status.md)、720pの構成別数値は[16:9仕様](wide-mode.md)を参照。CPU/ホスト版は24/26 BSRAM、art ROMを含むデモ版は25/26（`443900a`以降。art ROMのpROMが2→1個）であり、上記25ブロックの設計予算とは区別する。
 
 合成のcell数とP&Rの使用数を両方保存する。LogicとLUTを混同せず、各clockのslackと制約例外を報告する。個別moduleの合成量を単純加算して統合使用量としない。変更後は同じ構成・EDAで再測定する。
 

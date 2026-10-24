@@ -11,6 +11,8 @@ param(
     [string]$Pattern='bars'
 )
 $ErrorActionPreference='Stop'
+# `powershell -File ... -Configs spi,demo` passes one comma-joined string.
+$Configs=@($Configs | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $root=Split-Path -Parent $PSScriptRoot
 if(!(Test-Path -LiteralPath $Gowin)) { throw 'Specify -Gowin with the installed gw_sh.exe path' }
 $stream=Join-Path $root 'build/generated/kagura_hdmi_stream.sv'
