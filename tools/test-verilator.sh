@@ -57,6 +57,7 @@ run_test tb_tmds_channel third_party/hdl-util-hdmi/src/tmds_channel.sv \
     sim/tests/tb_tmds_channel.sv
 run_test tb_tmds_pipeline third_party/hdl-util-hdmi/src/tmds_channel.sv rtl/hdmi/kagura_tmds_channel.sv \
     sim/tests/tb_tmds_pipeline.sv
+run_test tb_serializer_reset rtl/platform/kagura_gowin_serializer.sv sim/tests/tb_serializer_reset.sv
 run_test tb_async_fifo rtl/memory/kagura_async_fifo.sv sim/tests/tb_async_fifo.sv
 run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
     rtl/audio/kagura_audio_transport.sv rtl/hdmi/kagura_audio_packets.sv \

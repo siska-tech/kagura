@@ -32,7 +32,7 @@ Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値であ�
 | qspi / qspi720 | 4399 / 4450 | 3270 / 3271 | 24/26 | +0.063ns / +0.099ns |
 | demo / demo720 | 6268 / 6253 | 3624 / 3625 | 25/26 | +0.095ns / +0.085ns |
 
-**720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。1台のモニターではreset後のレーン整列に異常は見られなかった。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[16:9測定表](wide-mode.md)を参照。
+**720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。`tb_serializer_reset`で入力resetの位相を変え、serializer内の非同期assert、3 FCLK立上り後の4 lane同時解除を確認したが、OSER10 primitive端子のrecovery/removalはsimulation対象外である。2026-10-24にS1（MSI MAG 325CQRF-QD）とS2（TOSHIBA REGZA 32S5）でreset解除を各20回反復し、全40回で720p映像・左右音声が復帰し、レーンずれは観測しなかった。これは対象基板・bitstream・sinkでの実機結果であり、除外経路の静的保証ではない。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[実機試験表](p1-07-hardware-test.md)を参照。
 
 CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以降。それ以前は26で予備なし）。設計予算25 BSRAMと実装使用量は区別する。単体の比較根拠は[HDMI評価](hdmi-synthesis-evaluation.md)、[音声packet評価](audio-packet-integration.md)、[BSRAM評価](bsram-evaluation.md)に残している。
 
@@ -46,7 +46,7 @@ CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以�
 - 実W65C02S・SPI/QSPIホストとの接続。CPU用外部reset保持回路、RAM/ROMのdecode/OEとbus turnaroundの確認。
 - CPUのPHI2/data/OE/CS/reset/IRQの実測。FPGA未設定・電源不安定時にもRESBをlowへ保持する回路の電源投入試験。
 - TMDS信号品質、実周波数・ジッタ・消費電流、実機音声の完全性、入力停止時のmute/silence復帰。
-- 配置変動に対する小さいsetup余裕と、720pのOSER10 reset解除の追加評価。
+- 配置変動に対する小さいsetup余裕。720pのOSER10 reset解除は2 sink×20回で異常なしだが、STA除外経路の静的保証はない。
 
 Flashでは`Verify Failed at 0`表示が残る一方、電源再投入後の起動は確認済み。SRAM Program and Verifyは成功。扱いと書込み方法は[ビルドガイド](build-and-test.md)を参照。
 
