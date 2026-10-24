@@ -23,14 +23,14 @@
 
 Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値でありLUT単独の数ではない。版・構成が異なる数値を単純加算しない。
 
-以下は`443900a`の測定値（M0の`9f595f7`からの改善は[タイミング仕様](timing.md)の改善記録）。全11構成でsetup/hold違反endpoint 0、TNS 0。
+以下は`d501a1f`の測定値（M0の`9f595f7`からの段階的な改善は[タイミング仕様](timing.md)の改善記録）。全11構成でsetup/hold違反endpoint 0、TNS 0。
 
 | 構成 | Logic | Register | BSRAM | 最小setup slack |
 |---|---:|---:|---:|---:|
-| phase2 / phase2720 | 4329 / 4351 | 3235 / 3236 | 24/26 | +0.105ns / +0.111ns |
-| spi / spi720 | 4405 / 4468 | 3268 / 3269 | 24/26 | +0.147ns / +0.134ns |
-| qspi / qspi720 | 4399 / 4450 | 3270 / 3271 | 24/26 | +0.063ns / +0.099ns |
-| demo / demo720 | 6268 / 6253 | 3624 / 3625 | 25/26 | +0.095ns / +0.085ns |
+| phase2 / phase2720 | 4329 / 4351 | 3235 / 3236 | 24/26 | +2.079ns / +0.377ns |
+| spi / spi720 | 4405 / 4468 | 3268 / 3269 | 24/26 | +1.608ns / +0.630ns |
+| qspi / qspi720 | 4399 / 4450 | 3270 / 3271 | 24/26 | +0.142ns / +0.192ns |
+| demo / demo720 | 6268 / 6253 | 3624 / 3625 | 25/26 | +0.634ns / +0.130ns |
 
 **720pはOSER10 RESETのrecovery/removal経路をSTAから除外している**。違反0はその経路を含む保証ではない。`tb_serializer_reset`で入力resetの位相を変え、serializer内の非同期assert、3 FCLK立上り後の4 lane同時解除を確認したが、OSER10 primitive端子のrecovery/removalはsimulation対象外である。2026-10-24にS1（MSI MAG 325CQRF-QD）とS2（TOSHIBA REGZA 32S5）でreset解除を各20回反復し、全40回で720p映像・左右音声が復帰し、レーンずれは観測しなかった。これは対象基板・bitstream・sinkでの実機結果であり、除外経路の静的保証ではない。余裕が小さく、RTL・配置・EDA変更後は再ビルド・再検査する。[タイミング仕様](timing.md)と[実機試験表](p1-07-hardware-test.md)を参照。
 

@@ -100,3 +100,20 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 - packet_assembler（pixel74）: 上流hdl-utilのBCH/parity経路。[16:9仕様](wide-mode.md)のとおりpipeline化の候補。上流ファイルは無改変で固定しているため、派生ソース生成（`tools/prepare-hdmi-stream.py`）側での対応を検討する。
 
 当面の受入れは「全構成でWNS≥+0.05ns」とし、上の2件の対応後に目標値を見直す。
+
+### P&R effort固定（後続拡張の余裕）
+
+【実測】`d501a1f`、Gowin Education V1.9.11.03、`tools/run-baseline.ps1`。`place_option 1`と`route_option 1`を全構成の既定値に固定した。RTL・制約・資源使用量は`443900a`から不変。全11構成でsetup/hold違反endpoint 0、TNS 0。証拠は`reports/d501a1f/`（Git管理外）。
+
+| 構成 | 最小setup slack（443900a → d501a1f） |
+|---|---:|
+| hdmi / dvi | +5.634 → +5.951ns |
+| phase2 / phase2720 | +0.105 → +2.079ns / +0.111 → +0.377ns |
+| demo / demo720 | +0.095 → +0.634ns / +0.085 → +0.130ns |
+| spi / spi720 | +0.147 → +1.608ns / +0.134 → +0.630ns |
+| qspi / qspi720 | +0.063 → +0.142ns / +0.099 → +0.192ns |
+| hdmi720 | +0.391 → +0.708ns |
+
+全構成の最小値は+0.063nsから+0.130nsへ改善した。最悪経路は構成ごとに移動しており、qspiはregister addressから音源capture、demo720はsequencer counter、その他の720p統合構成は主にpacket assemblerである。単一RTL経路の修正ではなく配置配線探索の改善であり、機能追加後に同じ余裕を保証するものではない。P&R時間は統合構成で増える。
+
+後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 25/26のため、BSRAMを使う拡張は別途空きを確保する。

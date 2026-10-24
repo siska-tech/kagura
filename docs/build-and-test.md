@@ -73,6 +73,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-nano9k-timing.ps
 
 `dvi`以外は引数に`720`を付けると16:9版になる。例: `demo720`、`phase2720`、`spi720`。basenameも末尾に`720`が付き、`hdmi720`だけは`kagura_hdmi720`となる。第2引数`bars`（既定）/`stress`は単体映像sourceを選ぶ。デモ・ホスト版の描画内容を切り替える指定ではない。
 
+Gowinの既定P&R設定は全構成で`place_option 1`、`route_option 1`。後続拡張向けの余裕を優先した設定で、統合構成の実行時間は長くなる。比較実験だけは環境変数`KAGURA_PLACE_OPTION`、`KAGURA_ROUTE_OPTION`で上書きできる。正式な数値は上書きなしのclean commitで`tools/run-baseline.ps1`を実行して保存する。
+
 bitstreamは各buildディレクトリの`impl/pnr/<basename>.fs`。CST/SDC断片とビルド設定packageはスクリプトが生成する。`timing-status.json`には最悪slackと経路・レポートhashを保存する。`-ReportOnly`は結果出力用であり、合否の自動ゲートではない。指定しない場合は数値違反に加えて実機互換性試験が未完了であることでも失敗する。720pのOSER10 RESET除外は[タイミング仕様](timing.md)を参照。
 
 ## SRAM書込み
