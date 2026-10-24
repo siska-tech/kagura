@@ -20,7 +20,7 @@
 
 ## LEDの読み方
 
-LEDはactive low。基板の表記は1始まりで、`led_n[0]`（pin 10）がLED1、`led_n[5]`（pin 16）がLED6（[demo top](../boards/tang-nano-9k/kagura_demo_top.sv)の注記による）。
+LEDはactive low。基板の表記は1始まりで、`led_n[0]`（pin 10）がLED1、`led_n[5]`（pin 16）がLED6。回路図の部品番号がLED1〜LED6であることを確認済み（基板のシルク印刷は判読できない）。pinとの対応は[demo top](../boards/tang-nano-9k/kagura_demo_top.sv)の注記とCSTによる。
 
 | 基板表記 | bit | カラーバー版（`kagura_phase1_top`） | demo版 | SPI/QSPI版（`kagura_host_top`） |
 |---|---|---|---|---|
