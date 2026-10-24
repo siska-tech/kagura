@@ -1,0 +1,70 @@
+; SPDX-License-Identifier: Apache-2.0
+; KAGURA SPI / QSPI host (docs/host-interface.md): mode 0, MSB first.
+; Each TX word is one byte: bit31 = wait for BUSY low before the byte,
+; bit30 (QSPI) = release IO0..3 after the byte, bits 29:22 (QSPI) or
+; 30:23 (SPI) = data. Data changes with the SCK falling edge and is
+; stable for 6 PIO cycles before the rise. MISO/IO is sampled one cycle
+; after the rise (about one more cycle of input synchronizer), well
+; inside the FPGA's >=37ns output hold. 12 PIO cycles per SCK: 120MHz
+; with clkdiv 1 gives 10MHz. /CS is a plain GPIO driven by software.
+; The `wait 0 gpio 0` placeholder is patched to the BUSY pin at load time.
+
+.program kagura_spi
+.side_set 1
+.wrap_target
+    pull block          side 0
+    out x, 1            side 0
+    jmp !x, start       side 0
+public busy_wait:
+    wait 0 gpio 0       side 0
+start:
+    set y, 7            side 0
+bitloop:
+    out pins, 1         side 0 [5]
+    nop                 side 1 [2]
+    in pins, 1          side 1
+    jmp y-- bitloop     side 1 [1]
+.wrap
+
+.program kagura_qspi
+.side_set 1
+.wrap_target
+top:
+    pull block          side 0
+    out x, 1            side 0
+    jmp !x, start       side 0
+public busy_wait:
+    wait 0 gpio 0       side 0
+start:
+    out y, 1            side 0
+    out pins, 4         side 0 [5]
+    nop                 side 1 [2]
+    in pins, 4          side 1
+    nop                 side 1 [1]
+    out pins, 4         side 0 [5]
+    nop                 side 1 [2]
+    in pins, 4          side 1 [2]
+    jmp !y, top         side 0
+    set pindirs, 0      side 0
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+// Shared setup: SCK side-set, data out/in pins, autopush 8 bits MSB first.
+static inline void kagura_host_sm_config(PIO pio, uint sm, uint offset, pio_sm_config *c,
+                                         uint out_base, uint out_count, uint in_base,
+                                         uint sck_pin, float clkdiv) {
+    sm_config_set_out_pins(c, out_base, out_count);
+    sm_config_set_set_pins(c, out_base, out_count);
+    sm_config_set_in_pins(c, in_base);
+    sm_config_set_sideset_pins(c, sck_pin);
+    sm_config_set_out_shift(c, false, false, 32);
+    sm_config_set_in_shift(c, false, true, 8);
+    sm_config_set_clkdiv(c, clkdiv);
+    pio_sm_set_pins_with_mask(pio, sm, 0, 1u << sck_pin);
+    pio_sm_set_pindirs_with_mask(pio, sm, 1u << sck_pin, 1u << sck_pin);
+    pio_gpio_init(pio, sck_pin);
+    (void)offset;
+}
+%}
