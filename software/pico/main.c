@@ -227,7 +227,7 @@ static void diag(void) {
     printf("  stats: %llu bytes, %llu transactions, %llu BUSY waits (%llu us, sampled by software)\n",
            (unsigned long long)st->bytes_sent, (unsigned long long)st->transactions,
            (unsigned long long)st->busy_waits, (unsigned long long)st->busy_wait_us);
-    printf("  check LED1 on the board (adapter `late`): it must stay off\n");
+    printf("  check board LED2 (led_n[1], adapter `late`): it must stay off\n");
     printf(failures ? "DIAG FAIL %d\n" : "DIAG PASS\n", failures);
 }
 
@@ -331,7 +331,7 @@ static void soak(unsigned minutes) {
     kh_audio_commit(100000);
     bool ok = mismatches == 0 && driver_failures == 0 && ready_drops == 0 && audio_flags == 0;
     printf(ok ? "SOAK PASS\n" : "SOAK FAIL\n");
-    printf("  check LED1 on the board (adapter `late`): it must stay off\n");
+    printf("  check board LED2 (led_n[1], adapter `late`): it must stay off\n");
 }
 
 // `w <addr> <len>` then len raw bytes; `c <addr> <len>` reads back and prints CRC32.

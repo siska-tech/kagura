@@ -58,7 +58,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `w <addr> <len>` / `c <addr> <len>` | VRAMへのupload、読戻しCRC（uploader用） |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 
-`diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → ch0 440Hzを1秒 → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音・基板のLED1（adapterの`late`）が消灯のままであることは目視で確認する。
+`diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → ch0 440Hzを1秒 → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音・基板のLED2（`led_n[1]`、adapterの`late`）が消灯のままであることは目視で確認する。
 
 VRAM uploader（Windows PowerShell 5.1）:
 
@@ -77,7 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/kagura-upload.ps1 -Por
 3. 復帰: `diag`合格後にTang Nano 9KのS2（reset）を押し、READYが一度下がって戻ることを`info`で確認してから再度`diag`。Pico側のUSB再接続後も同様。
 4. uploader: 32KBのpattern全域を`-Verify`付きで転送し、CRC一致と転送速度を記録する。
 5. 10MHzでオシロにより、SCK立上りに対するMISO（QSPIはIO）の変化時刻とt_CSSを測る（[ホスト仕様](../../docs/host-interface.md)の算定: FPGA出力は立上りから37〜56ns＋出力遅延）。
-6. 負荷試験: 合格した最大SCKで`soak 60`。全カウンタ0とLED1消灯を記録する。HDMI互換性試験（[実機試験表](../../docs/p1-07-hardware-test.md)）の各1時間にも使える。
+6. 負荷試験: 合格した最大SCKで`soak 60`。全カウンタ0とLED2（`late`）消灯を記録する。HDMI互換性試験（[実機試験表](../../docs/p1-07-hardware-test.md)）の各1時間にも使える。
 
 | 日付 | bitstream（commit） | mode | 最大合格SCK | diag | 復帰 | uploader（KB/s） | 波形・備考 |
 |---|---|---|---|---|---|---|---|
