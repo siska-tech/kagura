@@ -39,7 +39,9 @@ module kagura_demo_sequencer #(
     input wire req_ready,
     output reg req_write,
     output reg [4:0] req_addr,
-    output reg [7:0] req_wdata,
+    // Kept as fabric flops: absorbed into the art BSRAM output register, the
+    // slow DO would feed the register window opcode decode directly.
+    (* syn_preserve=1 *) output reg [7:0] req_wdata,
     input wire rsp_valid,
     input wire [7:0] rsp_rdata,
     input wire rsp_error,

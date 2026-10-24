@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // 32-byte register window, ABI 0.2 (docs/register-map.md). Every request is
 // answered two system cycles after acceptance (the ABI allows two).
-// Address/FILL range checks are
-// registered one cycle after VRAM_ADDR/LENGTH change (they do not fit in one
-// 54MHz cycle), and an accepted command reaches the queue one cycle later
+// The address check is registered one cycle and the FILL range check two
+// cycles after VRAM_ADDR/LENGTH change (they do not fit in one 54MHz
+// cycle), and an accepted command reaches the queue one cycle later
 // and takes four more to be stored. req_ready is held low during those
 // cycles, which the CPU pace (one access per 16 cycles) never observes. Command-type writes
 // are checked completely before anything changes: a refused operation sets
@@ -82,12 +82,22 @@ module kagura_registers #(
     reg q_valid, q_write;
     reg [4:0] q_addr;
     reg [7:0] q_wdata;
+    // COMMAND opcode and READ_REQUEST value decoded at capture, so the
+    // admission and error logic does not compare q_wdata (high fanout) again.
+    reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_zero;
     assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging;
     always @(posedge clk)
-        if(reset) begin q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0; end
+        if(reset) begin
+            q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0;
+            q_op_fill<=0; q_op_fence<=0; q_op_commit<=0; q_op_audio<=0; q_zero<=1;
+        end
         else begin
             q_valid<=req_valid && req_ready;
-            if(req_valid && req_ready) begin q_write<=req_write; q_addr<=req_addr; q_wdata<=req_wdata; end
+            if(req_valid && req_ready) begin
+                q_write<=req_write; q_addr<=req_addr; q_wdata<=req_wdata;
+                q_op_fill<=req_wdata==OP_FILL; q_op_fence<=req_wdata==OP_FENCE;
+                q_op_commit<=req_wdata==OP_COMMIT; q_op_audio<=req_wdata==OP_AUDIO; q_zero<=req_wdata==0;
+            end
         end
     assign irq=|(irq_status & irq_enable);
     wire accept=q_valid;
@@ -104,10 +114,29 @@ module kagura_registers #(
     endfunction
     wire [24:0] fill_end={1'b0,vram_addr}+{9'b0,length}-25'd1;
     reg addr_ok, fill_ok;
+    // FILL range check in two stages (sum, then region compare). After an
+    // ADDR/LENGTH write checks_stale holds req_ready low so the next request
+    // is accepted no earlier than the edge fill_ok is updated on; the same
+    // holds after a VRAM_WRITE/READ address advance (advance_q).
+    reg [24:0] fill_end_q;
+    reg [2:0] start_region_q;
+    reg length_zero_q;
     always @(posedge clk) begin
         addr_ok<=region({1'b0,vram_addr})!=0;
-        fill_ok<=region({1'b0,vram_addr})!=0 && (length==0 || region(fill_end)==region({1'b0,vram_addr}));
+        start_region_q<=region({1'b0,vram_addr});
+        fill_end_q<=fill_end;
+        length_zero_q<=length==0;
+        fill_ok<=start_region_q!=0 && (length_zero_q || region(fill_end_q)==start_region_q);
     end
+// synthesis translate_off
+    // fill_ok must reflect the current address and length when a FILL is decoded.
+    reg [15:0] length_d1, length_d2;
+    reg [23:0] addr_d1, addr_d2;
+    always @(posedge clk) begin addr_d1<=vram_addr; addr_d2<=addr_d1; length_d1<=length; length_d2<=length_d1; end
+    always @(posedge clk)
+        if(!reset && q_valid && q_write && q_addr==COMMAND && q_op_fill && (addr_d2!=vram_addr || length_d2!=length))
+            $fatal(1,"FILL decoded before its range check settled");
+// synthesis translate_on
     // Queue full as of the previous cycle: after a push the next request is
     // stalled anyway, and after a pop this only refuses one cycle early.
     reg full;
@@ -192,30 +221,26 @@ module kagura_registers #(
                     if(!addr_ok) errors[E_INVALID_ADDRESS]=1;
                 end
                 READ_REQUEST: begin
-                    if(q_wdata!=0) errors[E_BAD_ACCESS]=1;
+                    if(!q_zero) errors[E_BAD_ACCESS]=1;
                     if(read_busy || read_ready) errors[E_READ_COLLISION]=1;
                     if(full) errors[E_FIFO_FULL]=1;
                     if(!addr_ok) errors[E_INVALID_ADDRESS]=1;
                 end
-                COMMAND: case(q_wdata)
-                    OP_FILL: begin
+                COMMAND: begin
+                    if(q_op_fill) begin
                         if(full) errors[E_FIFO_FULL]=1;
                         if(!fill_ok) errors[E_INVALID_ADDRESS]=1;
-                    end
-                    OP_FENCE: begin
+                    end else if(q_op_fence) begin
                         if(full) errors[E_FIFO_FULL]=1;
-                    end
-                    OP_COMMIT: begin
+                    end else if(q_op_commit) begin
                         if(commit_busy) errors[E_BUSY_CONFLICT]=1;
                         if(full) errors[E_FIFO_FULL]=1;
-                    end
-                    OP_AUDIO: begin
+                    end else if(q_op_audio) begin
                         if(full) errors[E_FIFO_FULL]=1;
                         if(audio_busy) errors[E_BUSY_CONFLICT]=1;
                         if(!audio_settings_valid) errors[E_BAD_ACCESS]=1;
-                    end
-                    default: errors[E_BAD_ACCESS]=1;
-                endcase
+                    end else errors[E_BAD_ACCESS]=1;
+                end
                 default: ;
             endcase
             // Decode admission directly rather than passing q_addr through
@@ -223,14 +248,9 @@ module kagura_registers #(
             // Keep the same refusal conditions as the error reporting above.
             case(q_addr)
                 VRAM_WRITE: enqueue=!full && addr_ok;
-                READ_REQUEST: enqueue=!full && addr_ok && q_wdata==0 && !read_busy && !read_ready;
-                COMMAND: case(q_wdata)
-                    OP_FILL: enqueue=!full && fill_ok;
-                    OP_FENCE: enqueue=!full;
-                    OP_COMMIT: enqueue=!full && !commit_busy;
-                    OP_AUDIO: enqueue=!full && !audio_busy && audio_settings_valid;
-                    default: ;
-                endcase
+                READ_REQUEST: enqueue=!full && addr_ok && q_zero && !read_busy && !read_ready;
+                COMMAND: enqueue=!full && (q_op_fill && fill_ok || q_op_fence || q_op_commit && !commit_busy
+                    || q_op_audio && !audio_busy && audio_settings_valid);
                 default: ;
             endcase
             advance=enqueue && q_addr!=COMMAND;
@@ -243,8 +263,8 @@ module kagura_registers #(
     // checks (they only gate `enqueue`); the engine ignores unused fields.
     // COMMAND values 01..03 are the queue opcodes themselves.
     wire [7:0] desc_op=q_addr==VRAM_WRITE ? OP_WRITE : q_addr==READ_REQUEST ? OP_READ : q_wdata;
-    wire [7:0] desc_data=q_addr==VRAM_WRITE ? q_wdata : q_wdata==OP_FILL ? fill_value : fence_value;
-    wire is_commit=q_addr==COMMAND && q_wdata==OP_COMMIT;
+    wire [7:0] desc_data=q_addr==VRAM_WRITE ? q_wdata : q_op_fill ? fill_value : fence_value;
+    wire is_commit=q_addr==COMMAND && q_op_commit;
     wire [23:0] desc_addr=is_commit ? {4'b0,display_ctrl,scroll_x,scroll_y} : vram_addr;
     wire [15:0] desc_len=is_commit ? {backdrop,raster_line} : length;
     wire [63:0] desc={8'h00,desc_data,desc_len,desc_addr,desc_op};
@@ -254,7 +274,7 @@ module kagura_registers #(
     assign push_desc=desc_q;
     assign audio_index_write=wr && q_addr==AUDIO_INDEX;
     assign audio_data_write=wr && q_addr==AUDIO_DATA && audio_write_legal;
-    assign audio_capture=enqueue && q_addr==COMMAND && q_wdata==OP_AUDIO;
+    assign audio_capture=enqueue && q_addr==COMMAND && q_op_audio;
     assign audio_wdata=q_wdata;
 
     // New events win over a same-cycle W1C clear.

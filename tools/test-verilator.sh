@@ -124,6 +124,7 @@ done
 run_test tb_sprite_selector rtl/vdp/kagura_sprite_selector.sv sim/tests/tb_sprite_selector.sv
 run_test tb_sprite_composite rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv sim/tests/tb_sprite_composite.sv
 run_test tb_sprite_irq rtl/core/kagura_registers.sv sim/tests/tb_sprite_irq.sv
+run_test tb_fill_timing rtl/core/kagura_registers.sv sim/tests/tb_fill_timing.sv
 # Generated ABI package (tools/gen-registers.ps1) against the register RTL.
 run_test tb_register_abi rtl/core/kagura_abi_pkg.sv rtl/core/kagura_registers.sv rtl/audio/kagura_audio_registers.sv \
     sim/tests/tb_register_abi.sv
