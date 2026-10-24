@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-# KAGURA host firmware for Raspberry Pi Pico / Pico W (Pico SDK 2.1.1).
+# KAGURA host firmware for Raspberry Pi Pico / Pico W (Pico SDK 2.2.0).
 cmake_minimum_required(VERSION 3.13)
 if(NOT DEFINED PICO_BOARD)
-    set(PICO_BOARD pico_w)
+    set(PICO_BOARD pico)
 endif()
 include(pico_sdk_import.cmake)
 project(kagura_pico_host C CXX ASM)

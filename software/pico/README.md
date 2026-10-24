@@ -1,6 +1,6 @@
 # Pico host firmware（SPI / QSPI）
 
-Raspberry Pi Pico W（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstreamを操作する診断firmwareとVRAM uploader。[ホスト仕様](../../docs/host-interface.md)のトランザクションを、PIOで10MHz以下のmode 0として実装する。レジスタ定数は生成ヘッダ[`kagura_regs.h`](../include/kagura_regs.h)を使う。Pico（無印）でも`-DPICO_BOARD=pico`で同じ配線のまま使える。
+Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstreamを操作する診断firmwareとVRAM uploader。[ホスト仕様](../../docs/host-interface.md)のトランザクションを、PIOで10MHz以下のmode 0として実装する。レジスタ定数は生成ヘッダ[`kagura_regs.h`](../include/kagura_regs.h)を使う。既定のboardは`pico`。Pico Wでも`-DPICO_BOARD=pico_w`で同じ配線のまま使える（無線機能とGP23〜25・29は使わない）。
 
 【未検証】実機での動作は未確認。下の手順で確認した結果を記録してから合格とする。
 
@@ -8,7 +8,7 @@ Raspberry Pi Pico W（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstrea
 
 両基板とも3.3V I/O。電源は各自のUSBから取り、**GNDだけを共通**にする（3V3/5V同士は接続しない）。配線は短く（目安15cm以内）、GNDを2本以上つなぐ。FPGAピンは[ピン一覧](../../boards/tang-nano-9k/pin-inventory.csv)のSPI/QSPI割当て。TFカードは挿さず、RGB/SPI LCDは接続しない。
 
-| 信号 | Pico W | Pico物理pin | Tang Nano 9K | ヘッダ | 備考 |
+| 信号 | Pico | Pico物理pin | Tang Nano 9K | ヘッダ | 備考 |
 |---|---|---:|---:|---|---|
 | IO0 (MOSI) | GP2 | 4 | 28 | J5-8 | |
 | IO1 (MISO) | GP3 | 5 | 29 | J5-9 | |
@@ -34,7 +34,7 @@ cmake -S software/pico -B build/pico -DCMAKE_BUILD_TYPE=Release
 cmake --build build/pico -j8
 ```
 
-BOOTSELを押しながらPico WをUSB接続し、現れたドライブへ`build/pico/kagura_host.uf2`をコピーする。CIでもビルドし、`pico-firmware` artifactにUF2を保存する。
+BOOTSELを押しながらPicoをUSB接続し、現れたドライブへ`build/pico/kagura_host.uf2`をコピーする。CIでもビルドし、`pico-firmware` artifactにUF2を保存する。
 
 ## 使い方
 
