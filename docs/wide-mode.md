@@ -121,17 +121,17 @@ GW1NR-9 C6のOSER10とエミュレートLVDSで742.5Mbpsが少なくとも1台�
 - `tb_vdp_frame720` / `tb_vdp_sprites720`: 1280×720の4フレーム×921600画素を参照モデルと全画素比較。背景のみとスプライト付き、scroll、behind、16個/ライン超過、VBLANK/RASTER/COMMIT_DONE、systemだけのreset。SCREEN_HEIGHT=180も読む。最悪描画は1985 cycles（上限2633、論理ライン4800 cycles）。
 - VIC1側は従来の全試験がそのまま合格（720p導入時`1c1dcd8`の全回帰30件。`918e4f7`で`tb_demo_shooter720`を追加。現行の一覧は`tools/test-verilator.sh`）。
 
-【実測】Gowin 1.9.11.03 Education。全11構成（dviは480pのみ）でbitstream生成、解析対象のsetup/hold/recovery/removal違反0。16:9版は上記OSER10 RESET経路を除外しており、そのrecovery/removalを保証する結果ではない。数値は[M0基準記録](baseline.md)（`9f595f7`）の再測定値。demo720は自機配置の変更（`918e4f7`）後の値で、導入時の記録（Logic 6301、+0.085ns）から変わった。
+【実測】Gowin 1.9.11.03 Education。全11構成（dviは480pのみ）でbitstream生成、解析対象のsetup/hold/recovery/removal違反0。16:9版は上記OSER10 RESET経路を除外しており、そのrecovery/removalを保証する結果ではない。数値は`443900a`の測定値（M0の`9f595f7`からの変化は[タイミング仕様](timing.md)の改善記録）。
 
 | 構成 | Logic | Register | BSRAM | 最小setup slack | pixel Fmax |
 |---|---:|---:|---:|---:|---:|
 | hdmi720（カラーバー） | 811 | 416 | — | +0.391ns | 80.4MHz |
-| demo720 | 6280 | 3634 | 26/26 | +0.030ns | 74.9MHz |
-| phase2720 | 4332 | 3211 | 24/26 | +0.058ns | 74.9MHz |
-| spi720 | 4437 | 3244 | 24/26 | +0.029ns | 74.4MHz |
-| qspi720 | 4432 | 3246 | 24/26 | +0.095ns | 74.9MHz |
+| demo720 | 6253 | 3625 | 25/26 | +0.085ns | 74.7MHz |
+| phase2720 | 4351 | 3236 | 24/26 | +0.111ns | 74.9MHz |
+| spi720 | 4468 | 3269 | 24/26 | +0.134ns | 75.0MHz |
+| qspi720 | 4450 | 3271 | 24/26 | +0.099ns | 74.8MHz |
 
-16:9版のpixel74は余裕が+0.03〜0.1ns程度しかない。残る最悪経路は上流hdl-utilのタイミング生成（cx/cy比較、packet_assemblerのBCH）とsystem54側の既存経路で、配置の変動で出入りする幅である。機能を追加する際は、これらのパイプライン化を先に行う。
+16:9版の最悪経路は上流hdl-utilのpacket_assemblerのBCH/parity（pixel74）で、余裕は+0.09〜0.14ns程度。system54側の経路は`443900a`で改善した。機能を追加する際は、これらのパイプライン化を先に行う。
 
 【実機】2026-10-23、試験用モニター1台で`kagura_demo720.fs`（1280×720のdemo）と`kagura_demo.fs`（640×480、パイプライン化したTMDS encoderとACR修正を含む）をSRAMへ書込み、映像・音声とも問題ないことを確認した。16:9版ではリセット後のレーン整列にも異常は見られなかった。複数sinkと長時間試験は未実施。
 
