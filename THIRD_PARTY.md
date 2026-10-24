@@ -14,3 +14,5 @@ revisionとURLは[出典台帳](docs/sources.md)。今後の導入時には原�
 `tools/prepare-hdmi-stream.py`が原版`hdmi.sv`から評価用派生ソースをbuild内へ生成する。原版のハッシュを検証し、変更箇所をコード上のanchorで限定、由来とApache-2.0選択を生成物に記載する。原版は不変。stream構成で再利用するpacket formatters/assembler/TMDS encoderも同じライセンス条件で使用する。
 
 `rtl/hdmi/kagura_tmds_channel.sv`は固定した上流`src/tmds_channel.sv`（著者Sameer Puri）を基にしたローカル置換実装として管理する。74.25MHz向けにprefix XORと3段パイプラインへ構成を変更し、上流より2 pixel clocks遅い同一出力列を生成する。Apache-2.0を適用し、由来・変更内容をソース先頭にも記載する。原版は比較試験とDVI構成で使用する。
+
+`software/pico/pico_sdk_import.cmake`はRaspberry Pi Pico SDK 2.2.0（commit `a1438dff1d38bd9c65dbd693f0e5db4b9ae91779`）の`external/pico_sdk_import.cmake`の無改変の写しで、SDKのBSD-3-Clauseに従う。CIはSDK版の同ファイルと一致することを検査する。Pico SDK本体とArm GNU Toolchainはビルド時に取得し、リポジトリに含めない。

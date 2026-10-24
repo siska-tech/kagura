@@ -79,3 +79,41 @@ jobs:
       - name: Compile and run source RTL test
         shell: pwsh
         run: ./tools/test-phase1.ps1
+  pico-firmware:
+    runs-on: ubuntu-24.04
+    env:
+      ARM_TOOLCHAIN: arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi
+      ARM_TOOLCHAIN_SHA256: 62a63b981fe391a9cbad7ef51b17e49aeaa3e7b0d029b36ca1e9c3b2a9b78823
+      PICO_SDK_TAG: 2.2.0
+      PICO_SDK_COMMIT: a1438dff1d38bd9c65dbd693f0e5db4b9ae91779
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/opt
+          key: pico-${{ env.ARM_TOOLCHAIN }}-${{ env.PICO_SDK_COMMIT }}
+      - name: Install the Arm toolchain and Pico SDK
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/opt
+          curl -fsSL -o /tmp/arm.tar.xz "https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/$ARM_TOOLCHAIN.tar.xz"
+          echo "$ARM_TOOLCHAIN_SHA256  /tmp/arm.tar.xz" | sha256sum -c
+          tar -xf /tmp/arm.tar.xz -C ~/opt
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git ~/opt/pico-sdk
+          test "$(git -C ~/opt/pico-sdk rev-parse HEAD)" = "$PICO_SDK_COMMIT"
+          git -C ~/opt/pico-sdk submodule update --init --depth 1 lib/tinyusb lib/cyw43-driver
+      - name: Build the host firmware
+        run: |
+          export PATH="$HOME/opt/$ARM_TOOLCHAIN/bin:$PATH" PICO_SDK_PATH="$HOME/opt/pico-sdk"
+          cmp software/pico/pico_sdk_import.cmake "$PICO_SDK_PATH/external/pico_sdk_import.cmake"
+          cmake -S software/pico -B build/pico -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/pico -j"$(nproc)"
+      - name: Check PIO timing against the adapter model
+        run: python3 -I software/pico/tests/test_pio_timing.py build/pico/kagura_host.pio.h
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pico-firmware
+          path: |
+            build/pico/kagura_host.uf2
+            build/pico/kagura_host.elf
