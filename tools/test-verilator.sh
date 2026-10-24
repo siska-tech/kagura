@@ -20,6 +20,7 @@ seed="${KAGURA_SEED:-1}"
 test_timeout="${KAGURA_TEST_TIMEOUT:-1800}"
 echo "seed $seed, per-test timeout ${test_timeout}s"
 mkdir -p build/verilator
+python3 sim/tests/test_boot_image.py
 # Stale outputs would be mistaken for this run's evidence.
 rm -f build/verilator/*.run.log build/verilator/*.raw build/verilator/*.wav build/verilator/*.ppm build/verilator/*.vcd
 summary=build/verilator/summary.tsv
@@ -88,6 +89,13 @@ CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.s
     rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv
     rtl/core/kagura_core.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv)
 run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
+run_test tb_flash_reader rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader.sv
+run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
+run_test tb_boot_window rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window.sv
+run_test tb_boot_controller rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
+    rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_boot_controller.sv
+run_test tb_romless_boot_system rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
+    rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_romless_boot_system.sv
 for host_test in tb_spi_bus tb_qspi_bus; do
     run_test "$host_test" rtl/bus/kagura_spi_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_host_bus.sv
 done

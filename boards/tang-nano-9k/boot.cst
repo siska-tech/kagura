@@ -1,0 +1,12 @@
+// ROM-less boot-only pins.  Pin 26 is the header BOOT_MAP output; 59-62
+// connect to the on-board P25Q32U SPI NOR.
+IO_LOC "boot_map" 26;
+IO_LOC "flash_sclk" 59;
+IO_LOC "flash_cs_n" 60;
+IO_LOC "flash_mosi" 61;
+IO_LOC "flash_miso" 62;
+IO_PORT "boot_map" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=DOWN;
+IO_PORT "flash_sclk" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=DOWN;
+IO_PORT "flash_cs_n" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
+IO_PORT "flash_mosi" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=NONE;
+IO_PORT "flash_miso" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
