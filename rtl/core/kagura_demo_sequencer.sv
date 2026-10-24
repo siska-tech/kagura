@@ -31,6 +31,7 @@ module kagura_demo_sequencer #(
     parameter bit SPRITES=0,
     parameter bit AUDIO=0,
     parameter bit SCENE=0,
+    parameter bit RASTER=0,          // write a raster scroll table before the first COMMIT (CAPS RSCROLL, LINES>=161)
     parameter [15:0] ANIM_START=0,   // SCENE: first anim value (tests start inside a wall phase)
     parameter integer LINES=240      // SCENE: logical screen height (180 for 16:9)
 ) (
@@ -63,6 +64,20 @@ module kagura_demo_sequencer #(
         S_MUSIC=25,S_MUSIC_WRITE=26,S_SCENE_ADDR=27,S_SCENE_OAM=28,S_SCENE_PAL=29,
         S_OVF_READ=30,S_OVF_CLEAR=31;
     reg [4:0] step;
+    // {EXT index, value}: RS_COUNT=3, RS_INDEX=0, then LINE/X_L/X_H/Y per entry.
+    function automatic [15:0] rs_pair(input [4:0] j);
+        case(j)
+            5'd0: rs_pair={8'h0b,8'd3};
+            5'd1: rs_pair={8'h0c,8'd0};
+            5'd2: rs_pair={8'h0d,8'd100};
+            5'd6: rs_pair={8'h0d,8'd130};
+            5'd7: rs_pair={8'h0e,8'd40};
+            5'd10: rs_pair={8'h0d,8'd160};
+            5'd3,5'd11: rs_pair={8'h0e,8'd0};
+            5'd4,5'd8,5'd12: rs_pair={8'h0f,8'd0};
+            default: rs_pair={8'h10,8'd0};
+        endcase
+    endfunction
     reg [12:0] count;                  // byte index within a stream / sub-step
     reg [8:0] scroll_x;
     reg [7:0] scroll_y;
@@ -655,16 +670,20 @@ module kagura_demo_sequencer #(
                 end
                 S_EXT: begin
                     // EXT 03 BACKDROP=0, 04 RASTER=255 (off); the scene also
-                    // sets 02 scroll Y=-anim for its first frame.
-                    case(count[2:0])
-                        3'd0: issue(1,EXT_INDEX,8'h03);
-                        3'd1: issue(1,EXT_DATA,8'h00);
-                        3'd2: issue(1,EXT_INDEX,8'h04);
-                        3'd3: issue(1,EXT_DATA,8'hff);
-                        3'd4: issue(1,EXT_INDEX,8'h02);
-                        default: issue(1,EXT_DATA,8'(16'd0-anim));
+                    // sets 02 scroll Y=-anim for its first frame. RASTER then
+                    // writes a 3-entry table: lines 100..129 fixed, 130..159
+                    // shifted by 40 pixels, 160.. fixed.
+                    case(count)
+                        13'd0: issue(1,EXT_INDEX,8'h03);
+                        13'd1: issue(1,EXT_DATA,8'h00);
+                        13'd2: issue(1,EXT_INDEX,8'h04);
+                        13'd3: issue(1,EXT_DATA,8'hff);
+                        13'd4: issue(1,EXT_INDEX,8'h02);
+                        13'd5: issue(1,EXT_DATA,8'(16'd0-anim));
+                        default: issue(1,count[0] ? EXT_DATA : EXT_INDEX,
+                            count[0] ? rs_pair(5'((count-13'd6)>>1))[7:0] : rs_pair(5'((count-13'd6)>>1))[15:8]);
                     endcase
-                    if(count[2:0]==(SCENE ? 3'd5 : 3'd3)) begin step<=S_DISPLAY; count<=0; end else count<=count+1'b1;
+                    if(count==(RASTER ? 13'd33 : SCENE ? 13'd5 : 13'd3)) begin step<=S_DISPLAY; count<=0; end else count<=count+1'b1;
                 end
                 S_DISPLAY: begin issue(1,DISPLAY_CTRL,SPRITES || SCENE ? 8'h07 : 8'h03); step<=S_COMMIT; end
                 S_COMMIT: begin issue(1,COMMAND,8'h03); step<=S_WAIT; end

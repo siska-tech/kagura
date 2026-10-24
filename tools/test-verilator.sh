@@ -112,6 +112,8 @@ run_test tb_demo_sequencer "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv
 run_test tb_demo_sprites "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv sim/tests/tb_demo_sprites.sv
+run_test tb_demo_raster "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+    rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv sim/tests/tb_demo_raster.sv
 run_test tb_demo_audio "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv sim/tests/tb_demo_audio.sv
 # Half a second of the demo song; for the whole loop with the lead run
