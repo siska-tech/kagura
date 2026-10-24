@@ -65,6 +65,6 @@ module kagura_phase2_top #(
         .pix_clk(pixel),.pix_reset(~pixel_release[3]),.cx(cx),.cy(cy),.rgb(vdp_rgb));
     assign cpu_d=data_oe ? data_out : 8'hzz;
     assign cpu_irq_n=irq_drive ? 1'b0 : 1'bz;
-    // LED1 now shows the bus deadline flag instead of audio mute.
+    // led_n[1] (board LED2) now shows the bus deadline flag instead of audio mute.
     assign led_n=~{pixel_lock,system_lock,audio_status[2],audio_status[1],late,pixel_release[3]};
 endmodule

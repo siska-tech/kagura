@@ -74,7 +74,7 @@ module kagura_host_top #(
         assign host_io[i]=io_oe[i] ? io_out[i] : 1'bz;
     end endgenerate
     assign host_irq_n=irq_drive ? 1'b0 : 1'bz;
-    // LED1 shows the adapter deadline flag.
+    // led_n[1] (board LED2) shows the adapter deadline flag.
     assign led_n=~{pixel_lock,system_lock,audio_status[2],audio_status[1],late,pixel_release[3]};
 endmodule
 
