@@ -59,6 +59,10 @@ kh_status kh_read(uint8_t offset, bool inc, uint8_t *data, size_t n);  // n = 1.
 kh_status kh_write_reg(uint8_t offset, uint8_t value);
 kh_status kh_read_reg(uint8_t offset, uint8_t *value);
 
+// Diagnostic-only protocol test: raise /CS halfway through either the write
+// header or its first data byte. The incomplete byte must have no effect.
+void kh_abort_write(bool during_header, uint8_t offset, uint8_t value);
+
 // Register-level helpers.
 kh_status kh_check_errors(void);    // KH_DEVICE_ERROR if ERROR_CODE != 0 (not cleared)
 kh_status kh_clear_errors(void);    // W1C ERROR_CODE and IRQ_STATUS.ERROR

@@ -51,13 +51,14 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 |---|---|
 | `info` | ID/ABI/CAPS/STATUS/FIFO_STATUS/ERROR_CODE、READY・/IRQの状態 |
 | `diag` | 縦通し試験。各項目を`PASS`/`FAIL`で表示し、最後に`DIAG PASS`または`DIAG FAIL n` |
+| `abort` | write header途中・data byte途中で/CSを上げ、副作用がなく直後のID読出しが成功することを確認 |
 | `mode spi` / `mode qspi` | bitstreamに合わせる |
 | `div n` | SCK = 10MHz / n |
 | `rd <off> [n]` / `wr <off> <val>` | レジスタの読み書き（16進） |
 | `w <addr> <len>` / `c <addr> <len>` | VRAMへのupload、読戻しCRC（uploader用） |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 
-`diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → ch0 440Hzを1秒 → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音・基板のLED1（adapterの`late`）が消灯のままであることは目視で確認する。
+`diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → 全6音源を1秒鳴動しwave bank交換を読戻し → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音、および基板LED2（adapterの`late`）が消灯のままであることを目視確認する。LED1はreset解除表示なので正常動作中は点灯する。
 
 VRAM uploader（Windows PowerShell 5.1）:
 
@@ -75,17 +76,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/kagura-upload.ps1 -Por
 2. QSPI bitstreamで`mode qspi`にして同じ手順。
 3. 復帰: `diag`合格後にTang Nano 9KのS2（reset）を押し、READYが一度下がって戻ることを`info`で確認してから再度`diag`。Pico側のUSB再接続後も同様。
 4. uploader: 32KBのpattern全域を`-Verify`付きで転送し、CRC一致と転送速度を記録する。
-5. 10MHzでオシロにより、SCK立上りに対するMISO（QSPIはIO）の変化時刻とt_CSSを測る（[ホスト仕様](../../docs/host-interface.md)の算定: FPGA出力は立上りから37〜56ns＋出力遅延）。
+5. `abort`を実行し、header途中・data byte途中の両方が副作用なしで、その直後のID読出しまで合格することを確認する。
+6. 10MHzでオシロにより、SCK立上りに対するMISO（QSPIはIO）の変化時刻とt_CSSを測る（[ホスト仕様](../../docs/host-interface.md)の算定: FPGA出力は立上りから37〜56ns＋出力遅延）。
 
 | 日付 | bitstream（commit） | mode | 最大合格SCK | diag | 復帰 | uploader（KB/s） | 波形・備考 |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| 2026-10-25 | `kagura_spi.fs`（`ea8500b`） | SPI | 5MHz | 反復PASS | S2 reset・Pico USB再接続後PASS | 570.2 | 32KiB全域verify、BUSY 41〜50回、6ch音源・wave bank交換、header/data途中中断PASS。10MHzはVRAM読戻し不一致 |
+| 2026-10-25 | `kagura_qspi.fs`（`ea8500b`、SHA256 `DF739BBC…EC63`） | QSPI | 5MHz | 反復PASS | S2 reset・Pico USB再接続後PASS | 1,023.1 | 32KiB全域verify、BUSY 56〜59回、6ch音源・wave bank交換、header/data途中中断PASS。LED1点灯・LED2（`late`）消灯。10MHzはbit化け。ブレッドボード評価のためオシロ測定は対象外 |
+
+32KiB uploaderは4096byte×8 blockを全域読戻し照合し、QSPIは2.06秒・1,023.1KB/s、SPIは2.19秒・570.2KB/sだった。使用したPico firmware（`abort`追加前）のUF2 SHA256は`01E151B3…306C`。`abort`追加後のUF2（SHA256 `4C9942F1…C7E5`）ではSPI/QSPI 5MHzでheader/data途中中断と直後のID読出し、その後の全診断に合格した。Tang内蔵FlashへのQSPI bitstream書込み後、Flash bootから同じ診断に合格したが、Gowin Programmerの書込み時照合は`Verify Failed at 0`のため、Flash内容のreadback照合済みとは扱わない。
+
+今回のブレッドボード配線ではオシロ測定を完了条件から除外した。5MHz合格・10MHz不合格はこの配線個体での機能試験結果であり、信号品質や量産配線のタイミング余裕を保証しない。
 
 ## 実装メモ
 
-- PIOは120MHz（`set_sys_clock_khz(120000)`）で12cycle/SCK。データはSCK立下りと同時に変え、立上りの6cycle前から保持する。取込みは立上り後1cycle（＋入力同期）で、FPGA出力のhold（≥37ns）の内側に置く。Pico側のSCK端基準で取込みは約8ns後、FPGA出力の変化は配線遅延込みで約48〜67ns後と見積もり、setup・holdとも約40nsの余裕。
+- PIOは120MHz（`set_sys_clock_khz(120000)`）で12cycle/SCK。データはSCK立下りと同時に変え、立上りの6cycle前から保持する。MISO/IOはlow期間の末尾（SCK立上り直前）に取り込む。FPGAは検出した立上りの後で次のbitへ更新するため、更新遅延とRP2040入力同期器の位相に依存せず現在のbitを読める。
+- PicoのSCK・CS・IO0..3は2mA drive・slow slew、IO0..3の入力hysteresis有効に固定する。ブレッドボード配線でのovershoot・crosstalkを抑えるためで、外付け直列抵抗や実波形確認の代わりにはしない。
 - `tests/test_pio_timing.py`はpioasmの生成ヘッダを1cycleずつ実行し、仕様どおりのadapterモデル（立上りから37〜56ns＋出力・配線遅延で変化）と組み合わせて、SCKのhigh/low時間、MOSIのsetup、50通りの出力遅延での読出し値、BUSYによる待ち、QSPIのIO解放がFPGAの駆動より前であることを検査する（CIで実行）。RP2040の電気特性や実配線は含まない。
-- キューを消費するbyte（VRAM_WRITE、VRAM_READ_REQUEST、COMMAND）は、PIOがbyteの直前に`wait 0 gpio BUSY`する。ソフトのBUSY待ち回数は統計用の標本値。
+- キューを消費するbyte（VRAM_WRITE、VRAM_READ_REQUEST、COMMAND）は、PIOがbyteの直前に`wait 0 gpio BUSY`する。BUSYの立上り・立下りをGPIO edge IRQで記録し、pulse回数とhigh時間を統計表示する。
 - QSPIはcount byteの最後の立下り直後にPIOがIOを解放し、/CS high中に次のトランザクション用に駆動へ戻す。
 - 待ちはすべてtimeout付き。BUSYで止まったbyteはSMを再起動して/CSを上げる（adapterは途中のbyteを捨てる）。結果が不明な操作を自動で再送しない。
 - `pico_sdk_import.cmake`はPico SDK 2.2.0の`external/`からの写し（BSD-3-Clause、[第三者IP方針](../../THIRD_PARTY.md)）。
