@@ -127,7 +127,7 @@ run_test tb_demo_shooter "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/v
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_shooter.sv
 # The same scene started inside the enemy-wall phases (16 sprites/line overflow, fixed and rotated order),
 # and on the 16:9 build (320x180 on 1280x720).
-for wall_test in tb_demo_wall tb_demo_flicker tb_demo_shooter720; do
+for wall_test in tb_demo_wall tb_demo_flicker tb_demo_shooter720 tb_demo_shooter_raster tb_demo_shooter_raster720; do
     run_test "$wall_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
         rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv \
         sim/tests/tb_demo_shooter.sv sim/tests/tb_demo_wall.sv

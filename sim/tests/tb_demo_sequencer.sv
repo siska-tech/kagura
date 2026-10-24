@@ -70,11 +70,11 @@ module tb_demo_sequencer #(parameter bit SPRITES=0,parameter bit AUDIO=0,paramet
     endfunction
     integer sx, sy;
     function automatic [23:0] expected(input integer x,input integer y);
-        integer lx, ly, px, py, row, col, tile, pal, p,n,xx,yy,t; reg hf, vf; reg [11:0] c;
+        integer e, a, lx, ly, px, py, row, col, tile, pal, p,n,xx,yy,t; reg hf, vf; reg [11:0] c;
         begin
             lx=x/2; ly=y/2; px=(lx+sx)%512; py=(ly+sy)%256;
-            // Raster table written by the sequencer: lines 100..129 and 160.. at 0,0; 130..159 at 40,0.
-            if(RASTER && ly>=100) begin px=lx+(ly>=130 && ly<160 ? 40 : 0); py=ly; end
+            // Raster table: from line 100, entry e=min((ly-100)/10,7) adds a triangle wave of 0..21 px (phase = update count).
+            if(RASTER && ly>=100) begin e=(ly-100)/10; if(e>7) e=7; a=((sx/2)%16+3*e)%16; px=(lx+sx+3*(a>=8 ? 15-a : a))%512; end
             row=py/8; col=px/8;
             tile=(col+row)%16; pal=row%16;
             hf=col%2==1 && row/8==1; vf=col%2==1 && row/8==2;

@@ -121,9 +121,10 @@ set_option -output_base_name $name
 # to 0.130ns (docs/timing.md).  Keep both stages explicit and reproducible.
 set_option -place_option 1
 set_option -route_option 1
-# phase2boot720: the raster scroll table moved the upstream packet_assembler
-# path (pixel74) to -1.0ns with option 1; option 0 gives +0.16ns.
-if {$mode eq "phase2boot720"} { set_option -place_option 0 }
+# phase2boot720/demo720: the raster scroll table moved the upstream
+# packet_assembler path (pixel74) to about -1.0/-0.56ns with option 1; option 0
+# gives +0.16/+0.02ns.
+if {$mode in {phase2boot720 demo720}} { set_option -place_option 0 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }

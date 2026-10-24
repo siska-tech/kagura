@@ -97,4 +97,6 @@ Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、`bars`。BSRAMの増加�
 
 ## 実機確認用デモ
 
-kagura_demo（480p/720p）はシーケンサのRASTER=1で3エントリのテーブル（ライン100〜129と160以降は固定、130〜159は+40px）をCOMMIT前に書く。全画素比較は	b_demo_raster。実機SRAMへの書込みはVerify successまで確認済み（480p・720p）。画面の目視確認は未実施。
+kagura_demo（480p/720p）はシーケンサのRASTER=1で、ライン100〜170の8エントリ（10ライン刻み）を毎フレームCOMMIT前に書き直す。各エントリはフレームのscrollに0〜21pxの三角波（位相はエントリごとに3ずつずらし、フレームごとに進む）を加えるので、画面下側が水面のように横に揺れる。ライン0〜99は従来どおりのscroll。全画素比較は	b_demo_raster（背景のみ）、	b_demo_shooter_raster/	b_demo_shooter_raster720（実機と同じシーン）。実機SRAMへの書込みはVerify successまで確認済み。
+
+初版はテーブルを書込み後に固定していたため、下半分の背景が止まって見えるだけだった（設計どおりだが効果が分かりにくい）。実機の画面で揺れを目視確認すること。

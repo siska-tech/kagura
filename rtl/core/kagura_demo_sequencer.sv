@@ -31,7 +31,7 @@ module kagura_demo_sequencer #(
     parameter bit SPRITES=0,
     parameter bit AUDIO=0,
     parameter bit SCENE=0,
-    parameter bit RASTER=0,          // write a raster scroll table before the first COMMIT (CAPS RSCROLL, LINES>=161)
+    parameter bit RASTER=0,          // rewrite a wavy raster scroll table before every COMMIT (CAPS RSCROLL, LINES>=171)
     parameter [15:0] ANIM_START=0,   // SCENE: first anim value (tests start inside a wall phase)
     parameter integer LINES=240      // SCENE: logical screen height (180 for 16:9)
 ) (
@@ -57,26 +57,33 @@ module kagura_demo_sequencer #(
         VRAM_WRITE=5'h07, READ_REQUEST=5'h08, READ_RESULT=5'h09, EXT_INDEX=5'h0a, EXT_DATA=5'h0b,
         AUDIO_INDEX=5'h0c,AUDIO_DATA=5'h0d,COMMAND=5'h0e, INC_L=5'h10, INC_H=5'h11, ERROR_CODE=5'h17;
     // Program steps.
-    localparam [4:0] S_INC_L=0, S_INC_H=1, S_PAL_ADDR=2, S_PAL=3, S_PAT_ADDR=4, S_PAT=5,
+    localparam [5:0] S_INC_L=0, S_INC_H=1, S_PAL_ADDR=2, S_PAL=3, S_PAT_ADDR=4, S_PAT=5,
         S_MAP_ADDR=6, S_MAP=7, S_EXT=8, S_DISPLAY=9, S_COMMIT=10, S_WAIT=11, S_ERR_READ=12,
         S_ERR_CLEAR=13, S_SCROLL=14, S_IDLE=15, S_CHECK=16, S_OAM_ADDR=17, S_OAM=18, S_INIT=19,
         S_WAVE_ADDR=20,S_WAVE=21,S_AUDIO_CFG=22,S_AUDIO_COMMIT=23,S_AUDIO_WAIT=24,
         S_MUSIC=25,S_MUSIC_WRITE=26,S_SCENE_ADDR=27,S_SCENE_OAM=28,S_SCENE_PAL=29,
-        S_OVF_READ=30,S_OVF_CLEAR=31;
-    reg [4:0] step;
-    // {EXT index, value}: RS_COUNT=3, RS_INDEX=0, then LINE/X_L/X_H/Y per entry.
-    function automatic [15:0] rs_pair(input [4:0] j);
-        case(j)
-            5'd0: rs_pair={8'h0b,8'd3};
-            5'd1: rs_pair={8'h0c,8'd0};
-            5'd2: rs_pair={8'h0d,8'd100};
-            5'd6: rs_pair={8'h0d,8'd130};
-            5'd7: rs_pair={8'h0e,8'd40};
-            5'd10: rs_pair={8'h0d,8'd160};
-            5'd3,5'd11: rs_pair={8'h0e,8'd0};
-            5'd4,5'd8,5'd12: rs_pair={8'h0f,8'd0};
-            default: rs_pair={8'h10,8'd0};
-        endcase
+        S_OVF_READ=30,S_OVF_CLEAR=31,S_RS=32;
+    reg [5:0] step;
+    // Raster table, 8 entries at lines 100,110,..170: a travelling triangle
+    // wave of 0..21 pixels added to the frame scroll (X=scroll_x or 0, Y as
+    // the frame update). Pairs of {EXT index, value}: RS_COUNT=8, RS_INDEX=0,
+    // then RS_LINE/X_L/X_H/Y per entry.
+    function automatic [15:0] rs_pair(input [5:0] j);
+        reg [2:0] e; reg [1:0] f; reg [3:0] a; reg [8:0] x; reg [7:0] y;
+        begin
+            e=3'((j-6'd2)>>2); f=2'(j-6'd2);
+            a=4'(anim[4:1])+4'(3*e);
+            x=(SCENE ? 9'd0 : scroll_x)+9'(3*(a[3] ? 5'd15-5'(a) : 5'(a)));
+            y=SCENE ? 8'(16'd0-anim) : scroll_y;
+            if(j==0) rs_pair={8'h0b,8'd8};
+            else if(j==1) rs_pair={8'h0c,8'd0};
+            else case(f)
+                2'd0: rs_pair={8'h0d,8'(100+10*e)};
+                2'd1: rs_pair={8'h0e,x[7:0]};
+                2'd2: rs_pair={8'h0f,7'd0,x[8]};
+                default: rs_pair={8'h10,y};
+            endcase
+        end
     endfunction
     reg [12:0] count;                  // byte index within a stream / sub-step
     reg [8:0] scroll_x;
@@ -670,22 +677,24 @@ module kagura_demo_sequencer #(
                 end
                 S_EXT: begin
                     // EXT 03 BACKDROP=0, 04 RASTER=255 (off); the scene also
-                    // sets 02 scroll Y=-anim for its first frame. RASTER then
-                    // writes a 3-entry table: lines 100..129 fixed, 130..159
-                    // shifted by 40 pixels, 160.. fixed.
-                    case(count)
-                        13'd0: issue(1,EXT_INDEX,8'h03);
-                        13'd1: issue(1,EXT_DATA,8'h00);
-                        13'd2: issue(1,EXT_INDEX,8'h04);
-                        13'd3: issue(1,EXT_DATA,8'hff);
-                        13'd4: issue(1,EXT_INDEX,8'h02);
-                        13'd5: issue(1,EXT_DATA,8'(16'd0-anim));
-                        default: issue(1,count[0] ? EXT_DATA : EXT_INDEX,
-                            count[0] ? rs_pair(5'((count-13'd6)>>1))[7:0] : rs_pair(5'((count-13'd6)>>1))[15:8]);
+                    // sets 02 scroll Y=-anim for its first frame.
+                    case(count[2:0])
+                        3'd0: issue(1,EXT_INDEX,8'h03);
+                        3'd1: issue(1,EXT_DATA,8'h00);
+                        3'd2: issue(1,EXT_INDEX,8'h04);
+                        3'd3: issue(1,EXT_DATA,8'hff);
+                        3'd4: issue(1,EXT_INDEX,8'h02);
+                        default: issue(1,EXT_DATA,8'(16'd0-anim));
                     endcase
-                    if(count==(RASTER ? 13'd33 : SCENE ? 13'd5 : 13'd3)) begin step<=S_DISPLAY; count<=0; end else count<=count+1'b1;
+                    if(count[2:0]==(SCENE ? 3'd5 : 3'd3)) begin step<=RASTER ? S_RS : S_DISPLAY; count<=0; end else count<=count+1'b1;
                 end
-                S_DISPLAY: begin issue(1,DISPLAY_CTRL,SPRITES || SCENE ? 8'h07 : 8'h03); step<=S_COMMIT; end
+                // RASTER: the table is rewritten before every COMMIT (it is
+                // refused while COMMIT_BUSY, which the preceding wait cleared).
+                S_RS: begin
+                    if(!count[0]) issue(1,EXT_INDEX,rs_pair(6'(count>>1))[15:8]);
+                    else issue(1,EXT_DATA,rs_pair(6'(count>>1))[7:0]);
+                    if(count==13'd67) begin step<=configured ? S_COMMIT : S_DISPLAY; count<=0; end else count<=count+1'b1;
+                end                S_DISPLAY: begin issue(1,DISPLAY_CTRL,SPRITES || SCENE ? 8'h07 : 8'h03); step<=S_COMMIT; end
                 S_COMMIT: begin issue(1,COMMAND,8'h03); step<=S_WAIT; end
                 S_WAIT: begin
                     // Poll STATUS until COMMIT_BUSY (b4) clears.
@@ -731,7 +740,7 @@ module kagura_demo_sequencer #(
                         3'd4: issue(1,EXT_INDEX,8'h02);
                         default: issue(1,EXT_DATA,SCENE ? 8'(16'd0-anim) : scroll_y);
                     endcase
-                    if(count[2:0]==3'd5) begin step<=SCENE ? S_SCENE_ADDR : S_COMMIT; count<=0; end
+                    if(count[2:0]==3'd5) begin step<=SCENE ? S_SCENE_ADDR : RASTER ? S_RS : S_COMMIT; count<=0; end
                     else count<=count+1'b1;
                 end
                 S_SCENE_ADDR: begin
@@ -756,7 +765,7 @@ module kagura_demo_sequencer #(
                         default: issue(1,VRAM_WRITE,scene_pal_byte);
                     endcase
                     if(count==13'd2 || count==13'd10) count<=count+13'd2;
-                    else if(count==13'd13) begin step<=S_COMMIT; count<=0; end
+                    else if(count==13'd13) begin step<=RASTER ? S_RS : S_COMMIT; count<=0; end
                     else count<=count+1'b1;
                 end
                 // Sample and clear SPR_OVERFLOW once per update.

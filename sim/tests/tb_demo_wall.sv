@@ -12,3 +12,10 @@ endmodule
 module tb_demo_shooter720;
     tb_demo_shooter #(.VIC(4)) wide();
 endmodule
+// Wavy raster scroll table from line 100 on 480p and 16:9 (CAPS RSCROLL).
+module tb_demo_shooter_raster;
+    tb_demo_shooter #(.RASTER(1)) raster();
+endmodule
+module tb_demo_shooter_raster720;
+    tb_demo_shooter #(.VIC(4),.RASTER(1)) raster_wide();
+endmodule
