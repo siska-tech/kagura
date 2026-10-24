@@ -115,4 +115,4 @@ bash tools/test-verilator.sh
 
 - **SCK直接クロック**: SCKをpin35（GCLK）からクロックとしてIOB FFで受け、async FIFOでsystemへ渡せば25MHz以上が狙える。CDCとSTA制約が増えるため、オーバーサンプリング版の実機合格後に評価する。
 - **8080型8bitパラレル**: /WR /RD strobeをオーバーサンプリングする同種のフロントエンドで実現できる。必要になった時点で別parameterまたは別moduleとして追加する。
-- **ブロックread / burst VRAM write**: 1byte=1 descriptorの効率はSPI帯域より低い。実測後にコマンド追加をABI 0.2で検討する。
+- **ブロックread / burst VRAM write**: 1byte=1 descriptorの効率はSPI帯域より低い。実測後にコマンド追加を検討する。追加する場合のABI版番号は互換性評価後に決める。

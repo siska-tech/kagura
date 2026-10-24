@@ -16,4 +16,6 @@
 | memory | VRAM arbiter、queue、async FIFO契約 |
 | platform | Gowin RAM/PLL/CLKDIV/OSER10/reset wrapper |
 
+`core/kagura_abi_pkg.sv`は`tools/gen-registers.ps1`が生成するレジスタ定数packageで、現時点では合成対象topに含めない。レジスタmoduleは独自のdecodeを持ち、`tb_register_abi`が両者を照合する。
+
 規範は[architecture](../docs/architecture.md)、[register ABI 0.2](../docs/register-map.md)。現行構成と実機検証の入口は[README](../README.md)を参照。

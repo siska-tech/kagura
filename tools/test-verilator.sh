@@ -124,6 +124,9 @@ done
 run_test tb_sprite_selector rtl/vdp/kagura_sprite_selector.sv sim/tests/tb_sprite_selector.sv
 run_test tb_sprite_composite rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv sim/tests/tb_sprite_composite.sv
 run_test tb_sprite_irq rtl/core/kagura_registers.sv sim/tests/tb_sprite_irq.sv
+# Generated ABI package (tools/gen-registers.ps1) against the register RTL.
+run_test tb_register_abi rtl/core/kagura_abi_pkg.sv rtl/core/kagura_registers.sv rtl/audio/kagura_audio_registers.sv \
+    sim/tests/tb_register_abi.sv
 run_test tb_vram_init rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv sim/tests/tb_vram_init.sv
 run_test tb_startup_cpu "${CORE_SOURCES[@]}" rtl/bus/kagura_w65c02_adapter.sv rtl/memory/kagura_ram_tdp.sv \
     rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv sim/tests/tb_startup_cpu.sv

@@ -10,3 +10,6 @@ jobs:
       - name: Check design arithmetic and documentation
         shell: pwsh
         run: ./tools/check-design.ps1
+      - name: Check register spec, generated constants and document tables
+        shell: pwsh
+        run: ./tools/gen-registers.ps1 -Check
