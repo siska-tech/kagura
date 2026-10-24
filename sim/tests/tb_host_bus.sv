@@ -156,7 +156,7 @@ module tb_host_bus #(parameter integer LANES=1);
         #500;
         // ID/ABI/CAPS as one incrementing read; SPI header status = 32 free.
         txn_read(5'h18,1,5,0);
-        if({rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4]}!==40'h4b39000201) $fatal(1,"ID block");
+        if({rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4]}!==40'h4b39000301) $fatal(1,"ID block");
         if(LANES==1 && status!==8'h20) $fatal(1,"header FIFO_STATUS %02h",status);
         // Bytes after the count return 0 without consuming requests.
         txn_read(5'h18,0,2,3);

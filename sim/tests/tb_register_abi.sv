@@ -96,28 +96,30 @@ module tb_register_abi;
 
     task automatic check_ext(input reg s,input [7:0] height);
         integer i;
-        reg [7:0] expected [0:10];
+        reg [7:0] expected [0:17];
         begin
             expected[0]=EXT_SCROLL_X_L_RESET; expected[1]=EXT_SCROLL_X_H_RESET; expected[2]=EXT_SCROLL_Y_RESET;
             expected[3]=EXT_BACKDROP_RESET; expected[4]=EXT_RASTER_LINE_RESET; expected[5]=EXT_MAX_SPRITES_RESET;
             expected[6]=EXT_MAX_LINE_SPRITES_RESET; expected[7]=EXT_PATTERN_COUNT_L_RESET; expected[8]=EXT_PATTERN_COUNT_H_RESET;
             expected[9]=EXT_WAVE_LENGTH_MAX_RESET; expected[10]=height;
-            for(i=0;i<=10;i=i+1) begin
+            expected[11]=EXT_RS_COUNT_RESET; expected[12]=EXT_RS_INDEX_RESET; expected[13]=EXT_RS_LINE_RESET;
+            expected[14]=EXT_RS_X_L_RESET; expected[15]=EXT_RS_X_H_RESET; expected[16]=EXT_RS_Y_RESET; expected[17]=EXT_RS_MAX_RESET;
+            for(i=0;i<=17;i=i+1) begin
                 access(s,1,REG_EXT_REG_INDEX,i[7:0]);
                 access(s,0,REG_EXT_REG_DATA,0);
                 if(err || value!=expected[i]) $fatal(1,"inst %0d EXT %h: %h err %b, spec %h",s,i,value,err,expected[i]);
-                if(i>=EXT_MAX_SPRITES) begin
+                if((i>=EXT_MAX_SPRITES && i<=10) || i==17) begin
                     access(s,1,REG_EXT_REG_DATA,8'h01);
                     if(!err) $fatal(1,"inst %0d EXT %h: write to RO accepted",s,i);
                     clear_errors(s);
                 end
                 checks=checks+1;
             end
-            access(s,1,REG_EXT_REG_INDEX,8'h0b);
+            access(s,1,REG_EXT_REG_INDEX,8'h12);
             access(s,0,REG_EXT_REG_DATA,0);
-            if(err || value!=0) $fatal(1,"EXT 0B read");
+            if(err || value!=0) $fatal(1,"EXT 12 read");
             access(s,1,REG_EXT_REG_DATA,8'h01);
-            if(!err) $fatal(1,"EXT 0B write accepted");
+            if(!err) $fatal(1,"EXT 12 write accepted");
             clear_errors(s); checks=checks+1;
         end
     endtask

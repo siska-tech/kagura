@@ -54,9 +54,9 @@ module kagura_phase2_top #(
     kagura_w65c02_adapter bus(system_clk,sys_reset,pixel_up_sync[1] && vdp_ready && frame_ready,cpu_phi2,cpu_reset_release,
         cpu_a,cpu_cs_n,cpu_rwb,cpu_d,data_out,data_oe,irq_drive,irq,
         req_valid,req_ready,req_write,req_addr,req_wdata,rsp_valid,rsp_ready,rsp_rdata,rsp_error,late);
-    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE for 320x180.
+    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE, raster scroll for 320x180.
     wire [11:0] render_cycles;
-    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h33 : 8'h13),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h73 : 8'h53),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(rsp_ready),.rsp_rdata(rsp_rdata),
         .rsp_error(rsp_error),.irq(irq),.init_done(vdp_ready),.frame_ready(frame_ready),.render_cycles(render_cycles),

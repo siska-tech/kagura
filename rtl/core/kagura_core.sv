@@ -103,6 +103,11 @@ module kagura_core #(
         end
     // RASTER: once, when the matching logical line starts showing (0..LINES-1).
     wire raster_event=line_start && shown_line==active_raster && active_raster<8'(LINES);
+    wire [3:0] rs_count;
+    wire [199:0] rs_table;
+    wire bg_start;
+    wire [8:0] bg_scroll_x;
+    wire [7:0] bg_scroll_y;
 
     kagura_registers #(.CAPS(CAPS),.LINES(LINES)) registers(
         .clk(clk),.reset(reset),.init_done(init_done),.vblank_live(vblank_live),
@@ -119,7 +124,11 @@ module kagura_core #(
         .audio_index(audio_index),.audio_rdata(audio_rdata),.audio_read_legal(audio_read_legal),.audio_write_legal(audio_write_legal),
         .audio_settings_valid(audio_settings_valid),.audio_busy(audio_busy),.audio_index_write(audio_index_write),
         .audio_data_write(audio_data_write),.audio_capture(audio_capture),.audio_wdata(audio_wdata),
-        .scroll_x(scroll_x),.scroll_y(scroll_y),.backdrop(backdrop),.raster_line(raster_line));
+        .scroll_x(scroll_x),.scroll_y(scroll_y),.backdrop(backdrop),.raster_line(raster_line),
+        .rs_count(rs_count),.rs_table(rs_table));
+    kagura_raster_scroll raster_scroll(.clk(clk),.reset(reset),.start(render_start && init_done),.line(render_line),
+        .frame_x(active_scroll_x),.frame_y(active_scroll_y),.load(commit_done),.count_in(rs_count),.table_in(rs_table),
+        .start_o(bg_start),.x_o(bg_scroll_x),.y_o(bg_scroll_y));
     kagura_command_queue queue(.clk(clk),.reset(reset),.push(push),.push_desc(push_desc),
         .push_ready(push_ready),.free(queue_free),.idle(queue_idle),.staging(queue_staging),
         .head_valid(head_valid),.head(head),.pop(pop));
@@ -177,9 +186,9 @@ module kagura_core #(
         .pattern_read(pattern_read),.pattern_addr(pattern_addr),.pattern_data(pattern_data),
         .palette_read(palette_read),.palette_index(palette_index),.palette_data(palette_data),
         .oam_read(oam_read),.oam_index(oam_index),.oam_data(oam_data));
-    kagura_bg_renderer renderer(.clk(clk),.reset(reset),.start(render_start && init_done),.line(render_line),
+    kagura_bg_renderer renderer(.clk(clk),.reset(reset),.start(bg_start),.line(render_line),
         .display_enable(active_display[0]),.bg_enable(active_display[1]),
-        .scroll_x(active_scroll_x),.scroll_y(active_scroll_y),.backdrop(active_backdrop),
+        .scroll_x(bg_scroll_x),.scroll_y(bg_scroll_y),.backdrop(active_backdrop),
         .render_hold(bg_hold),.render_grant(render_grant),
         .map_read(map_read),.map_index(map_index),.map_data(map_data),
         .pattern_read(bg_pr),.pattern_addr(bg_pa),.pattern_data(pattern_data),

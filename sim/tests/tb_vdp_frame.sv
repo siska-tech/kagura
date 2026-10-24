@@ -3,7 +3,7 @@
 // COMMIT at VBlank, then every visible pixel of a frame compared with a
 // software reference renderer. Real clock periods: VIC1 640x480 (2x2,
 // 54/25.2MHz) or VIC4 1280x720 (4x4, 180 logical lines, 54/74.25MHz).
-module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1);
+module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, parameter bit RASTER=0);
     localparam integer H_TOTAL=VIC==4 ? 1650 : 800, V_TOTAL=VIC==4 ? 750 : 525;
     localparam integer H_ACTIVE=VIC==4 ? 1280 : 640, V_ACTIVE=VIC==4 ? 720 : 480;
     localparam integer SCALE=VIC==4 ? 4 : 2, LINES=V_ACTIVE/SCALE, XW=VIC==4 ? 11 : 10;
@@ -18,7 +18,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1);
     reg [XW-1:0] cx=0;
     reg [9:0] cy=0;
     wire [23:0] rgb;
-    kagura_vdp #(.CAPS(8'h01),.VIDEO_ID_CODE(VIC)) dut(.sys_clk(sys),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS(RASTER ? 8'h41 : 8'h01),.VIDEO_ID_CODE(VIC)) dut(.sys_clk(sys),.sys_reset(sys_reset),
         .audio_full(1'b0),.audio_underflow_toggle(1'b0),.audio_muted(1'b0),.req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(1'b1),.rsp_rdata(rsp_rdata),
         .rsp_error(rsp_error),.irq(irq),.render_cycles(render_cycles),
@@ -57,14 +57,19 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1);
     reg [11:0] palette [0:255];
     reg [8:0] sx; reg [7:0] sy, backdrop; reg bg_on;
     reg spr_on=0;
+    // Raster scroll table in effect (ABI 0.3) and the staged one written to the shadow.
+    integer rs_n=0, rs_line[0:7], rs_x[0:7], rs_y[0:7];
+    integer t_line[0:7], t_x[0:7], t_y[0:7];
     integer sprite_x[0:63],sprite_y[0:63],sprite_tile[0:63],sprite_pal[0:63],sprite_flags[0:63];
     function automatic [23:0] expected(input integer x,input integer y);
-        integer lx, ly, px, py, row, col, idx,n,size,eligible,xx,yy,t,cp;
+        integer lx, ly, px, py, row, col, idx,n,size,eligible,xx,yy,t,cp,sxe,sye;
         reg solid,claimed;
         reg [15:0] m; reg [7:0] b; reg [3:0] p; reg [11:0] c;
         begin
             lx=x/SCALE; ly=y/SCALE;
-            px=(lx+sx)%512; py=(ly+sy)%256;
+            sxe=sx; sye=sy;
+            for(n=0;n<rs_n;n=n+1) if(rs_line[n]<=ly) begin sxe=rs_x[n]; sye=rs_y[n]; end
+            px=(lx+sxe)%512; py=(ly+sye)%256;
             m=map[(py/8)*64+px/8];
             row=m[15] ? 7-(py%8) : py%8;
             col=m[14] ? 7-(px%8) : px%8;
@@ -106,6 +111,25 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1);
             wr(IRQ_STATUS,8'h7f); wr(COMMAND,8'h03);
             v=8'h10; while(v[4]) rd(STATUS,v);  // COMMIT_BUSY clears after the copy
             rd(IRQ_STATUS,v); if(!v[4]) $fatal(1,"COMMIT_DONE not raised");
+        end
+    endtask
+    // Writes the staged table to the shadow registers (RS_INDEX 0 first).
+    task automatic rs_write(input integer n);
+        integer k;
+        begin
+            ext(8'h0c,8'd0);
+            for(k=0;k<n;k=k+1) begin
+                ext(8'h0d,8'(t_line[k])); ext(8'h0e,8'(t_x[k])); ext(8'h0f,{7'b0,t_x[k][8]}); ext(8'h10,8'(t_y[k]));
+            end
+            ext(8'h0b,8'(n));
+        end
+    endtask
+    task automatic rs_commit(input integer n);
+        integer k;
+        begin
+            rs_write(n); commit_and_wait();
+            for(k=0;k<n;k=k+1) begin rs_line[k]=t_line[k]; rs_x[k]=t_x[k]; rs_y[k]=t_y[k]; end
+            rs_n=n;
         end
     endtask
     task automatic check_frame(input integer which);
@@ -199,6 +223,54 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1);
             wr(IRQ_STATUS,8'h20); rd(5'h1e,v); if(v!=0) $fatal(1,"overflow index not cleared");
             rd(5'h1f,v); if(v!=0) $fatal(1,"overflow line not cleared");
             rd(IRQ_STATUS,v); if(v[5]) $fatal(1,"overflow after sprite disable");
+        end
+        if(RASTER) begin
+            // CAPS b6 and ABI_MINOR 3; RS_MAX reads 8.
+            rd(5'h1c,v); if(v!==8'h41) $fatal(1,"CAPS %02h",v);
+            rd(5'h1b,v); if(v!==8'h03) $fatal(1,"ABI_MINOR %02h",v);
+            wr(EXT_INDEX,8'h11); rd(EXT_DATA,v); if(v!==8) $fatal(1,"RS_MAX %0d",v);
+            // R1: eight entries, the last on the final logical line.
+            t_line[0]=3; t_line[1]=20; t_line[2]=21; t_line[3]=60; t_line[4]=100; t_line[5]=150; t_line[6]=LINES-2; t_line[7]=LINES-1;
+            for(i=0;i<8;i=i+1) begin t_x[i]=$urandom%512; t_y[i]=$urandom%256; end
+            rs_commit(8); check_frame(10);
+            // Read-back of the shadow entries through RS_INDEX.
+            ext(8'h0c,8'd5); wr(EXT_INDEX,8'h0d); rd(EXT_DATA,v); if(v!=t_line[5]) $fatal(1,"RS_LINE readback %0d",v);
+            wr(EXT_INDEX,8'h0f); rd(EXT_DATA,v); if(v!=t_x[5]/256) $fatal(1,"RS_X_H readback %0d",v);
+            // R2: one entry per line from line 0 (maximum update rate; entry at line 0).
+            for(i=0;i<8;i=i+1) begin t_line[i]=i; t_x[i]=$urandom%512; t_y[i]=$urandom%256; end
+            rs_commit(8); check_frame(11);
+            // R3: shadow-only changes do not reach the screen without COMMIT.
+            t_line[0]=40; t_line[1]=90; t_x[0]=77; t_x[1]=300; t_y[0]=1; t_y[1]=2;
+            rs_write(2); check_frame(12);
+            // Refused COMMITs leave everything unchanged: equal lines, then line >= LINES.
+            t_line[0]=50; t_line[1]=50; rs_write(2);
+            access(1,COMMAND,8'h03); if(!last_error) $fatal(1,"COMMIT with equal lines accepted");
+            rd(ERROR_CODE,v); if(v!==8'h04) $fatal(1,"ERROR_CODE %02h after equal lines",v);
+            wr(ERROR_CODE,8'hff); rd(STATUS,v); if(v[4]) $fatal(1,"COMMIT_BUSY after refused COMMIT");
+            t_line[0]=LINES; rs_write(1);
+            access(1,COMMAND,8'h03); if(!last_error) $fatal(1,"COMMIT with line>=LINES accepted");
+            wr(ERROR_CODE,8'hff);
+            // Out-of-range COUNT and INDEX are refused and do not change the registers.
+            wr(EXT_INDEX,8'h0b); access(1,EXT_DATA,8'd9); if(!last_error) $fatal(1,"RS_COUNT 9 accepted");
+            rd(EXT_DATA,v); if(v!==8'd1) $fatal(1,"RS_COUNT changed to %0d",v);
+            wr(EXT_INDEX,8'h0c); access(1,EXT_DATA,8'd8); if(!last_error) $fatal(1,"RS_INDEX 8 accepted");
+            wr(ERROR_CODE,8'hff);
+            check_frame(13);
+            // R4: RS_COUNT=0 restores the plain SCROLL_X/Y frame.
+            rs_commit(0); check_frame(14);
+            // R5: table writes during COMMIT_BUSY are refused (BUSY_CONFLICT) and not stored.
+            for(i=0;i<3;i=i+1) begin t_line[i]=10+30*i; t_x[i]=$urandom%512; t_y[i]=$urandom%256; end
+            rs_write(3);
+            @(negedge pix); while(!(cx==10 && cy==100)) @(negedge pix);
+            wr(IRQ_STATUS,8'h7f); wr(EXT_INDEX,8'h10); wr(COMMAND,8'h03);
+            rd(STATUS,v); if(!v[4]) $fatal(1,"COMMIT_BUSY not set");
+            access(1,EXT_DATA,8'h55); if(!last_error) $fatal(1,"RS_Y written during COMMIT_BUSY");
+            rd(ERROR_CODE,v); if(v!==8'h80) $fatal(1,"ERROR_CODE %02h for busy write",v);
+            wr(ERROR_CODE,8'hff);
+            v=8'h10; while(v[4]) rd(STATUS,v);
+            for(i=0;i<3;i=i+1) begin rs_line[i]=t_line[i]; rs_x[i]=t_x[i]; rs_y[i]=t_y[i]; end
+            rs_n=3; check_frame(15);
+            wr(EXT_INDEX,8'h0c); wr(EXT_DATA,8'd2); wr(EXT_INDEX,8'h10); rd(EXT_DATA,v); if(v!==t_y[2]) $fatal(1,"busy write leaked into RS_Y");
         end
         rd(ERROR_CODE,v); if(v!==0) $fatal(1,"ERROR_CODE %02h (underrun?)",v);
         // Reset only the system side while the pixel clock/scan keep running.

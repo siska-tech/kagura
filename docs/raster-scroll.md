@@ -1,6 +1,6 @@
 # ラスタスクロール 実装検討
 
-状態: 検討中（未実装、ABI未確定）。ロードマップ段階4の最初の候補。確定後に[レジスタマップ](register-map.md)・`spec/registers.json`へ反映する。
+状態: 実装済み（ABI 0.3、`feature/raster-scroll`）。規範は[レジスタマップ](register-map.md)の「ABI 0.3」。この文書は設計の経緯と根拠を残す。実装時の差分: 範囲外のRS_COUNT/RS_INDEXおよび順序違反COMMITのエラーは`BAD_ACCESS`（`INVALID_ARGUMENT`は存在しない）、RS_INDEXの変更はCOMMIT_BUSY中も可、COMMITではテーブルを受付時にsnapshotせず、書込み禁止にして完了時に一括copyする。
 
 ## 現状の制約（コード確認結果）
 
@@ -26,7 +26,7 @@ CAPSに`RSCROLL`ビット（b6案）を追加。未対応bitstreamはCAPS=0で�
 | EXT | 名前 | 内容 |
 |---|---|---|
 | 0B | RS_COUNT | 有効エントリ数 0..N、RW shadow /0。0で機能無効（現行動作と同一） |
-| 0C | RS_INDEX | 書込み対象エントリ 0..N−1、RW。範囲外書込みはINVALID_ARGUMENT |
+| 0C | RS_INDEX | 書込み対象エントリ 0..N−1、RW。範囲外書込みはBAD_ACCESS |
 | 0D | RS_LINE | エントリのライン 0..LINES−1 |
 | 0E | RS_X_L / 0F RS_X_H(b0) | scroll X |
 | 10 | RS_Y | scroll Y。この書込みでshadowエントリ確定、RS_INDEXを自動+1 |
@@ -35,7 +35,7 @@ CAPSに`RSCROLL`ビット（b6案）を追加。未対応bitstreamはCAPS=0で�
 規則（確定が必要な項目の提案値）:
 
 - **適用ライン**: エントリの`line=L`は、論理ラインLの描画から適用し、次のエントリまで継続する（それ以前は`SCROLL_X/Y`）。
-- **順序**: `line`は`RS_COUNT`範囲で厳密昇順。違反・`line>=LINES`はCOMMITを`INVALID_ARGUMENT`で拒否（snapshot不変）。同一ラインへの複数更新はABI上存在しない（最後勝ちの曖昧さを排除）。
+- **順序**: `line`は`RS_COUNT`範囲で厳密昇順。違反・`line>=LINES`はCOMMITを`BAD_ACCESS`で拒否（snapshot不変）。同一ラインへの複数更新はABI上存在しない（最後勝ちの曖昧さを排除）。
 - **遅延**: 適用はhardware描画開始時で決まり、hostの応答遅延の影響を受けない。描画がunderrunした場合は既存のunderrun挙動に従い、テーブルは描画要求のライン番号で引くのでずれない。
 - **更新**: shadowテーブルの書換えは次回COMMIT用。今回COMMITのsnapshot（RS_COUNTを含む）は受付時点で固定。テーブル本体はCOMMIT受付後に書換えると完了時copyに混入するため、COMMIT_BUSY中のRS_*書込みは`BUSY_CONFLICT`（OAMと違いFIFO順序保証がない点の対策）。
 - 480p/720p共通。LINESは240/180、同じテーブル。

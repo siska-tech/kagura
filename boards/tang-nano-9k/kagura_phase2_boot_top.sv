@@ -84,7 +84,7 @@ module kagura_phase2_boot_top #(
     end
 
     wire [11:0] render_cycles;
-    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h33 : 8'h13),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h73 : 8'h53),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
         .req_valid(req_valid && !boot_map),.req_ready(v_req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(v_rsp_valid),.rsp_ready(rsp_ready),.rsp_rdata(v_rsp_rdata),
         .rsp_error(v_rsp_error),.irq(irq),.init_done(vdp_ready),.frame_ready(frame_ready),.render_cycles(render_cycles),

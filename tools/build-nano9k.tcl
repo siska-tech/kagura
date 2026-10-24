@@ -29,7 +29,7 @@ set config [file join $build_dir kagura_build_config.sv]
 set out [open $config w]
 puts $out "package kagura_build_config; localparam integer VIDEO_ID_CODE=[expr {$wide ? 4 : 1}]; localparam integer LANES=[expr {$base eq {qspi} ? 4 : 1}]; endpackage"
 close $out
-set vdp {rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.sv rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv rtl/core/kagura_core.sv rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv}
+set vdp {rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.sv rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv rtl/core/kagura_raster_scroll.sv rtl/core/kagura_core.sv rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv}
 # Line-handover payload bound: just under one pixel period of the mode.
 set vdp_sdc [list phase3-vdp.sdc [expr {$wide ? "vdp-720p.sdc" : "vdp-480p.sdc"}]]
 if {$base in {bootprobe magicprobe}} {
