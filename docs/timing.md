@@ -90,7 +90,7 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 
 - COMMANDのopcodeとREAD_REQUESTの値0判定を、要求の取込み時にflagへ前もって復号する。受付・error判定が高fanoutの`q_wdata`（fanout 54）を再度比較しなくなり、最悪だった`q_wdata`→`capture_pending`/`error_code`経路（論理7段）が消えた。
 - FILLの範囲検査を、加算と領域比較の2段に分けた。ADDR/LENGTH書込みとVRAM_WRITE/READのaddress進行の後は、`checks_stale`が次の要求を両段の更新後まで受け付けない。この前提はsimulation専用のassertionと、最大速度で要求を出す`tb_fill_timing`で検査する（3段に遅らせた改変版はassertionで失敗することを確認）。
-- demo sequencerの`req_wdata`を`syn_preserve`でfabricのFFに残した。art ROMのBSRAM出力レジスタへ吸収されると、遅いDOが上記の復号へ直結していた（demo720が+0.010nsへ悪化した原因）。副作用としてart ROMのpROMが2→1個になり、demo/demo720のBSRAMは26→25/26。シミュレーションの結果は同じだが、ROM割付けが変わったため実機でdemo表示を再確認する。
+- demo sequencerの`req_wdata`を`syn_preserve`でfabricのFFに残した。art ROMのBSRAM出力レジスタへ吸収されると、遅いDOが上記の復号へ直結していた（demo720が+0.010nsへ悪化した原因）。副作用としてart ROMのpROMが2→1個になり、demo/demo720のBSRAMは26→25/26。シミュレーションの結果は同じ。ROM割付けの変更後のdemo（480p）の映像は、2026-10-24にTOSHIBA REGZA 32S5で正常表示を確認した（[検証状況](validation-status.md)）。
 
 残る経路と次の候補:
 
