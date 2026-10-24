@@ -71,3 +71,25 @@ CAPSに`RSCROLL`ビット（b6案）を追加。未対応bitstreamはCAPS=0で�
 - COMMIT_BUSY中のRS_*書込みは拒否。shadow/activeの整合性を守る。
 - ABI 0.3。既存0.2との互換性を維持して拡張する。
 - ライン途中（ピクセル単位）切替は対象外。
+
+## Gowin P&R/STA実測
+
+Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、`bars`。BSRAMの増加は0（demo系は26→25、他は不変）。renderer期限は`render_cycles`が+4（pipeline）になるだけで、`check-design.ps1`の上限内。
+
+| 構成 | Logic | Register | BSRAM | 最悪setup |
+|------|------:|---------:|------:|----------:|
+| hdmi / dvi | 786 / 95 | 414 / 61 | 0 | +5.951ns |
+| phase2 | 4883 | 3747 | 24 | +1.578ns |
+| demo | 6752 | 4136 | 25 | +0.351ns |
+| spi / qspi | 4959 / 4921 | 3780 / 3782 | 24 | +0.985 / +0.094ns |
+| hdmi720 | 811 | 416 | 0 | +0.708ns |
+| phase2720 | 4892 | 3748 | 24 | +0.289ns |
+| demo720 | 6811 | 4137 | 25 | +0.066ns |
+| spi720 / qspi720 | 4973 / 4970 | 3781 / 3783 | 24 | +0.411 / +0.454ns |
+| phase2boot | 5783 | 4125 | 24 | +0.154ns |
+| phase2boot720 | 5767 | 4126 | 24 | +0.160ns（place_option 0） |
+
+- 追加分はdemoで約+480 LUT、+500 FF（table 2面×200bit）。全構成でsetup/hold違反0。
+- 初回は`rs_table`をレジスタ値`rs_idx`の可変オフセットで書いたため、約+2200 LUTとなりdemoは配線不能、phase2もsetup −2.79nsだった。entryごとの定数オフセット書込みに変えて解消した。
+- phase2boot720は、既定のplace_option 1でupstreamのpacket_assembler（pixel74）が−1.001nsとなった。raster追加前（`b1e088d`）は+0.612ns。経路はraster回路と無関係で配置変動によるため、この構成だけ`tools/build-nano9k.tcl`でplace_option 0とした（[wide-mode.md](wide-mode.md)の16:9のoption指定と同様の扱い）。
+- 受入条件のWNS≥+0.10nsはdemo720（+0.066ns）とqspi（+0.094ns）で未達。ただしdemo720の追加前は+0.030ns、他は旧baseline（[baseline.md](baseline.md)）と同程度以上で、悪化ではない。
