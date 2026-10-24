@@ -231,6 +231,109 @@ static void diag(void) {
     printf(failures ? "DIAG FAIL %d\n" : "DIAG PASS\n", failures);
 }
 
+// Long-run load: 64 registered sprites (16 on one line band) moved by COMMIT
+// every frame, all six audio voices playing, and once a second a 1KB random
+// VRAM write with a 32-byte read-back sample. Errors are counted and cleared,
+// not fatal, so an hour-long run reports how often each one happened.
+static void soak(unsigned minutes) {
+    kh_stats *st = kh_get_stats();
+    memset(st, 0, sizeof *st);
+    printf("SOAK %s, SCK %.2f MHz, %u min (any key stops)\n", config.lanes == KH_QSPI ? "QSPI" : "SPI",
+           10.0 / config.clkdiv, minutes);
+    if (!check("soak", kh_wait_ready(2000000))) { printf("SOAK FAIL\n"); return; }
+    uint8_t height = 240;
+    kh_ext_read(KAGURA_EXT_SCREEN_HEIGHT, &height);
+    kh_clear_errors();
+
+    // Display: backdrop, sprite palette 1 colours 1..3, tiles 1020..1023 striped.
+    kh_status s = KH_OK;
+    palette_word(0, 0x013, &s);
+    palette_word(16 + 1, 0xfc0, &s);
+    palette_word(16 + 2, 0x0cf, &s);
+    palette_word(16 + 3, 0xf4a, &s);
+    for (int i = 0; i < 128; i++) buf[i] = (uint8_t)(0x11 * (1 + (i / 4) % 3));
+    if (s == KH_OK) s = kh_vram_write(KAGURA_VRAM_PATTERN_BASE + 32u * 1020u, buf, 128);
+    if (s == KH_OK) s = kh_ext_write(KAGURA_EXT_BACKDROP, 0);
+    if (s == KH_OK) s = kh_write_reg(KAGURA_REG_DISPLAY_CTRL, KAGURA_DISPLAY_CTRL_DISPLAY_ENABLE |
+                                     KAGURA_DISPLAY_CTRL_BG_ENABLE | KAGURA_DISPLAY_CTRL_SPR_ENABLE);
+    // Audio: three pulses, noise and two wavetables at low gain.
+    for (int i = 0; i < 256; i++) buf[i] = (uint8_t)(int8_t)(i < 128 ? i - 64 : 191 - i);   // triangle
+    for (int i = 0; i < 256; i++) buf[256 + i] = (uint8_t)(int8_t)(i < 128 ? 48 : -48);     // square
+    static const uint32_t steps[6] = {153791u, 193771u, 230456u, 0, 76896u, 115344u};       // A4 C#5 E5 - A3 E4
+    for (int bank = 0; s == KH_OK && bank < 2; bank++) {   // fill both wave banks (docs/audio-spec.md)
+        s = kh_vram_write(KAGURA_VRAM_WAVE_BASE, buf, 512);
+        for (int c = 0; s == KH_OK && c < 6; c++) {
+            uint8_t regs[] = {KAGURA_AUDIO_STEP_L, (uint8_t)steps[c], KAGURA_AUDIO_STEP_M, (uint8_t)(steps[c] >> 8),
+                              KAGURA_AUDIO_STEP_H, (uint8_t)(steps[c] >> 16), KAGURA_AUDIO_DUTY, 96,
+                              KAGURA_AUDIO_GAIN_L, 24, KAGURA_AUDIO_GAIN_R, 24, KAGURA_AUDIO_LEN_LOG2, 8,
+                              KAGURA_AUDIO_NOISE_PERIOD_L, 40, KAGURA_AUDIO_NOISE_PERIOD_H, 0,
+                              KAGURA_AUDIO_CONTROL, KAGURA_AUDIO_CONTROL_ENABLE};
+            for (size_t i = 0; s == KH_OK && i < sizeof regs; i += 2) s = kh_audio_write(KAGURA_AUDIO_INDEX(c, regs[i]), regs[i + 1]);
+        }
+        if (s == KH_OK) s = kh_audio_commit(100000);
+    }
+    if (!check("soak-setup", s)) { printf("SOAK FAIL\n"); return; }
+
+    uint64_t start = time_us_64(), end = start + (uint64_t)minutes * 60000000u, next_report = start + 10000000u;
+    uint64_t next_vram = start + 1000000u;
+    unsigned long frames = 0, vram_checks = 0, mismatches = 0, driver_failures = 0, ready_drops = 0, audio_flags = 0;
+    unsigned long error_bits[8] = {0};
+    const uint32_t scratch = KAGURA_VRAM_PATTERN_BASE + 32u * 960u;   // patterns 960..1019
+    uint8_t oam[64 * 8];
+    for (;;) {
+        // 64 sprites: 16 on a band at mid-screen (line limit), the rest spread above and below.
+        for (int n = 0; n < 64; n++) {
+            int x = (int)((n * 20 + frames * (1 + n % 3)) % 352) - 16;
+            int y = n < 16 ? height / 2 - 8 : (int)((n * 37 + frames) % (height + 16)) - 16;
+            uint8_t e[8] = {(uint8_t)x, (uint8_t)((x >> 8) & 3), (uint8_t)y, (uint8_t)((y >> 8) & 3),
+                            (uint8_t)1020, (uint8_t)(3 | (1 << 2)), 0x03, 0};
+            memcpy(&oam[8 * n], e, 8);
+        }
+        s = kh_vram_write(KAGURA_VRAM_OAM_BASE, oam, sizeof oam);
+        if (s == KH_OK) s = kh_commit(100000);
+        frames++;
+        if (s != KH_OK) {
+            driver_failures++;
+            if (s == KH_DEVICE_ERROR)
+                for (int b = 0; b < 8; b++) if (kh_last_error() & (1u << b)) error_bits[b]++;
+            kh_clear_errors();
+        }
+        if (!kh_ready_pin()) { ready_drops++; kh_wait_ready(2000000); }
+        uint64_t now = time_us_64();
+        if (now >= next_vram) {
+            next_vram += 1000000u;
+            for (int i = 0; i < 1024; i++) buf[i] = next_random();
+            uint32_t off = (uint32_t)(next_random() % (1024u - 32u));
+            s = kh_vram_write(scratch, buf, 1024);
+            if (s == KH_OK) s = kh_vram_read(scratch + off, back, 32);
+            if (s == KH_OK) { vram_checks++; for (int i = 0; i < 32; i++) mismatches += back[i] != buf[off + i]; }
+            else { driver_failures++; kh_clear_errors(); }
+            uint8_t ast = 0;
+            if (kh_audio_read(KAGURA_AUDIO_STATUS, &ast) == KH_OK &&
+                (ast & (KAGURA_AUDIO_STATUS_FIFO_UNDERFLOW | KAGURA_AUDIO_STATUS_OVERFLOW))) {
+                audio_flags++;
+                kh_audio_write(KAGURA_AUDIO_ERROR_CLEAR, KAGURA_AUDIO_ERROR_CLEAR_FIFO_UNDERFLOW | KAGURA_AUDIO_ERROR_CLEAR_OVERFLOW);
+            }
+        }
+        bool stop = getchar_timeout_us(0) != PICO_ERROR_TIMEOUT || now >= end;
+        if (now >= next_report || stop) {
+            next_report += 10000000u;
+            printf("  %4llus frames %lu (%.1f/s) vram-checks %lu mismatches %lu driver-failures %lu ready-drops %lu "
+                   "audio-flags %lu busy-waits %llu errors[b0..7] %lu %lu %lu %lu %lu %lu %lu %lu\n",
+                   (unsigned long long)((now - start) / 1000000u), frames, frames * 1e6 / (double)(now - start),
+                   vram_checks, mismatches, driver_failures, ready_drops, audio_flags,
+                   (unsigned long long)st->busy_waits, error_bits[0], error_bits[1], error_bits[2], error_bits[3],
+                   error_bits[4], error_bits[5], error_bits[6], error_bits[7]);
+        }
+        if (stop) break;
+    }
+    for (int c = 0; c < 6; c++) kh_audio_write(KAGURA_AUDIO_INDEX(c, KAGURA_AUDIO_CONTROL), 0);
+    kh_audio_commit(100000);
+    bool ok = mismatches == 0 && driver_failures == 0 && ready_drops == 0 && audio_flags == 0;
+    printf(ok ? "SOAK PASS\n" : "SOAK FAIL\n");
+    printf("  check LED1 on the board (adapter `late`): it must stay off\n");
+}
+
 // `w <addr> <len>` then len raw bytes; `c <addr> <len>` reads back and prints CRC32.
 static void upload(uint32_t addr, size_t len) {
     if (len == 0 || len > sizeof buf) { printf("ERR length 1..%u\n", (unsigned)sizeof buf); return; }
@@ -272,6 +375,7 @@ static void help(void) {
     printf("commands:\n"
            "  info                 ID, ABI, CAPS, STATUS, pins\n"
            "  diag                 end-to-end check (ID, registers, VRAM, FILL/FENCE, sprite, audio, IRQ, BUSY)\n"
+           "  soak [min]           long run (default 60): 64 sprites, 6 voices, VRAM write/verify; counts errors\n"
            "  mode spi|qspi        must match the bitstream (build-nano9k.tcl spi / qspi)\n"
            "  div <n>              SCK = 10MHz / n (1..250, default 4)\n"
            "  rd <off> [n]         read n registers from offset (hex), INC\n"
@@ -306,6 +410,7 @@ int main(void) {
         if (!strcmp(cmd, "help")) help();
         else if (!strcmp(cmd, "info")) info();
         else if (!strcmp(cmd, "diag")) diag();
+        else if (!strcmp(cmd, "soak")) soak(a1 ? (unsigned)strtoul(a1, NULL, 0) : 60u);
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {
             config.lanes = !strcmp(a1, "qspi") ? KH_QSPI : KH_SPI;

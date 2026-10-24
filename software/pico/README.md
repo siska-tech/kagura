@@ -51,6 +51,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 |---|---|
 | `info` | ID/ABI/CAPS/STATUS/FIFO_STATUS/ERROR_CODE、READY・/IRQの状態 |
 | `diag` | 縦通し試験。各項目を`PASS`/`FAIL`で表示し、最後に`DIAG PASS`または`DIAG FAIL n` |
+| `soak [分]` | 長時間試験（既定60分、キー入力で停止）。64 sprite（1ラインに16個）をCOMMITで毎frame移動、6音を再生、毎秒1KBのVRAM書込みと32byteの読戻し照合。ERROR_CODEの各bit・不一致・driverの失敗・READY低下・音声underflow/overflowを数えて10秒ごとに表示し、最後に`SOAK PASS`/`SOAK FAIL` |
 | `mode spi` / `mode qspi` | bitstreamに合わせる |
 | `div n` | SCK = 10MHz / n |
 | `rd <off> [n]` / `wr <off> <val>` | レジスタの読み書き（16進） |
@@ -76,6 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/kagura-upload.ps1 -Por
 3. 復帰: `diag`合格後にTang Nano 9KのS2（reset）を押し、READYが一度下がって戻ることを`info`で確認してから再度`diag`。Pico側のUSB再接続後も同様。
 4. uploader: 32KBのpattern全域を`-Verify`付きで転送し、CRC一致と転送速度を記録する。
 5. 10MHzでオシロにより、SCK立上りに対するMISO（QSPIはIO）の変化時刻とt_CSSを測る（[ホスト仕様](../../docs/host-interface.md)の算定: FPGA出力は立上りから37〜56ns＋出力遅延）。
+6. 負荷試験: 合格した最大SCKで`soak 60`。全カウンタ0とLED1消灯を記録する。HDMI互換性試験（[実機試験表](../../docs/p1-07-hardware-test.md)）の各1時間にも使える。
 
 | 日付 | bitstream（commit） | mode | 最大合格SCK | diag | 復帰 | uploader（KB/s） | 波形・備考 |
 |---|---|---|---|---|---|---|---|
