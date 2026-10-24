@@ -368,10 +368,14 @@ module kagura_registers #(
                 8'h04: raster_line<=q_wdata;
                 8'h0b: rs_count<=q_wdata[3:0];
                 8'h0c: rs_idx<=q_wdata[2:0];
-                8'h0d: rs_table[25*rs_idx +: 8]<=q_wdata;
-                8'h0e: rs_table[25*rs_idx+8 +: 8]<=q_wdata;
-                8'h0f: rs_table[25*rs_idx+16]<=q_wdata[0];
-                8'h10: begin rs_table[25*rs_idx+17 +: 8]<=q_wdata; rs_idx<=rs_idx+1'b1; end
+                8'h10: rs_idx<=rs_idx+1'b1;
+                default: ;
+            endcase
+            for(ri=0;ri<8;ri=ri+1) if(ext_write && rs_idx==ri[2:0]) case(ext_index)
+                8'h0d: rs_table[25*ri +: 8]<=q_wdata;
+                8'h0e: rs_table[25*ri+8 +: 8]<=q_wdata;
+                8'h0f: rs_table[25*ri+16]<=q_wdata[0];
+                8'h10: rs_table[25*ri+17 +: 8]<=q_wdata;
                 default: ;
             endcase
             rs_settle<={rs_settle[1:0], ext_write && ext_index>=8'h0b && ext_index<=8'h10};
