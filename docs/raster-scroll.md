@@ -80,11 +80,11 @@ Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、`bars`。BSRAMの増加�
 |------|------:|---------:|------:|----------:|
 | hdmi / dvi | 786 / 95 | 414 / 61 | 0 | +5.951ns |
 | phase2 | 4883 | 3747 | 24 | +1.578ns |
-| demo | 6752 | 4136 | 25 | +0.351ns |
+| demo | 6689 | 4137 | 25 | +0.022ns |
 | spi / qspi | 4959 / 4921 | 3780 / 3782 | 24 | +0.985 / +0.094ns |
 | hdmi720 | 811 | 416 | 0 | +0.708ns |
 | phase2720 | 4892 | 3748 | 24 | +0.289ns |
-| demo720 | 6811 | 4137 | 25 | +0.066ns |
+| demo720 | 6755 | 4138 | 25 | +0.021ns（place_option 0） |
 | spi720 / qspi720 | 4973 / 4970 | 3781 / 3783 | 24 | +0.411 / +0.454ns |
 | phase2boot | 5783 | 4125 | 24 | +0.154ns |
 | phase2boot720 | 5767 | 4126 | 24 | +0.160ns（place_option 0） |
@@ -92,11 +92,12 @@ Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、`bars`。BSRAMの増加�
 - 追加分はdemoで約+480 LUT、+500 FF（table 2面×200bit）。全構成でsetup/hold違反0。
 - 初回は`rs_table`をレジスタ値`rs_idx`の可変オフセットで書いたため、約+2200 LUTとなりdemoは配線不能、phase2もsetup −2.79nsだった。entryごとの定数オフセット書込みに変えて解消した。
 - phase2boot720は、既定のplace_option 1でupstreamのpacket_assembler（pixel74）が−1.001nsとなった。raster追加前（`b1e088d`）は+0.612ns。経路はraster回路と無関係で配置変動によるため、この構成だけ`tools/build-nano9k.tcl`でplace_option 0とした（[wide-mode.md](wide-mode.md)の16:9のoption指定と同様の扱い）。
-- 受入条件のWNS≥+0.10nsはdemo720（+0.066ns）とqspi（+0.094ns）で未達。ただしdemo720の追加前は+0.030ns、他は旧baseline（[baseline.md](baseline.md)）と同程度以上で、悪化ではない。
+- demoはシーケンサが毎フレーム8エントリを書く最終版での値。demo720は既定のplace_option 1だと同じupstream経路で−0.563nsとなるため、phase2boot720と同様にplace_option 0とした。+0.10ns未満はdemo +0.022、demo720 +0.021、qspi +0.094ns。
+- 受入条件のWNS≥+0.10nsはdemo、demo720、qspiで未達。ただしdemoの追加前は+0.020ns、demo720は+0.030ns、他は旧baseline（[baseline.md](baseline.md)）と同程度以上で、悪化ではない。
 - 最終HEADで13構成を再実行し、上表と同じ値を再現した。両構成の最悪経路はraster回路と無関係（demo720: 上流packet_assemblerのpixel74、qspi: audio_registersとスプライト合成）で、追加前から余裕が小さい経路。配置変動の範囲のため、追加改善はせず現状値を受け入れる。
 
 ## 実機確認用デモ
 
-kagura_demo（480p/720p）はシーケンサのRASTER=1で、ライン100〜170の8エントリ（10ライン刻み）を毎フレームCOMMIT前に書き直す。各エントリはフレームのscrollに0〜21pxの三角波（位相はエントリごとに3ずつずらし、フレームごとに進む）を加えるので、画面下側が水面のように横に揺れる。ライン0〜99は従来どおりのscroll。全画素比較は	b_demo_raster（背景のみ）、	b_demo_shooter_raster/	b_demo_shooter_raster720（実機と同じシーン）。実機SRAMへの書込みはVerify successまで確認済み。
+`kagura_demo`（480p/720p）はシーケンサの`RASTER=1`で、ライン100〜170の8エントリ（10ライン刻み）を毎フレームCOMMIT前に書き直す。各エントリはフレームのscrollに0〜21pxの三角波（位相はエントリごとに3ずつずらし、フレームごとに進む）を加えるので、画面下側が水面のように横に揺れる。ライン0〜99は従来どおりのscroll。全画素比較は`tb_demo_raster`（背景のみ）、`tb_demo_shooter_raster`/`tb_demo_shooter_raster720`（実機と同じシーン）。
 
-初版はテーブルを書込み後に固定していたため、下半分の背景が止まって見えるだけだった（設計どおりだが効果が分かりにくい）。実機の画面で揺れを目視確認すること。
+実機確認: 480p/720pとも、画面下側が波打つラスタ表示を目視確認済み。初版はテーブルを書込み後に固定していたため、下半分の背景が止まって見えるだけだった（設計どおりだが効果が分かりにくい）。
