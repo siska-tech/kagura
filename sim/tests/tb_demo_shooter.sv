@@ -10,7 +10,7 @@
 // consecutive updates and requires the sequencer to report the overflow.
 // Tile art comes from sim/tests/demo_art.hex (tools/gen-demo-art.py).
 // VIC=4 runs the 16:9 build: 320x180 shown 4x4 on 1280x720, ship at y=136.
-module tb_demo_shooter #(parameter integer START=0, parameter integer VIC=1);
+module tb_demo_shooter #(parameter integer START=0, parameter integer VIC=1, parameter bit RASTER=0);
     localparam integer H_TOTAL=VIC==4 ? 1650 : 800, V_TOTAL=VIC==4 ? 750 : 525;
     localparam integer H_ACTIVE=VIC==4 ? 1280 : 640, V_ACTIVE=VIC==4 ? 720 : 480;
     localparam integer SCALE=VIC==4 ? 4 : 2, LINES=V_ACTIVE/SCALE, XW=VIC==4 ? 11 : 10;
@@ -27,12 +27,12 @@ module tb_demo_shooter #(parameter integer START=0, parameter integer VIC=1);
     wire [23:0] rgb;
     wire audio_valid;
     wire signed [15:0] audio_l,audio_r;
-    kagura_demo_sequencer #(.SPRITES(1),.AUDIO(1),.SCENE(1),.ANIM_START(START),.LINES(LINES)) seq(.clk(sys),.reset(sys_reset),
+    kagura_demo_sequencer #(.SPRITES(1),.AUDIO(1),.SCENE(1),.RASTER(RASTER),.ANIM_START(START),.LINES(LINES)) seq(.clk(sys),.reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),
         .req_write(req_write),.req_addr(req_addr),.req_wdata(req_wdata),.rsp_valid(rsp_valid),
         .rsp_rdata(rsp_rdata),.rsp_error(rsp_error),.configured(configured),.frames(frames),
         .map_bad(map_bad),.data_bad(data_bad),.sprite_overflow(sprite_overflow),.map_readback(),.map_written());
-    kagura_vdp #(.CAPS(VIC==4 ? 8'h33 : 8'h13),.VIDEO_ID_CODE(VIC)) dut(.sys_clk(sys),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS(VIC==4 ? (RASTER ? 8'h73 : 8'h33) : (RASTER ? 8'h53 : 8'h13)),.VIDEO_ID_CODE(VIC)) dut(.sys_clk(sys),.sys_reset(sys_reset),
         .audio_full(1'b0),.audio_underflow_toggle(1'b0),.audio_muted(1'b0),
         .audio_sample_valid(audio_valid),.audio_left(audio_l),.audio_right(audio_r),.req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(1'b1),.rsp_rdata(rsp_rdata),
@@ -148,14 +148,16 @@ module tb_demo_shooter #(parameter integer START=0, parameter integer VIC=1);
         star_tile=h<200 ? 0 : h<220 ? 1 : h<235 ? 2 : h<242 ? 4 : h<248 ? 5 : 3;
     endfunction
     function automatic [23:0] expected(input integer x,input integer y);
-        integer lx, ly, py, row, col, tile, h, hf, vf, p, n, xx, yy, done;
+        integer lx, ly, py, e, a, bx, row, col, tile, h, hf, vf, p, n, xx, yy, done;
         reg [11:0] c;
         begin
             lx=x/SCALE; ly=y/SCALE; py=(ly-k)&255;
-            row=py/8; col=lx/8;
+            bx=lx;
+            if(RASTER && ly>=100) begin e=(ly-100)/10; if(e>7) e=7; a=((k/2)%16+3*e)%16; bx=(lx+3*(a>=8 ? 15-a : a))%512; end
+            row=py/8; col=bx/8;
             if(row>=6 && row<10 && col>=26 && col<30) begin tile=32+(row-6)*4+(col-26); hf=0; vf=0; end
             else begin h=((row*64+col)*40503)&65535; tile=star_tile(h>>8); vf=(h>>7)&1; hf=(h>>6)&1; end
-            p=art_pixel(tile,hf!=0 ? 7-lx%8 : lx%8,vf!=0 ? 7-py%8 : py%8);
+            p=art_pixel(tile,hf!=0 ? 7-bx%8 : bx%8,vf!=0 ? 7-py%8 : py%8);
             c=colour(0,p);
             done=0;
             for(n=0;n<64;n=n+1) if(done==0 && shown[ly][n]) begin

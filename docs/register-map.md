@@ -1,6 +1,6 @@
 # Register Specification / ABI 0.2
 
-【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=2（0.2で16:9モード用のCAPS b5とEXT 0Aを追加。下記「ABI 0.2」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
+【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=3（0.2で16:9モード用のCAPS b5とEXT 0Aを追加、0.3でラスタスクロール用のCAPS b6とEXT 0B..11を追加。下記「ABI 0.2」「ABI 0.3」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
 
 ## 32byte直接窓（CPU base $9F00）
 
@@ -33,8 +33,8 @@
 | 18 | ID0 | RO | reset/read 0x4B ('K') |
 | 19 | ID1 | RO | 0x39 ('9') |
 | 1A | ABI_MAJOR | RO | 0 |
-| 1B | ABI_MINOR | RO | 2 |
-| 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM=0,b4 SPR16=1,b5 WIDE（320×180）、残り0。全体版は0x13、16:9版は0x33 |
+| 1B | ABI_MINOR | RO | 3 |
+| 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM=0,b4 SPR16=1,b5 WIDE（320×180）,b6 RSCROLL、残り0。全体版は0x53、16:9版は0x73 |
 | 1D | FRAME_COUNT_L | RO | VBlankイベントで増える8bit counter、wrap。snapshot不要な8bit値 |
 | 1E | SPR_OVERFLOW_INDEX | RO | 最初にline上限を超えたsprite番号0..63。IRQ b5 clearで0に戻す |
 | 1F | SPR_OVERFLOW_LINE | RO | 最初にoverflowした論理Y。IRQ b5 clearで0に戻す |
@@ -80,7 +80,14 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 | 08 | PATTERN_COUNT_H | RO/4（1024） |
 | 09 | WAVE_LENGTH_MAX encoding | RO/8（2^8=256） |
 | 0A | SCREEN_HEIGHT（論理ライン数LINES） | RO/240、16:9版180 |
-| 0B..FF | 未実装 | read0/write BAD_ACCESS |
+| 0B | RS_COUNT（有効entry数0..8、9以上のwriteはBAD_ACCESS） | RW shadow /0 |
+| 0C | RS_INDEX（対象entry 0..7、8以上のwriteはBAD_ACCESS。RS_Y write後に自動+1、7の次は0） | RW shadow /0 |
+| 0D | RS_LINE（対象entryの論理ライン） | RW shadow /0 |
+| 0E | RS_X bits7:0 | RW shadow /0 |
+| 0F | RS_X bit8をb0、他予約 | RW shadow /0 |
+| 10 | RS_Y | RW shadow /0 |
+| 11 | RS_MAX（entry数） | RO/8 |
+| 12..FF | 未実装 | read0/write BAD_ACCESS |
 
 全readはshadow値（RO除く）。active値への暗黙read切替はしない。scrollはX modulo512/Y modulo256で背景マップへ適用。
 
@@ -107,3 +114,17 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 - 背景・スプライトの座標系、scroll、マップの扱いは同じ。16:9版は論理Y 0..179だけを描画する。
 
 ソフトはCAPS b5またはSCREEN_HEIGHTで画面高を判定する。ABI_MINOR=1のbitstreamにはEXT 0Aがない（read 0）。
+
+## ABI 0.3（ラスタスクロール）
+
+詳細な検討は[raster-scroll.md](raster-scroll.md)。既存のregister配置・副作用・frame atomicityは変更しない。
+
+- ABI_MINORを3にした。全bitstreamが0.3を返す。
+- CAPS b6 RSCROLL: ラスタスクロールを実装したbitstreamだけが立てる。立てないbitstreamではEXT 0B..11は未実装（read 0/write BAD_ACCESS）。
+- EXT 0B..11: 最大8 entryのライン別scrollテーブル。entryは{line, X(9bit), Y}。RS_INDEXで選んだentryをRS_LINE/RS_X/RS_Yで設定し、RS_Y writeでRS_INDEXが自動+1する。全て常にX/Y両方を持つ。
+- 適用: entryのlineの論理ラインから描画へ適用し、次のentryまで継続する。最初のentryより前のライン、およびRS_COUNT=0ではSCROLL_X/Yを使う。各frameはline 0から`SCROLL_X/Y`で始まり、テーブルはframeごとに先頭から再評価する。同一lineの複数更新はない。
+- 反映: テーブルはshadowで、COMMIT完了のVBlankでactiveへ一括copyする（RS_COUNTを含む）。active値の変更はCOMMIT完了のVBlankまで画面に影響しない。
+- 検査: COMMITは、RS_COUNT未満の全entryがline < LINESかつ厳密昇順でなければBAD_ACCESSで拒否し、何も変更しない。
+- COMMIT_BUSY中のRS_COUNT/RS_LINE/RS_X/RS_Yのwriteは、テーブルをcopyし終えるまで守るためBUSY_CONFLICTで拒否する（RS_INDEXの変更は可）。
+- RS_*の書込み後は内部の検査が反映されるまで数cycle register要求が待たされる。
+- 480p/720pで同じ。適用はライン描画開始時のハードウェア処理で、hostのIRQ応答遅延には依存しない。

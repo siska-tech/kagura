@@ -6,7 +6,7 @@
 |---|---|
 | ボード接続・ピン | [ボード資料](../boards/tang-nano-9k/README.md)、[ピン一覧](../boards/tang-nano-9k/pin-inventory.csv) |
 | ホストから制御 | [レジスタABI](register-map.md)、[SPI/QSPI](host-interface.md)、[Pico host firmware](../software/pico/README.md)、[CPUタイミング](timing.md) |
-| 映像・音声データ | [メモリマップ](memory-map.md)、[音源仕様](audio-spec.md)、[16:9モード](wide-mode.md) |
+| 映像・音声データ | [メモリマップ](memory-map.md)、[音源仕様](audio-spec.md)、[16:9モード](wide-mode.md)、[ラスタスクロール検討](raster-scroll.md) |
 | 内部実装 | [アーキテクチャ](architecture.md)、[メモリアクセス](memory-access-schedule.md)、[RTL一覧](../rtl/README.md) |
 | 設計根拠 | [成立性とリスク](hardware-feasibility.md)、[資源予算](resource-budget.md)、[HDMI設計判断](hdmi-design-decision.md) |
 | 個別の評価根拠 | [BSRAM](bsram-evaluation.md)、[HDMI合成](hdmi-synthesis-evaluation.md)、[音声packet](audio-packet-integration.md) |

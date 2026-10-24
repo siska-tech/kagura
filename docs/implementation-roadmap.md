@@ -94,7 +94,7 @@ SPI/QSPI、320×180表示とABI 0.2は実装済み。機材待ちのCPU試験を
 | 4 | PSRAM・PCM・bitmap・raster拡張 | 必要帯域、メモリ構成、ABI、互換性を別設計として先に提示。Tang Nano 9K内の実現性を評価してから実装 |
 | 候補 | SPI Flashアセットローダ | 下記。BSRAM不足でM3の配置改善が行き詰まった場合は、art ROM置換に限り前倒しを検討 |
 
-ラスタスクロールは、小規模な表示拡張の第一候補とする。現行の`SCROLL_X/Y`はCOMMIT後のVBlankでだけactive化するため、RASTER IRQから同じCOMMITを発行しても画面途中では切り替わらない。実装時はOAM/paletteの512wordコピーを伴わない小さなscroll snapshotを用意し、論理ライン境界で次に描画するラインへ適用する。適用ライン、同一ラインへの複数更新、遅延時の扱い、480p/720pでのhost締切を先にABIとして定義する。既存COMMITのframe atomicityは変更しない。追加後は全画素比較、最大頻度更新、renderer期限、全11構成WNS≥+0.10ns、BSRAM増加0を受入条件とする。
+ラスタスクロールは、小規模な表示拡張の第一候補とし、ABI 0.3として実装した（[raster-scroll.md](raster-scroll.md)、全画素比較は`tb_raster_scroll`/`tb_raster_scroll720`、Gowin P&R/STAは`docs/raster-scroll.md`の実測を参照。phase2boot720以外は既定のplace_option 1で通過、phase2boot720とdemo720のみplace_option 0。demo/demo720/qspiはWNS +0.10ns未満でこの受入条件は未達。実機では480p/720pのデモで波打つラスタ表示を目視確認済み）。以下は実装時の受入条件。現行の`SCROLL_X/Y`はCOMMIT後のVBlankでだけactive化するため、RASTER IRQから同じCOMMITを発行しても画面途中では切り替わらない。実装時はOAM/paletteの512wordコピーを伴わない小さなscroll snapshotを用意し、論理ライン境界で次に描画するラインへ適用する。適用ライン、同一ラインへの複数更新、遅延時の扱い、480p/720pでのhost締切を先にABIとして定義する。既存COMMITのframe atomicityは変更しない。追加後は全画素比較、最大頻度更新、renderer期限、全11構成WNS≥+0.10ns、BSRAM増加0を受入条件とする。
 
 ### SPI Flashアセットローダ（候補）
 

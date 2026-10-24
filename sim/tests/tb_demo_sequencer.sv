@@ -2,7 +2,7 @@
 // kagura_demo_sequencer + kagura_vdp: the first frame after configuration
 // and the following animated frames are compared pixel by pixel with an
 // independent model of the documented demo content and scroll sequence.
-module tb_demo_sequencer #(parameter bit SPRITES=0,parameter bit AUDIO=0);
+module tb_demo_sequencer #(parameter bit SPRITES=0,parameter bit AUDIO=0,parameter bit RASTER=0);
     reg sys=0, pix=0;
     always #9.259 sys=~sys;
     always #19.8415 pix=~pix;
@@ -46,11 +46,11 @@ module tb_demo_sequencer #(parameter bit SPRITES=0,parameter bit AUDIO=0);
     end else begin
         assign audio_full=0; assign audio_uf=0; assign audio_muted=0;
     end endgenerate
-    kagura_demo_sequencer #(.SPRITES(SPRITES),.AUDIO(AUDIO)) seq(.clk(sys),.reset(sys_reset),.req_valid(req_valid),.req_ready(req_ready),
+    kagura_demo_sequencer #(.SPRITES(SPRITES),.AUDIO(AUDIO),.RASTER(RASTER)) seq(.clk(sys),.reset(sys_reset),.req_valid(req_valid),.req_ready(req_ready),
         .req_write(req_write),.req_addr(req_addr),.req_wdata(req_wdata),.rsp_valid(rsp_valid),
         .rsp_rdata(rsp_rdata),.rsp_error(rsp_error),.configured(configured),.frames(frames),
         .map_bad(map_bad),.data_bad(data_bad),.map_readback(map_readback),.map_written(map_written));
-    kagura_vdp #(.CAPS(8'h01)) dut(.sys_clk(sys),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS(RASTER ? 8'h41 : 8'h01)) dut(.sys_clk(sys),.sys_reset(sys_reset),
         .audio_full(audio_full),.audio_underflow_toggle(audio_uf),.audio_muted(audio_muted),
         .audio_sample_valid(audio_valid),.audio_left(audio_l),.audio_right(audio_r),.req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(1'b1),.rsp_rdata(rsp_rdata),
@@ -70,9 +70,11 @@ module tb_demo_sequencer #(parameter bit SPRITES=0,parameter bit AUDIO=0);
     endfunction
     integer sx, sy;
     function automatic [23:0] expected(input integer x,input integer y);
-        integer lx, ly, px, py, row, col, tile, pal, p,n,xx,yy,t; reg hf, vf; reg [11:0] c;
+        integer e, a, lx, ly, px, py, row, col, tile, pal, p,n,xx,yy,t; reg hf, vf; reg [11:0] c;
         begin
             lx=x/2; ly=y/2; px=(lx+sx)%512; py=(ly+sy)%256;
+            // Raster table: from line 100, entry e=min((ly-100)/10,7) adds a triangle wave of 0..21 px (phase = update count).
+            if(RASTER && ly>=100) begin e=(ly-100)/10; if(e>7) e=7; a=((sx/2)%16+3*e)%16; px=(lx+sx+3*(a>=8 ? 15-a : a))%512; end
             row=py/8; col=px/8;
             tile=(col+row)%16; pal=row%16;
             hf=col%2==1 && row/8==1; vf=col%2==1 && row/8==2;

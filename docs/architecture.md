@@ -60,6 +60,6 @@ CPUはOAM/パレットのshadow領域を更新する。COMMITは順序付きコ�
 
 COMMIT待ちは最大1件。active OAM/パレットはフレーム中不変。パターンと背景マップは単一バンクなので書換えのティアリングは防げない。必要な更新はVBlank中に行うか未使用タイルへ書いてマップを切り替える。全VRAMを二重化したとの保証はしない。
 
-VBlankは物理y=480（16:9版は720）のx=0でイベント発生。active更新とline0の先読みをVBlank内に完了する。ラスタIRQは比較値0..LINES−1（240または180）に対し最初の複製行y=SCALE*RASTER（SCALE=2または4）、x=0で1回。LINES..255は無効。IRQ自体は既に描画された当該ラインを変更できない。将来のラスタ更新は「どの将来ラインの描画要求へ適用するか」を別ABIで定義する。
+VBlankは物理y=480（16:9版は720）のx=0でイベント発生。active更新とline0の先読みをVBlank内に完了する。ラスタIRQは比較値0..LINES−1（240または180）に対し最初の複製行y=SCALE*RASTER（SCALE=2または4）、x=0で1回。LINES..255は無効。IRQ自体は既に描画された当該ラインを変更できない。ラスタ更新のうちscrollだけは、ABI 0.3（CAPS b6）のライン別scrollテーブルとして実装した。ホストがIRQで書き換えるのではなく、COMMITのVBlankでactive化した最大8 entryを、背景のライン描画開始時にハードウェアが引く（[raster-scroll.md](raster-scroll.md)）。それ以外のラスタ更新は別ABIで定義する。
 
 期限超過時は未完成bankを表示しない。その論理ラインのSCALE個のコピー（2または4）を黒にし、LINE_UNDERRUNをセットする。line tagが一致しない古い完了通知は廃棄し、次の要求で再同期する。

@@ -1,6 +1,6 @@
 {
   "$comment": "Machine-readable register ABI. Normative prose: docs/register-map.md, docs/audio-spec.md, docs/memory-map.md. Generate constants with tools/gen-registers.ps1; -Check verifies outputs and the document tables.",
-  "abi": { "major": 0, "minor": 2 },
+  "abi": { "major": 0, "minor": 3 },
   "io_base": { "w65c02": 40704 },
   "direct": [
     { "offset": 0, "name": "STATUS", "access": "RO", "reset": 0,
@@ -35,10 +35,10 @@
     { "offset": 24, "name": "ID0", "access": "RO", "reset": 75 },
     { "offset": 25, "name": "ID1", "access": "RO", "reset": 57 },
     { "offset": 26, "name": "ABI_MAJOR", "access": "RO", "reset": 0 },
-    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 2 },
+    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 3 },
     { "offset": 28, "name": "CAPS", "access": "RO", "reset": null,
-      "bits": { "HDMI_AUDIO": 0, "WAVE": 1, "RDY": 2, "PSRAM": 3, "SPR16": 4, "WIDE": 5 },
-      "variants": { "full": 19, "wide": 51 } },
+      "bits": { "HDMI_AUDIO": 0, "WAVE": 1, "RDY": 2, "PSRAM": 3, "SPR16": 4, "WIDE": 5, "RSCROLL": 6 },
+      "variants": { "full": 83, "wide": 115 } },
     { "offset": 29, "name": "FRAME_COUNT_L", "access": "RO", "reset": 0 },
     { "offset": 30, "name": "SPR_OVERFLOW_INDEX", "access": "RO", "reset": 0 },
     { "offset": 31, "name": "SPR_OVERFLOW_LINE", "access": "RO", "reset": 0 }
@@ -60,9 +60,16 @@
     { "index": 7, "name": "PATTERN_COUNT_L", "doc_label": "PATTERN_COUNT_L", "access": "RO", "reset": 0 },
     { "index": 8, "name": "PATTERN_COUNT_H", "doc_label": "PATTERN_COUNT_H", "access": "RO", "reset": 4 },
     { "index": 9, "name": "WAVE_LENGTH_MAX", "doc_label": "WAVE_LENGTH_MAX", "access": "RO", "reset": 8 },
-    { "index": 10, "name": "SCREEN_HEIGHT", "doc_label": "SCREEN_HEIGHT", "access": "RO", "reset": 240, "variants": { "full": 240, "wide": 180 } }
+    { "index": 10, "name": "SCREEN_HEIGHT", "doc_label": "SCREEN_HEIGHT", "access": "RO", "reset": 240, "variants": { "full": 240, "wide": 180 } },
+    { "index": 11, "name": "RS_COUNT", "doc_label": "RS_COUNT", "access": "RW shadow", "reset": 0 },
+    { "index": 12, "name": "RS_INDEX", "doc_label": "RS_INDEX", "access": "RW shadow", "reset": 0 },
+    { "index": 13, "name": "RS_LINE", "doc_label": "RS_LINE", "access": "RW shadow", "reset": 0 },
+    { "index": 14, "name": "RS_X_L", "doc_label": "RS_X", "access": "RW shadow", "reset": 0 },
+    { "index": 15, "name": "RS_X_H", "doc_label": "RS_X", "access": "RW shadow", "reset": 0 },
+    { "index": 16, "name": "RS_Y", "doc_label": "RS_Y", "access": "RW shadow", "reset": 0 },
+    { "index": 17, "name": "RS_MAX", "doc_label": "RS_MAX", "access": "RO", "reset": 8 }
   ],
-  "ext_implemented_end": 11,
+  "ext_implemented_end": 18,
   "audio": {
     "channel_stride": 16,
     "channels": [

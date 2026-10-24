@@ -54,8 +54,12 @@ module kagura_registers #(
     // Shadow state for the renderer; COMMIT snapshots it for VBlank apply.
     output reg [2:0] display_ctrl,
     output reg [8:0] scroll_x,
-    output reg [7:0] scroll_y, backdrop, raster_line
+    output reg [7:0] scroll_y, backdrop, raster_line,
+    // Raster scroll shadow table (CAPS b6): entries {y, x[8:0], line}.
+    output reg [3:0] rs_count,
+    output reg [199:0] rs_table
 );
+    localparam RS=CAPS[6];
     localparam [4:0] STATUS=5'h00, IRQ_STATUS=5'h01, IRQ_ENABLE=5'h02, DISPLAY_CTRL=5'h03,
         ADDR_L=5'h04, ADDR_M=5'h05, ADDR_H=5'h06, VRAM_WRITE=5'h07, READ_REQUEST=5'h08,
         READ_RESULT=5'h09, EXT_INDEX=5'h0a, EXT_DATA=5'h0b, AUDIO_INDEX=5'h0c,AUDIO_DATA=5'h0d,COMMAND=5'h0e, FIFO_STATUS=5'h0f,
@@ -85,7 +89,8 @@ module kagura_registers #(
     // COMMAND opcode and READ_REQUEST value decoded at capture, so the
     // admission and error logic does not compare q_wdata (high fanout) again.
     reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_zero;
-    assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging;
+    reg [2:0] rs_settle;
+    assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging && !(|rs_settle);
     always @(posedge clk)
         if(reset) begin
             q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0;
@@ -145,9 +150,24 @@ module kagura_registers #(
     // Extended registers (shadow; RO constants per register-map).
     reg [7:0] ext_value;
     reg ext_writable, ext_defined;
+    reg [2:0] rs_idx;
+    wire [24:0] rs_ent=rs_table[25*rs_idx +: 25];
+    // Entry registers 0B..10 are refused during COMMIT_BUSY (the COMMIT
+    // copies the table at completion); out-of-range COUNT/INDEX are BAD_ACCESS.
+    wire rs_is_table=RS && ext_index>=8'h0b && ext_index<=8'h10 && ext_index!=8'h0c;
+    wire rs_bad_value=(ext_index==8'h0b && q_wdata>8'd8) || (ext_index==8'h0c && q_wdata>8'd7);
+    wire rs_block=RS && (rs_is_table && commit_busy || rs_bad_value);
+    reg rs_ok;
     always @* begin
         ext_value=0; ext_writable=0; ext_defined=1;
         case(ext_index)
+            8'h0b: if(RS) begin ext_value={4'b0,rs_count}; ext_writable=1; end else ext_defined=0;
+            8'h0c: if(RS) begin ext_value={5'b0,rs_idx}; ext_writable=1; end else ext_defined=0;
+            8'h0d: if(RS) begin ext_value=rs_ent[7:0]; ext_writable=1; end else ext_defined=0;
+            8'h0e: if(RS) begin ext_value=rs_ent[15:8]; ext_writable=1; end else ext_defined=0;
+            8'h0f: if(RS) begin ext_value={7'b0,rs_ent[16]}; ext_writable=1; end else ext_defined=0;
+            8'h10: if(RS) begin ext_value=rs_ent[24:17]; ext_writable=1; end else ext_defined=0;
+            8'h11: if(RS) ext_value=8'd8; else ext_defined=0;
             8'h00: begin ext_value=scroll_x[7:0]; ext_writable=1; end
             8'h01: begin ext_value={7'b0,scroll_x[8]}; ext_writable=1; end
             8'h02: begin ext_value=scroll_y; ext_writable=1; end
@@ -195,7 +215,7 @@ module kagura_registers #(
             ID0: read_value=8'h4b;
             ID1: read_value=8'h39;
             ABI_MAJOR: read_value=8'h00;
-            ABI_MINOR: read_value=8'h02;
+            ABI_MINOR: read_value=8'h03;
             CAPS_REG: read_value=CAPS;
             FRAME_COUNT: read_value=frame_count;
             SPR_OVF_INDEX: read_value={2'b00,overflow_index};
@@ -235,12 +255,15 @@ module kagura_registers #(
                     end else if(q_op_commit) begin
                         if(commit_busy) errors[E_BUSY_CONFLICT]=1;
                         if(full) errors[E_FIFO_FULL]=1;
+                        if(!rs_ok) errors[E_BAD_ACCESS]=1;
                     end else if(q_op_audio) begin
                         if(full) errors[E_FIFO_FULL]=1;
                         if(audio_busy) errors[E_BUSY_CONFLICT]=1;
                         if(!audio_settings_valid) errors[E_BAD_ACCESS]=1;
                     end else errors[E_BAD_ACCESS]=1;
                 end
+                EXT_DATA: if(rs_is_table && commit_busy) errors[E_BUSY_CONFLICT]=1;
+                    else if(RS && rs_bad_value) errors[E_BAD_ACCESS]=1;
                 default: ;
             endcase
             // Decode admission directly rather than passing q_addr through
@@ -249,7 +272,7 @@ module kagura_registers #(
             case(q_addr)
                 VRAM_WRITE: enqueue=!full && addr_ok;
                 READ_REQUEST: enqueue=!full && addr_ok && q_zero && !read_busy && !read_ready;
-                COMMAND: enqueue=!full && (q_op_fill && fill_ok || q_op_fence || q_op_commit && !commit_busy
+                COMMAND: enqueue=!full && (q_op_fill && fill_ok || q_op_fence || q_op_commit && !commit_busy && rs_ok
                     || q_op_audio && !audio_busy && audio_settings_valid);
                 default: ;
             endcase
@@ -283,7 +306,22 @@ module kagura_registers #(
     wire w1c_irq=wr && q_addr==IRQ_STATUS;
     wire clear_overflow=w1c_irq && q_wdata[5];
     wire w1c_err=wr && q_addr==ERROR_CODE;
-    wire ext_write=wr && q_addr==EXT_DATA && ext_writable;
+    wire ext_write=wr && q_addr==EXT_DATA && ext_writable && !rs_block;
+    // Validity of the shadow raster table (lines < LINES, strictly ascending,
+    // only entries below RS_COUNT), registered in two stages; rs_settle keeps
+    // requests off until it reflects the latest table write.
+    reg [7:0] rs_line_ok, rs_asc_ok;
+    integer ri;
+    always @(posedge clk)
+        if(reset) begin rs_line_ok<=8'hff; rs_asc_ok<=8'hff; rs_ok<=1; end
+        else begin
+            for(ri=0;ri<8;ri=ri+1) begin
+                rs_line_ok[ri]<=rs_table[25*ri +: 8]<8'(LINES);
+                rs_asc_ok[ri]<= ri==0 ? 1'b1 : rs_table[25*ri +: 8]>rs_table[25*(ri-1) +: 8];
+            end
+            rs_ok<=1;
+            for(ri=0;ri<8;ri=ri+1) if(ri<rs_count && !(rs_line_ok[ri] && rs_asc_ok[ri])) rs_ok<=0;
+        end
     always @(posedge clk)
         if(reset) begin
             irq_status<=0; irq_enable<=0; error_code<=0; display_ctrl<=0; overflow_index<=0; overflow_line<=0;
@@ -291,6 +329,7 @@ module kagura_registers #(
             done_tag<=0; frame_count<=0; ext_index<=0; read_busy<=0; read_ready<=0; read_result<=0;
             commit_busy<=0;
             scroll_x<=0; scroll_y<=0; backdrop<=0; raster_line<=8'd255;
+            rs_count<=0; rs_table<=0; rs_idx<=0; rs_settle<=0;
             rsp_valid<=0; rsp_rdata<=0; rsp_error<=0; checks_stale<=1; push_q<=0; desc_q<=0; advance_q<=0;
         end else begin
             push_q<=enqueue; desc_q<=desc; advance_q<=advance;
@@ -326,8 +365,20 @@ module kagura_registers #(
                 8'h01: scroll_x[8]<=q_wdata[0];
                 8'h02: scroll_y<=q_wdata;
                 8'h03: backdrop<=q_wdata;
-                default: raster_line<=q_wdata;
+                8'h04: raster_line<=q_wdata;
+                8'h0b: rs_count<=q_wdata[3:0];
+                8'h0c: rs_idx<=q_wdata[2:0];
+                8'h10: rs_idx<=rs_idx+1'b1;
+                default: ;
             endcase
+            for(ri=0;ri<8;ri=ri+1) if(ext_write && rs_idx==ri[2:0]) case(ext_index)
+                8'h0d: rs_table[25*ri +: 8]<=q_wdata;
+                8'h0e: rs_table[25*ri+8 +: 8]<=q_wdata;
+                8'h0f: rs_table[25*ri+16]<=q_wdata[0];
+                8'h10: rs_table[25*ri+17 +: 8]<=q_wdata;
+                default: ;
+            endcase
+            rs_settle<={rs_settle[1:0], ext_write && ext_index>=8'h0b && ext_index<=8'h10};
             // One cycle after acceptance (timing); the next request is stalled.
             if(advance_q) vram_addr<=vram_addr+{8'h00,inc};
             if(enqueue && q_addr==READ_REQUEST) read_busy<=1;

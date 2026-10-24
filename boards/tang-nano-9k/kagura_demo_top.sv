@@ -50,13 +50,13 @@ module kagura_demo_top #(
     wire [7:0] req_wdata,rsp_rdata;
     wire [15:0] frames;
     wire [11:0] render_cycles;
-    kagura_demo_sequencer #(.SPRITES(1),.AUDIO(1),.SCENE(1),.LINES(VIDEO_ID_CODE==4 ? 180 : 240)) sequencer(.clk(system_clk),.reset(sys_reset),
+    kagura_demo_sequencer #(.SPRITES(1),.AUDIO(1),.SCENE(1),.RASTER(1),.LINES(VIDEO_ID_CODE==4 ? 180 : 240)) sequencer(.clk(system_clk),.reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_rdata(rsp_rdata),.rsp_error(rsp_error),
         .configured(configured),.frames(frames),.map_bad(map_bad),.data_bad(data_bad),.sprite_overflow(sprite_overflow),
         .map_readback(),.map_written());
-    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE for 320x180.
-    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h33 : 8'h13),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
+    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE, raster scroll for 320x180.
+    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h73 : 8'h53),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(1'b1),.rsp_rdata(rsp_rdata),
         .rsp_error(rsp_error),.irq(irq),.render_cycles(render_cycles),
