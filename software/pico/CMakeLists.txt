@@ -9,7 +9,7 @@ project(kagura_pico_host C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
 
-add_executable(kagura_host main.c kagura_host.c)
+add_executable(kagura_host main.c kagura_host.c spectacular_demo.c)
 pico_generate_pio_header(kagura_host ${CMAKE_CURRENT_LIST_DIR}/kagura_host.pio)
 target_include_directories(kagura_host PRIVATE ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/../include)
 target_compile_options(kagura_host PRIVATE -Wall -Wextra -Werror)

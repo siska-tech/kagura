@@ -10,6 +10,7 @@
 #include "hardware/clocks.h"
 #include "pico/stdlib.h"
 #include "kagura_host.h"
+#include "spectacular_demo.h"
 
 #define PIN_IO0 2u    // IO0..IO3 = GP2..GP5
 #define PIN_SCK 6u
@@ -364,6 +365,7 @@ static void help(void) {
            "  info                 ID, ABI, CAPS, STATUS, pins\n"
            "  diag                 end-to-end check (ID, registers, VRAM, FILL/FENCE, sprite, audio, IRQ, BUSY)\n"
            "  abort                abort mid-header and mid-data; verify no side effect and recovery\n"
+           "  show [seconds]       moonlit parallax runner demo; default 30s, 0 runs until a key\n"
            "  mode spi|qspi        must match the bitstream (build-nano9k.tcl spi / qspi)\n"
            "  div <n>              SCK = 10MHz / n (1..250, default 4)\n"
            "  rd <off> [n]         read n registers from offset (hex), INC\n"
@@ -399,6 +401,12 @@ int main(void) {
         else if (!strcmp(cmd, "info")) info();
         else if (!strcmp(cmd, "diag")) diag();
         else if (!strcmp(cmd, "abort")) abort_test();
+        else if (!strcmp(cmd, "show")) {
+            unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 30u;
+            if (seconds > 600u) { printf("ERR seconds 0..600\n"); continue; }
+            kh_status s = kagura_spectacular_demo(seconds);
+            if (s != KH_OK) printf("ERR show: %s 0x%02x\n", status_name(s), kh_last_error());
+        }
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {
             config.lanes = !strcmp(a1, "qspi") ? KH_QSPI : KH_SPI;

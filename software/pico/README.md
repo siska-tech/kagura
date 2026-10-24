@@ -52,6 +52,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `info` | ID/ABI/CAPS/STATUS/FIFO_STATUS/ERROR_CODE、READY・/IRQの状態 |
 | `diag` | 縦通し試験。各項目を`PASS`/`FAIL`で表示し、最後に`DIAG PASS`または`DIAG FAIL n` |
 | `abort` | write header途中・data byte途中で/CSを上げ、副作用がなく直後のID読出しが成功することを確認 |
+| `show [seconds]` | 月夜の砂漠都市、多重scroll、走る・跳ぶ旅人、magic sprite、6ch音楽を同期再生。既定30秒、`0`はキー入力まで継続 |
 | `mode spi` / `mode qspi` | bitstreamに合わせる |
 | `div n` | SCK = 10MHz / n |
 | `rd <off> [n]` / `wr <off> <val>` | レジスタの読み書き（16進） |
@@ -67,6 +68,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/kagura-upload.ps1 -Por
 ```
 
 4096byteごとに送り、Picoが受け取ったデータのCRC32を照合する。`-Verify`はFPGAから読み戻したVRAMのCRC32も照合する（READ_REQUESTを1byteずつ使うため遅い）。`-Mode qspi`・`-Div 1`で接続設定も変えられる。
+
+## Picoショーケース
+
+`show 30`は外部データを使わず、Pico上で4bpp pattern・64×32 map・palette・OAM・wave tableを生成してKAGURA-9へ転送する。月夜の空、雲・砂丘、遠景と近景の都市、屋上、前景を8 bandのraster scrollで異なる速度に動かす。32×32のオリジナル旅人は4個の16×16 spriteで構成し、走行2 poseとjump 2 poseを周期的に切り替える。pulse 3声の和音、noise percussion、wavetable melody/bassを同時演奏する。`show 0`はUSBシリアルへ任意のキーを入力するまで継続する。
+
+QSPI 5MHz推奨。ABI 0.3の`RSCROLL`がないbitstreamでも動作するが、bandごとの横揺れは無効になる。終了時は音源を停止し、映像は最終frameを保持する。診断へ戻す場合はそのまま`diag`を実行できる。
 
 ## 実機確認の手順
 
