@@ -67,11 +67,33 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-nano9k-timing.ps
 | `dvi` | 音声なし比較用 | `kagura_phase1_dvi` |
 | `demo` | CPU不要のシューティング＋6ch演奏 | `kagura_demo` |
 | `phase2` | W65C02S接続用のVDP・音源 | `kagura_phase2` |
+| `phase2boot` | W65C02S ROM-less boot＋VDP・音源 | `kagura_phase2boot` |
+| `bootprobe` | CPU/HDMI不要のFlash読出し・K9BT検査 | `kagura_boot_probe` |
 | `spi` / `qspi` | SPI/QSPI接続用のVDP・音源 | `kagura_spi` / `kagura_qspi` |
 
 全構成をまとめてビルドし、構成ごとの証拠manifestを`reports/`へ保存するには`tools/run-baseline.ps1`を使う（[M0基準記録](baseline.md)）。
 
 `dvi`以外は引数に`720`を付けると16:9版になる。例: `demo720`、`phase2720`、`spi720`。basenameも末尾に`720`が付き、`hdmi720`だけは`kagura_hdmi720`となる。第2引数`bars`（既定）/`stress`は単体映像sourceを選ぶ。デモ・ホスト版の描画内容を切り替える指定ではない。
+
+`bootprobe`には720版がない。`phase2boot720`は`kagura_line_display`の走査判定を`cy`由来の登録済みフラグに変更した結果、2026-10-24にsetup WNS +0.612ns・hold +0.555ns・TNS 0となった（変更前は-1.510ns）。実機表示は未検証。480pの`phase2boot`は+1.980ns、`bootprobe`は+1.992nsでsetup/hold違反0だった。
+
+## ROM-lessブートイメージ
+
+W65C02S用のraw binaryへ32-byte K9BT headerとCRCを付ける。load addressとlengthは256-byte境界、entryはpayload内でなければならない。最終ページを埋める場合だけ`--pad`を指定する。
+
+```sh
+python3 tools/make-boot-image.py program.bin program.k9bt \
+  --load 0x0200 --entry 0x0200 --pad
+```
+
+Stage 1/3の配線確認用には、`EA 4C 00 02`（NOP、`JMP $0200`）から始まる256-byte payloadを生成できる。
+
+```sh
+python3 tools/make-boot-image.py build/romless-smoke.k9bt \
+  --smoke-loop --load 0x0200 --entry 0x0200
+```
+
+生成物はheaderを含めて外部Flashの`0x100000`へ配置する。programmerによる任意offset書込みと番兵領域の保持はまだ実機検証されていないため、書込みコマンドは確定していない。`python3 sim/tests/test_boot_image.py`で生成器単体を検査でき、全WSL Verilator回帰からも実行される。
 
 Gowinの既定P&R設定は全構成で`place_option 1`、`route_option 1`。後続拡張向けの余裕を優先した設定で、統合構成の実行時間は長くなる。比較実験だけは環境変数`KAGURA_PLACE_OPTION`、`KAGURA_ROUTE_OPTION`で上書きできる。正式な数値は上書きなしのclean commitで`tools/run-baseline.ps1`を実行して保存する。
 

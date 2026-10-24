@@ -15,6 +15,7 @@
 | hdmi | protocol、packet、TMDS、platform非依存 |
 | memory | VRAM arbiter、queue、async FIFO契約 |
 | platform | Gowin RAM/PLL/CLKDIV/OSER10/reset wrapper |
+| boot | SPI Flash readerとROM-less boot controller（段階実装中） |
 
 `core/kagura_abi_pkg.sv`は`tools/gen-registers.ps1`が生成するレジスタ定数packageで、現時点では合成対象topに含めない。レジスタmoduleは独自のdecodeを持ち、`tb_register_abi`が両者を照合する。
 

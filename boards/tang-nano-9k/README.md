@@ -31,6 +31,14 @@ CPU不要の`demo` topは背景・スプライトに6ch音源を追加し、HDMI
 
 計18本。既存tn_vdpの3.3V使用例と公式net名を照合した候補で、ヘッダの物理位置は別途ピン図で照合する。RDY追加なら1本追加。/RESET線はFPGA出力を直接CPUへつなぐだけで設定前保証ができるわけではなく、[reset設計](../../docs/timing.md)の外部回路を通す。
 
+### ROM-less boot構成
+
+`phase2boot`/`phase2boot720`は上記CPU信号に加え、pin 26を`BOOT_MAP`出力として使い、オンボードP25Q32Uをpin 59（SCLK）、60（CS#）、61（MOSI）、62（MISO）から読み出す。対象構成だけ`-use_mspi_as_gpio 1`を有効にする。`BOOT_MAP`はFPGA設定前にlowとなる外付けpull-downを前提とし、設定後はブート窓を有効にするためhigh、`$FFFF`読出し後のPHI2 low期間にlowへ戻る。
+
+Flash読出しとCPU起動はRTL simulation済みだが、MSPI兼用ピンからの実Flash読出し、Flashへの安全な書込み、外部decode/RESB保持回路、W65C02S実機起動は未検証である。[ROM-less boot実現可能性](../../docs/romless-boot-feasibility.md)のStage 1・3・5を完了するまで実用構成として扱わない。
+
+CPU/HDMI不要の`bootprobe`構成はStage 1用で、LED 6本を順にJEDEC ID=`85 60 16`、有効なK9BT image、error code bit 3〜0として表示する。`BOOT_MAP`はlow固定。期待IDは実機で未確認のため、ID LEDが消灯しても読出し自体が失敗したとは限らず、最初の実測後に値を確定する。
+
 36..39はTFカード系、31/32/33/34等はLCD系と共有するため、初版はTFカード未挿入・LCD未接続。HDMIとRGB LCDも共有するので同時使用しない。BL702/JTAG/Flash/MODE/DONEは転用しない。1.8V側のLED/button/header pinを3.3V CPUへ混ぜない。
 
 ## Pin inventory（回路図照合、2026-10-23）

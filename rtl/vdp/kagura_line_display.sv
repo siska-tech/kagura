@@ -55,7 +55,20 @@ module kagura_line_display #(
     // position three ahead (cx advances by one per clock), so no adder or
     // compare on cx/cy feeds the line RAM enable at 74.25MHz.
     wire [XW-1:0] ax3=cx>=XW'(H_TOTAL-3) ? cx-XW'(H_TOTAL-3) : cx+XW'(3);
-    wire [9:0] ay3=cx>=XW'(H_TOTAL-3) ? (cy==10'(V_TOTAL-1) ? 10'd0 : cy+10'd1) : cy;
+    // cy is constant over a physical line, so the vertical terms of the scan
+    // decisions are registered from cy alone. nxt_* describe the next line
+    // (valid from the second clock of a line); cur_* take over from them on the
+    // last clock, so they are valid for the whole of the line they describe.
+    wire [9:0] cy_next=cy==10'(V_TOTAL-1) ? 10'd0 : cy+10'd1;
+    reg nxt_active, nxt_first, cur_active, cur_first;
+    always @(posedge pix_clk) begin
+        nxt_active<=cy_next<10'(V_ACTIVE);
+        nxt_first<=cy_next[SHIFT-1:0]==0;
+        if(cx==XW'(H_TOTAL-1)) begin cur_active<=nxt_active; cur_first<=nxt_first; end
+    end
+    wire at_wrap=cx>=XW'(H_TOTAL-3);
+    wire ay3_active=at_wrap ? nxt_active : cur_active;
+    wire ay3_first=at_wrap ? nxt_first : cur_first;
     reg line_begin, scan, tag_match;
     // The logical line a line_begin can start during this physical line:
     // line_begin falls in its last clocks and refers to the next physical
@@ -64,8 +77,8 @@ module kagura_line_display #(
     reg [8:0] scan_addr;
     always @(posedge pix_clk) begin
         next_line<=cy==10'(V_TOTAL-1) ? 8'd0 : 8'((cy+10'd1)>>SHIFT);
-        line_begin<=ax3==0 && ay3[SHIFT-1:0]==0 && ay3<10'(V_ACTIVE);
-        scan<=ax3<XW'(H_ACTIVE) && ay3<10'(V_ACTIVE);
+        line_begin<=cx==XW'(H_TOTAL-3) && ay3_first && ay3_active;
+        scan<=(at_wrap || cx<XW'(H_ACTIVE-3)) && ay3_active;
         scan_addr<=9'(ax3>>SHIFT);
     end
     reg req_toggle, req_bank;

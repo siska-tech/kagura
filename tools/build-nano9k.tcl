@@ -1,30 +1,51 @@
 # SPDX-License-Identifier: Apache-2.0
 # Run from a per-variant build directory after tools/prepare-hdmi-stream.py.
-# Arguments: [hdmi|dvi|phase2|demo|spi|qspi][720] [bars|stress]. Defaults build the flashable HDMI+audio
+# Arguments: [hdmi|dvi|phase2|phase2boot|demo|spi|qspi][720], bootprobe, or magicprobe.
+# Defaults build the flashable HDMI+audio
 # colour-bar image; stress keeps all TMDS encoder logic for P1-05 measurement.
 # A 720 suffix (not for dvi) builds the 16:9 mode: 1280x720p60, VIC4, 320x180
 # logical screen (docs/wide-mode.md).
 set root [file normalize [file join [file dirname [info script]] ..]]
+set build_dir [pwd]
+if {[info exists ::env(KAGURA_BUILD_DIR)]} {
+    set build_dir $::env(KAGURA_BUILD_DIR)
+    file mkdir $build_dir
+    cd $build_dir
+}
 set mode [expr {[llength $argv] > 0 ? [lindex $argv 0] : "hdmi"}]
 set pattern [expr {[llength $argv] > 1 ? [lindex $argv 1] : "bars"}]
 set wide [string match *720 $mode]
 set base [regsub {720$} $mode ""]
-if {$base ni {hdmi dvi phase2 demo spi qspi} || ($wide && $base eq "dvi")} {
-    error "Expected hdmi, dvi, phase2, demo, spi or qspi, optionally with a 720 suffix (not dvi)"
+if {$base ni {hdmi dvi phase2 phase2boot bootprobe magicprobe demo spi qspi} ||
+    ($wide && $base in {dvi bootprobe magicprobe})} {
+    error "Expected hdmi, dvi, phase2, phase2boot, demo, spi or qspi, optionally with a 720 suffix (not dvi), bootprobe, or magicprobe"
 }
 if {$pattern ni {bars stress}} { error "Expected bars or stress" }
 set_device -name GW1NR-9C GW1NR-LV9QN88PC6/I5
 set_option -verilog_std sysv2017
 set cst {phase1.cst}
 # Board tops take VIDEO_ID_CODE (and the host top LANES) from this package.
-set config [file join [pwd] kagura_build_config.sv]
+set config [file join $build_dir kagura_build_config.sv]
 set out [open $config w]
 puts $out "package kagura_build_config; localparam integer VIDEO_ID_CODE=[expr {$wide ? 4 : 1}]; localparam integer LANES=[expr {$base eq {qspi} ? 4 : 1}]; endpackage"
 close $out
 set vdp {rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.sv rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv rtl/core/kagura_core.sv rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv}
 # Line-handover payload bound: just under one pixel period of the mode.
 set vdp_sdc [list phase3-vdp.sdc [expr {$wide ? "vdp-720p.sdc" : "vdp-480p.sdc"}]]
-if {$base in {hdmi phase2 demo spi qspi}} {
+if {$base in {bootprobe magicprobe}} {
+    set upstream {}
+    set boot {rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv}
+    if {$base eq "bootprobe"} {
+        set local [concat [list $config] $boot [list boards/tang-nano-9k/kagura_boot_probe_top.sv]]
+        set top kagura_boot_probe_top
+    } else {
+        set local [list $config rtl/boot/kagura_flash_reader.sv boards/tang-nano-9k/kagura_flash_magic_probe_top.sv]
+        set top kagura_flash_magic_probe_top
+    }
+    set cst {boot-probe.cst}
+    set sdc {boot-probe.sdc}
+    set_option -use_mspi_as_gpio 1
+} elseif {$base in {hdmi phase2 phase2boot demo spi qspi}} {
     set upstream {audio_info_frame audio_sample_packet auxiliary_video_information_info_frame packet_assembler source_product_description_info_frame tmds_channel}
     set local [list $config build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_hdmi_stream_eval.sv boards/tang-nano-9k/kagura_phase1_top.sv]
     set top kagura_phase1_top
@@ -35,6 +56,14 @@ if {$base in {hdmi phase2 demo spi qspi}} {
         set top kagura_phase2_top
         set sdc [concat $sdc phase2-cpu.sdc $vdp_sdc]
         lappend cst phase2-cpu.cst
+    }
+    if {$base eq "phase2boot"} {
+        set boot {rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv}
+        set local [concat $local $vdp rtl/bus/kagura_w65c02_adapter.sv $boot boards/tang-nano-9k/kagura_phase2_boot_top.sv]
+        set top kagura_phase2_boot_top
+        set sdc [concat $sdc phase2-cpu.sdc boot.sdc $vdp_sdc]
+        lappend cst phase2-cpu.cst boot.cst
+        set_option -use_mspi_as_gpio 1
     }
     if {$base eq "demo"} {
         # No CPU pins: the demo sequencer drives the register window.
@@ -79,12 +108,12 @@ proc merge_into {path names} {
     }
     close $out
 }
-merge_into [file join [pwd] kagura_${mode}.cst] $cst
-merge_into [file join [pwd] kagura_${mode}.sdc] $sdc
-add_file -type cst [file join [pwd] kagura_${mode}.cst]
-add_file -type sdc [file join [pwd] kagura_${mode}.sdc]
+merge_into [file join $build_dir kagura_${mode}.cst] $cst
+merge_into [file join $build_dir kagura_${mode}.sdc] $sdc
+add_file -type cst [file join $build_dir kagura_${mode}.cst]
+add_file -type sdc [file join $build_dir kagura_${mode}.sdc]
 set_option -top_module $top
-set name [dict get {hdmi kagura_phase1 dvi kagura_phase1_dvi phase2 kagura_phase2 demo kagura_demo spi kagura_spi qspi kagura_qspi} $base]
+set name [dict get {hdmi kagura_phase1 dvi kagura_phase1_dvi phase2 kagura_phase2 phase2boot kagura_phase2boot bootprobe kagura_boot_probe magicprobe kagura_flash_magic_probe demo kagura_demo spi kagura_spi qspi kagura_qspi} $base]
 if {$wide} { set name [expr {$base eq "hdmi" ? "kagura_hdmi720" : "${name}720"}] }
 set_option -output_base_name $name
 # Integrated builds are placement-sensitive even at 54MHz: option 1 improves

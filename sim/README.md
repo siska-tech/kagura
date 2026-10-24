@@ -10,6 +10,13 @@ WSL/Linuxではリポジトリrootから`bash tools/test-verilator.sh`で基礎s
 
 同じrunnerで`tests/tb_async_fifo.sv`も実行する。depth16の満杯、1024語の順序・wrap、nonempty reset、empty popの検査が合格済み。
 
+`tests/tb_flash_reader.sv`はROM-less boot向けの単線SPI readerをFlashモデルへ接続し、JEDEC ID、`03h`連続読出し、byte境界でのbackpressure、長さ0の拒否を検査する。
+`tests/tb_boot_image_check.sv`は32-byteヘッダ、配置範囲、entry、header/payload CRCを検査し、各拒否理由を確認する。
+`tests/tb_boot_window.sv`は6502スタブ、RESET/BRKベクタ、保護されたデータポートとpayload backpressureを検査する。
+`tests/tb_boot_controller.sv`はFlashモデルを使い、JEDEC確認、二重読出し、CRC検査、先読み、ブート窓までを統合検査する。
+`tests/tb_romless_boot_system.sv`はW65C02Sのスタブ命令モデル、SRAM/decodeモデル、Flashモデルを接続し、全payloadのコピー、entry到達、データポート消費数、KAGURA/SRAMの排他選択を検査する。
+`tests/test_boot_image.py`はホスト側のブートイメージ生成器について、header/payload CRC、padding、配置範囲の拒否を検査する。
+
 `tb_audio_packets`は2048 stereo pairsとBCH/metadata/ACR、`tb_hdmi_stream`はpartial-group reset後の1024 stereo pairsをTERC4から復号する。[統合評価条件](../docs/audio-packet-integration.md)を参照。
 
 `tb_serializer_reset`はGowin primitiveを機能stubへ置き換え、入力resetのFCLK位相を変えて非同期assert、serializer内の3 FCLK立上り後の解除、4 lane同時解除を検査する。OSER10端子の物理的なrecovery/removalと配線遅延は対象外で、[実機試験表](../docs/p1-07-hardware-test.md)の720p反復と区別する。

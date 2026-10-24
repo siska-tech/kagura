@@ -1,6 +1,20 @@
 # ROM-less Boot 実現可能性調査
 
-調査日: 2026-10-24。資源・STAの基準: `d501a1f`（P&R effort固定後。[タイミング仕様](timing.md)の「P&R effort固定」）。RTL・制約・CPUアダプタの内容は`443900a`以降変わっていない。**この文書は調査と設計案であり、RTL・ピン割当て・ABIは変更していない。** 実機試験・新しいP&Rは行っていない。
+調査日: 2026-10-24。資源・STAの基準: `d501a1f`（P&R effort固定後。[タイミング仕様](timing.md)の「P&R effort固定」）。以下の本文はこの時点の調査と設計判断を残している。2026-10-24に案DのPoC実装を開始したため、現在の実装・検証状態は直後の「実装状況」を正とする。
+
+## 0. 実装状況（2026-10-24）
+
+- `rtl/boot/`にSPI mode 0 reader、32-byte image validator、`$FFE0〜$FFFF` boot window、二重読出し型controllerを実装した。通常ABIと既存CPU adapterは変更していない。
+- `phase2boot` board top、MSPI/`BOOT_MAP` CST、SDC、Gowin build構成を追加した。既存11構成のsource/CST/SDC選択は変更していない。
+- `tools/make-boot-image.py`を追加し、raw binaryからK9BT header・CRCを生成できる。Stage 1用`bootprobe`はCPU/HDMIなしでJEDEC ID一致、image検査結果、error codeをLED表示する。
+- WSL Verilator 5.032で全39試験が合格した。Stage 2統合試験ではW65C02Sスタブ命令モデルが256 byteをSRAMへコピーし、payload消費256回、entry `$0210`到達、KAGURA/SRAM排他decodeを確認した。
+- 現行RTLの`phase2boot`（480p）はGowin Education V1.9.11.03でLogic 5185、FF 3599、BSRAM 24/26、setup WNS +1.980ns、setup/hold違反0（`kagura_line_display`の走査判定修正後。修正前はLogic 5239、WNS +0.782ns）。Stage 4の480p条件を満たす。
+- `bootprobe`はLogic 711、FF 335、BSRAM 0、setup WNS +1.992ns、setup/hold違反0でbitstream生成まで完了した。Flash実読出しは未実施。
+- Tang Nano 9K（device ID `0x1100481B`）へ`bootprobe`をSRAM Program and Verifyし、programmerのreadbackは成功した。LED結果の記録前なので、Flash実読出しの合否はまだ確定していない。
+- 480p `phase2boot`を2026-10-24にGowin Education V1.9.11.03で再ビルドし、Logic 5239、FF 3596、BSRAM 24/26、setup WNS +0.782ns、hold +0.552ns、TNS 0を再確認した（`KAGURA_BUILD_DIR=build/phase2boot-verify`）。
+- Stage 1実機の途中経過（2026-10-24）: Flash ID `0x856016`（`--operation_index 51`）。magic診断の実測は`000011`（JEDEC一致・読出し完了・`K9BT`不一致）。`build/romless-smoke.k9bt`（288 byte、SHA-256 `A500A8D5…376FA`）は先頭`4B 39 42 54`のK9BT headerで内容は正常。`--operation_index 32`は`spi flash not found`、`39`（`--fsFile x.bin --spiaddr 0x100000`）はVerify成功を表示するが、`Erasing 0 sectors from address 0x100000 to 0x0FF000`と出力し、4KB/64KBへ拡大（0xFF詰め）しても変わらない。「C Bin」はSUG502上「RISC-V binary」用の操作で、任意データを`--spiaddr`へ書く用途として未確認のため、この操作でのFlash内容は未確定（programmerの成功表示は照合の根拠にしない）。その後、操作37（`exFlash Erase,Program,Verify thru GAO-Bridge`、通常の.bin、`--spiaddr 0x100000`）では`Erasing 1 sectors from address 0x100000 to 0x100000`と、消去が1セクタだけ実行された（操作39との差）。以降はこちらを使う。操作37の実行後、magic診断の実測は`111111`（K/9/B/T一致、JEDEC一致、読出し完了）となり、`0x100000`のK9BT headerをFPGAから読めることを確認した（ユーザー実測）。Verilator 39試験の再実行は全合格。bootprobeの現行LED定義は`led_n=~{JEDEC一致,image有効,error_code[3:0]}`で、LED1がLSB（error_code[0]）、LED6がJEDEC一致。実測`000011`（LED5=image有効、LED6=JEDEC一致、error_code=0）でheader・payload CRC検査を含むimage検査に成功した（ユーザー実測、操作37書込み後）。失敗時の`100001`は`ERR_MAGIC`（1）に相当。異常系: ペイロード1バイト（offset 100）を反転したイメージを同じセクタへ書いたところ、bootprobeは`111001`（error_code=7 `ERR_PAYLOAD_CRC`、image無効）となり実機でCRC検査が効くことを確認した（ユーザー実測）。その後、正しいイメージへ復元し、操作15の照合は`SPI verify success!`、bootprobeも`000011`に復帰（ユーザー実測）。電源再投入後の再現性: USB再接続（電源再投入）後にbootprobeを再ロードし、実測`000011`を確認した（ユーザー実測）。USB再接続10回の各回で操作15の照合が`SPI verify success!`（10/10）。10回目の再接続後のbootprobeも`000011`（LED確認は計2回）。プログラマ単体の読出し照合として、操作15（`exFlash Verify in bscan`、`--fsFile build/romless-smoke.bin --spiaddr 0x100000`、書込みなし）が`SPI verify success!`となった。同じ操作で1バイト（offset 100）を変えたファイルは`SPI Verify failed!`（exit 67）となり、差分を検出できることを確認した。操作11は`Spi flash not found`で使えない。照合範囲はファイル長（288 byte）で、`0x100000`の1セクタ全体のreadbackではない。
+- `phase2boot720`は当初Logic 5230、FF 3597、BSRAM 24/26でsetup WNS -1.510ns、違反endpoint 6で不合格だった。原因経路は`link/protocol/cy`から`kagura_line_display`の`ay3`（`cy+1`の加算・比較）を経て`scan`のリセットに至るもの（論理7段、配線61%）。`cy`はライン中不変なので、縦方向の判定（`cy_next<V_ACTIVE`、`cy_next`のphase）を登録フラグ`nxt_*`/`cur_*`へ移し、`ax3`の加減算も`cx`との比較へ置換した。修正後はLogic 5205、FF 3600、BSRAM 24/26、setup WNS +0.612ns、hold +0.555ns、TNS 0（`build/phase2boot720-b`）。Verilator 39試験は修正後も全合格。720pの実機表示とブート構成での動作は未検証（REGZA実測: `hdmi720`のカラーバーは表示でき、修正前・修正後とも`phase2boot720`は「720p認識・黒画面」で同一。CPU未接続ではVDPが初期化されず黒画面になる設計のため、描画の確認はW65C02S接続後。480p `phase2boot`（修正後）は「640x480認識・黒画面」で、720pと同様に想定どおり（ユーザー実測））。
+- Stage 1は一部実施済み（MSPIピン経由の実Flash読出し、操作37による`0x100000`への書込み、bootprobeのimage検査成功。電源再投入10回の再現性とプログラマでのreadback照合は未実施）。Stage 3・5は未実施。外部decode/RESB保持回路、W65C02S実機ブートを確認するまでは「ROM-lessブート未検証」の扱いを維持する。
 
 表記は次のとおり区別する。
 
