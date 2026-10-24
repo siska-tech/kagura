@@ -87,10 +87,12 @@ set_option -top_module $top
 set name [dict get {hdmi kagura_phase1 dvi kagura_phase1_dvi phase2 kagura_phase2 demo kagura_demo spi kagura_spi qspi kagura_qspi} $base]
 if {$wide} { set name [expr {$base eq "hdmi" ? "kagura_hdmi720" : "${name}720"}] }
 set_option -output_base_name $name
-# 74.25MHz leaves a few tens of ps on the pixel paths; placement option 1
-# closed demo720 where the default left -0.010ns (docs/wide-mode.md).
-if {$wide} { set_option -place_option 1 }
-# Optional P&R effort for exploration, e.g. KAGURA_PLACE_OPTION=1.
+# Integrated builds are placement-sensitive even at 54MHz: option 1 improves
+# every measured configuration and raises the minimum setup slack from 0.063ns
+# to 0.130ns (docs/timing.md).  Keep both stages explicit and reproducible.
+set_option -place_option 1
+set_option -route_option 1
+# Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }
 # Keep readback enabled so SRAM/embFlash programming can be verified.
