@@ -78,7 +78,7 @@
 | ヘッダ外（基板上Flash U3） | 60 CS#、59 SCLK、61 SI/IO0、62 SO/IO1 |
 | 使用禁止 | 1.8VのJ6-2〜9（79–86）、TMDSが出ているJ5-23/24・J6-12〜17 |
 
-SPI/QSPI版（`host.cst`）は26をBUSY、27をREADYとして使う。ただしbitstream単位で選ぶ構成なので（[ホスト仕様](host-interface.md)）、W65C02S版のピン追加はSPI/QSPI版と競合しない。
+SPI/QSPI版（`host.cst`）は26をBUSY、27をREADY、49を/IRQとして使い、36〜39はホストのTFカード用にHi-Zとする。ただしbitstream単位で選ぶ構成なので（[ホスト仕様](host-interface.md)）、W65C02S版のピン追加はSPI/QSPI版と競合しない。
 
 ### 2.3 CPUバス・クロック・リセット・IRQ
 

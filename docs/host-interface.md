@@ -20,9 +20,11 @@ W65C02S用の3.3Vピン（[pin-inventory.csv](../boards/tang-nano-9k/pin-invento
 | IO1 (MISO) | 29 | D1 | out / QSPIはinout | SPIでは/CS low中だけ駆動 |
 | IO2 | 30 | D2 | QSPIのみinout | SPIでは未使用（Hi-Z） |
 | IO3 | 33 | D3 | QSPIのみinout | SPIでは未使用（Hi-Z） |
-| /IRQ | 39 | /IRQ | open-drain | 外部3.3V pull-up |
+| /IRQ | 49 | 未使用 | open-drain | 外部3.3V pull-up |
 | BUSY | 26 | RDY候補 | out | キュー空き不足（後述） |
 | READY | 27 | reset release | out | VRAM/line初期化と最初のline0完了で1 |
+
+pin 36〜39（J5-1〜4、TFカードのSCLK/MOSI/CS/MISO）はホスト用にFPGAから駆動せず、pull無しのHi-Zとする（`host.cst`の`sd_hiz`）。TFカードへはホストが直接アクセスする。pin 49はSPI LCDのRSと共有するため、SPI LCDは接続しない。
 
 READYはCPUのRESBを駆動しない。ホストはREADY=1を待つか、ID0/ID1とSTATUS.INIT_DONEをpollしてから操作する。
 

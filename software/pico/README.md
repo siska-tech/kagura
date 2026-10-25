@@ -6,7 +6,7 @@ Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstream�
 
 ## 配線
 
-両基板とも3.3V I/O。電源は各自のUSBから取り、**GNDだけを共通**にする（3V3/5V同士は接続しない）。配線は短く（目安15cm以内）、GNDを2本以上つなぐ。FPGAピンは[ピン一覧](../../boards/tang-nano-9k/pin-inventory.csv)のSPI/QSPI割当て。TFカードは挿さず、RGB/SPI LCDは接続しない。
+両基板とも3.3V I/O。電源は各自のUSBから取り、**GNDだけを共通**にする（3V3/5V同士は接続しない）。配線は短く（目安15cm以内）、GNDを2本以上つなぐ。FPGAピンは[ピン一覧](../../boards/tang-nano-9k/pin-inventory.csv)のSPI/QSPI割当て。RGB/SPI LCDは接続しない。TFカードの4本（pin 36〜39、J5-1〜4）はSPI/QSPI bitstreamではHi-Z（pull無し）で、Picoから直接アクセスするために空けてある（この診断firmwareはTFカードを使わない）。
 
 | 信号 | Pico | Pico物理pin | Tang Nano 9K | ヘッダ | 備考 |
 |---|---|---:|---:|---|---|
@@ -18,7 +18,7 @@ Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstream�
 | /CS | GP7 | 10 | 42 | J5-16 | |
 | BUSY | GP8 | 11 | 26 | J5-6 | |
 | READY | GP9 | 12 | 27 | J5-7 | Pico側pull-down（FPGA未設定時は未準備） |
-| /IRQ | GP10 | 14 | 39 | J5-4 | open drain。4.7kΩでPico 3V3(OUT)（pin 36）へpull-up |
+| /IRQ | GP10 | 14 | 49 | J6-20 | open drain。4.7kΩでPico 3V3(OUT)（pin 36）へpull-up |
 | GND | GND | 3, 8, 13 | GND | J6-23 | 2本以上 |
 
 SPI/QSPIで配線は同じ。bitstreamは`tools/build-nano9k.tcl spi`または`qspi`（[ビルドガイド](../../docs/build-and-test.md)）で作り、firmwareの`mode`を一致させる。
