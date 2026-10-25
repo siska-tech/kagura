@@ -10,9 +10,7 @@
 // The RWDS read-data strobe is not used: capture timing is a fixed latency
 // that must be tuned on hardware. IDDR and ODDR share a pin buffer, so Gowin
 // requires them to use the same clock net; tune via the controller RD_LATENCY.
-module kagura_hyperram_phy_gowin #(
-    parameter integer CK_STAGES=2
-) (
+module kagura_hyperram_phy_gowin (
     input  wire clk,
     input  wire clk_ck,
 
@@ -44,9 +42,14 @@ module kagura_hyperram_phy_gowin #(
     // sees the new value; the second stage keeps CK in the same cycle as DQ.
     // Hardware showed a single stage puts CK one cycle early, so the memory
     // latched the idle bus as the first CA byte (every command became a read).
-    reg [CK_STAGES-1:0] ck_en_q=0;
-    always @(posedge clk) ck_en_q<=CK_STAGES'({ck_en_q,phy_ck_en});
-    wire ck_en_d=ck_en_q[CK_STAGES-1];
+    // The second stage is clocked by clk_ck: the short clk->clk_ck crossing is
+    // then fabric FF to FF, and the fixed-location ODDR gets a full clk_ck
+    // cycle. (A clk second stage missed setup into the ODDR by 0.234 ns once
+    // the evaluation logic grew.) The CK timing is unchanged.
+    reg ck_en_q=0;
+    always @(posedge clk) ck_en_q<=phy_ck_en;
+    reg ck_en_d=0;
+    always @(posedge clk_ck) ck_en_d<=ck_en_q;
     wire ck_oddr,ck_n_oddr;
     ODDR ck_ddr(.D0(ck_en_d),.D1(1'b0),.TX(1'b0),.CLK(clk_ck),.Q0(ck_oddr),.Q1());
     ODDR ck_n_ddr(.D0(~ck_en_d),.D1(1'b1),.TX(1'b0),.CLK(clk_ck),.Q0(ck_n_oddr),.Q1());

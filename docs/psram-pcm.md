@@ -188,4 +188,26 @@ setup/hold違反は両構成とも0。480pのrecovery +0.090nsは既存480p seri
 - 480p: 約10分間の613連続report、20秒の初回確認とも全行`D 00000000 M 00000000 F 00 A 3 H 0`。report間の増分は毎回N +48,000、R +96,000（2ch×48kHz×8bit）。累計30,479,989 sample、60,960,042 byteを照合した。
 - 720p: 121連続reportが全行同じく誤り0、増分N +48,000。
 
-証跡は各buildディレクトリの`build.log`、`programmer.log`、`uart.log`（480pは`uart-soak600.log`も）。720p版のカラーバー表示とPCM音声の出力はユーザーが実機で確認した（左右別の周波数の聴き分けは未記録）。未評価: host uploadとの同時仲裁、本体renderer負荷、die 1、長時間・温度/電源変動、部分write。現在B1のSRAMは720p PCM評価版。
+証跡は各buildディレクトリの`build.log`、`programmer.log`、`uart.log`（480pは`uart-soak600.log`も）。720p版のカラーバー表示とPCM音声の出力はユーザーが実機で確認した（左右別の周波数の聴き分けは未記録）。未評価: host uploadとの同時仲裁、本体renderer負荷、die 1、長時間・温度/電源変動、部分write。当時B1のSRAMは720p PCM評価版。
+
+### host転送との同時仲裁（2026-10-25）
+
+`rtl/memory/kagura_psram_arbiter.sv`を追加し、PCM read path（p側）とhost upload/readback（h側、valid/ready）を1つの1-outstanding controllerへ仲裁する。通常はPCM優先とし、直前がPCMへのgrantでhostが待っている場合だけhostを1回優先する。read応答は最後にgrantしたreadの側へ返す。評価engineは起動時のuploadをh側経由に変え、再生中はh側から別領域（word 0x40000〜、4096 word）へのwriteとreadbackをback-to-backで流し続ける（最悪のhost負荷）。readbackはseedごとのpatternと照合する（UARTの`W`=host command数、`E`=host誤り）。`L`はPCM byte要求（valid）から応答までの最大cycle数。再生中領域へのhost writeは引き続き規約で禁止し、cacheの一貫性は扱わない。
+
+Verilator: 全55件合格。`tb_psram_arbiter`はランダムな所要時間のcontroller modelでPCM 5,802 read、host 3,121 read/3,173 write（mask付き含む）を照合し、最大待ちはPCM 31、host 61 cycleだった（いずれも相手の約1 commandが上限）。`tb_hyperram_pcm_source`はhost 58,434 command中に1,250 sampleを照合し、PCMの最大待ちは57 cycle。host領域の破損はhost側だけで検出され、PCM側の照合へ漏れないことも確認した。
+
+**PHY修正**: 評価logicの増加により、480pでCK enable最終段（system54 FF）→CK# ODDR（psram54、67.5°で予算3.472ns）がsetup −0.234nsになった。最終段を`clk_ck`側のFFへ移し、短い跨ぎをfabric FF同士、ODDRへの経路を1周期にした。CKの出力timingは変えていない。
+
+| 構成 | Logic | Register | rPLL | 最悪setup | 最悪hold | recovery | removal |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| PCM+host+HDMI 480p | 3263 | 1967 | 2/2 | +1.598ns | +0.542ns | +0.090ns | +0.542ns |
+| PCM+host+HDMI 720p | 3352 | 1968 | 2/2 | +0.719ns | +0.545ns | +9.784ns | +0.539ns |
+
+最悪setupはどちらも新しいsystem54→psram54のFF間経路。720pはplace_option 0のまま。
+
+実機（B1、SRAM一時書込み、両方`Verify success`、内蔵Flash未変更、出力`build/hyperram-pcmhost480`・`build/hyperram-pcmhost720`）:
+
+- 480p: 60秒の初回確認と約10分の620連続reportが全行`D/M/E 0、F 00、A 3、H 0、L 0039`。hostは毎秒約2.24M command（4 byte/command、write+readbackで約8.9MB/s）。soak終了時点の累計はhost 1,527,205,591 command（0x5B074ED7）、PCM 32,735,989 sample。
+- 720p: 120連続reportが全行同じく誤り0、L 0039。
+
+PCMの最大待ち57 cycle（約1.06µs）は、256 byte bufferの補充期限（2ms目標）に対して十分小さい。未評価: 本体renderer負荷、実際のhost interface（SPI/QSPI）からのupload、die 1、長時間・温度/電源変動、部分write、公開ABI。現在B1のSRAMは720p PCM+host評価版。

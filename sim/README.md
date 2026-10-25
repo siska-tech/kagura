@@ -16,6 +16,7 @@ WSL/Linuxではリポジトリrootから`bash tools/test-verilator.sh`で基礎s
 `tests/tb_pcm_audio_path.sv`は可変レイテンシmemory model、prefetch、48kHz境界pulse、PCM mixerを接続し、signed sampleの順序とone-shot末尾sampleの保持を縦通しで検査する。
 `tests/tb_psram_byte_bridge.sv`は32bit controllerのbackpressure、4 byte lane、1-word cache hit、word/byte address変換と整列、calibration喪失時のerror応答を検査する。
 `tests/tb_psram_read_cdc.sv`は非同期なsystem/memory clock間で302 readを往復させ、要求backpressure、可変応答遅延、error、reset後の再利用を検査する。
+`tests/tb_psram_arbiter.sv`はランダムな所要時間の1-outstanding controller modelへPCM側(byte bridge型)とhost側(読み書き混在・mask付き)を同時に流し、応答の振り分け、data、両側の最大待ち時間を検査する。
 `tests/tb_hyperram_ctrl.sv`は`kagura_hyperram_ctrl`をcycle単位のHyperRAM protocol checkerへ接続し、reset pulse、CR0書込み、register空間のwrite/read、CAの各field、固定latency、CS high時間、バス競合、write mask、40 word乱数write/readの往復を検査する。PHYと実機timingは対象外で、実機値は`rtl/README.md`に記録している。
 `tests/tb_psram_pcm_chain.sv`は32bit PSRAM controller model、1-word cache、非同期CDC、prefetch、PCM mixerを縦通しし、8個のsigned sampleを2 controller commandsで左右へ出力することを検査する。
 

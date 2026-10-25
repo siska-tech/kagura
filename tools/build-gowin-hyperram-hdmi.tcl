@@ -32,7 +32,7 @@ if {$source eq "pcm"} {
     foreach path {
         rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv
         rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv
-        rtl/memory/kagura_psram_read_path.sv
+        rtl/memory/kagura_psram_read_path.sv rtl/memory/kagura_psram_arbiter.sv
         boards/tang-nano-9k/kagura_hyperram_pcm_source.sv
         boards/tang-nano-9k/kagura_pcm_uart_status.sv
         boards/tang-nano-9k/kagura_hyperram_pcm_top.sv

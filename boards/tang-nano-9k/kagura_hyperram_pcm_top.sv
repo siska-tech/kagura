@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Shared PLL, PSRAM upload/read path, two PCM loops and HDMI audio.
+// Shared PLL, PSRAM upload/read path, two PCM loops under host traffic and HDMI audio.
 // VIDEO_ID_CODE 1: 640x480; 4: 1280x720 (the 16:9 physical-layer gate,
 // docs/wide-mode.md). tools/build-gowin-hyperram-hdmi.tcl writes the config.
 module kagura_hyperram_pcm_top #(
@@ -37,14 +37,15 @@ module kagura_hyperram_pcm_top #(
     wire phy_reset_n,phy_cs_n,phy_ck_en,phy_dq_oe,phy_rwds_oe;
     wire phy_rwds_o_rise,phy_rwds_o_fall;
     wire [7:0] o_rise,o_fall,i_rise,i_fall;
-    wire [31:0] checked_samples,read_bytes,data_errors,mix_errors;
+    wire [31:0] checked_samples,read_bytes,data_errors,mix_errors,host_words,host_errors;
+    wire [15:0] pcm_wait_max;
     wire [7:0] faults;
     wire [1:0] active;
     kagura_hyperram_pcm_source source(
         .clk(system_clk),.reset(~system_release[3]),.sample_valid(valid),
         .sample_left(left_sample),.sample_right(right_sample),
-        .checked_samples,.read_bytes,.data_errors,.mix_errors,.faults,.active,
-        .phy_reset_n,.phy_cs_n,.phy_ck_en,.phy_dq_oe,.phy_rwds_oe,
+        .checked_samples,.read_bytes,.data_errors,.mix_errors,.host_words,.host_errors,.pcm_wait_max,
+        .faults,.active,.phy_reset_n,.phy_cs_n,.phy_ck_en,.phy_dq_oe,.phy_rwds_oe,
         .phy_dq_o_rise(o_rise),.phy_dq_o_fall(o_fall),
         .phy_rwds_o_rise,.phy_rwds_o_fall,.phy_dq_i_rise(i_rise),.phy_dq_i_fall(i_fall));
     kagura_hyperram_phy_gowin phy(
@@ -70,7 +71,7 @@ module kagura_hyperram_pcm_top #(
     end
     kagura_pcm_uart_status status(
         .clk(system_clk),.reset(~system_release[3]),.checked_samples,.read_bytes,
-        .data_errors,.mix_errors,.faults,.active,
+        .data_errors,.mix_errors,.host_words,.host_errors,.pcm_wait_max,.faults,.active,
         .hdmi_errors({overflow,underflow_sync2}),.uart_tx);
-    assign led_n=~{overflow,underflow_sync2,(|faults),(|data_errors),(|mix_errors),(&active)};
+    assign led_n=~{overflow,underflow_sync2,(|faults),(|data_errors)||(|host_errors),(|mix_errors),(&active)};
 endmodule

@@ -150,10 +150,11 @@ run_test tb_pcm_audio_path rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_
 run_test tb_psram_byte_bridge rtl/memory/kagura_psram_byte_bridge.sv sim/tests/tb_psram_byte_bridge.sv
 run_test tb_psram_read_cdc rtl/memory/kagura_psram_read_cdc.sv sim/tests/tb_psram_read_cdc.sv
 run_test tb_hyperram_ctrl rtl/memory/kagura_hyperram_ctrl.sv sim/tests/tb_hyperram_ctrl.sv
+run_test tb_psram_arbiter rtl/memory/kagura_psram_arbiter.sv sim/tests/tb_psram_arbiter.sv
 run_test tb_hyperram_pcm_source rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv \
     rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv \
     rtl/memory/kagura_psram_read_path.sv rtl/memory/kagura_hyperram_ctrl.sv \
-    boards/tang-nano-9k/kagura_hyperram_pcm_source.sv \
+    rtl/memory/kagura_psram_arbiter.sv boards/tang-nano-9k/kagura_hyperram_pcm_source.sv \
     sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_hyperram_pcm_source.sv
 run_test tb_hyperram_pcm_chain rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv \
     rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv \

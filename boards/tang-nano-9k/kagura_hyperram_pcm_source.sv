@@ -1,14 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 // Evaluation only: upload two patterns, then continuously play/check PCM.
-// No host ABI or concurrent upload arbitration. Connect the byte-pair ports
-// to the Gowin PHY on hardware or a CA-decoding model in simulation.
+// Uploads go through the host port of kagura_psram_arbiter. With HOST_TRAFFIC
+// the host port then keeps writing and reading back a separate region
+// back-to-back during playback (worst-case host load); host_errors counts
+// mismatches and pcm_wait_max the longest PCM byte request-to-response time.
+// No host ABI. Connect the byte-pair ports to the Gowin PHY on hardware or a
+// CA-decoding model in simulation.
 module kagura_hyperram_pcm_source #(
-    parameter integer INIT_CYCLES=4096
+    parameter integer INIT_CYCLES=4096,
+    parameter         HOST_TRAFFIC=1'b1,
+    parameter integer HOST_WORDS_LOG2=12
 ) (
     input wire clk, reset,
     output wire sample_valid,
     output wire signed [15:0] sample_left, sample_right,
     output reg [31:0] checked_samples, read_bytes, data_errors, mix_errors,
+    output reg [31:0] host_words, host_errors,
+    output reg [15:0] pcm_wait_max,
     output wire [7:0] faults,
     output wire [1:0] active,
     output wire phy_reset_n, phy_cs_n, phy_ck_en, phy_dq_oe, phy_rwds_oe,
@@ -23,10 +31,19 @@ module kagura_hyperram_pcm_source #(
     reg region;
     reg [7:0] upload_index;
     wire uploading=state==UPLOAD;
-    wire init_calib,ctrl_ready,ctrl_valid;
-    wire [31:0] ctrl_data;
-    wire read_cmd,read_en;
+    wire init_calib,ctrl_ready,ctrl_valid,ctrl_cmd,ctrl_en;
+    wire [31:0] ctrl_data,ctrl_wr_data;
+    wire [3:0] ctrl_mask;
+    wire [19:0] ctrl_addr;
+    wire read_cmd,read_en,read_rdy,read_valid;
     wire [19:0] read_addr;
+    wire [31:0] read_data;
+    reg host_cmd,host_en;
+    reg [19:0] host_addr;
+    reg [31:0] host_wr_data;
+    wire host_rdy,host_valid;
+    wire [31:0] host_rd_data;
+    wire host_fire=host_en && host_rdy;
     wire [19:0] upload_addr=(region ? 20'hFFF00 : 20'h00040)+20'(upload_index);
     wire [23:0] upload_byte={2'b0,upload_addr,2'b0};
     function automatic [7:0] pattern(input [23:0] a);
@@ -34,11 +51,18 @@ module kagura_hyperram_pcm_source #(
     endfunction
     wire [31:0] upload_data={pattern(upload_byte+3),pattern(upload_byte+2),
                             pattern(upload_byte+1),pattern(upload_byte)};
+    kagura_psram_arbiter #(.ADDR_WIDTH(20)) arbiter(
+        .clk,.reset,
+        .p_cmd(read_cmd),.p_cmd_en(read_en),.p_cmd_rdy(read_rdy),.p_addr(read_addr),
+        .p_rd_data(read_data),.p_rd_data_valid(read_valid),
+        .h_cmd(host_cmd),.h_cmd_en(host_en),.h_cmd_rdy(host_rdy),.h_addr(host_addr),
+        .h_wr_data(host_wr_data),.h_data_mask(4'b0),.h_rd_data(host_rd_data),.h_rd_data_valid(host_valid),
+        .c_cmd(ctrl_cmd),.c_cmd_en(ctrl_en),.c_cmd_rdy(ctrl_ready),.c_addr(ctrl_addr),
+        .c_wr_data(ctrl_wr_data),.c_data_mask(ctrl_mask),.c_rd_data(ctrl_data),.c_rd_data_valid(ctrl_valid));
     kagura_hyperram_ctrl #(.ADDR_WIDTH(20),.INIT_CYCLES(INIT_CYCLES)) ctrl(
         .clk,.rst_n(!reset),.lat_cycles(5'd14),.rd_latency(3'd6),
-        .cmd(uploading ? 1'b1 : read_cmd),.cmd_reg(1'b0),
-        .cmd_en(uploading ? init_calib && ctrl_ready : read_en),.cmd_rdy(ctrl_ready),
-        .addr(uploading ? upload_addr : read_addr),.wr_data(upload_data),.data_mask(4'b0),
+        .cmd(ctrl_cmd),.cmd_reg(1'b0),.cmd_en(ctrl_en),.cmd_rdy(ctrl_ready),
+        .addr(ctrl_addr),.wr_data(ctrl_wr_data),.data_mask(ctrl_mask),
         .rd_data(ctrl_data),.rd_data_valid(ctrl_valid),.init_calib,
         .phy_reset_n,.phy_cs_n,.phy_ck_en,.phy_dq_oe,.phy_rwds_oe,
         .phy_dq_o_rise,.phy_dq_o_fall,.phy_rwds_o_rise,.phy_rwds_o_fall,
@@ -52,8 +76,8 @@ module kagura_hyperram_pcm_source #(
         .sys_clk(clk),.sys_reset(reset),.sys_req_valid(req_valid),.sys_req_ready(req_ready),
         .sys_req_addr(req_addr),.sys_rsp_valid(rsp_valid),.sys_rsp_data(rsp_data),.sys_rsp_error(rsp_error),
         .mem_clk(clk),.mem_reset(reset),.controller_ready(init_calib && state>=CONFIG),
-        .ctrl_cmd(read_cmd),.ctrl_cmd_en(read_en),.ctrl_cmd_rdy(ctrl_ready),.ctrl_addr(read_addr),
-        .ctrl_rd_data(ctrl_data),.ctrl_rd_data_valid(ctrl_valid));
+        .ctrl_cmd(read_cmd),.ctrl_cmd_en(read_en),.ctrl_cmd_rdy(read_rdy),.ctrl_addr(read_addr),
+        .ctrl_rd_data(read_data),.ctrl_rd_data_valid(read_valid));
 
     wire [1:0] cfg_ready,ready,underrun,config_error,memory_error;
     wire signed [7:0] pcm0,pcm1;
@@ -77,6 +101,67 @@ module kagura_hyperram_pcm_source #(
         .sample_boundary(boundary),.pcm_sample0(pcm0),.pcm_sample1(pcm1),
         .cfg_pcm_gain_l(16'h0080),.cfg_pcm_gain_r(16'h8000),.cfg_pcm_enable(2'b11));
 
+    // Host port: upload first, then (HOST_TRAFFIC) write a 2^HOST_WORDS_LOG2
+    // word region at word 0x40000 and read it back, a new seed per round.
+    reg [1:0] t_phase;   // 0 write, 1 read issue, 2 read wait
+    reg [HOST_WORDS_LOG2-1:0] t_idx;
+    reg [15:0] t_seed;
+    function automatic [31:0] host_pattern(input [19:0] a,input [15:0] seed);
+        reg [31:0] x;
+        x={a[11:0],a}^{seed,~seed};
+        x=x^(x<<13);
+        x=x^(x>>17);
+        host_pattern=x^(x<<5);
+    endfunction
+    wire t_last=&t_idx;
+    always @* begin
+        host_cmd=1; host_en=0; host_addr=upload_addr; host_wr_data=upload_data;
+        if(uploading) host_en=init_calib;
+        else if(HOST_TRAFFIC && state==PLAY) begin
+            host_addr=20'h40000+20'(t_idx);
+            host_wr_data=host_pattern(20'(t_idx),t_seed);
+            host_cmd=t_phase==0;
+            host_en=t_phase!=2;
+        end
+    end
+    always @(posedge clk) begin
+        if(reset) begin
+            t_phase<=0; t_idx<=0; t_seed<=0; host_words<=0; host_errors<=0;
+        end else if(state==PLAY) begin
+            if(host_fire) begin
+                host_words<=host_words+1'b1;
+                if(t_phase==0) begin
+                    t_idx<=t_idx+1'b1;
+                    if(t_last) t_phase<=1;
+                end else t_phase<=2;
+            end
+            if(host_valid && t_phase==2) begin
+                if(host_rd_data!=host_pattern(20'(t_idx),t_seed) && !(&host_errors))
+                    host_errors<=host_errors+1'b1;
+                t_idx<=t_idx+1'b1;
+                if(t_last) begin t_phase<=0; t_seed<=t_seed+1'b1; end
+                else t_phase<=1;
+            end
+        end
+    end
+
+    // Longest PCM byte request (valid, before acceptance) to response, in cycles.
+    reg pcm_waiting;
+    reg [15:0] pcm_wait;
+    always @(posedge clk) begin
+        if(reset) begin pcm_waiting<=0; pcm_wait<=0; pcm_wait_max<=0; end
+        else begin
+            if(rsp_valid) begin
+                pcm_waiting<=0;
+                if(pcm_wait>pcm_wait_max) pcm_wait_max<=pcm_wait;
+            end else if(pcm_waiting) begin
+                if(!(&pcm_wait)) pcm_wait<=pcm_wait+1'b1;
+            end else if(req_valid) begin
+                pcm_waiting<=1; pcm_wait<=1;
+            end
+        end
+    end
+
     reg [23:0] startup_timer;
     reg startup_timeout,synth_error;
     assign faults={synth_error,startup_timeout,memory_error,config_error,underrun};
@@ -91,7 +176,7 @@ module kagura_hyperram_pcm_source #(
             end
             case(state)
                 INIT: if(init_calib) state<=UPLOAD;
-                UPLOAD: if(ctrl_ready) begin
+                UPLOAD: if(host_fire) begin
                     if(upload_index==128) begin
                         upload_index<=0;
                         if(region) state<=DRAIN;
