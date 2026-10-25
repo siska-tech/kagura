@@ -5,9 +5,14 @@ IO_LOC "host_io[0]" 28;
 IO_LOC "host_io[1]" 29;
 IO_LOC "host_io[2]" 30;
 IO_LOC "host_io[3]" 33;
-IO_LOC "host_irq_n" 39;
+IO_LOC "host_irq_n" 49;
 IO_LOC "host_busy" 26;
 IO_LOC "host_ready" 27;
+// TF card pins (SCLK, MOSI, CS, MISO), left to the host: never driven, no pull.
+IO_LOC "sd_hiz[0]" 36;
+IO_LOC "sd_hiz[1]" 37;
+IO_LOC "sd_hiz[2]" 38;
+IO_LOC "sd_hiz[3]" 39;
 IO_PORT "host_sck" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
 // Deselected when no host is attached.
 IO_PORT "host_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
@@ -19,3 +24,7 @@ IO_PORT "host_io[3]" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
 IO_PORT "host_irq_n" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=UP;
 IO_PORT "host_busy" IO_TYPE=LVCMOS33 DRIVE=8;
 IO_PORT "host_ready" IO_TYPE=LVCMOS33 DRIVE=8 PULL_MODE=DOWN;
+IO_PORT "sd_hiz[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_hiz[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_hiz[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_hiz[3]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;

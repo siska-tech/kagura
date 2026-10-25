@@ -42,7 +42,7 @@ J6,16,70,IOT41B,1,3.3V,HDMI_D0_N,HDMI TMDS D0 N,do not connect,TMDS stub; keep h
 J6,17,71,IOT41A,1,3.3V,HDMI_D0_P,HDMI TMDS D0 P,do not connect,TMDS stub; keep header pin open
 J6,18,,,,,+5V,power,do not connect to CPU signals,USB VBUS rail
 J6,19,48,IOR24B,1,3.3V,PIN48_IOR24B_SPILCD_CS,SPI LCD CS,RWB,SPI LCD must not be connected
-J6,20,49,IOR24A,1,3.3V,PIN49_IOR24A_SPILCD_RS,SPI LCD RS,unused,
+J6,20,49,IOR24A,1,3.3V,PIN49_IOR24A_SPILCD_RS,SPI LCD RS,unused,SPI/QSPI host builds: /IRQ open drain (host.cst); SPI LCD must not be connected
 J6,21,31,IOB15A,2,3.3V,PIN31_IOB15A_RGBINIT,RGB LCD init,A0,RGB LCD must not be connected
 J6,22,32,IOB15B,2,3.3V,PIN32_IOB15B_RGBINIT,RGB LCD init,A1,RGB LCD must not be connected
 J6,23,,,,,GND,power,GND,

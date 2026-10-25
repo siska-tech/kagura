@@ -7,6 +7,7 @@
 // PSRAM (spipsram/qspipsram) sets CAPS b3: die 0 of the in-package PSRAM
 // through kagura_hyperram_phy_gowin, with its CK from the system PLL CLKOUTP
 // (67.5 degrees). Without it the PSRAM pins are held idle (CS# high, RESET# low).
+// sd_hiz (TF card pins 36..39) is never driven, leaving the card to the host.
 module kagura_host_top #(
     parameter integer LANES=kagura_build_config::LANES,
     parameter integer VIDEO_ID_CODE=kagura_build_config::VIDEO_ID_CODE,
@@ -22,6 +23,7 @@ module kagura_host_top #(
     inout wire [3:0] host_io,
     output wire host_busy, host_ready,
     output wire host_irq_n,
+    inout wire [3:0] sd_hiz,
     output wire [1:0] O_psram_ck,O_psram_ck_n,O_psram_reset_n,O_psram_cs_n,
     inout wire [1:0] IO_psram_rwds,
     inout wire [15:0] IO_psram_dq
@@ -105,6 +107,7 @@ module kagura_host_top #(
         assign host_io[i]=io_oe[i] ? io_out[i] : 1'bz;
     end endgenerate
     assign host_irq_n=irq_drive ? 1'b0 : 1'bz;
+    assign sd_hiz=4'bz;
     // led_n[1] (board LED2) shows the adapter deadline flag.
     assign led_n=~{pixel_lock,system_lock,audio_status[2],audio_status[1],late,pixel_release[3]};
 endmodule
