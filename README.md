@@ -11,6 +11,10 @@ W65C02SまたはSPI/QSPIホストから制御するTang Nano 9K向けHDMI VDP・
 
 デモ動画（YouTube）: [KAGURA-9: Custom HDMI Video & 6-Channel Sound Chip](https://www.youtube.com/shorts/ZjfHmth6I0A)
 
+![ブレッドボード上のRaspberry Pi PicoとTang Nano 9K。ジャンパ線でSPI/QSPIホスト接続し、Tang Nano 9KからHDMIを出力](docs/images/hardware-pico-tang-nano-9k.jpg)
+
+*実機構成: Raspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9K。配線は[Pico firmware](software/pico/README.md)を参照。*
+
 現行版（`bfd2178`時点）はABI 0.2に対応し、320×240を640×480へ2倍表示、または320×180を1280×720へ4倍表示します。CPU不要のシューティングデモは背景・スプライトを動かしながら6ch音源で曲を再生します。両表示モードの映像・音声と、720p版の自機配置をモニター1台で確認済みです。[16:9実装・検証記録](docs/wide-mode.md)を参照してください。
 
 起動時RAM初期化、AUDIO_COMMITの順序制御、波形RAMのbank交換、FIFOエラー通知を実装済みです。6ch音源は34770 stereo samplesの参照モデル比較に合格しています。確認範囲と未完了項目は[検証状況](docs/validation-status.md)、HDMI復号試験は[音声packet統合評価](docs/audio-packet-integration.md)に記録しています。
