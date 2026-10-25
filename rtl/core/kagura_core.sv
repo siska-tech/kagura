@@ -84,7 +84,8 @@ module kagura_core #(
         .cfg_step(audio_steps),.cfg_duty(audio_duties),.cfg_gain_l(audio_l),.cfg_gain_r(audio_r),.cfg_enable(audio_enable),
         .cfg_phase_reset(audio_resets),.cfg_wave_len(audio_lengths),.cfg_master(audio_master),.cfg_noise_period(audio_period),
         .apply_done(audio_apply_done),.apply_error(audio_apply_error),.apply_busy(),.wave_read(wave_read),.wave_addr(wave_addr),
-        .wave_data(wave_data),.sample_valid(audio_sample_valid),.sample_left(audio_left),.sample_right(audio_right),.last_cycles(),.apply_boundary(wave_swap));
+        .wave_data(wave_data),.sample_valid(audio_sample_valid),.sample_left(audio_left),.sample_right(audio_right),.last_cycles(),.apply_boundary(wave_swap),.sample_boundary(),
+        .pcm_sample0(8'sd0),.pcm_sample1(8'sd0),.cfg_pcm_gain_l(16'b0),.cfg_pcm_gain_r(16'b0),.cfg_pcm_enable(2'b0));
 
     // Active display state, replaced only when a COMMIT completes.
     reg [2:0] active_display;

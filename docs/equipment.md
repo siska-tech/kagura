@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | B1 | Tang Nano 9K（シルク3674、GW1NR-LV9QN88PC6/I5、チップID `0x1100481B`） | 確認済み・1台 | 全段階 | [検証状況](validation-status.md) |
 | — | 基板内蔵programmer（BL702、FTDI互換として認識） | 確認済み | 全段階 | 注意点は[ビルドガイド](build-and-test.md) |
-| — | Windows PC＋WSL Ubuntu | 確認済み | 全段階 | Verilator 5.032、Icarus 10.1（`build/toolchain`）、Gowin Education V1.9.11.03（V1.9.12.04も導入済み・未使用） |
+| — | Windows PC＋WSL Ubuntu | 確認済み | 全段階 | Verilator 5.032、Icarus 10.1（`build/toolchain`）、Gowin Education V1.9.11.03。ライセンス導入済みV1.9.12.04は`hdmi`のbitstream生成とCDC hold修正を確認したが、480p OSER10 reset recovery −0.041nsのため基準移行は未完了 |
 | P | 電源（PC USBポート/USB電源） | 確認済み | M3 | 試験記録には使った電源を書く |
 
 ## 段階別

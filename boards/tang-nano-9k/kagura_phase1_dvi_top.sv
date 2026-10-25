@@ -9,7 +9,7 @@ module kagura_phase1_dvi_top (
     output wire [5:0] led_n
 );
     wire pixel,serial,system_clk,pixel_lock,system_lock;
-    kagura_nano9k_clocks clocks(clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock);
+    kagura_nano9k_clocks clocks(clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock,);
     wire release_ok=reset_n && pixel_lock && system_lock;
     (* ASYNC_REG="TRUE" *) reg [3:0] pixel_release;
     always @(posedge pixel or negedge release_ok)

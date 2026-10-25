@@ -19,7 +19,7 @@ module kagura_phase2_top #(
     output wire cpu_irq_n
 );
     wire pixel,serial,system_clk,pixel_lock,system_lock;
-    kagura_nano9k_clocks #(.VIDEO_ID_CODE(VIDEO_ID_CODE)) clocks(clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock);
+    kagura_nano9k_clocks #(.VIDEO_ID_CODE(VIDEO_ID_CODE)) clocks(clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock,);
     wire release_ok=reset_n && pixel_lock && system_lock;
     (* ASYNC_REG="TRUE" *) reg [3:0] pixel_release,system_release;
     always @(posedge pixel or negedge release_ok)

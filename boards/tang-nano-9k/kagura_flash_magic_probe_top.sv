@@ -10,7 +10,7 @@ module kagura_flash_magic_probe_top (
 );
     wire pixel_unused,serial_unused,system_clk,pixel_lock,system_lock;
     kagura_nano9k_clocks clocks(clk27,reset_n,pixel_unused,serial_unused,
-        system_clk,pixel_lock,system_lock);
+        system_clk,pixel_lock,system_lock,);
     wire release_ok=reset_n && system_lock;
     (* ASYNC_REG="TRUE" *) reg [3:0] system_release;
     always @(posedge system_clk or negedge release_ok)

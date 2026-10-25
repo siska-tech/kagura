@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-// CPU-independent six-voice engine. Apply captures a private snapshot and
+// CPU-independent six-voice engine with an optional two-channel PCM tail.
+// Apply captures a private snapshot and
 // activates it at the next 48kHz boundary, before evaluating phase zero.
 // Wave port: ch4/ch5 in address bit8, one-edge synchronous read latency.
 // Two shared 18x9 multipliers serve all voice gains and the master gain.
 module kagura_audio_synth #(
-    parameter bit EXTERNAL_SNAPSHOT=0 // caller holds cfg until apply_done
+    parameter bit EXTERNAL_SNAPSHOT=0, // caller holds cfg until apply_done
+    parameter bit PCM_ENABLE=0
 ) (
     input wire clk, reset,
     input wire apply_valid,
@@ -23,7 +25,11 @@ module kagura_audio_synth #(
     output reg sample_valid,
     output reg signed [15:0] sample_left, sample_right,
     output reg [6:0] last_cycles,
-    output wire apply_boundary
+    output wire apply_boundary,
+    output wire sample_boundary,
+    input wire signed [7:0] pcm_sample0, pcm_sample1,
+    input wire [15:0] cfg_pcm_gain_l, cfg_pcm_gain_r,
+    input wire [1:0] cfg_pcm_enable
 );
     localparam [2:0] IDLE=0,VOICE=1,WAVE=2,MULT=3,MASTER=4,EMIT=5,PREP=6,SAT=7;
     reg [2:0] state,channel;
@@ -33,7 +39,9 @@ module kagura_audio_synth #(
     reg [143:0] pending_step,active_step;
     reg [23:0] pending_duty,active_duty;
     reg [47:0] pending_l,pending_r,active_l,active_r;
+    reg [15:0] pending_pcm_l,pending_pcm_r,active_pcm_l,active_pcm_r;
     reg [5:0] pending_enable,pending_reset,active_enable;
+    reg [1:0] pending_pcm_enable,active_pcm_enable;
     reg [7:0] pending_len,active_len,pending_master,active_master;
     reg [15:0] pending_period,active_period;
     reg [23:0] phase [0:5];
@@ -44,6 +52,7 @@ module kagura_audio_synth #(
     assign apply_ready=!pending;
     assign apply_busy=pending;
     assign apply_boundary=pending && divider==1124 && !reset;
+    assign sample_boundary=divider==1124 && !reset;
     reg [23:0] step_now,phase_now;
     reg [7:0] gain_l,gain_r,duty_now;
     reg voice_on;
@@ -62,7 +71,7 @@ module kagura_audio_synth #(
     reg [8:0] wave_addr_q;
     assign wave_addr=wave_addr_q;
 
-    // A six-voice sum lies within -195840..194310. Split the master input
+    // An eight-voice sum lies within -261120..259080. Split the master input
     // into unsigned low17 plus signed high bits (only -2,-1,0,1 possible),
     // using shifts for the high contribution. This shares the same two
     // 18x9 multipliers used for signed8 voice * unsigned8 gain.
@@ -104,7 +113,9 @@ module kagura_audio_synth #(
             state<=IDLE; channel<=0; divider<=0; cycles<=0; pending<=0;
             pending_step<=0; active_step<=0; pending_duty<=0; active_duty<=0;
             pending_l<=0; pending_r<=0; active_l<=0; active_r<=0;
+            pending_pcm_l<=0; pending_pcm_r<=0; active_pcm_l<=0; active_pcm_r<=0;
             pending_enable<=0; pending_reset<=0; active_enable<=0;
+            pending_pcm_enable<=0; active_pcm_enable<=0;
             pending_len<=8'h55; active_len<=8'h55; pending_master<=32; active_master<=32;
             pending_period<=0; active_period<=0;
             for(i=0;i<6;i=i+1) phase[i]<=0;
@@ -122,6 +133,9 @@ module kagura_audio_synth #(
                     if(!EXTERNAL_SNAPSHOT) begin
                     pending_step<=cfg_step; pending_duty<=cfg_duty;
                     pending_l<=cfg_gain_l; pending_r<=cfg_gain_r; pending_enable<=cfg_enable;
+                    pending_pcm_l<=PCM_ENABLE ? cfg_pcm_gain_l : 16'b0;
+                    pending_pcm_r<=PCM_ENABLE ? cfg_pcm_gain_r : 16'b0;
+                    pending_pcm_enable<=PCM_ENABLE ? cfg_pcm_enable : 2'b0;
                     pending_reset<=cfg_phase_reset; pending_len<=cfg_wave_len; pending_master<=cfg_master;
                     pending_period<=cfg_noise_period;
                     end
@@ -135,6 +149,9 @@ module kagura_audio_synth #(
                     active_duty<=EXTERNAL_SNAPSHOT ? cfg_duty : pending_duty;
                     active_l<=EXTERNAL_SNAPSHOT ? cfg_gain_l : pending_l; active_r<=EXTERNAL_SNAPSHOT ? cfg_gain_r : pending_r;
                     active_enable<=EXTERNAL_SNAPSHOT ? cfg_enable : pending_enable;
+                    active_pcm_l<=PCM_ENABLE ? (EXTERNAL_SNAPSHOT ? cfg_pcm_gain_l : pending_pcm_l) : 16'b0;
+                    active_pcm_r<=PCM_ENABLE ? (EXTERNAL_SNAPSHOT ? cfg_pcm_gain_r : pending_pcm_r) : 16'b0;
+                    active_pcm_enable<=PCM_ENABLE ? (EXTERNAL_SNAPSHOT ? cfg_pcm_enable : pending_pcm_enable) : 2'b0;
                     active_len<=EXTERNAL_SNAPSHOT ? cfg_wave_len : pending_len;
                     active_master<=EXTERNAL_SNAPSHOT ? cfg_master : pending_master;
                     active_period<=EXTERNAL_SNAPSHOT ? cfg_noise_period : pending_period;
@@ -147,11 +164,19 @@ module kagura_audio_synth #(
             if(state!=IDLE) cycles<=cycles+1'b1;
             case(state)
                 PREP: begin
-                    wave_addr_q<={channel==5,wave_index};
-                    step_now<=active_step[24*channel +:24]; phase_now<=phase[channel];
-                    gain_l<=active_l[8*channel +:8]; gain_r<=active_r[8*channel +:8];
-                    duty_now<=channel<3 ? active_duty[8*channel +:8] : 8'b0;
-                    voice_on<=active_enable[channel]; state<=VOICE;
+                    if(channel<6) begin
+                        wave_addr_q<={channel==5,wave_index};
+                        step_now<=active_step[24*channel +:24]; phase_now<=phase[channel];
+                        gain_l<=active_l[8*channel +:8]; gain_r<=active_r[8*channel +:8];
+                        duty_now<=channel<3 ? active_duty[8*channel +:8] : 8'b0;
+                        voice_on<=active_enable[channel];
+                    end else begin
+                        step_now<=0; phase_now<=0; duty_now<=0;
+                        gain_l<=active_pcm_l[8*(channel-6) +:8];
+                        gain_r<=active_pcm_r[8*(channel-6) +:8];
+                        voice_on<=active_pcm_enable[channel-6];
+                    end
+                    state<=VOICE;
                 end
                 VOICE: begin
                     voice_sample<=0;
@@ -168,13 +193,15 @@ module kagura_audio_synth #(
                                 noise_state<={noise_state[13:0],noise_state[14]^noise_state[13]}; noise_count<=active_period;
                             end else noise_count<=noise_count-1'b1;
                         end
-                    end else if(voice_on) phase[channel]<=phase_now+step_now;
-                    state<=channel>=4 ? WAVE : MULT;
+                    end else if(channel<6) begin
+                        if(voice_on) phase[channel]<=phase_now+step_now;
+                    end else if(voice_on) voice_sample<=channel==6 ? pcm_sample0 : pcm_sample1;
+                    state<=channel==4 || channel==5 ? WAVE : MULT;
                 end
                 WAVE: begin voice_sample<=voice_on && step_now!=0 ? wave_data : 8'sd0; state<=MULT; end
                 MULT: begin
                     sum_l<=sum_l+20'(product_l); sum_r<=sum_r+20'(product_r);
-                    if(channel==5) state<=MASTER;
+                    if(channel==(PCM_ENABLE ? 7 : 5)) state<=MASTER;
                     else begin channel<=channel+1'b1; state<=PREP; end
                 end
                 MASTER: begin
