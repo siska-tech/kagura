@@ -127,10 +127,9 @@ set_option -route_option 1
 # packet_assembler path (pixel74) to about -1.0/-0.56ns with option 1; option 0
 # gives +0.16/+0.02ns.
 if {$mode in {phase2boot720 demo720}} { set_option -place_option 0 }
-# qspipsram720: the same upstream packet_assembler path (pixel74) is +0.035ns
-# with the defaults and +0.048ns with place option 0; route option 2 gives
-# +0.111ns (docs/psram-pcm.md).
-if {$mode eq "qspipsram720"} { set_option -route_option 2 }
+# qspipsram720 remains the densest 720p build. Route option 2 keeps its pixel
+# paths short; the PSRAM CK-enable crossing is handled structurally in the PHY.
+if {$mode in {phase2boot720 qspipsram720}} { set_option -route_option 2 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }

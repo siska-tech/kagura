@@ -2,7 +2,7 @@
 // kagura_tmds_channel against the unchanged upstream tmds_channel: the same
 // random input sequence (video runs long enough to build disparity, plus
 // control, guard, island and undefined modes) must give the upstream output
-// exactly two pixel clocks later on all three lanes.
+// exactly three pixel clocks later on all three lanes.
 module tb_tmds_pipeline;
     reg clk=0;
     always #5 clk=~clk;
@@ -18,15 +18,15 @@ module tb_tmds_pipeline;
         kagura_tmds_channel #(.CN(c)) pipelined(.clk_pixel(clk),.video_data(video[c]),.data_island_data(island[c]),
             .control_data(ctrl[c]),.mode(mode),.tmds(new_tmds[c]));
     end endgenerate
-    reg [9:0] ref_d1 [0:2], ref_d2 [0:2];
+    reg [9:0] ref_d1 [0:2], ref_d2 [0:2], ref_d3 [0:2];
     integer cycle=0, run=0, j, checked=0, video_symbols=0;
     always @(posedge clk) begin
-        for(j=0;j<3;j=j+1) begin ref_d2[j]<=ref_d1[j]; ref_d1[j]<=ref_tmds[j]; end
+        for(j=0;j<3;j=j+1) begin ref_d3[j]<=ref_d2[j]; ref_d2[j]<=ref_d1[j]; ref_d1[j]<=ref_tmds[j]; end
     end
     always @(negedge clk) begin
         // Compare once the delay line holds upstream output (from cycle 3).
-        if(cycle>=3) for(j=0;j<3;j=j+1) begin
-            if(new_tmds[j]!==ref_d2[j]) $fatal(1,"lane %0d cycle %0d: %010b expected %010b",j,cycle,new_tmds[j],ref_d2[j]);
+        if(cycle>=4) for(j=0;j<3;j=j+1) begin
+            if(new_tmds[j]!==ref_d3[j]) $fatal(1,"lane %0d cycle %0d: %010b expected %010b",j,cycle,new_tmds[j],ref_d3[j]);
             checked=checked+1;
         end
         if(run==0) begin
@@ -48,7 +48,7 @@ module tb_tmds_pipeline;
         end
         cycle=cycle+1;
         if(cycle==200000) begin
-            $display("PASS: pipelined TMDS channel equals upstream two clocks later, %0d lane symbols (%0d video cycles), all modes",checked,video_symbols);
+            $display("PASS: pipelined TMDS channel equals upstream three clocks later, %0d lane symbols (%0d video cycles), all modes",checked,video_symbols);
             $finish;
         end
     end

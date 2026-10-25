@@ -34,7 +34,7 @@ text = text[:start] + '''        kagura_audio_packets #(.VIDEO_ID_CODE(VIDEO_ID_
             .sample_data(sample_data), .sample_ready(sample_ready),
             .header(header), .sub(sub));
 ''' + text[end:]
-# Pipelined encoder (3-cycle latency) for 74.25MHz; equivalence is checked
+# Pipelined encoder (4-cycle latency) for 74.25MHz; equivalence is checked
 # against the unchanged upstream tmds_channel by sim/tests/tb_tmds_pipeline.sv.
 replace_once('        tmds_channel #(.CN(i)) tmds_channel (', '        kagura_tmds_channel #(.CN(i)) tmds_channel (')
 # Same output sequence without the counter-indexed bit mux in front of the BCH

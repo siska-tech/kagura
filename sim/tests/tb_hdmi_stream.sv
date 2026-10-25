@@ -40,9 +40,9 @@ module tb_hdmi_stream_core #(parameter integer VIC=1);
             endcase
         end
     endfunction
-    // kagura_tmds_channel emits a symbol three pixel clocks after its mode.
-    reg [2:0] mode_d1, mode_d2;
-    always @(posedge pix) begin mode_d1<=dut.protocol.mode; mode_d2<=mode_d1; emitted_mode<=mode_d2; end
+    // kagura_tmds_channel emits a symbol four pixel clocks after its mode.
+    reg [2:0] mode_d1, mode_d2, mode_d3;
+    always @(posedge pix) begin mode_d1<=dut.protocol.mode; mode_d2<=mode_d1; mode_d3<=mode_d2; emitted_mode<=mode_d3; end
     always @(negedge sys) begin
         sv=0;
         if(!reset && produced<1024) begin

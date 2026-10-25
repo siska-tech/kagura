@@ -97,13 +97,13 @@ module kagura_registers #(
     reg [7:0] q_wdata;
     // COMMAND opcode and READ_REQUEST value decoded at capture, so the
     // admission and error logic does not compare q_wdata (high fanout) again.
-    reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_op_copy, q_zero;
+    reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_op_copy, q_zero, q_ext_data;
     reg [2:0] rs_settle;
     assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging && !(|rs_settle) && !audio_settle;
     always @(posedge clk)
         if(reset) begin
             q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0;
-            q_op_fill<=0; q_op_fence<=0; q_op_commit<=0; q_op_audio<=0; q_op_copy<=0; q_zero<=1;
+            q_op_fill<=0; q_op_fence<=0; q_op_commit<=0; q_op_audio<=0; q_op_copy<=0; q_zero<=1; q_ext_data<=0;
         end
         else begin
             q_valid<=req_valid && req_ready;
@@ -111,7 +111,7 @@ module kagura_registers #(
                 q_write<=req_write; q_addr<=req_addr; q_wdata<=req_wdata;
                 q_op_fill<=req_wdata==OP_FILL; q_op_fence<=req_wdata==OP_FENCE;
                 q_op_commit<=req_wdata==OP_COMMIT; q_op_audio<=req_wdata==OP_AUDIO; q_op_copy<=PSRAM && req_wdata==OP_COPY;
-                q_zero<=req_wdata==0;
+                q_zero<=req_wdata==0; q_ext_data<=req_addr==EXT_DATA;
             end
         end
     assign irq=|(irq_status & irq_enable);
@@ -175,6 +175,8 @@ module kagura_registers #(
     reg ext_writable, ext_defined;
     reg [2:0] rs_idx;
     wire [24:0] rs_ent=rs_table[25*rs_idx +: 25];
+    reg [24:0] rs_ent_q;
+    wire [24:0] rs_ent_read=PSRAM ? rs_ent_q : rs_ent;
     // Entry registers 0B..10 are refused during COMMIT_BUSY (the COMMIT
     // copies the table at completion); out-of-range COUNT/INDEX are BAD_ACCESS.
     wire rs_is_table=RS && ext_index>=8'h0b && ext_index<=8'h10 && ext_index!=8'h0c;
@@ -186,10 +188,10 @@ module kagura_registers #(
         case(ext_index)
             8'h0b: if(RS) begin ext_value={4'b0,rs_count}; ext_writable=1; end else ext_defined=0;
             8'h0c: if(RS) begin ext_value={5'b0,rs_idx}; ext_writable=1; end else ext_defined=0;
-            8'h0d: if(RS) begin ext_value=rs_ent[7:0]; ext_writable=1; end else ext_defined=0;
-            8'h0e: if(RS) begin ext_value=rs_ent[15:8]; ext_writable=1; end else ext_defined=0;
-            8'h0f: if(RS) begin ext_value={7'b0,rs_ent[16]}; ext_writable=1; end else ext_defined=0;
-            8'h10: if(RS) begin ext_value=rs_ent[24:17]; ext_writable=1; end else ext_defined=0;
+            8'h0d: if(RS) begin ext_value=rs_ent_read[7:0]; ext_writable=1; end else ext_defined=0;
+            8'h0e: if(RS) begin ext_value=rs_ent_read[15:8]; ext_writable=1; end else ext_defined=0;
+            8'h0f: if(RS) begin ext_value={7'b0,rs_ent_read[16]}; ext_writable=1; end else ext_defined=0;
+            8'h10: if(RS) begin ext_value=rs_ent_read[24:17]; ext_writable=1; end else ext_defined=0;
             8'h11: if(RS) ext_value=8'd8; else ext_defined=0;
             8'h00: begin ext_value=scroll_x[7:0]; ext_writable=1; end
             8'h01: begin ext_value={7'b0,scroll_x[8]}; ext_writable=1; end
@@ -219,7 +221,7 @@ module kagura_registers #(
     // the writes that change these (EXT index/data, a push) stall the next one.
     reg [7:0] ext_value_q;
     reg [5:0] free_q;
-    always @(posedge clk) begin ext_value_q<=ext_value; free_q<=queue_free; end
+    always @(posedge clk) begin rs_ent_q<=rs_ent; ext_value_q<=ext_value; free_q<=queue_free; end
 
     // Decode: read value, whether a write is legal, and command checks.
     reg [7:0] read_value;
@@ -351,7 +353,12 @@ module kagura_registers #(
     wire w1c_irq=wr && q_addr==IRQ_STATUS;
     wire clear_overflow=w1c_irq && q_wdata[5];
     wire w1c_err=wr && q_addr==ERROR_CODE;
-    wire ext_write=wr && q_addr==EXT_DATA && ext_writable && !rs_block;
+    wire ext_data_selected=PSRAM ? q_ext_data : q_addr==EXT_DATA;
+    wire ext_write=wr && ext_data_selected && ext_writable && !rs_block;
+    // Entry values have no value-range rejection. Decode their write enable
+    // directly so q_wdata's COUNT/INDEX checks do not fan out to 200 table FFs.
+    wire rs_entry_write=wr && ext_data_selected && ext_index>=8'h0d && ext_index<=8'h10
+        && !(rs_is_table && commit_busy);
     assign dbg_arm=DEBUG && ext_write && ext_index==8'h18;
     assign dbg_arm_value=q_wdata;
     // Validity of the shadow raster table (lines < LINES, strictly ascending,
@@ -422,7 +429,7 @@ module kagura_registers #(
                 8'h10: rs_idx<=rs_idx+1'b1;
                 default: ;
             endcase
-            for(ri=0;ri<8;ri=ri+1) if(ext_write && rs_idx==ri[2:0]) case(ext_index)
+            for(ri=0;ri<8;ri=ri+1) if(rs_entry_write && rs_idx==ri[2:0]) case(ext_index)
                 8'h0d: rs_table[25*ri +: 8]<=q_wdata;
                 8'h0e: rs_table[25*ri+8 +: 8]<=q_wdata;
                 8'h0f: rs_table[25*ri+16]<=q_wdata[0];

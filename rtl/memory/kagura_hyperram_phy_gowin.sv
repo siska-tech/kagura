@@ -42,14 +42,14 @@ module kagura_hyperram_phy_gowin (
     // sees the new value; the second stage keeps CK in the same cycle as DQ.
     // Hardware showed a single stage puts CK one cycle early, so the memory
     // latched the idle bus as the first CA byte (every command became a read).
-    // The second stage is clocked by clk_ck: the short clk->clk_ck crossing is
-    // then fabric FF to FF, and the fixed-location ODDR gets a full clk_ck
-    // cycle. (A clk second stage missed setup into the ODDR by 0.234 ns once
-    // the evaluation logic grew.) The CK timing is unchanged.
+    // The second stage is clocked on clk_ck's falling edge.  It therefore has
+    // 12.731 ns from clk at the selected 67.5-degree phase, while the following
+    // ODDR still observes it at the same next clk_ck rising edge as before.
+    // This preserves CK timing and removes the former 3.472 ns fabric path.
     reg ck_en_q=0;
     always @(posedge clk) ck_en_q<=phy_ck_en;
     reg ck_en_d=0;
-    always @(posedge clk_ck) ck_en_d<=ck_en_q;
+    always @(negedge clk_ck) ck_en_d<=ck_en_q;
     wire ck_oddr,ck_n_oddr;
     ODDR ck_ddr(.D0(ck_en_d),.D1(1'b0),.TX(1'b0),.CLK(clk_ck),.Q0(ck_oddr),.Q1());
     ODDR ck_n_ddr(.D0(~ck_en_d),.D1(1'b1),.TX(1'b0),.CLK(clk_ck),.Q0(ck_n_oddr),.Q1());

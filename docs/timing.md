@@ -137,6 +137,27 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 | phase2 / phase2720 | +0.58 → +2.29ns / −0.46 → +0.39ns |
 | spi / spi720 | +0.47 → +0.91ns / +0.49 → +0.43ns |
 | qspi / qspi720 | +0.045 → +0.87ns / +0.46 → +0.008ns |
-| phase2boot / phase2boot720 | +0.07 → +0.009ns / −1.22 → +0.10ns |
+| phase2boot / phase2boot720 | +0.07 → +0.009ns / −1.22 → +0.096ns |
 
-対象の4経路は最悪経路から消えたが、最悪経路は別の場所へ移った（demo720は`kagura_tmds_channel`の`video_data`→`qm1`、qspi720はaudio_packetsの`cx`判定、phase2bootはregistersの`ext_index`→`rs_table`）。Register数は約+280。配置の変動幅が個々の短縮効果を上回っており、**demo720はこの変更でSTA不合格**。実機確認用のdemo720は`cf7f6b0`のbitstream（+0.003ns）を使った（[検証状況](validation-status.md)）。残りの経路は別の課題として扱う。
+対象の4経路は元の形では最悪経路から消えたが、分割後の段や別の場所が最悪経路へ移った（phase2720は分割後のaudio product register、phase2boot720は追加した`guard_line`、demo720は`kagura_tmds_channel`の`video_data`→`qm1`、qspi720はaudio_packetsの`cx`判定、phase2bootはregistersの`ext_index`→`rs_table`）。Register数は約+280。単一のP&R結果だけでは配置変動が支配要因とは断定しない。
+
+demo720はsetup違反9 endpointで、pixel74の`video_data`→`qm1`（−0.691ns）だけでなく、system54の`init_done`→OAM address（−0.531ns）、`q_addr`→`error_code`（−0.251ns）等も違反した。phase2boot720の+0.096ns、demoの+0.028ns、qspi720の+0.008ns、phase2bootの+0.009nsも、丸め前の値では開発下限+0.10nsに達していない。この変更はタイミング改善として未受入れであり、実機確認用のdemo720は`cf7f6b0`のbitstream（+0.003ns）を使った（[検証状況](validation-status.md)）。
+
+後続修正では次の経路を構造で短縮した。
+
+- TMDS encoderの入力をregisterで受け、外部`video_data`配線とpopcount/prefix XORを別cycleにした。全lane・全modeで上流encoderの3 pixel遅れと一致することを試験する。
+- PSRAM CK enableの第2段を`clk_ck`下降端へ移した。system54立上りから12.731nsを確保しつつ、ODDRが値を取る次の`clk_ck`立上りは従来と同じである。
+- EXT_DATAとRS entry選択をPSRAM構成だけ事前register化し、非PSRAM構成へ追加FFを残さない。
+
+Gowin Education V1.9.11.03で監査時の境界構成を再P&Rした結果は次のとおり。すべてsetup/hold違反0で、開発下限+0.10nsを満たした。実機はこの修正版bitstreamでは未確認である。
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
+|---|---:|---:|---:|---:|---:|
+| demo720 | 6871 | 4545 | 26/26 | +0.181ns | +0.563ns |
+| phase2boot720 | 5933 | 4533 | 25/26 | +0.683ns | +0.558ns |
+| spipsram | 6673 | 5138 | 25/26 | +0.851ns | +0.563ns |
+| qspipsram720 | 6649 | 5141 | 25/26 | +0.113ns | +0.555ns |
+
+`tools/run-baseline.ps1`は+0.10nsを既定gateとし、spipsram、qspipsram、qspipsram720も既定対象に含める。dirty buildは差分hashを含む固有directoryへ保存し、manifestへtracked diffと対象sourceのSHA-256を記録するため、同じHEAD上の試行が互いの証跡を上書きしない。
+高密度720pのphase2boot720とqspipsram720はroute option 2、demo720は従来どおりplace option 0を使用する。
+`tools/test-verilator.sh`は共有build/logへの同時実行をlockで拒否し、並行回帰による実行物・summaryの相互上書きを防ぐ。

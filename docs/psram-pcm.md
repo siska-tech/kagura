@@ -310,3 +310,9 @@ BSRAMは24/26のまま。77%ではP&R結果の振れが大きく、spipsramのop
 | spipsram 480p | 76% | +0.226ns | +0.559ns | 同上すべてPASS |
 
 BSRAMは24/26。3構成とも目標+0.10nsを満たした。
+
+### 256スプライト後のtiming監査対応（2026-10-26）
+
+共通HDMI経路の短縮後、配置変動でqspipsram720のPSRAM CK enable経路やRS register読出しが限界へ移ったため、PHYとregister decodeを追加修正した。CK enableの第2段FFを67.5°位相`clk_ck`の下降端へ移し、ODDRが値を取る次の立上りを変えずにsystem54からの予算を3.472nsから12.731nsへ広げた。PSRAM構成ではEXT_DATA判定とRS entry選択結果をregister化し、非PSRAM構成ではこれらを合成から除外する。
+
+Gowin V1.9.11.03の再P&RではspipsramがLogic 6673、Register 5138、BSRAM 25/26、setup +0.851ns、hold +0.563ns。qspipsram720はLogic 6649、Register 5141、BSRAM 25/26、setup +0.113ns、hold +0.555ns。両方ともsetup/hold違反0で+0.10ns目標を満たした。qspipsram720はroute option 2、spipsramは共通option 1を使う。この修正版はsimulationとSTAの対象であり、PSRAM CKの下降端FFを含む実機再確認は未実施である。

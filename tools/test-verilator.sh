@@ -3,6 +3,15 @@
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
+# Build directories and the summary are shared by every invocation.  Refuse a
+# concurrent run instead of allowing two regressions to overwrite each
+# other's executables, logs and result rows.
+mkdir -p build/verilator
+exec 9>build/verilator/.regression.lock
+if ! flock -n 9; then
+    echo "FAIL: another Verilator regression is already running" >&2
+    exit 1
+fi
 # Environment:
 #   KAGURA_STRICT_VERSION=1  fail unless verilator matches tools/verilator.version (CI)
 #   KAGURA_SEED=<n>          runtime seed for $urandom (default 1)
@@ -19,7 +28,6 @@ fi
 seed="${KAGURA_SEED:-1}"
 test_timeout="${KAGURA_TEST_TIMEOUT:-1800}"
 echo "seed $seed, per-test timeout ${test_timeout}s"
-mkdir -p build/verilator
 python3 sim/tests/test_boot_image.py
 # Stale outputs would be mistaken for this run's evidence.
 rm -f build/verilator/*.run.log build/verilator/*.raw build/verilator/*.wav build/verilator/*.ppm build/verilator/*.vcd
