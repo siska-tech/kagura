@@ -56,13 +56,14 @@ module kagura_vram_engine (
     reg [7:0] op, data;
     reg [23:0] addr;
     reg [15:0] remaining;
+    reg more;                          // remaining!=0, kept with remaining (off the issue path)
     reg [8:0] copy;                    // bit 8: 0 OAM, 1 palette; bits 7:0 word
     reg [15:0] copy_word;
     reg [15:0] dst;                    // COPY destination
     assign pop=state==IDLE && head_valid;
     assign busy=state!=IDLE;
     assign audio_apply_valid=state==AUDIO_SEND && vram_idle;
-    wire byte_op=state==RUN && (op==OP_WRITE || op==OP_READ || (op==OP_FILL && remaining!=0));
+    wire byte_op=state==RUN && (op==OP_WRITE || op==OP_READ || (op==OP_FILL && more));
     wire psram_op=addr[23:22]==2'b01;
     assign vram_valid=(byte_op && !psram_op) || state==COPY_READ || state==COPY_WRITE || state==X_WRITE;
     assign psram_valid=(byte_op && psram_op) || state==X_READ;
@@ -77,14 +78,14 @@ module kagura_vram_engine (
     wire issued=vram_valid && vram_ready || psram_valid && psram_ready;
     always @(posedge clk)
         if(reset) begin
-            state<=IDLE; op<=0; data<=0; addr<=0; remaining<=0; copy<=0; copy_word<=0;
+            state<=IDLE; op<=0; data<=0; addr<=0; remaining<=0; more<=0; copy<=0; copy_word<=0;
             read_done<=0; read_data<=0; fence_done<=0; fence_tag<=0;
             commit_done<=0; commit_snapshot<=0; audio_commit_done<=0; dst<=0;
         end else begin
             read_done<=0; fence_done<=0; commit_done<=0; audio_commit_done<=0;
             case(state)
                 IDLE: if(head_valid) begin
-                    op<=head[7:0]; addr<=head[31:8]; remaining<=head[47:32]; data<=head[55:48];
+                    op<=head[7:0]; addr<=head[31:8]; remaining<=head[47:32]; more<=head[47:32]!=0; data<=head[55:48];
                     dst<=head[63:48];
                     state<=head[7:0]==OP_COMMIT ? WAIT_VBLANK : head[7:0]==OP_AUDIO ? AUDIO_SEND :
                         head[7:0]==OP_COPY ? (head[47:32]==0 ? IDLE : X_READ) : RUN;
@@ -92,8 +93,8 @@ module kagura_vram_engine (
                 RUN: case(op)
                     OP_WRITE: if(issued) state<=IDLE;
                     OP_READ: if(issued) state<=WAIT_READ;
-                    OP_FILL: if(remaining==0) state<=IDLE;
-                        else if(issued) begin addr<=addr+1'b1; remaining<=remaining-1'b1; end
+                    OP_FILL: if(!more) state<=IDLE;
+                        else if(issued) begin addr<=addr+1'b1; remaining<=remaining-1'b1; more<=remaining!=1; end
                     OP_FENCE: if(psram_idle) begin fence_done<=1; fence_tag<=data; state<=IDLE; end
                     default: state<=IDLE;
                 endcase
@@ -114,7 +115,7 @@ module kagura_vram_engine (
                 X_READ: if(issued) state<=X_WAIT;
                 X_WAIT: if(psram_rsp_valid) begin data<=psram_rdata; state<=X_WRITE; end
                 X_WRITE: if(issued) begin
-                    addr<=addr+1'b1; dst<=dst+1'b1; remaining<=remaining-1'b1;
+                    addr<=addr+1'b1; dst<=dst+1'b1; remaining<=remaining-1'b1; more<=remaining!=1;
                     state<=remaining==1 ? IDLE : X_READ;
                 end
                 default: state<=IDLE;

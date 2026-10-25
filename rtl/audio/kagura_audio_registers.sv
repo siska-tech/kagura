@@ -73,25 +73,31 @@ module kagura_audio_registers #(
     always @(posedge clk)
         if(reset) begin pcm_prepare<=0; pcm_stop<=0; pcm_clear<=0; settle_sr<=0; dw_q<=0; wd_q<=0; end
         else begin
-            settle_sr<={settle_sr[1:0],data_write};
+            settle_sr<={settle_sr[1:0],data_write || index_write};
             dw_q<=data_write && write_legal;
             wd_q<=wdata;
             pcm_prepare<={pcm_cmd_write && pcm_ch && wdata[0],pcm_cmd_write && !pcm_ch && wdata[0]};
             pcm_stop<={pcm_cmd_write && pcm_ch && wdata[1],pcm_cmd_write && !pcm_ch && wdata[1]};
             pcm_clear<={pcm_cmd_write && pcm_ch && wdata[2],pcm_cmd_write && !pcm_ch && wdata[2]};
         end
+    // Read data and legality are registered one cycle after the caches below,
+    // keeping the index decode out of the bus response and error paths; index
+    // writes therefore also hold the next request through `settle`.
+    reg [7:0] rdata_c;
+    reg read_legal_c,write_legal_c;
+    always @(posedge clk) begin rdata<=rdata_c; read_legal<=read_legal_c; write_legal<=write_legal_c; end
     always @* begin
-        rdata=0; read_legal=1; write_legal=channel_index || pcm_index;
+        rdata_c=0; read_legal_c=1; write_legal_c=channel_index || pcm_index;
         if(channel_index) begin
-            for(integer c=0;c<6;c=c+1) rdata=rdata | (channel_data[c] & {8{ch==c}});
+            for(integer c=0;c<6;c=c+1) rdata_c=rdata_c | (channel_data[c] & {8{ch==c}});
         end else if(pcm_index) begin
-            rdata=pcm_data;
+            rdata_c=pcm_data;
         end else begin
-            rdata=global_data;
+            rdata_c=global_data;
             case(index)
-            8'he0: write_legal=1;
+            8'he0: write_legal_c=1;
             8'he1: ;
-            8'he2: begin read_legal=0; write_legal=1; end
+            8'he2: begin read_legal_c=0; write_legal_c=1; end
             default: ;
             endcase
         end

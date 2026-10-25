@@ -212,6 +212,14 @@ module kagura_registers #(
         endcase
     end
 
+    // Read-side copies one cycle behind their sources, keeping the EXT decode
+    // (RS entry select) and the queue free-count subtraction out of the response
+    // path. A request is decoded at least two cycles after the previous one, and
+    // the writes that change these (EXT index/data, a push) stall the next one.
+    reg [7:0] ext_value_q;
+    reg [5:0] free_q;
+    always @(posedge clk) begin ext_value_q<=ext_value; free_q<=queue_free; end
+
     // Decode: read value, whether a write is legal, and command checks.
     reg [7:0] read_value;
     reg read_legal, write_legal;
@@ -229,10 +237,10 @@ module kagura_registers #(
             VRAM_WRITE, READ_REQUEST, COMMAND: begin read_legal=0; write_legal=1; end
             READ_RESULT: read_value=read_ready ? read_result : 8'h00;
             EXT_INDEX: begin read_value=ext_index; write_legal=1; end
-            EXT_DATA: begin read_value=ext_value; write_legal=ext_writable; end
+            EXT_DATA: begin read_value=ext_value_q; write_legal=ext_writable; end
             AUDIO_INDEX: begin read_value=audio_index; write_legal=1; end
             AUDIO_DATA: begin read_value=audio_rdata; read_legal=audio_read_legal; write_legal=audio_write_legal; end
-            FIFO_STATUS: read_value={full,1'b0,queue_free};
+            FIFO_STATUS: read_value={full,1'b0,free_q};
             INC_L: begin read_value=inc[7:0]; write_legal=1; end
             INC_H: begin read_value=inc[15:8]; write_legal=1; end
             LENGTH_L: begin read_value=length[7:0]; write_legal=1; end

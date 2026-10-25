@@ -105,6 +105,18 @@ module kagura_pcm_prefetch #(
         next_ok[1]<=!reset && !(cfg_valid[1] && cfg_ready[1]) && !(mem_req_valid && mem_req_ready && selected_ch);
     end
 
+    // Range check of the configuration inputs, registered every cycle: the
+    // caller holds them for at least two cycles before cfg_valid (the public
+    // registers settle for three), so the comparators stay out of the accept path.
+    reg [1:0] cfg_bad;
+    always @(posedge clk)
+        for(int c=0;c<2;c=c+1)
+            cfg_bad[c]<=cfg_start[c*ADDR_WIDTH +: ADDR_WIDTH]>=cfg_end[c*ADDR_WIDTH +: ADDR_WIDTH] ||
+                {1'b0,cfg_end[c*ADDR_WIDTH +: ADDR_WIDTH]}>MEMORY_BYTES ||
+                (cfg_loop_enable[c] &&
+                 (cfg_loop[c*ADDR_WIDTH +: ADDR_WIDTH]<cfg_start[c*ADDR_WIDTH +: ADDR_WIDTH] ||
+                  cfg_loop[c*ADDR_WIDTH +: ADDR_WIDTH]>=cfg_end[c*ADDR_WIDTH +: ADDR_WIDTH]));
+
     integer i;
     always @(posedge clk) begin
         if(reset) begin
@@ -121,11 +133,7 @@ module kagura_pcm_prefetch #(
             for(i=0;i<2;i=i+1) begin
                 if(cfg_valid[i] && cfg_ready[i]) begin
                     rd_ptr[i]<=0; wr_ptr[i]<=0; count[i]<=0; fetch_done[i]<=0;
-                    if(cfg_start[i*ADDR_WIDTH +: ADDR_WIDTH]>=cfg_end[i*ADDR_WIDTH +: ADDR_WIDTH] ||
-                       {1'b0,cfg_end[i*ADDR_WIDTH +: ADDR_WIDTH]}>MEMORY_BYTES ||
-                       (cfg_loop_enable[i] &&
-                        (cfg_loop[i*ADDR_WIDTH +: ADDR_WIDTH]<cfg_start[i*ADDR_WIDTH +: ADDR_WIDTH] ||
-                         cfg_loop[i*ADDR_WIDTH +: ADDR_WIDTH]>=cfg_end[i*ADDR_WIDTH +: ADDR_WIDTH]))) begin
+                    if(cfg_bad[i]) begin
                         configured[i]<=0;
                         config_error[i]<=1;
                     end else begin

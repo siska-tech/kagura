@@ -58,7 +58,10 @@ module tb_pcm_prefetch;
         begin
             wait(cfg_ready[ch]); @(negedge clk);
             cfg_start[ch*AW +:AW]=s; cfg_end[ch*AW +:AW]=e; cfg_loop[ch*AW +:AW]=l;
-            cfg_loop_enable[ch]=looped; cfg_valid[ch]=1;
+            cfg_loop_enable[ch]=looped;
+            repeat(2) @(negedge clk);    // configuration is held two cycles before cfg_valid
+            while(!cfg_ready[ch]) @(negedge clk);
+            cfg_valid[ch]=1;
             @(negedge clk); cfg_valid[ch]=0;
         end
     endtask

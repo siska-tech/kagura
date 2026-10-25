@@ -292,12 +292,21 @@ BSRAMは24/26のまま。77%ではP&R結果の振れが大きく、spipsramのop
 - 調査用に`KAGURA_PSRAM_DEBUG=1`のbuildを用意した。1 transactionの間、PSRAM pinのIDDR値と制御信号を48 cycle記録し、EXT 17/18（debug版のみ、ABI外）とPicoの`pdbg`で読める。正常版のwriteでは、CA `20 01 00 00 00 00`、dataのbyte 0だけRWDS=0、bytes 1〜3はRWDS=1（mask）と、設計どおりの波形を確認した。
 - 併せて、CLKOUTPを動的位相（PSDA/DUTYDA入力）から静的設定（`PSDA_SEL "0011"`、`DUTYDA_SEL "1000"`）へ変えた（STAの`-phase 67.5`と一致）。TX窓の拡張とpinごとのenable registerも、STA対象外の経路への余裕として残す。教訓として、PSRAM padへ出る信号はすべてregister（またはIOLOGIC）出力にする。
 
-最終RTL（既定option 1、Gowin V1.9.11.03）:
+**timing改善**: 77%利用率で目標+0.10nsに届かなかった経路を、register読出しの応答経路から順に外した。
 
-| 構成 | Logic | 最悪setup | 実機 |
-|---|---:|---:|---|
-| qspipsram 480p | 77% | +0.233ns | `diag`、`psram`×2、`copy`×2、`pcm 20`すべてPASS |
-| qspipsram 720p | 77% | +0.040ns | 同上すべてPASS |
-| spipsram 480p | 77% | +0.056ns | 同上すべてPASS |
+- EXT読出し値（RS entry選択を含む）とFIFO_STATUSの空き数（queueのwptr−rptr）を、毎cycle registerへ写した（`ext_value_q`、`free_q`）。
+- audio registerの読出しdataとread/write可否を、1 cycle遅れのregister出力にした。index writeもsettleの対象にした。
+- prefetchのPREPARE範囲検査を毎cycle計算するregister（`cfg_bad`）にした。呼出し側は設定を2 cycle以上保持してからcfg_validを出す。公開registerは3 cycle settleする。
+- engineのFILL残数判定（remaining≠0）を、remainingと一緒に更新するregister（`more`）にした。
 
-BSRAMは24/26。720pとspipsramは違反なしだが、目標+0.10nsに届かない。最悪経路は既存のHDMI packet assemblerとregister読出しで、option 0でも改善しなかった。77%利用率での余裕確保は残課題である。
+いずれも、要求は前の要求から2 cycle以上空き、該当する書込みは次の要求を止めるので、読出しの値と順序は変わらない。720pの最悪経路は上流`packet_assembler`（pixel74）に残った（既定+0.035ns、place option 0で+0.048ns）。route option 2で+0.111nsになったため、`build-nano9k.tcl`でqspipsram720だけに適用した（demo720と同じ扱い）。
+
+最終RTL（Gowin V1.9.11.03、qspipsram720のみroute option 2）:
+
+| 構成 | Logic | 最悪setup | 最悪hold | 実機 |
+|---|---:|---:|---:|---|
+| qspipsram 480p | 77% | +0.668ns | +0.552ns | `diag`、`psram`×2、`copy`×2、`pcm 20`すべてPASS |
+| qspipsram 720p | 76% | +0.111ns | +0.555ns | 同上すべてPASS |
+| spipsram 480p | 76% | +0.226ns | +0.559ns | 同上すべてPASS |
+
+BSRAMは24/26。3構成とも目標+0.10nsを満たした。
