@@ -87,7 +87,9 @@ CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.s
     rtl/audio/kagura_audio_transport.sv rtl/memory/kagura_async_fifo.sv
     rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv
     rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv
-    rtl/core/kagura_raster_scroll.sv rtl/core/kagura_core.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv)
+    rtl/core/kagura_raster_scroll.sv rtl/core/kagura_core.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv
+    rtl/audio/kagura_pcm_control.sv rtl/audio/kagura_pcm_prefetch.sv rtl/memory/kagura_psram_arbiter.sv rtl/memory/kagura_psram_read_path.sv
+    rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv rtl/memory/kagura_hyperram_ctrl.sv)
 run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
 run_test tb_flash_reader rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader.sv
 run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
@@ -101,6 +103,7 @@ for host_test in tb_spi_bus tb_qspi_bus; do
 done
 run_test tb_vram_core "${CORE_SOURCES[@]}" sim/tests/tb_vram_core.sv
 run_test tb_audio_core "${CORE_SOURCES[@]}" sim/tests/tb_audio_core.sv
+run_test tb_psram_core "${CORE_SOURCES[@]}" sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_psram_core.sv
 run_test tb_vdp_frame "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv
 # tb_vdp_frame720/tb_vdp_sprites720: 320x180 on 1280x720 (docs/wide-mode.md).
@@ -143,6 +146,26 @@ run_test tb_vram_init rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv
 run_test tb_startup_cpu "${CORE_SOURCES[@]}" rtl/bus/kagura_w65c02_adapter.sv rtl/memory/kagura_ram_tdp.sv \
     rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv sim/tests/tb_startup_cpu.sv
 run_test tb_audio_synth rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_synth.sv
+run_test tb_audio_pcm_mix rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_pcm_mix.sv
+run_test tb_pcm_prefetch rtl/audio/kagura_pcm_prefetch.sv sim/tests/tb_pcm_prefetch.sv
+run_test tb_pcm_timeout rtl/audio/kagura_pcm_prefetch.sv sim/tests/tb_pcm_timeout.sv
+run_test tb_pcm_audio_path rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv sim/tests/tb_pcm_audio_path.sv
+run_test tb_psram_byte_bridge rtl/memory/kagura_psram_byte_bridge.sv sim/tests/tb_psram_byte_bridge.sv
+run_test tb_psram_read_cdc rtl/memory/kagura_psram_read_cdc.sv sim/tests/tb_psram_read_cdc.sv
+run_test tb_hyperram_ctrl rtl/memory/kagura_hyperram_ctrl.sv sim/tests/tb_hyperram_ctrl.sv
+run_test tb_psram_arbiter rtl/memory/kagura_psram_arbiter.sv sim/tests/tb_psram_arbiter.sv
+run_test tb_hyperram_pcm_source rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv \
+    rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv \
+    rtl/memory/kagura_psram_read_path.sv rtl/memory/kagura_hyperram_ctrl.sv \
+    rtl/memory/kagura_psram_arbiter.sv boards/tang-nano-9k/kagura_hyperram_pcm_source.sv \
+    sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_hyperram_pcm_source.sv
+run_test tb_hyperram_pcm_chain rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv \
+    rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv \
+    rtl/memory/kagura_psram_read_path.sv rtl/memory/kagura_hyperram_ctrl.sv \
+    sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_hyperram_pcm_chain.sv
+run_test tb_psram_pcm_chain rtl/audio/kagura_audio_synth.sv rtl/audio/kagura_pcm_prefetch.sv \
+    rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv \
+    rtl/memory/kagura_psram_read_path.sv sim/tests/tb_psram_pcm_chain.sv
 [ ! -f build/verilator/audio-synth.raw ] || python3 tools/render-audio-wav.py build/verilator/audio-synth.raw build/verilator/audio-synth.wav
 column -t "$summary" 2>/dev/null || cat "$summary"
 if [ "${#failures[@]}" -gt 0 ]; then

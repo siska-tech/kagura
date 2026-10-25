@@ -1,6 +1,6 @@
 # Audio Specification / 6 voices
 
-【設計】ch0..2 pulse、ch3 noise、ch4..5 wavetable。出力signed16bit L/R、48000 samples/s。system54MHzに/1125 enable、最初のsample boundaryをreset解除後に統一する。補間/ADSR/PCMはv0.1に含めない。
+【設計】ch0..2 pulse、ch3 noise、ch4..5 wavetable。出力signed16bit L/R、48000 samples/s。system54MHzに/1125 enable、最初のsample boundaryをreset解除後に統一する。補間/ADSRはv0.1に含めない。PSRAMのsampleを再生する2ch PCM音源はABI 0.4のCAPS b3版だけが持つ（下記「PCM音源」）。
 
 ## 周波数と波形
 
@@ -41,7 +41,7 @@ ch cはindex=16*c+offset（00..5F）。全てshadow RW、reset0。予約はread0
 | 9 | NOISE_PERIOD high（ch3のみ） |
 | A..F | 予約 |
 
-他channel種別に使わないフィールドはread0/write ignored。60..DFは未実装read0/write BAD_ACCESS。
+他channel種別に使わないフィールドはread0/write ignored。60..9FはCAPS b3版ではPCM音源レジスタ（下記）、それ以外では未実装。A0..DFは未実装read0/write BAD_ACCESS。
 
 | index | 内容 |
 |---|---|
@@ -57,6 +57,38 @@ MUTEDはlink起動待ち/障害回復時の強制mute状態を示す。単に全
 token実行時、先行wave書込みを完了させ、次sample boundaryで設定反映しwaveのactive/shadow bankを交換する。コピーは不要。交換後のshadowには以前のactive内容が残るので、差分編集時はこの規則に従う。waveを変えない設定更新でもbank交換するため、ドライバは両bankへ同じ初期波形を準備するか、毎回使用波形をshadowに書く。
 
 COMMIT完了まで後続VRAM commandは待機。音源shadow registerは書換え可能だがsnapshotには影響しない。phase_reset_pendingは受付でclearし、後から書いたreset requestは次COMMIT用。完了はAPPLY_BUSY=0、必要ならFENCEを後置して通知する。音源commitの全処理は1sample内の64system cyclesを上限にする。
+
+## PCM音源（CAPS b3、ABI 0.4）
+
+2ch。sampleはsigned 8bit、48kHz固定で1 sampleごとに1 byte進む。PSRAM領域（400000–7FFFFF）のbyte列を再生する。補間・可変ピッチ・ADPCMはない。6音源の後段で同じmixerに加算し、MASTER_GAINと飽和は共通。PCM pはindex=0x60+0x20*p+offset（p=0,1、60..7Fと80..9F）。
+
+| offset | 名前 | 内容 |
+|---|---|---|
+| +00 | START_L | 再生開始address bits7:0（24bit、PREPAREで取込み） |
+| +01 | START_M | START bits15:8 |
+| +02 | START_H | START bits23:16 |
+| +04 | END_L | 終了address（排他的）bits7:0 |
+| +05 | END_M | END bits15:8 |
+| +06 | END_H | END bits23:16 |
+| +08 | LOOP_L | loop再開address bits7:0 |
+| +09 | LOOP_M | LOOP bits15:8 |
+| +0A | LOOP_H | LOOP bits23:16 |
+| +0C | GAIN_L | 0..255、AUDIO_COMMITで反映 |
+| +0D | GAIN_R | 0..255、AUDIO_COMMITで反映 |
+| +0E | CONTROL | b0 ENABLE（AUDIO_COMMITで反映）、b1 LOOP_ENABLE（PREPAREで取込み） |
+| +0F | CMD | WO（AUDIO_REG_DATAへのwrite）: b0 PREPARE、b1 STOP、b2 CLEAR |
+| +0F | STATUS | RO（AUDIO_REG_DATAのread）: b0 READY、b1 ACTIVE、b2 DONE、b3 UNDERRUN、b4 CONFIG_ERROR、b5 MEMORY_ERROR、b6 PREPARING |
+
++0F以外はRW shadow、reset0。+03、+07、+0B、+10..+1Fは予約（read0/write ignored）。
+
+- PREPARE: 再生中なら直ちに止め、START/END/LOOP/LOOP_ENABLEを取り込み、先読みbufferを捨ててSTARTから先読みを始める（PREPARING=1）。条件は`0x400000 <= START < END <= 0x800000`、LOOP_ENABLE時は`START <= LOOP < END`。違反はCONFIG_ERROR。取込みは受付時なので、PREPARING中にSTART等を書き換えない。先読みが終わるとREADY。
+- 開始と一時停止: AUDIO_COMMITが反映されるsample境界で、ENABLE=1かつREADYでACTIVEでないchが再生を始める。READYでないchは開始しないが、AUDIO_COMMIT自体は拒否しない（one-shot終了後もENABLE=1のまま他の音源を更新できるようにするため）。開始したかはACTIVEで確認する。ENABLE=0が反映されると再生中のchは一時停止し、bufferと位置を保つ。次にENABLE=1が反映されると続きから再生する。GAINだけの変更は再生位置を変えない。
+- 終端: ENDに達すると、LOOP_ENABLE時はLOOPへ戻り途切れず続ける。one-shotでは最後のsampleを出した次のsampleから無音になり、ACTIVE=0、DONE=1。
+- STOP: 直ちに止める。再生には再びPREPAREが要る。
+- CMDのwrite後、次のregister要求はSTATUSが反映されるまで数cycle待たされる（RS_*と同じ）。したがってwrite直後のSTATUS readはcommandの結果を返す。
+- DONE、UNDERRUN、CONFIG_ERROR、MEMORY_ERRORはstickyで、CLEARで消える。いずれかが立った後とSTOP後は、PREPAREするまでREADYにならない。UNDERRUN（補充が間に合わない）とMEMORY_ERROR（PSRAM応答の失敗またはtimeout）は該当chだけを無音で止め、他の音源とHDMIのsample cadenceは続く。ERROR_CODE・IRQ・AUDIO_STATUSには反映しないので、STATUSをpollする。
+- 先読みbufferは各ch 32 sample。補充は1 byteごとにPSRAMへ要求し、hostのPSRAM転送が連続する最悪条件でも応答待ちは実機で最大57 system cycles（約1.06µs）だった（[psram-pcm.md](psram-pcm.md)）。
+- PCMの出力換算は他の音源と同じ`sample*GAIN`で、8音源のsumはsigned20bit（−261120..259080）に収まる。PCM版の演算は29 system cycles/sample（上限64）。PCMのない版は従来どおり6音源・23 cycles/sampleで、出力も従来とbit単位で同じ。
 
 ## ミキサーと演算幅
 

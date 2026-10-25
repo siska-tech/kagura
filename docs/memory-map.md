@@ -1,6 +1,6 @@
 # Memory Map / BSRAM配置案
 
-【設計】CPUは24bit論理アドレスを使用するがv0.1では下表の範囲だけを実装する。上位アドレスを無視してaliasさせない。未実装領域はINVALID_ADDRESS、読出し結果は0。多byte値はlittle endian。
+【設計】CPUは24bit論理アドレスを使用するがv0.1では下表の範囲だけを実装する（PSRAM領域はABI 0.4のCAPS b3版のみ）。上位アドレスを無視してaliasさせない。未実装領域はINVALID_ADDRESS、読出し結果は0。多byte値はlittle endian。
 
 | VRAM address | 用途 | CPUアクセス |
 |---|---|---|
@@ -12,6 +12,7 @@
 | 009600–0097FF | active palette | 非公開、アクセスエラー |
 | 009800–0099FF | shadow wave、2×256 signed 8bit | RW |
 | 009A00–009BFF | active wave | 非公開、アクセスエラー |
+| 400000–7FFFFF | PSRAM（die 0、4MiB）。CAPS b3版のみ | RW、queue経由。内容は電源投入時に不定で消去しない。CAPS b3のない版ではアクセスエラー |
 | その他 | 未実装 | アクセスエラー |
 
 パレットwordはbits11:8 R、7:4 G、3:0 B。CPUの低byte/高byte書込みはshadowだけに作用する。高byteのbits7:4は無視し、読出し0。

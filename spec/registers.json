@@ -1,6 +1,6 @@
 {
   "$comment": "Machine-readable register ABI. Normative prose: docs/register-map.md, docs/audio-spec.md, docs/memory-map.md. Generate constants with tools/gen-registers.ps1; -Check verifies outputs and the document tables.",
-  "abi": { "major": 0, "minor": 3 },
+  "abi": { "major": 0, "minor": 4 },
   "io_base": { "w65c02": 40704 },
   "direct": [
     { "offset": 0, "name": "STATUS", "access": "RO", "reset": 0,
@@ -35,10 +35,10 @@
     { "offset": 24, "name": "ID0", "access": "RO", "reset": 75 },
     { "offset": 25, "name": "ID1", "access": "RO", "reset": 57 },
     { "offset": 26, "name": "ABI_MAJOR", "access": "RO", "reset": 0 },
-    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 3 },
+    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 4 },
     { "offset": 28, "name": "CAPS", "access": "RO", "reset": null,
       "bits": { "HDMI_AUDIO": 0, "WAVE": 1, "RDY": 2, "PSRAM": 3, "SPR16": 4, "WIDE": 5, "RSCROLL": 6 },
-      "variants": { "full": 83, "wide": 115 } },
+      "variants": { "full": 83, "wide": 115, "full_psram": 91, "wide_psram": 123 } },
     { "offset": 29, "name": "FRAME_COUNT_L", "access": "RO", "reset": 0 },
     { "offset": 30, "name": "SPR_OVERFLOW_INDEX", "access": "RO", "reset": 0 },
     { "offset": 31, "name": "SPR_OVERFLOW_LINE", "access": "RO", "reset": 0 }
@@ -47,7 +47,8 @@
     { "value": 1, "name": "FILL" },
     { "value": 2, "name": "FENCE" },
     { "value": 3, "name": "COMMIT" },
-    { "value": 4, "name": "AUDIO_COMMIT" }
+    { "value": 4, "name": "AUDIO_COMMIT" },
+    { "value": 5, "name": "COPY" }
   ],
   "ext": [
     { "index": 0, "name": "SCROLL_X_L", "doc_label": "SCROLL_X", "access": "RW shadow", "reset": 0 },
@@ -67,9 +68,14 @@
     { "index": 14, "name": "RS_X_L", "doc_label": "RS_X", "access": "RW shadow", "reset": 0 },
     { "index": 15, "name": "RS_X_H", "doc_label": "RS_X", "access": "RW shadow", "reset": 0 },
     { "index": 16, "name": "RS_Y", "doc_label": "RS_Y", "access": "RW shadow", "reset": 0 },
-    { "index": 17, "name": "RS_MAX", "doc_label": "RS_MAX", "access": "RO", "reset": 8 }
+    { "index": 17, "name": "RS_MAX", "doc_label": "RS_MAX", "access": "RO", "reset": 8 },
+    { "index": 18, "name": "PSRAM_SIZE_LOG2", "doc_label": "PSRAM_SIZE_LOG2", "access": "RO", "reset": 22 },
+    { "index": 19, "name": "PCM_CHANNELS", "doc_label": "PCM_CHANNELS", "access": "RO", "reset": 2 },
+    { "index": 20, "name": "COPY_SRC_L", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 },
+    { "index": 21, "name": "COPY_SRC_M", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 },
+    { "index": 22, "name": "COPY_SRC_H", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 }
   ],
-  "ext_implemented_end": 18,
+  "ext_implemented_end": 23,
   "audio": {
     "channel_stride": 16,
     "channels": [
@@ -90,6 +96,26 @@
       { "offset": 9, "name": "NOISE_PERIOD_H", "kinds": ["noise"], "reset": 0 }
     ],
     "channel_end": 96,
+    "pcm": {
+      "base": 96, "stride": 32, "channels": 2,
+      "registers": [
+        { "offset": 0, "name": "START_L", "reset": 0 },
+        { "offset": 1, "name": "START_M", "reset": 0 },
+        { "offset": 2, "name": "START_H", "reset": 0 },
+        { "offset": 4, "name": "END_L", "reset": 0 },
+        { "offset": 5, "name": "END_M", "reset": 0 },
+        { "offset": 6, "name": "END_H", "reset": 0 },
+        { "offset": 8, "name": "LOOP_L", "reset": 0 },
+        { "offset": 9, "name": "LOOP_M", "reset": 0 },
+        { "offset": 10, "name": "LOOP_H", "reset": 0 },
+        { "offset": 12, "name": "GAIN_L", "reset": 0 },
+        { "offset": 13, "name": "GAIN_R", "reset": 0 },
+        { "offset": 14, "name": "CONTROL", "reset": 0, "bits": { "ENABLE": 0, "LOOP_ENABLE": 1 } },
+        { "offset": 15, "name": "CMD", "access": "WO", "reset": null, "bits": { "PREPARE": 0, "STOP": 1, "CLEAR": 2 } },
+        { "offset": 15, "name": "STATUS", "access": "RO", "reset": 0,
+          "bits": { "READY": 0, "ACTIVE": 1, "DONE": 2, "UNDERRUN": 3, "CONFIG_ERROR": 4, "MEMORY_ERROR": 5, "PREPARING": 6 } }
+      ]
+    },
     "global": [
       { "index": 224, "name": "MASTER_GAIN", "access": "RW shadow", "reset": 32 },
       { "index": 225, "name": "AUDIO_STATUS", "access": "RO", "reset": 0,
@@ -106,6 +132,7 @@
     { "name": "PALETTE", "start": 37888, "end": 38399, "access": "RW" },
     { "name": "PALETTE_ACTIVE", "start": 38400, "end": 38911, "access": "none" },
     { "name": "WAVE", "start": 38912, "end": 39423, "access": "RW" },
-    { "name": "WAVE_ACTIVE", "start": 39424, "end": 39935, "access": "none" }
+    { "name": "WAVE_ACTIVE", "start": 39424, "end": 39935, "access": "none" },
+    { "name": "PSRAM", "start": 4194304, "end": 8388607, "access": "RW", "caps": "PSRAM" }
   ]
 }

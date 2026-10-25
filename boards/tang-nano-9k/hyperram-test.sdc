@@ -1,0 +1,5 @@
+create_clock -name clk27 -period 37.037 [get_ports {clk27}]
+create_generated_clock -name sys54 -source [get_ports {clk27}] -multiply_by 2 [get_pins {pll/CLKOUT}]
+create_generated_clock -name ck54 -source [get_ports {clk27}] -multiply_by 2 [get_pins {pll/CLKOUTP}]
+set_false_path -from [get_ports {reset_n}]
+set_false_path -to [get_ports {led_n[*]}]

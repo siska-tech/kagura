@@ -10,6 +10,8 @@
 #include "hardware/clocks.h"
 #include "pico/stdlib.h"
 #include "kagura_host.h"
+#include "spectacular_demo.h"
+#include "pcm_demo.h"
 
 #define PIN_IO0 2u    // IO0..IO3 = GP2..GP5
 #define PIN_SCK 6u
@@ -124,7 +126,8 @@ static void diag(void) {
     if (!check("id", kh_read(KAGURA_REG_ID0, true, id, 5))) { printf("DIAG FAIL %d\n", failures); return; }
     bool wide = id[4] & KAGURA_CAPS_WIDE;
     report("id", id[0] == KAGURA_ID0 && id[1] == KAGURA_ID1 && id[2] == KAGURA_ABI_MAJOR && id[3] == KAGURA_ABI_MINOR &&
-           (id[4] == KAGURA_CAPS_VALUE_FULL || id[4] == KAGURA_CAPS_VALUE_WIDE),
+           (id[4] == KAGURA_CAPS_VALUE_FULL || id[4] == KAGURA_CAPS_VALUE_WIDE ||
+            id[4] == KAGURA_CAPS_VALUE_FULL_PSRAM || id[4] == KAGURA_CAPS_VALUE_WIDE_PSRAM),
            "ID %02x %02x ABI %u.%u CAPS 0x%02x", id[0], id[1], id[2], id[3], id[4]);
     if (config.lanes == KH_SPI)
         report("fifo-header", (kh_last_fifo_status() & KAGURA_FIFO_STATUS_FREE_MASK) == 32,
@@ -364,12 +367,16 @@ static void help(void) {
            "  info                 ID, ABI, CAPS, STATUS, pins\n"
            "  diag                 end-to-end check (ID, registers, VRAM, FILL/FENCE, sprite, audio, IRQ, BUSY)\n"
            "  abort                abort mid-header and mid-data; verify no side effect and recovery\n"
+           "  show [seconds]       moonlit parallax runner demo; default 30s, 0 runs until a key\n"
            "  mode spi|qspi        must match the bitstream (build-nano9k.tcl spi / qspi)\n"
            "  div <n>              SCK = 10MHz / n (1..250, default 4)\n"
            "  rd <off> [n]         read n registers from offset (hex), INC\n"
            "  wr <off> <val>       write one register (hex)\n"
            "  w <addr> <len>       upload len raw bytes to VRAM (hex addr), replies READY then OK len us crc32\n"
            "  c <addr> <len>       read VRAM back, replies CRC len us crc32\n"
+           "  psram [len]          PSRAM upload/FENCE/readback compare (CAPS PSRAM, default 2048)\n"
+           "  copy [len]           COMMAND COPY PSRAM -> pattern VRAM compare, and 32KiB copy timing\n"
+           "  pcm [seconds]       PCM loop + retriggered one-shot from PSRAM; default 10s, 0 runs until a key\n"
            "  clear                clear ERROR_CODE and IRQ.ERROR\n");
 }
 
@@ -399,6 +406,20 @@ int main(void) {
         else if (!strcmp(cmd, "info")) info();
         else if (!strcmp(cmd, "diag")) diag();
         else if (!strcmp(cmd, "abort")) abort_test();
+        else if (!strcmp(cmd, "show")) {
+            unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 30u;
+            if (seconds > 600u) { printf("ERR seconds 0..600\n"); continue; }
+            kh_status s = kagura_spectacular_demo(seconds);
+            if (s != KH_OK) printf("ERR show: %s 0x%02x\n", status_name(s), kh_last_error());
+        }
+        else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
+        else if (!strcmp(cmd, "pdbg")) kagura_psram_debug(a1 && !strcmp(a1, "r"), a2 ? (uint8_t)strtoul(a2, NULL, 16) : 0xc3u);
+        else if (!strcmp(cmd, "copy")) kagura_copy_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
+        else if (!strcmp(cmd, "pcm")) {
+            unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 10u;
+            if (seconds > 600u) { printf("ERR seconds 0..600\n"); continue; }
+            kagura_pcm_demo(seconds);
+        }
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {
             config.lanes = !strcmp(a1, "qspi") ? KH_QSPI : KH_SPI;

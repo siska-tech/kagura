@@ -105,7 +105,7 @@ module tb_w65c02_bus;
         @(negedge phi2_pin);
         // ID/ABI/CAPS and STATUS.
         cpu_read(5'h18,8'h4b); cpu_read(5'h19,8'h39); cpu_read(5'h1a,8'h00);
-        cpu_read(5'h1b,8'h03); cpu_read(5'h1c,8'h01); cpu_read(5'h00,8'h01);
+        cpu_read(5'h1b,8'h04); cpu_read(5'h1c,8'h01); cpu_read(5'h00,8'h01);
         // Read/write register and unselected cycles in between.
         cpu_write(5'h02,8'h15); idle(1); idle(0); cpu_read(5'h02,8'h15);
         // Writing a read-only register is BAD_ACCESS with IRQ.ERROR.

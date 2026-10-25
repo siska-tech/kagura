@@ -3,10 +3,15 @@
 // HDMI stream, with kagura_spi_adapter in place of the W65C02S adapter.
 // Instance names of the stream part match kagura_phase1_top so phase1.cst
 // and phase1*.sdc apply. Pins reuse the 3.3V CPU header pins (host.cst).
-// tools/build-nano9k.tcl writes kagura_build_config (LANES, VIDEO_ID_CODE).
+// tools/build-nano9k.tcl writes kagura_build_config (LANES, VIDEO_ID_CODE, PSRAM).
+// PSRAM (spipsram/qspipsram) sets CAPS b3: die 0 of the in-package PSRAM
+// through kagura_hyperram_phy_gowin, with its CK from the system PLL CLKOUTP
+// (67.5 degrees). Without it the PSRAM pins are held idle (CS# high, RESET# low).
 module kagura_host_top #(
     parameter integer LANES=kagura_build_config::LANES,
     parameter integer VIDEO_ID_CODE=kagura_build_config::VIDEO_ID_CODE,
+    parameter bit PSRAM=kagura_build_config::PSRAM,
+    parameter bit PSRAM_DEBUG=kagura_build_config::PSRAM_DEBUG,
     localparam integer XW=VIDEO_ID_CODE==4 ? 11 : 10
 ) (
     input wire clk27, reset_n,
@@ -16,10 +21,14 @@ module kagura_host_top #(
     input wire host_sck, host_cs_n,
     inout wire [3:0] host_io,
     output wire host_busy, host_ready,
-    output wire host_irq_n
+    output wire host_irq_n,
+    output wire [1:0] O_psram_ck,O_psram_ck_n,O_psram_reset_n,O_psram_cs_n,
+    inout wire [1:0] IO_psram_rwds,
+    inout wire [15:0] IO_psram_dq
 );
-    wire pixel,serial,system_clk,pixel_lock,system_lock;
-    kagura_nano9k_clocks #(.VIDEO_ID_CODE(VIDEO_ID_CODE)) clocks(clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock);
+    wire pixel,serial,system_clk,pixel_lock,system_lock,psram_ck;
+    kagura_nano9k_clocks #(.VIDEO_ID_CODE(VIDEO_ID_CODE),.PSRAM_CK_ENABLE(PSRAM)) clocks(
+        clk27,reset_n,pixel,serial,system_clk,pixel_lock,system_lock,psram_ck);
     wire release_ok=reset_n && pixel_lock && system_lock;
     (* ASYNC_REG="TRUE" *) reg [3:0] pixel_release,system_release;
     always @(posedge pixel or negedge release_ok)
@@ -56,16 +65,38 @@ module kagura_host_top #(
         .busy(host_busy),.irq_drive(irq_drive),.irq_level(irq),.queue_free(queue_free),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),.req_wdata(req_wdata),
         .rsp_valid(rsp_valid),.rsp_ready(rsp_ready),.rsp_rdata(rsp_rdata),.rsp_error(rsp_error),.late(late));
-    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE, raster scroll for 320x180.
+    // CAPS: HDMI_AUDIO, WAVE, 16 sprites per line, WIDE, raster scroll for 320x180, PSRAM.
+    wire p_reset_n,p_cs_n,p_ck_en,p_dq_oe,p_rwds_oe,p_rwds_r,p_rwds_f,p_dq_tx,p_rwds_tx;
+    wire [7:0] p_dq_r,p_dq_f,p_in_r,p_in_f;
+    wire p_rwds_in_r,p_rwds_in_f;
     wire [11:0] render_cycles;
-    kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h73 : 8'h53),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
+    kagura_vdp #(.CAPS((VIDEO_ID_CODE==4 ? 8'h73 : 8'h53) | (PSRAM ? 8'h08 : 8'h00)),.VIDEO_ID_CODE(VIDEO_ID_CODE),.PSRAM_DEBUG(PSRAM_DEBUG)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(rsp_ready),.rsp_rdata(rsp_rdata),
         .rsp_error(rsp_error),.irq(irq),.init_done(vdp_ready),.frame_ready(frame_ready),.render_cycles(render_cycles),
         .queue_free(queue_free),
         .audio_full(full),.audio_underflow_toggle(audio_uf_toggle),.audio_muted(muted),
         .audio_sample_valid(valid),.audio_left(left_sample),.audio_right(right_sample),.audio_status(audio_status),
-        .pix_clk(pixel),.pix_reset(~pixel_release[3]),.cx(cx),.cy(cy),.rgb(vdp_rgb));
+        .pix_clk(pixel),.pix_reset(~pixel_release[3]),.cx(cx),.cy(cy),.rgb(vdp_rgb),
+        .psram_reset_n(p_reset_n),.psram_cs_n(p_cs_n),.psram_ck_en(p_ck_en),.psram_dq_oe(p_dq_oe),.psram_rwds_oe(p_rwds_oe),
+        .psram_dq_o_rise(p_dq_r),.psram_dq_o_fall(p_dq_f),.psram_rwds_o_rise(p_rwds_r),.psram_rwds_o_fall(p_rwds_f),.psram_dq_tx(p_dq_tx),.psram_rwds_tx(p_rwds_tx),
+        .psram_dq_i_rise(p_in_r),.psram_dq_i_fall(p_in_f),.psram_rwds_i_rise(p_rwds_in_r),.psram_rwds_i_fall(p_rwds_in_f));
+    generate if(PSRAM) begin: psram
+        kagura_hyperram_phy_gowin phy(.clk(system_clk),.clk_ck(psram_ck),.phy_reset_n(p_reset_n),.phy_cs_n(p_cs_n),
+            .phy_ck_en(p_ck_en),.phy_dq_oe(p_dq_tx),.phy_dq_o_rise(p_dq_r),.phy_dq_o_fall(p_dq_f),.phy_rwds_oe(p_rwds_tx),
+            .phy_rwds_o_rise(p_rwds_r),.phy_rwds_o_fall(p_rwds_f),.phy_dq_i_rise(p_in_r),.phy_dq_i_fall(p_in_f),
+            .phy_rwds_i_rise(p_rwds_in_r),.phy_rwds_i_fall(p_rwds_in_f),
+            .O_psram_ck(O_psram_ck[0]),.O_psram_ck_n(O_psram_ck_n[0]),.O_psram_reset_n(O_psram_reset_n[0]),
+            .O_psram_cs_n(O_psram_cs_n[0]),.IO_psram_rwds(IO_psram_rwds[0]),.IO_psram_dq(IO_psram_dq[7:0]));
+    end else begin: no_psram
+        assign {O_psram_ck[0],O_psram_ck_n[0],O_psram_reset_n[0],O_psram_cs_n[0]}=4'b0101;
+        assign IO_psram_rwds[0]=1'bz;
+        assign IO_psram_dq[7:0]=8'bz;
+        assign {p_in_r,p_in_f,p_rwds_in_r,p_rwds_in_f}=0;
+    end endgenerate
+    assign {O_psram_ck[1],O_psram_ck_n[1],O_psram_reset_n[1],O_psram_cs_n[1]}=4'b0101;
+    assign IO_psram_rwds[1]=1'bz;
+    assign IO_psram_dq[15:8]=8'bz;
     // READY: memory/line initialization and the first line 0 are done.
     reg ready_q;
     always @(posedge system_clk) ready_q<=pixel_up_sync[1] && vdp_ready && frame_ready;

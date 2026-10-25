@@ -75,6 +75,7 @@ kh_status kh_set_inc(uint16_t inc);
 kh_status kh_vram_write(uint32_t addr, const uint8_t *data, size_t n);  // INC=1
 kh_status kh_vram_read(uint32_t addr, uint8_t *data, size_t n);         // READ_REQUEST per byte
 kh_status kh_fill(uint32_t addr, uint16_t length, uint8_t value);
+kh_status kh_copy(uint32_t src, uint32_t dst, uint16_t length);         // COMMAND COPY (CAPS PSRAM), PSRAM -> VRAM
 kh_status kh_fence(uint8_t tag, uint32_t timeout_us);                   // waits DONE_TAG
 kh_status kh_commit(uint32_t timeout_us);                               // waits COMMIT_BUSY=0
 kh_status kh_audio_commit(uint32_t timeout_us);                         // waits APPLY_BUSY=0

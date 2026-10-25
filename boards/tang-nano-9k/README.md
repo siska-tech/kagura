@@ -54,3 +54,9 @@ CPU/HDMI不要の`bootprobe`構成はStage 1用で、LED 6本を順にJEDEC ID=`
 - HDMI出力はAC結合（100nF）＋送信側の49.9Ω pull-up（3.3V）の構成で、HDMI connectorの+5V（pin 18）はダイオード経由で供給、HPDはFPGAに接続されていない。
 
 型番・基板版が異なる場合はCST生成前に停止する。未確認のpinを推測でCSTへ追加しない。
+
+## PSRAMとHDMIのPLL共用評価
+
+`kagura_hyperram_hdmi_top.sv`はsystem PLLの54MHz CLKOUT/67.5° CLKOUTPを使い、die 0全4MiBのUART memtestとHDMIカラーバー・48kHzテスト音を同時実行する。`tools/build-gowin-hyperram-hdmi.tcl 480|720`でビルドする（作業ディレクトリはモード別に分ける）。UART TXはpin 17、115200 8N1。LED下位4本はmemtestのinit/clean/ever-fail/pass、上位2本はHDMI underflow/overflowを示す。
+
+2026-10-25に両モードでPLL 2個・STA setup/hold違反0、各64連続passエラー0、ユーザーによる映像・音声正常を確認した。720pの既存OSER10 reset例外と、外部PSRAM端子タイミングのSTA範囲には注意する。数値・制約・再現手順は[PSRAM/PCM記録](../../docs/psram-pcm.md)を参照。本体rendererやPCM再生を統合した構成ではない。
