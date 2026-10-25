@@ -48,7 +48,7 @@ if {$base in {bootprobe magicprobe}} {
     set_option -use_mspi_as_gpio 1
 } elseif {$base in {hdmi phase2 phase2boot demo spi qspi spipsram qspipsram}} {
     set upstream {audio_info_frame audio_sample_packet auxiliary_video_information_info_frame packet_assembler source_product_description_info_frame tmds_channel}
-    set local [list $config build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_hdmi_stream_eval.sv boards/tang-nano-9k/kagura_phase1_top.sv]
+    set local [list $config build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv rtl/hdmi/kagura_hdmi_stream_eval.sv boards/tang-nano-9k/kagura_phase1_top.sv]
     set top kagura_phase1_top
     set sdc {phase1.sdc phase1-audio.sdc}
     if {$wide} { lappend sdc phase1-720p.sdc }

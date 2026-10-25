@@ -12,7 +12,7 @@
 | VRAM・queue | byte参照モデル、領域境界、拒否時副作用、FILL/FENCE、満杯、順序を検査 | 外部ホストからの長時間更新 |
 | 起動 | RAMのpoison/zero照合、INIT_DONE、最初のline0、system側だけのresetを検査。初期化版デモでS2復帰を実機確認 | 多数回の電源投入・reset |
 | 背景・sprite | 全画素比較、scroll/flip/behind、透明色、優先順位、16個/line超過とIRQ。720pでも背景・spriteを全画素比較 | 全属性の実機個別判定 |
-| 6ch音源 | `tb_audio_synth`で34770 stereo samplesが整数モデルと一致。23 system cycles/sample、noise周期、飽和、設定反映・拒否を検査 | 実機PCMのsample完全性 |
+| 6ch音源 | `tb_audio_synth`で34770 stereo samplesが整数モデルと一致。24 system cycles/sample、noise周期、飽和、設定反映・拒否を検査 | 実機PCMのsample完全性 |
 | 音源統合 | `tb_audio_core` / `tb_demo_audio`でFIFO token順序、wave bank交換、PCM、error、デモの映像・音声を検査 | 長時間の音声途切れ・停止復帰 |
 | HDMI | TMDS復号、BCH/metadata/ACR、TERC4からPCMを復号。パイプラインencoderは原版と2clock遅れで60万symbol一致 | serializer出力の電気特性・規格適合 |
 | デモ | 480p/720pのシューティング映像と6ch演奏をモニター1台で確認。720pの自機配置修正後も確認 | 複数sink・長時間 |
@@ -47,6 +47,13 @@ CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以�
 ## 実機互換性
 
 基板1台で480p/720pの映像・音声をPCモニター1台にて確認した。初期480p試験ではTCL製テレビが無信号で、Sipeed公式DVI相当サンプルでも同様だった。原因は未特定であり、KAGURA固有ともテレビ非対応とも断定しない。2026-10-24に2機種目のTOSHIBA REGZA 32S5で、`443900a`のdemo bitstream（`kagura_demo.fs`、SHA256 `92bad474…`）の映像が正常に表示されることを確認した（art ROMのBSRAM割付け変更後の表示確認を兼ねる。音声・連続時間・回数は未記録）。全体の互換性試験は未完了。[実機試験手順・記録表](p1-07-hardware-test.md)を使用する。
+
+256スプライト化（ABI 0.5）後、2026-10-25にTOSHIBA REGZA 32S5へSRAM書込みで次を確認した（連続時間・回数は未記録）。demoは実装上OAMの先頭64件だけを使うため、256件全体の表示はシミュレーションの全画素比較でのみ確認している。
+
+| bitstream | source | SHA256 | 結果 |
+|---|---|---|---|
+| demo（480p） | `cf7f6b0`＋[経路短縮](timing.md#256スプライト化後の経路短縮2026-10-25)（書込み時は未コミット、内容はそのcommitと同じ） | `51893898…0C71` | 映像・LED正常 |
+| demo720 | `cf7f6b0` | `7E56831F…10AE` | 映像・音声・LED・S2 reset後の復帰とも正常 |
 
 未実施項目:
 

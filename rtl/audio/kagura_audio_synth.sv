@@ -31,8 +31,9 @@ module kagura_audio_synth #(
     input wire [15:0] cfg_pcm_gain_l, cfg_pcm_gain_r,
     input wire [1:0] cfg_pcm_enable
 );
-    localparam [2:0] IDLE=0,VOICE=1,WAVE=2,MULT=3,MASTER=4,EMIT=5,PREP=6,SAT=7;
-    reg [2:0] state,channel;
+    localparam [3:0] IDLE=0,VOICE=1,WAVE=2,MULT=3,MASTER=4,EMIT=5,PREP=6,SAT=7,ACC=8;
+    reg [3:0] state;
+    reg [2:0] channel;
     reg [10:0] divider;
     reg [6:0] cycles;
     reg pending;
@@ -49,6 +50,11 @@ module kagura_audio_synth #(
     reg [15:0] noise_count;
     reg signed [7:0] voice_sample;
     reg signed [19:0] sum_l,sum_r;
+    // A voice product is registered in MULT and added on the next cycle
+    // (PREP, or ACC after the last voice), keeping the multiplier and the
+    // accumulator adder in separate cycles (timing at 54MHz).
+    reg signed [26:0] voice_product_l,voice_product_r;
+    reg accumulate;
     assign apply_ready=!pending;
     assign apply_busy=pending;
     assign apply_boundary=pending && divider==1124 && !reset;
@@ -120,6 +126,7 @@ module kagura_audio_synth #(
             pending_period<=0; active_period<=0;
             for(i=0;i<6;i=i+1) phase[i]<=0;
             noise_state<=1; noise_count<=0; voice_sample<=0; sum_l<=0; sum_r<=0;
+            voice_product_l<=0; voice_product_r<=0; accumulate<=0;
             step_now<=0; phase_now<=0; gain_l<=0; gain_r<=0; duty_now<=0; voice_on<=0;
             master_product_l<=0; master_product_r<=0; master_correction_l<=0; master_correction_r<=0;
             wave_addr_q<=0;
@@ -200,10 +207,11 @@ module kagura_audio_synth #(
                 end
                 WAVE: begin voice_sample<=voice_on && step_now!=0 ? wave_data : 8'sd0; state<=MULT; end
                 MULT: begin
-                    sum_l<=sum_l+20'(product_l); sum_r<=sum_r+20'(product_r);
-                    if(channel==(PCM_ENABLE ? 7 : 5)) state<=MASTER;
+                    voice_product_l<=product_l; voice_product_r<=product_r; accumulate<=1;
+                    if(channel==(PCM_ENABLE ? 7 : 5)) state<=ACC;
                     else begin channel<=channel+1'b1; state<=PREP; end
                 end
+                ACC: state<=MASTER;
                 MASTER: begin
                     master_product_l<=product_l; master_product_r<=product_r;
                     master_correction_l<=correction(sum_l,active_master); master_correction_r<=correction(sum_r,active_master);
@@ -213,6 +221,9 @@ module kagura_audio_synth #(
                 EMIT: begin sample_valid<=1; last_cycles<=cycles+1'b1; state<=IDLE; end
                 default: ;
             endcase
+            if(accumulate) begin
+                sum_l<=sum_l+20'(voice_product_l); sum_r<=sum_r+20'(voice_product_r); accumulate<=0;
+            end
         end
 // synthesis translate_off
     always @(posedge clk)

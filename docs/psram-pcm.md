@@ -17,7 +17,7 @@ PSRAMからの直接描画やフレームバッファ化は別段階とする。
 
 ## 現状と成立条件
 
-- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は23cycles/sample、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
+- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は24cycles/sample（PCM有効時30）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
 - 既存音声出力がPCMであることと、メモリから任意sampleを読むPCM音源があることは別。現在は後者が未実装。
 - [現行記録](validation-status.md)の`d501a1f`測定ではホスト版24/26、デモ25/26 BSRAM。最小setupはqspi +0.142ns、demo720 +0.130ns等。これは今回checkoutの再測定ではない。統合時に新しい基準を取得する。
 - `kagura_nano9k_clocks.sv`はvideo/systemでPLLを2個使用済み。PSRAM向けに3個目を追加できない。system用PLLの出力・分周・位相出力を共用できるか、選定IPとデバイスの制約を確認する。周波数や位相は未決定。system54MHzとvideo clockの維持を優先する。

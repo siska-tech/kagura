@@ -31,8 +31,11 @@ module kagura_audio_transport #(
     reg [13:0] tick_acc;
     // Due samples not yet handed over; bounded by the packet slot latency.
     reg [2:0] credits;
-    wire [14:0] tick_next={1'b0,tick_acc}+15'(TICK_DEN);
-    wire tick=tick_next>=15'(TICK_NUM);
+    // tick_acc < TICK_NUM, so acc+DEN >= NUM is acc >= NUM-DEN: the compare
+    // and the constant adds run in parallel instead of in series (74.25MHz).
+    wire tick=tick_acc>=14'(TICK_NUM-TICK_DEN);
+    wire [13:0] tick_step=tick_acc+14'(TICK_DEN);
+    wire [13:0] tick_wrap=tick_acc+14'(TICK_DEN-TICK_NUM);
     wire issue=!pending && !pixel_valid && pixel_ready && credits!=0;
     wire pop=!reset && issue && !muted && !empty;
     wire fill=issue && (muted || empty);
@@ -47,7 +50,7 @@ module kagura_audio_transport #(
             pending<=0; pixel_valid<=0; pixel_data<=0; muted<=1; starved<=0;
             tick_acc<=0; credits<=0; underflow_toggle<=0;
         end else begin
-            tick_acc<=tick ? 14'(tick_next-15'(TICK_NUM)) : tick_next[13:0];
+            tick_acc<=tick ? tick_wrap : tick_step;
             // Each new loss toggles independently of legacy sticky flags so
             // software can clear/re-arm its system-domain AUDIO_STATUS bits.
             if((tick && !issue && credits==3'd7) || (fill && !muted)) underflow_toggle<=~underflow_toggle;

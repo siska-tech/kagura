@@ -4,6 +4,8 @@
 
 ローカルTMDS置換実装: `rtl/hdmi/kagura_tmds_channel.sv`はS6の固定revisionにある`src/tmds_channel.sv`（Sameer Puri）を基にした実装として管理する。KAGURA側でprefix XORと3段パイプラインへ変更し、`sim/tests/tb_tmds_pipeline.sv`で原版と2クロック遅れの出力一致を検査する。Apache-2.0を選択し、著者・変更表記をソースへ記載。原版・ライセンス本文は`third_party/hdl-util-hdmi/`に保持する。詳細は[依存IP方針](../THIRD_PARTY.md)を参照。
 
+ローカルpacket assembler置換実装: `rtl/hdmi/kagura_packet_assembler.sv`は同revisionの`src/packet_assembler.sv`（Sameer Puri）を基にした実装として管理する。KAGURA側でcounter依存のbit選択muxをshift registerと1cycle先行のregister判定に置き換え、74.25MHzのBCH更新経路を短くした。header/subがpacket先頭の直前だけ変わる前提で、`sim/tests/tb_packet_assembler.sv`が原版と毎cycleの出力一致を検査する。Apache-2.0を選択し、著者・変更表記をソースへ記載。
+
 | ID | 資料 | 確認箇所・留意点 |
 |---|---|---|
 | S1 | [Tang Nano 9K公式Wiki](https://wiki.sipeed.com/hardware/en/tang/Tang-Nano-9K/Nano-9K) | ボード仕様。型番表記はGW1NR-LV9QN88PC6/I5 |

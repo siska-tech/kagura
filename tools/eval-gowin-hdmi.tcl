@@ -13,7 +13,7 @@ foreach path [glob [file join $root third_party hdl-util-hdmi src *.sv]] {
 }
 add_file -type verilog [file join $root rtl platform kagura_gowin_serializer.sv]
 if {$mode eq "stream"} {
-    foreach path {build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/hdmi/kagura_audio_packets.sv rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv rtl/hdmi/kagura_hdmi_stream_eval.sv} {
+    foreach path {build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv rtl/hdmi/kagura_hdmi_stream_eval.sv} {
         add_file -type verilog [file join $root $path]
     }
     set_option -top_module kagura_hdmi_stream_eval

@@ -37,6 +37,21 @@ text = text[:start] + '''        kagura_audio_packets #(.VIDEO_ID_CODE(VIDEO_ID_
 # Pipelined encoder (3-cycle latency) for 74.25MHz; equivalence is checked
 # against the unchanged upstream tmds_channel by sim/tests/tb_tmds_pipeline.sv.
 replace_once('        tmds_channel #(.CN(i)) tmds_channel (', '        kagura_tmds_channel #(.CN(i)) tmds_channel (')
+# Same output sequence without the counter-indexed bit mux in front of the BCH
+# update; checked against the upstream module by sim/tests/tb_packet_assembler.sv.
+replace_once('        packet_assembler packet_assembler (', '        kagura_packet_assembler packet_assembler (')
+# The guard/preamble line test from a register. cy is constant from cx 1 to the
+# end of the line (START_X is 0) and the test is used only at cx >= frame_width-10,
+# so the output is unchanged; cy no longer feeds these flags combinationally.
+replace_once('''        logic video_guard = 1;
+        logic video_preamble = 0;
+''', '''        logic video_guard = 1;
+        logic video_preamble = 0;
+        logic guard_line = 0;
+        always_ff @(posedge clk_pixel) guard_line <= cy == frame_height - 1 || cy < screen_height - 1;
+''')
+replace_once('(cy == frame_height - 1 || cy < screen_height - 1 /* no VG at end of last line */)', 'guard_line /* no VG at end of last line */')
+replace_once('(cy == frame_height - 1 || cy < screen_height - 1 /* no VP at end of last line */)', 'guard_line /* no VP at end of last line */')
 # This generated variant is used only with HDMI enabled at the fixed mode.
 text = ('// Modified for KAGURA-9: fixed VIC (1 or 4)/60Hz/48kHz/16bit sample-valid interface.\n'
         '// Derived from hdl-util/hdmi, Sameer Puri; Apache-2.0 option selected.\n'

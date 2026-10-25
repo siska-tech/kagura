@@ -58,6 +58,8 @@ run_test tb_tmds_channel third_party/hdl-util-hdmi/src/tmds_channel.sv \
     sim/tests/tb_tmds_channel.sv
 run_test tb_tmds_pipeline third_party/hdl-util-hdmi/src/tmds_channel.sv rtl/hdmi/kagura_tmds_channel.sv \
     sim/tests/tb_tmds_pipeline.sv
+run_test tb_packet_assembler third_party/hdl-util-hdmi/src/packet_assembler.sv rtl/hdmi/kagura_packet_assembler.sv \
+    sim/tests/tb_packet_assembler.sv
 run_test tb_serializer_reset rtl/platform/kagura_gowin_serializer.sv sim/tests/tb_serializer_reset.sv
 run_test tb_async_fifo rtl/memory/kagura_async_fifo.sv sim/tests/tb_async_fifo.sv
 run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
@@ -70,7 +72,7 @@ run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
 python3 tools/prepare-hdmi-stream.py
 # The same stream at VIC1 (640x480) and VIC4 (1280x720, docs/wide-mode.md).
 for stream_test in tb_hdmi_stream tb_hdmi_stream720; do
-    run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv \
+    run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv \
         rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv \
         rtl/hdmi/kagura_audio_packets.sv rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv rtl/hdmi/kagura_hdmi_stream_eval.sv \
         third_party/hdl-util-hdmi/src/audio_sample_packet.sv \

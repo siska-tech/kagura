@@ -117,3 +117,26 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 全構成の最小値は+0.063nsから+0.130nsへ改善した。最悪経路は構成ごとに移動しており、qspiはregister addressから音源capture、demo720はsequencer counter、その他の720p統合構成は主にpacket assemblerである。単一RTL経路の修正ではなく配置配線探索の改善であり、機能追加後に同じ余裕を保証するものではない。P&R時間は統合構成で増える。
 
 後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 26/26（256スプライト化後の見込み）で空きがないため、BSRAMを使う拡張は別途空きを確保する。
+
+### 256スプライト化後の経路短縮（2026-10-25）
+
+256スプライト化（`cf7f6b0`）のP&Rで、変更していない経路が配置の変動で期限を割った。繰り返し現れた次の4経路を、出力を変えずに短くした。
+
+| 経路 | 変更 |
+|---|---|
+| packet_assembler（pixel74）counter → BCH parity | `rtl/hdmi/kagura_packet_assembler.sv`に置換。counterで選ぶbit muxをshift registerにし、counterの範囲判定を1cycle先にregisterで作る。`tb_packet_assembler`が原版と毎cycleの出力一致を検査 |
+| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし |
+| audio_transport（pixel74）tick_acc | 定数加算と比較を直列から並列に（`tick_acc < TICK_NUM`を前提に等価） |
+| hdmi guard/preamble（pixel74）cy → video_guard | cyの行判定をregisterで受ける。cyは行内で一定で、判定はcx≥frame_width−10でだけ使う |
+
+【実測】Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、最小setup slack（`cf7f6b0` → この変更）。
+
+| 構成 | slack |
+|---|---:|
+| demo / demo720 | +0.78 → +0.03ns / +0.003 → **−0.69ns** |
+| phase2 / phase2720 | +0.58 → +2.29ns / −0.46 → +0.39ns |
+| spi / spi720 | +0.47 → +0.91ns / +0.49 → +0.43ns |
+| qspi / qspi720 | +0.045 → +0.87ns / +0.46 → +0.008ns |
+| phase2boot / phase2boot720 | +0.07 → +0.009ns / −1.22 → +0.10ns |
+
+対象の4経路は最悪経路から消えたが、最悪経路は別の場所へ移った（demo720は`kagura_tmds_channel`の`video_data`→`qm1`、qspi720はaudio_packetsの`cx`判定、phase2bootはregistersの`ext_index`→`rs_table`）。Register数は約+280。配置の変動幅が個々の短縮効果を上回っており、**demo720はこの変更でSTA不合格**。実機確認用のdemo720は`cf7f6b0`のbitstream（+0.003ns）を使った（[検証状況](validation-status.md)）。残りの経路は別の課題として扱う。
