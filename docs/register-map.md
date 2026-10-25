@@ -1,6 +1,6 @@
-# Register Specification / ABI 0.2
+# Register Specification / ABI 0.4
 
-【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=3（0.2で16:9モード用のCAPS b5とEXT 0Aを追加、0.3でラスタスクロール用のCAPS b6とEXT 0B..11を追加。下記「ABI 0.2」「ABI 0.3」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
+【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=4（0.2で16:9モード用のCAPS b5とEXT 0Aを追加、0.3でラスタスクロール用のCAPS b6とEXT 0B..11、0.4でPSRAM・PCM用のCAPS b3、EXT 12..13、PSRAM領域、PCM音源レジスタを追加。下記「ABI 0.2」「ABI 0.3」「ABI 0.4」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
 
 ## 32byte直接窓（CPU base $9F00）
 
@@ -33,8 +33,8 @@
 | 18 | ID0 | RO | reset/read 0x4B ('K') |
 | 19 | ID1 | RO | 0x39 ('9') |
 | 1A | ABI_MAJOR | RO | 0 |
-| 1B | ABI_MINOR | RO | 3 |
-| 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM=0,b4 SPR16=1,b5 WIDE（320×180）,b6 RSCROLL、残り0。全体版は0x53、16:9版は0x73 |
+| 1B | ABI_MINOR | RO | 4 |
+| 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM（PSRAM領域とPCM 2ch）,b4 SPR16=1,b5 WIDE（320×180）,b6 RSCROLL、残り0。全体版は0x53、16:9版は0x73、PSRAM版はそれぞれ0x5B、0x7B |
 | 1D | FRAME_COUNT_L | RO | VBlankイベントで増える8bit counter、wrap。snapshot不要な8bit値 |
 | 1E | SPR_OVERFLOW_INDEX | RO | 最初にline上限を超えたsprite番号0..63。IRQ b5 clearで0に戻す |
 | 1F | SPR_OVERFLOW_LINE | RO | 最初にoverflowした論理Y。IRQ b5 clearで0に戻す |
@@ -87,7 +87,9 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 | 0F | RS_X bit8をb0、他予約 | RW shadow /0 |
 | 10 | RS_Y | RW shadow /0 |
 | 11 | RS_MAX（entry数） | RO/8 |
-| 12..FF | 未実装 | read0/write BAD_ACCESS |
+| 12 | PSRAM_SIZE_LOG2（PSRAM領域のbyte数のlog2） | RO/22 |
+| 13 | PCM_CHANNELS（PCM音源数） | RO/2 |
+| 14..FF | 未実装 | read0/write BAD_ACCESS |
 
 全readはshadow値（RO除く）。active値への暗黙read切替はしない。scrollはX modulo512/Y modulo256で背景マップへ適用。
 
@@ -128,3 +130,15 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 - COMMIT_BUSY中のRS_COUNT/RS_LINE/RS_X/RS_Yのwriteは、テーブルをcopyし終えるまで守るためBUSY_CONFLICTで拒否する（RS_INDEXの変更は可）。
 - RS_*の書込み後は内部の検査が反映されるまで数cycle register要求が待たされる。
 - 480p/720pで同じ。適用はライン描画開始時のハードウェア処理で、hostのIRQ応答遅延には依存しない。
+## ABI 0.4（PSRAM・PCM）
+
+検討と実機評価は[psram-pcm.md](psram-pcm.md)。既存のregister配置・副作用は変更しない。
+
+- ABI_MINORを4にした。全bitstreamが0.4を返す。
+- CAPS b3 PSRAM: 内蔵PSRAM（die 0、4MiB）と2ch PCM音源を実装したbitstreamだけが立てる。立てないbitstreamでは、PSRAM領域はINVALID_ADDRESS、EXT 12..13とaudio index 60..9Fは未実装（read 0/write BAD_ACCESS）。
+- PSRAM領域 400000–7FFFFF（[メモリマップ](memory-map.md)）: VRAM_WRITE、VRAM_READ_REQUEST、FILLの対象で、addressとINCの規則、範囲検査、同じFIFOでの順序保証はVRAMと同じ。FILLは開始〜終了がPSRAM領域内でなければINVALID_ADDRESS。PSRAM writeはcontrollerが受け付けた時点で完了扱いとする。controllerは1件ずつ処理するので、後続のどのPSRAMアクセスよりも先に終わる。したがってFENCEのDONE_TAG更新後に始まるPSRAMアクセス（READ_REQUEST、PCMの先読みを含む）は必ず先行writeの結果を読む。
+- PSRAMの内容は電源投入時に不定で、起動時の消去対象ではない。INIT_DONEはPSRAMの初期化を待たない。初期化（reset解除後約80µs）が終わるまでは、queue先頭のPSRAM操作だけが待つ。
+- EXT 12 PSRAM_SIZE_LOG2（22）、EXT 13 PCM_CHANNELS（2）はRO。
+- PCM音源レジスタはaudio index 60..9F（[音源仕様](audio-spec.md)）。GAIN・ENABLEはAUDIO_COMMITで反映し、START/END/LOOP/LOOP_ENABLEはPREPAREで取り込む。
+- host規約: PREPARE前に、そのsampleのuploadの後へFENCEを置いて完了を確認する。PREPARE済み・再生中のchが参照する範囲（START..END−1）は書き換えない（再生結果は不定）。別の範囲へのupload・readbackは再生と並行してよく、PCMの補充が優先される。
+- 典型手順: `VRAM_ADDR=START`→VRAM_WRITEでsampleを転送→FENCE→START/END/LOOP/CONTROL.LOOP_ENABLEを設定→PCM_CMD.PREPARE→PCM_STATUS.READYをpoll→GAIN・CONTROL.ENABLEを設定→AUDIO_COMMIT。

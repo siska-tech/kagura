@@ -225,9 +225,9 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             rd(IRQ_STATUS,v); if(v[5]) $fatal(1,"overflow after sprite disable");
         end
         if(RASTER) begin
-            // CAPS b6 and ABI_MINOR 3; RS_MAX reads 8.
+            // CAPS b6 and ABI_MINOR 4; RS_MAX reads 8.
             rd(5'h1c,v); if(v!==8'h41) $fatal(1,"CAPS %02h",v);
-            rd(5'h1b,v); if(v!==8'h03) $fatal(1,"ABI_MINOR %02h",v);
+            rd(5'h1b,v); if(v!==8'h04) $fatal(1,"ABI_MINOR %02h",v);
             wr(EXT_INDEX,8'h11); rd(EXT_DATA,v); if(v!==8) $fatal(1,"RS_MAX %0d",v);
             // R1: eight entries, the last on the final logical line.
             t_line[0]=3; t_line[1]=20; t_line[2]=21; t_line[3]=60; t_line[4]=100; t_line[5]=150; t_line[6]=LINES-2; t_line[7]=LINES-1;

@@ -55,7 +55,7 @@ proc merge {type names} {
     add_file -type $type $path
 }
 merge cst {phase1.cst hyperram-uart.cst}
-set constraints {phase1.sdc phase1-audio.sdc hyperram-hdmi.sdc}
+set constraints {phase1.sdc phase1-audio.sdc psram-ck.sdc hyperram-hdmi.sdc}
 if {$wide} { lappend constraints phase1-720p.sdc }
 if {$source eq "pcm"} { lappend constraints hyperram-pcm.sdc }
 merge sdc $constraints

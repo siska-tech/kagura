@@ -26,7 +26,7 @@ module tb_register_abi;
             .push(),.push_desc(),.push_ready(1'b1),.queue_free(6'd32),.queue_idle(1'b1),.queue_staging(1'b0),
             .engine_busy(1'b0),.read_done(1'b0),.read_data(8'b0),.fence_done(1'b0),.fence_tag(8'b0),.commit_done(1'b0),
             .audio_index(8'b0),.audio_rdata(8'b0),.audio_read_legal(1'b1),.audio_write_legal(1'b0),
-            .audio_settings_valid(1'b1),.audio_busy(1'b0),.audio_index_write(),.audio_data_write(),.audio_capture(),.audio_wdata(),
+            .audio_settings_valid(1'b1),.audio_busy(1'b0),.audio_settle(1'b0),.audio_index_write(),.audio_data_write(),.audio_capture(),.audio_wdata(),
             .display_ctrl(),.scroll_x(),.scroll_y(),.backdrop(),.raster_line());
     end endgenerate
 

@@ -75,7 +75,7 @@ module kagura_hyperram_pcm_source #(
     kagura_psram_read_path #(.BYTE_ADDR_WIDTH(24),.CTRL_ADDR_WIDTH(20)) path(
         .sys_clk(clk),.sys_reset(reset),.sys_req_valid(req_valid),.sys_req_ready(req_ready),
         .sys_req_addr(req_addr),.sys_rsp_valid(rsp_valid),.sys_rsp_data(rsp_data),.sys_rsp_error(rsp_error),
-        .mem_clk(clk),.mem_reset(reset),.controller_ready(init_calib && state>=CONFIG),
+        .mem_clk(clk),.mem_reset(reset),.controller_ready(init_calib && state>=CONFIG),.cache_flush(1'b0),
         .ctrl_cmd(read_cmd),.ctrl_cmd_en(read_en),.ctrl_cmd_rdy(read_rdy),.ctrl_addr(read_addr),
         .ctrl_rd_data(read_data),.ctrl_rd_data_valid(read_valid));
 

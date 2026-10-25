@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// 32-byte register window, ABI 0.2 (docs/register-map.md). Every request is
+// 32-byte register window, ABI 0.4 (docs/register-map.md). Every request is
 // answered two system cycles after acceptance (the ABI allows two).
 // The address check is registered one cycle and the FILL range check two
 // cycles after VRAM_ADDR/LENGTH change (they do not fit in one 54MHz
@@ -48,7 +48,7 @@ module kagura_registers #(
     input wire [7:0] fence_tag,
     input wire commit_done,
     input wire [7:0] audio_index,audio_rdata,
-    input wire audio_read_legal,audio_write_legal,audio_settings_valid,audio_busy,
+    input wire audio_read_legal,audio_write_legal,audio_settings_valid,audio_busy,audio_settle,
     output wire audio_index_write,audio_data_write,audio_capture,
     output wire [7:0] audio_wdata,
     // Shadow state for the renderer; COMMIT snapshots it for VBlank apply.
@@ -60,6 +60,7 @@ module kagura_registers #(
     output reg [199:0] rs_table
 );
     localparam RS=CAPS[6];
+    localparam PSRAM=CAPS[3];  // PSRAM region 400000-7FFFFF and PCM (ABI 0.4)
     localparam [4:0] STATUS=5'h00, IRQ_STATUS=5'h01, IRQ_ENABLE=5'h02, DISPLAY_CTRL=5'h03,
         ADDR_L=5'h04, ADDR_M=5'h05, ADDR_H=5'h06, VRAM_WRITE=5'h07, READ_REQUEST=5'h08,
         READ_RESULT=5'h09, EXT_INDEX=5'h0a, EXT_DATA=5'h0b, AUDIO_INDEX=5'h0c,AUDIO_DATA=5'h0d,COMMAND=5'h0e, FIFO_STATUS=5'h0f,
@@ -90,7 +91,7 @@ module kagura_registers #(
     // admission and error logic does not compare q_wdata (high fanout) again.
     reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_zero;
     reg [2:0] rs_settle;
-    assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging && !(|rs_settle);
+    assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging && !(|rs_settle) && !audio_settle;
     always @(posedge clk)
         if(reset) begin
             q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0;
@@ -115,6 +116,7 @@ module kagura_registers #(
         else if(a[24:9]==16'h0048) region=3;               // OAM shadow 009000-0091FF
         else if(a[24:9]==16'h004a) region=4;               // palette shadow 009400-0095FF
         else if(a[24:9]==16'h004c) region=5;               // wave shadow 009800-0099FF
+        else if(PSRAM && a[24:22]==3'b001) region=6;        // PSRAM 400000-7FFFFF
         else region=0;
     endfunction
     wire [24:0] fill_end={1'b0,vram_addr}+{9'b0,length}-25'd1;
@@ -179,6 +181,8 @@ module kagura_registers #(
             8'h08: ext_value=8'd4;
             8'h09: ext_value=8'd8;
             8'h0a: ext_value=8'(LINES);
+            8'h12: if(PSRAM) ext_value=8'd22; else ext_defined=0;
+            8'h13: if(PSRAM) ext_value=8'd2; else ext_defined=0;
             default: ext_defined=0;
         endcase
     end
@@ -215,7 +219,7 @@ module kagura_registers #(
             ID0: read_value=8'h4b;
             ID1: read_value=8'h39;
             ABI_MAJOR: read_value=8'h00;
-            ABI_MINOR: read_value=8'h03;
+            ABI_MINOR: read_value=8'h04;
             CAPS_REG: read_value=CAPS;
             FRAME_COUNT: read_value=frame_count;
             SPR_OVF_INDEX: read_value={2'b00,overflow_index};

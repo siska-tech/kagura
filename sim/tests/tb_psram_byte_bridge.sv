@@ -16,7 +16,7 @@ module tb_psram_byte_bridge;
     kagura_psram_byte_bridge #(
         .BYTE_ADDR_WIDTH(8),.CTRL_ADDR_WIDTH(6),.CTRL_ADDR_SHIFT(2)
     ) dut(
-        .clk(clk),.reset(reset),.controller_ready(controller_ready),
+        .clk(clk),.reset(reset),.controller_ready(controller_ready),.cache_flush(1'b0),
         .req_valid(req_valid),.req_ready(req_ready),.req_addr(req_addr),
         .rsp_valid(rsp_valid),.rsp_data(rsp_data),.rsp_error(rsp_error),
         .ctrl_cmd(ctrl_cmd),.ctrl_cmd_en(ctrl_cmd_en),.ctrl_cmd_rdy(ctrl_cmd_rdy),
@@ -26,7 +26,7 @@ module tb_psram_byte_bridge;
     kagura_psram_byte_bridge #(
         .BYTE_ADDR_WIDTH(8),.CTRL_ADDR_WIDTH(8),.CTRL_ADDR_SHIFT(0)
     ) byte_addressed_dut(
-        .clk(clk),.reset(reset),.controller_ready(controller_ready),
+        .clk(clk),.reset(reset),.controller_ready(controller_ready),.cache_flush(1'b0),
         .req_valid(byte_req_valid),.req_ready(byte_req_ready),.req_addr(byte_req_addr),
         .rsp_valid(),.rsp_data(),.rsp_error(),.ctrl_cmd(),.ctrl_cmd_en(byte_ctrl_cmd_en),
         .ctrl_cmd_rdy(1'b1),.ctrl_addr(byte_ctrl_addr),.ctrl_rd_data(32'b0),

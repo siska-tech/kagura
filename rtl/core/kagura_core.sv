@@ -4,9 +4,17 @@
 // background renderer and the active (COMMITted) display state.
 // The line display block (pixel domain) connects through the render_* and
 // video event ports. Background is followed by an optional sprite pass.
+// CAPS b3 (ABI 0.4) adds the PSRAM region and two PCM channels: the vendor-
+// neutral HyperRAM controller, host/PCM arbiter, PCM read path, prefetcher
+// and PCM control live here; only the byte-pair PHY boundary (psram_*) leaves
+// the core. Without b3 those ports are constant and their inputs unused.
 module kagura_core #(
     parameter [7:0] CAPS=8'h00,
-    parameter integer LINES=240       // logical lines per frame (180 for 16:9)
+    parameter integer LINES=240,      // logical lines per frame (180 for 16:9)
+    // PSRAM controller timing at system 54MHz (hardware: 14 / 6, rtl/README.md)
+    parameter integer PSRAM_LAT=14,
+    parameter integer PSRAM_RDL=6,
+    parameter integer PSRAM_INIT_CYCLES=4096
 ) (
     input wire clk, reset,
     input wire req_valid,
@@ -39,8 +47,14 @@ module kagura_core #(
     input wire line_start,
     input wire [7:0] shown_line,
     output wire [11:0] render_cycles,
-    output wire [5:0] queue_free      // free command entries (host BUSY pin)
+    output wire [5:0] queue_free,     // free command entries (host BUSY pin)
+    // PSRAM PHY boundary (kagura_hyperram_phy_gowin), CAPS b3 only
+    output wire psram_reset_n,psram_cs_n,psram_ck_en,psram_dq_oe,psram_rwds_oe,
+    output wire [7:0] psram_dq_o_rise,psram_dq_o_fall,
+    output wire psram_rwds_o_rise,psram_rwds_o_fall,
+    input wire [7:0] psram_dq_i_rise,psram_dq_i_fall
 );
+    localparam PSRAM=CAPS[3];
     wire push, push_ready, queue_idle, queue_staging, head_valid, pop, engine_busy;
     wire [63:0] push_desc, head;
     wire read_done, fence_done, commit_done;
@@ -74,18 +88,101 @@ module kagura_core #(
         end
     wire audio_underflow_event=audio_uf_sync[1]!=audio_uf_seen;
     wire audio_overflow_event=audio_sample_valid && audio_full;
-    kagura_audio_registers audio_registers(.clk(clk),.reset(reset),.index_write(audio_index_write),.data_write(audio_data_write),
+    wire [47:0] pcm_start,pcm_end,pcm_loop;
+    wire [1:0] pcm_loop_enable,pcm_prepare,pcm_stop,pcm_clear,pcm_commit_enable;
+    wire [15:0] pcm_status,pcm_gain_l,pcm_gain_r;
+    wire signed [7:0] pcm_sample0,pcm_sample1;
+    wire sample_boundary,audio_settle;
+    kagura_audio_registers #(.PCM(PSRAM)) audio_registers(.clk(clk),.reset(reset),.index_write(audio_index_write),.data_write(audio_data_write),
         .wdata(audio_wdata),.index(audio_index),.rdata(audio_rdata),.read_legal(audio_read_legal),.write_legal(audio_write_legal),
         .settings_valid(audio_settings_valid),.capture(audio_capture),.commit_done(audio_commit_done),.apply_busy(audio_busy),
         .underflow_event(audio_underflow_event),.overflow_event(audio_overflow_event),.muted(audio_mute_sync[1]),.status(audio_status),
         .snapshot_step(audio_steps),.snapshot_duty(audio_duties),.snapshot_l(audio_l),.snapshot_r(audio_r),
-        .snapshot_enable(audio_enable),.snapshot_reset(audio_resets),.snapshot_len(audio_lengths),.snapshot_master(audio_master),.snapshot_period(audio_period));
-    kagura_audio_synth #(.EXTERNAL_SNAPSHOT(1)) audio_synth(.clk(clk),.reset(reset),.apply_valid(audio_apply_valid),.apply_ready(audio_apply_ready),
+        .snapshot_enable(audio_enable),.snapshot_reset(audio_resets),.snapshot_len(audio_lengths),.snapshot_master(audio_master),.snapshot_period(audio_period),
+        .pcm_start(pcm_start),.pcm_end(pcm_end),.pcm_loop(pcm_loop),.pcm_loop_enable(pcm_loop_enable),
+        .pcm_prepare(pcm_prepare),.pcm_stop(pcm_stop),.pcm_clear(pcm_clear),.pcm_status(pcm_status),
+        .snapshot_pcm_l(pcm_gain_l),.snapshot_pcm_r(pcm_gain_r),.snapshot_pcm_enable(pcm_commit_enable),.settle(audio_settle));
+    kagura_audio_synth #(.EXTERNAL_SNAPSHOT(1),.PCM_ENABLE(PSRAM)) audio_synth(.clk(clk),.reset(reset),.apply_valid(audio_apply_valid),.apply_ready(audio_apply_ready),
         .cfg_step(audio_steps),.cfg_duty(audio_duties),.cfg_gain_l(audio_l),.cfg_gain_r(audio_r),.cfg_enable(audio_enable),
         .cfg_phase_reset(audio_resets),.cfg_wave_len(audio_lengths),.cfg_master(audio_master),.cfg_noise_period(audio_period),
         .apply_done(audio_apply_done),.apply_error(audio_apply_error),.apply_busy(),.wave_read(wave_read),.wave_addr(wave_addr),
-        .wave_data(wave_data),.sample_valid(audio_sample_valid),.sample_left(audio_left),.sample_right(audio_right),.last_cycles(),.apply_boundary(wave_swap),.sample_boundary(),
-        .pcm_sample0(8'sd0),.pcm_sample1(8'sd0),.cfg_pcm_gain_l(16'b0),.cfg_pcm_gain_r(16'b0),.cfg_pcm_enable(2'b0));
+        .wave_data(wave_data),.sample_valid(audio_sample_valid),.sample_left(audio_left),.sample_right(audio_right),.last_cycles(),
+        .apply_boundary(wave_swap),.sample_boundary(sample_boundary),
+        .pcm_sample0(pcm_sample0),.pcm_sample1(pcm_sample1),.cfg_pcm_gain_l(pcm_gain_l),.cfg_pcm_gain_r(pcm_gain_r),.cfg_pcm_enable(pcm_commit_enable));
+
+    // PSRAM: queue byte operations (host port) and PCM refills (PCM port)
+    // share one controller. PSRAM writes complete in order with later reads.
+    wire eng_psram_valid,eng_psram_ready,eng_psram_write,eng_psram_rsp_valid;
+    wire [21:0] eng_psram_addr;
+    wire [7:0] eng_psram_wdata,eng_psram_rdata;
+    generate if(PSRAM) begin: psram
+        wire calib,c_cmd,c_en,c_rdy,c_valid,h_rdy,h_valid,p_cmd,p_en,p_rdy,p_valid;
+        wire [19:0] c_addr,p_addr;
+        wire [31:0] c_wdata,c_rdata,h_rdata,p_rdata;
+        wire [3:0] c_mask;
+        kagura_hyperram_ctrl #(.ADDR_WIDTH(20),.INIT_CYCLES(PSRAM_INIT_CYCLES)) ctrl(
+            .clk(clk),.rst_n(!reset),.lat_cycles(5'(PSRAM_LAT)),.rd_latency(3'(PSRAM_RDL)),
+            .cmd(c_cmd),.cmd_reg(1'b0),.cmd_en(c_en),.cmd_rdy(c_rdy),.addr(c_addr),.wr_data(c_wdata),.data_mask(c_mask),
+            .rd_data(c_rdata),.rd_data_valid(c_valid),.init_calib(calib),
+            .phy_reset_n(psram_reset_n),.phy_cs_n(psram_cs_n),.phy_ck_en(psram_ck_en),.phy_dq_oe(psram_dq_oe),
+            .phy_dq_o_rise(psram_dq_o_rise),.phy_dq_o_fall(psram_dq_o_fall),.phy_rwds_oe(psram_rwds_oe),
+            .phy_rwds_o_rise(psram_rwds_o_rise),.phy_rwds_o_fall(psram_rwds_o_fall),
+            .phy_dq_i_rise(psram_dq_i_rise),.phy_dq_i_fall(psram_dq_i_fall));
+        // Host side: one masked byte lane of a 32-bit word per queue byte operation.
+        reg [1:0] lane;
+        wire h_en=eng_psram_valid && calib;
+        assign eng_psram_ready=h_rdy && calib;
+        always @(posedge clk) if(h_en && h_rdy) lane<=eng_psram_addr[1:0];
+        assign eng_psram_rsp_valid=h_valid;
+        assign eng_psram_rdata=h_rdata[8*lane +: 8];
+        kagura_psram_arbiter #(.ADDR_WIDTH(20)) arbiter(.clk(clk),.reset(reset),
+            .p_cmd(p_cmd),.p_cmd_en(p_en),.p_cmd_rdy(p_rdy),.p_addr(p_addr),.p_rd_data(p_rdata),.p_rd_data_valid(p_valid),
+            .h_cmd(eng_psram_write),.h_cmd_en(h_en),.h_cmd_rdy(h_rdy),.h_addr(eng_psram_addr[21:2]),
+            .h_wr_data({4{eng_psram_wdata}}),.h_data_mask(~(4'b0001<<eng_psram_addr[1:0])),
+            .h_rd_data(h_rdata),.h_rd_data_valid(h_valid),
+            .c_cmd(c_cmd),.c_cmd_en(c_en),.c_cmd_rdy(c_rdy),.c_addr(c_addr),.c_wr_data(c_wdata),.c_data_mask(c_mask),
+            .c_rd_data(c_rdata),.c_rd_data_valid(c_valid));
+        // PCM side. Public addresses are 400000-7FFFFF; the prefetcher works in
+        // PSRAM offsets (a lower START wraps above 4 MiB and fails its range check).
+        wire pf_req_valid,pf_req_ready,pf_rsp_valid,pf_rsp_error,flush;
+        wire [23:0] pf_req_addr;
+        wire [7:0] pf_rsp_data;
+        wire [1:0] cfg_valid,cfg_ready,start_play,stop_play,pf_ready,pf_active,pf_done,pf_underrun,pf_config_error,pf_memory_error;
+        // Offsets registered: a PREPARE is accepted at least three cycles after the
+        // last START/END/LOOP write, and this keeps the subtraction out of the
+        // prefetcher's configuration check.
+        reg [47:0] rel_start,rel_end,rel_loop;
+        always @(posedge clk) begin
+            rel_start<={pcm_start[47:24]-24'h400000,pcm_start[23:0]-24'h400000};
+            rel_end<={pcm_end[47:24]-24'h400000,pcm_end[23:0]-24'h400000};
+            rel_loop<={pcm_loop[47:24]-24'h400000,pcm_loop[23:0]-24'h400000};
+        end
+        kagura_psram_read_path #(.BYTE_ADDR_WIDTH(24),.CTRL_ADDR_WIDTH(20)) path(
+            .sys_clk(clk),.sys_reset(reset),.sys_req_valid(pf_req_valid),.sys_req_ready(pf_req_ready),.sys_req_addr(pf_req_addr),
+            .sys_rsp_valid(pf_rsp_valid),.sys_rsp_data(pf_rsp_data),.sys_rsp_error(pf_rsp_error),
+            .mem_clk(clk),.mem_reset(reset),.controller_ready(calib),.cache_flush(flush),
+            .ctrl_cmd(p_cmd),.ctrl_cmd_en(p_en),.ctrl_cmd_rdy(p_rdy),.ctrl_addr(p_addr),
+            .ctrl_rd_data(p_rdata),.ctrl_rd_data_valid(p_valid));
+        kagura_pcm_prefetch #(.ADDR_WIDTH(24),.BUFFER_ADDR_BITS(5),.MEMORY_BYTES(25'h0400000),.RESPONSE_TIMEOUT(4096)) prefetch(
+            .clk(clk),.reset(reset),.sample_tick(sample_boundary),.cfg_valid(cfg_valid),.cfg_ready(cfg_ready),
+            .cfg_start(rel_start),.cfg_end(rel_end),.cfg_loop(rel_loop),
+            .cfg_loop_enable(pcm_loop_enable),.start_play(start_play),.stop_play(stop_play),
+            .ready(pf_ready),.active(pf_active),.done(pf_done),.underrun(pf_underrun),
+            .config_error(pf_config_error),.memory_error(pf_memory_error),.sample0(pcm_sample0),.sample1(pcm_sample1),
+            .mem_req_valid(pf_req_valid),.mem_req_ready(pf_req_ready),.mem_req_addr(pf_req_addr),
+            .mem_rsp_valid(pf_rsp_valid),.mem_rsp_data(pf_rsp_data),.mem_rsp_error(pf_rsp_error));
+        kagura_pcm_control control(.clk(clk),.reset(reset),.prepare(pcm_prepare),.stop(pcm_stop),.clear(pcm_clear),
+            .apply_boundary(wave_swap),.commit_enable(pcm_commit_enable),
+            .cfg_valid(cfg_valid),.cfg_ready(cfg_ready),.start_play(start_play),.stop_play(stop_play),.cache_flush(flush),
+            .pf_ready(pf_ready),.pf_active(pf_active),.pf_done(pf_done),.pf_underrun(pf_underrun),
+            .pf_config_error(pf_config_error),.pf_memory_error(pf_memory_error),
+            .status0(pcm_status[7:0]),.status1(pcm_status[15:8]));
+    end else begin: no_psram
+        assign {psram_reset_n,psram_cs_n,psram_ck_en,psram_dq_oe,psram_rwds_oe}=5'b01000;
+        assign {psram_dq_o_rise,psram_dq_o_fall,psram_rwds_o_rise,psram_rwds_o_fall}=0;
+        assign {eng_psram_ready,eng_psram_rsp_valid,eng_psram_rdata}=0;
+        assign {pcm_sample0,pcm_sample1,pcm_status}=0;
+    end endgenerate
 
     // Active display state, replaced only when a COMMIT completes.
     reg [2:0] active_display;
@@ -123,7 +220,7 @@ module kagura_core #(
         .read_done(read_done),.read_data(read_data),
         .fence_done(fence_done),.fence_tag(fence_tag),.commit_done(commit_done),.display_ctrl(display_ctrl),
         .audio_index(audio_index),.audio_rdata(audio_rdata),.audio_read_legal(audio_read_legal),.audio_write_legal(audio_write_legal),
-        .audio_settings_valid(audio_settings_valid),.audio_busy(audio_busy),.audio_index_write(audio_index_write),
+        .audio_settings_valid(audio_settings_valid),.audio_busy(audio_busy),.audio_settle(audio_settle),.audio_index_write(audio_index_write),
         .audio_data_write(audio_data_write),.audio_capture(audio_capture),.audio_wdata(audio_wdata),
         .scroll_x(scroll_x),.scroll_y(scroll_y),.backdrop(backdrop),.raster_line(raster_line),
         .rs_count(rs_count),.rs_table(rs_table));
@@ -140,7 +237,9 @@ module kagura_core #(
         .vram_rdata(vram_rdata),.read_done(read_done),.read_data(read_data),
         .fence_done(fence_done),.fence_tag(fence_tag),
         .commit_done(commit_done),.commit_snapshot(commit_snapshot),.vram_idle(vram_idle),
-        .audio_apply_ready(audio_apply_ready),.audio_apply_done(audio_apply_done),.audio_apply_valid(audio_apply_valid),.audio_commit_done(audio_commit_done));
+        .audio_apply_ready(audio_apply_ready),.audio_apply_done(audio_apply_done),.audio_apply_valid(audio_apply_valid),.audio_commit_done(audio_commit_done),
+        .psram_valid(eng_psram_valid),.psram_ready(eng_psram_ready),.psram_write(eng_psram_write),.psram_addr(eng_psram_addr),
+        .psram_wdata(eng_psram_wdata),.psram_rsp_valid(eng_psram_rsp_valid),.psram_rdata(eng_psram_rdata));
 
     wire render_hold, render_grant, map_read, pattern_read, palette_read;
     wire bg_hold,bg_done,sp_hold,sp_done,sp_overflow;

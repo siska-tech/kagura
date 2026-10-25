@@ -20,6 +20,7 @@ module kagura_psram_read_path #(
     input  wire mem_clk,
     input  wire mem_reset,
     input  wire controller_ready,
+    input  wire cache_flush,
     output wire ctrl_cmd,
     output wire ctrl_cmd_en,
     input  wire ctrl_cmd_rdy,
@@ -44,7 +45,7 @@ module kagura_psram_read_path #(
         .BYTE_ADDR_WIDTH(BYTE_ADDR_WIDTH),.CTRL_ADDR_WIDTH(CTRL_ADDR_WIDTH),
         .CTRL_ADDR_SHIFT(CTRL_ADDR_SHIFT),.READ_CMD(READ_CMD)
     ) bridge(
-        .clk(mem_clk),.reset(mem_reset),.controller_ready(controller_ready),
+        .clk(mem_clk),.reset(mem_reset),.controller_ready(controller_ready),.cache_flush(cache_flush),
         .req_valid(byte_req_valid),.req_ready(byte_req_ready),.req_addr(byte_req_addr),
         .rsp_valid(byte_rsp_valid),.rsp_data(byte_rsp_data),.rsp_error(byte_rsp_error),
         .ctrl_cmd(ctrl_cmd),.ctrl_cmd_en(ctrl_cmd_en),.ctrl_cmd_rdy(ctrl_cmd_rdy),

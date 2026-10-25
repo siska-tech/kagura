@@ -14,6 +14,7 @@ module kagura_psram_byte_bridge #(
     input  wire clk,
     input  wire reset,
     input  wire controller_ready,
+    input  wire cache_flush,      // drop the cached word (memory may have changed)
 
     input  wire req_valid,
     output wire req_ready,
@@ -65,7 +66,7 @@ module kagura_psram_byte_bridge #(
             rsp_valid<=0;
             rsp_error<=0;
 
-            if(!controller_ready) cache_valid<=0;
+            if(!controller_ready || cache_flush) cache_valid<=0;
 
             if(req_valid && req_ready && cache_hit) begin
                 rsp_valid<=1;
@@ -82,7 +83,7 @@ module kagura_psram_byte_bridge #(
                 outstanding<=0;
                 rsp_valid<=1;
                 rsp_data<=select_byte(ctrl_rd_data,byte_lane);
-                cache_valid<=controller_ready;
+                cache_valid<=controller_ready && !cache_flush;
                 cache_data<=ctrl_rd_data;
             end else if(outstanding && !controller_ready) begin
                 outstanding<=0;

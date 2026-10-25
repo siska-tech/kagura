@@ -48,7 +48,7 @@ module tb_hyperram_pcm_chain;
         .sys_clk(sys_clk),.sys_reset(sys_reset),.sys_req_valid(sys_req_valid),
         .sys_req_ready(sys_req_ready),.sys_req_addr(sys_req_addr),
         .sys_rsp_valid(sys_rsp_valid),.sys_rsp_data(sys_rsp_data),.sys_rsp_error(sys_rsp_error),
-        .mem_clk(mem_clk),.mem_reset(mem_reset),.controller_ready(init_calib && !upload),
+        .mem_clk(mem_clk),.mem_reset(mem_reset),.controller_ready(init_calib && !upload),.cache_flush(1'b0),
         .ctrl_cmd(ctrl_cmd),.ctrl_cmd_en(ctrl_cmd_en),.ctrl_cmd_rdy(ctrl_cmd_rdy),.ctrl_addr(ctrl_addr),
         .ctrl_rd_data(ctrl_rd_data),.ctrl_rd_data_valid(ctrl_rd_data_valid));
 

@@ -210,4 +210,34 @@ Verilator: 全55件合格。`tb_psram_arbiter`はランダムな所要時間のc
 - 480p: 60秒の初回確認と約10分の620連続reportが全行`D/M/E 0、F 00、A 3、H 0、L 0039`。hostは毎秒約2.24M command（4 byte/command、write+readbackで約8.9MB/s）。soak終了時点の累計はhost 1,527,205,591 command（0x5B074ED7）、PCM 32,735,989 sample。
 - 720p: 120連続reportが全行同じく誤り0、L 0039。
 
-PCMの最大待ち57 cycle（約1.06µs）は、256 byte bufferの補充期限（2ms目標）に対して十分小さい。未評価: 本体renderer負荷、実際のhost interface（SPI/QSPI）からのupload、die 1、長時間・温度/電源変動、部分write、公開ABI。現在B1のSRAMは720p PCM+host評価版。
+PCMの最大待ち57 cycle（約1.06µs）は、256 byte bufferの補充期限（2ms目標）に対して十分小さい。未評価: 本体renderer負荷、実際のhost interface（SPI/QSPI）からのupload、die 1、長時間・温度/電源変動、部分write、公開ABI（いずれも本体統合は次節）。
+
+### 公開ABI 0.4と本体統合（2026-10-25）
+
+公開仕様は[register-map.md](register-map.md)の「ABI 0.4」、[audio-spec.md](audio-spec.md)の「PCM音源」、[memory-map.md](memory-map.md)のPSRAM領域。定義は`spec/registers.json`から生成し、`tools/gen-registers.ps1 -Check`で文書の表と一致を検査する。
+
+- PSRAMは24bit address空間の400000–7FFFFFへ置き、既存のVRAM_WRITE/READ_REQUEST/FILLとqueue・FENCEをそのまま使う。追加の窓レジスタは作らず、既存uploader（Picoの`kh_vram_write`）が変更なしで使える。byte writeは32bit wordの1 lane＋RWDS maskで、実機でも隣接byteを壊さない（下記の照合で確認）。
+- PCM 2chはaudio index 60..9F。START/END/LOOPはPREPAREで取込み、GAIN/ENABLEはAUDIO_COMMITのsample境界で反映する。提案時の「未準備の開始は拒否」は採らず、READYでないchは開始しないだけにした。one-shot終了後もENABLE=1のまま他の音源をAUDIO_COMMITできるようにするため。
+- 先読みbufferは提案の256 byte×2面から各ch 32 byteに減らした。host転送が連続する最悪条件でも応答待ちが57 cycleだったため。BSRAMは増えずSSRAM（RAM16）に載る。
+- 統合中の修正: (1) 一時停止のsample境界で1 sample消費して捨てていた問題。停止と同じtickでは消費しないようにした。(2) PREPARE直後のSTATUS readが旧READYを返し得る問題。RS_*と同様に、PCM_CMDのwrite後は反映まで次のregister要求を止める。(3) 74%利用率でのsetup違反3経路を構造で解消した（PCM_CMD pulseのregister化、PSRAM offset変換のregister化、prefetchの空き判定からadderを除去しEND−1を保持）。
+- buildは`tools/build-nano9k.tcl spipsram|qspipsram[720]`（出力`kagura_spi_psram`/`kagura_qspi_psram`）。CAPS b3のないhost buildではPSRAM端子をidle（CS# high、RESET# low）に固定する。
+
+Gowin V1.9.11.03（Education）の評価:
+
+| 構成 | Logic | Register | BSRAM | rPLL | 最悪setup | 最悪hold | recovery | removal |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| qspipsram 480p | 6309 | 4533 | 24/26 | 2/2 | +0.100ns | +0.552ns | +0.541ns | +0.793ns |
+| qspipsram 720p | 6351 | 4678 | 24/26 | 2/2 | +0.044ns | +0.555ns | +7.498ns | +0.569ns |
+
+480pの最悪setupは既存のraster scroll register経路で、目標+0.10nsに一致する。720pの最悪setupは既存の上流`packet_assembler`（pixel74）経路で違反ではないが、目標+0.10nsに届かない。place_option 0では逆にprefetch経路が−0.073nsになったため、既定のoption 1を採る。720pの余裕改善は残課題。
+
+Verilator: 新規`tb_psram_core`（公開register経由のABI 0.4全体）を含む全56件が合格。ABI_MINORを固定値で照合していた既存試験4件は4へ更新した。
+
+実機（B1、`kagura_qspi_psram.fs`をSRAMへ一時書込み、`--run 4`は`Verify success`、内蔵Flash未変更。Pico H1、QSPI、SCK 2.5MHz。ログは`build/nano9k-qspipsram/pico-results.log`）:
+
+- `info`: ID 4B 39、ABI 0.4、CAPS 0x5B。
+- `diag`: 既存の全11項目がPASS（VRAM、FILL/FENCE、sprite COMMIT、wave-swap、6音源、IRQ、BUSY、errors）。PSRAM版でも既存機能は退行していない。
+- `psram`: 乱数位置0x67FF7Bの2048 byteが0 mismatch。upload＋FENCEは877KB/sで、VRAM（911KB/s）と同等。
+- `pcm`: 2秒のloopメロディ（PCM 0）と150msのドラム（PCM 1、one-shot）を、0.5秒ごとにPREPARE＋AUDIO_COMMITで61回再発音した。446,543回のstatus pollの間、UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・メロディ停止・ERROR_CODEはすべて0。HDMI音声もユーザーが実機で確認した。upload表示の37KB/sはPico側の浮動小数sample生成が律速で、転送速度ではない。
+
+未評価: 720p版の実機、spi（1 lane）版、長時間連続再生、die 1、温度/電源変動。

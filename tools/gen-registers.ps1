@@ -86,6 +86,21 @@ foreach ($g in $global) {
     Test-Bits "audio $($g.name)" $g; Test-Reset "audio $($g.name)" $g
 }
 if (@($global.index | Select-Object -Unique).Count -ne $global.Count) { Fail 'audio: duplicate global indices' }
+$pcm = Get $audio 'pcm'
+$pcmRegs = @()
+if ($pcm) {
+    $pcmRegs = @($pcm.registers)
+    if (@($pcmRegs.name | Select-Object -Unique).Count -ne $pcmRegs.Count) { Fail 'audio pcm: duplicate names' }
+    foreach ($r in $pcmRegs) {
+        if ($r.offset -ge $pcm.stride) { Fail "audio pcm $($r.name): offset beyond stride" }
+        $same = @($pcmRegs | Where-Object { $_.offset -eq $r.offset })
+        if ($same.Count -gt 2 -or ($same.Count -eq 2 -and ((@($same | ForEach-Object { Get $_ 'access' }) | Sort-Object) -join ',') -ne 'RO,WO')) { Fail "audio pcm $($r.name): a shared offset must pair one RO and one WO register" }
+        Test-Bits "audio pcm $($r.name)" $r; Test-Reset "audio pcm $($r.name)" $r
+    }
+    if ($pcm.base -lt $audio.channel_end) { Fail 'audio pcm: overlaps the channel registers' }
+    $pcmEnd = $pcm.base + $pcm.stride * $pcm.channels
+    foreach ($g in $global) { if ($g.index -lt $pcmEnd) { Fail "audio $($g.name): index overlaps PCM registers" } }
+}
 $vram = @($spec.vram)
 for ($i = 0; $i -lt $vram.Count; $i++) {
     if ($vram[$i].end -lt $vram[$i].start) { Fail "vram $($vram[$i].name): end before start" }
@@ -125,6 +140,15 @@ function Get-Symbols {
         foreach ($p in (Props (Get $a 'bits'))) { Add 'Audio register bits (masks)' "AUDIO_$(Remove-AudioPrefix $a.name)_$($p.Name)" (1 -shl $p.Value) 8 }
     }
     foreach ($a in @($channelRegs) + @($global)) { if ($null -ne (Get $a 'reset')) { Add 'Audio register reset values' "AUDIO_$(Remove-AudioPrefix $a.name)_RESET" $a.reset 8 } }
+    if ($pcm) {
+        $s = 'Audio PCM registers (AUDIO_REG_INDEX, CAPS PSRAM)'
+        Add $s 'AUDIO_PCM_BASE' $pcm.base 8
+        Add $s 'AUDIO_PCM_STRIDE' $pcm.stride 8
+        Add $s 'AUDIO_PCM_CHANNELS' $pcm.channels 8
+        foreach ($r in $pcmRegs) { Add $s "AUDIO_PCM_$($r.name)" $r.offset 8 }
+        foreach ($r in $pcmRegs) { foreach ($p in (Props (Get $r 'bits'))) { Add 'Audio PCM register bits (masks)' "AUDIO_PCM_$($r.name)_$($p.Name)" (1 -shl $p.Value) 8 } }
+        foreach ($r in $pcmRegs) { if ($null -ne (Get $r 'reset')) { Add 'Audio PCM register reset values' "AUDIO_PCM_$($r.name)_RESET" $r.reset 8 } }
+    }
     foreach ($m in $vram) {
         Add 'VRAM regions (24-bit addresses)' "VRAM_$($m.name)_BASE" $m.start 24
         Add 'VRAM regions (24-bit addresses)' "VRAM_$($m.name)_SIZE" ($m.end - $m.start + 1) 24
@@ -152,6 +176,11 @@ foreach ($s in (Sections)) {
 [void]$c.AppendLine('')
 [void]$c.AppendLine('/* AUDIO_REG_INDEX value for channel ch (0..5) and per-channel offset off. */')
 [void]$c.AppendLine('#define KAGURA_AUDIO_INDEX(ch, off) ((unsigned)(ch) * KAGURA_AUDIO_CH_STRIDE + (unsigned)(off))')
+if ($pcm) {
+    [void]$c.AppendLine('')
+    [void]$c.AppendLine('/* AUDIO_REG_INDEX value for PCM channel p (0..1) and per-channel offset off. */')
+    [void]$c.AppendLine('#define KAGURA_AUDIO_PCM_INDEX(p, off) (KAGURA_AUDIO_PCM_BASE + (unsigned)(p) * KAGURA_AUDIO_PCM_STRIDE + (unsigned)(off))')
+}
 [void]$c.AppendLine('')
 [void]$c.AppendLine('#endif')
 
@@ -173,6 +202,11 @@ foreach ($r in $direct) { [void]$a.AppendLine(('KAGURA_IO_{0,-33} = KAGURA_IO_BA
 [void]$a.AppendLine('')
 [void]$a.AppendLine('; AUDIO_REG_INDEX value for channel ch (0..5) and per-channel offset off.')
 [void]$a.AppendLine('.define KAGURA_AUDIO_INDEX(ch, off) ((ch) * KAGURA_AUDIO_CH_STRIDE + (off))')
+if ($pcm) {
+    [void]$a.AppendLine('')
+    [void]$a.AppendLine('; AUDIO_REG_INDEX value for PCM channel p (0..1) and per-channel offset off.')
+    [void]$a.AppendLine('.define KAGURA_AUDIO_PCM_INDEX(p, off) (KAGURA_AUDIO_PCM_BASE + (p) * KAGURA_AUDIO_PCM_STRIDE + (off))')
+}
 
 $sv = New-Object System.Text.StringBuilder
 [void]$sv.AppendLine('// SPDX-License-Identifier: Apache-2.0')
@@ -285,6 +319,15 @@ if ($Check) {
         $resetMatch = [regex]::Match($m.Groups[1].Value, 'reset(\d+)')
         if ($resetMatch.Success -and [int]$resetMatch.Groups[1].Value -ne $g.reset) { Fail "audio-spec.md $($g.name): reset differs" }
         if ($g.name -eq 'AUDIO_STATUS') { Compare-Bits "audio-spec.md $($g.name)" (Get-BitNames $m.Groups[1].Value) $g.bits }
+    }
+
+    if ($pcm) {
+        $pcmRows = Get-TableRows $audioDoc '\| \+([0-9A-F]{2}) \| ([A-Z_]+) \| '
+        $docPcm = @($pcmRows | ForEach-Object { "$([Convert]::ToInt32($_.Groups[1].Value, 16)):$($_.Groups[2].Value)" })
+        $specPcm = @($pcmRegs | ForEach-Object { "$($_.offset):$($_.name)" })
+        if (($docPcm -join ',') -ne ($specPcm -join ',')) { Fail "audio-spec.md: PCM rows $($docPcm -join ',') vs spec $($specPcm -join ',')" }
+        $wa = [char]0x306F  # the particle between "PCM p" and "index"; keeps this script ASCII
+        if ($audioDoc -notmatch ('PCM p{2}index=0x{0}\+0x{1}\*p\+offset' -f (Hex2 $pcm.base), (Hex2 $pcm.stride), $wa)) { Fail 'audio-spec.md: PCM index formula differs' }
     }
 
     $memDoc = Read-Doc 'docs/memory-map.md'

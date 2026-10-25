@@ -52,7 +52,7 @@ module kagura_pcm_prefetch #(
     reg [BUFFER_ADDR_BITS-1:0] rd_ptr [0:1];
     reg [BUFFER_ADDR_BITS-1:0] wr_ptr [0:1];
     reg [COUNT_WIDTH-1:0] count [0:1];
-    reg [ADDR_WIDTH-1:0] end_addr [0:1];
+    reg [ADDR_WIDTH-1:0] end_addr [0:1];   // last byte (END-1)
     reg [ADDR_WIDTH-1:0] loop_addr [0:1];
     reg [ADDR_WIDTH-1:0] fetch_addr [0:1];
     reg [1:0] loop_enable;
@@ -66,14 +66,16 @@ module kagura_pcm_prefetch #(
     reg selected_valid;
     reg selected_ch;
 
-    wire pop0=sample_tick && active[0];
-    wire pop1=sample_tick && active[1];
+    // A channel stopped on a sample tick does not consume that sample, so a
+    // pause on the AUDIO_COMMIT boundary resumes without a gap.
+    wire pop0=sample_tick && active[0] && !stop_play[0];
+    wire pop1=sample_tick && active[1] && !stop_play[1];
     wire push0=mem_rsp_valid && outstanding && !discard_response && !mem_rsp_error && !outstanding_ch;
     wire push1=mem_rsp_valid && outstanding && !discard_response && !mem_rsp_error && outstanding_ch;
-    wire [COUNT_WIDTH-1:0] reserved0=count[0]+COUNT_WIDTH'(outstanding && !outstanding_ch);
-    wire [COUNT_WIDTH-1:0] reserved1=count[1]+COUNT_WIDTH'(outstanding && outstanding_ch);
-    wire need0=configured[0] && !fetch_done[0] && reserved0<BUFFER_DEPTH_COUNT;
-    wire need1=configured[1] && !fetch_done[1] && reserved1<BUFFER_DEPTH_COUNT;
+    // A request is issued only with no read outstanding, so the space a channel
+    // needs is simply count < depth: the MSB of count (count <= depth).
+    wire need0=configured[0] && !fetch_done[0] && !count[0][COUNT_WIDTH-1];
+    wire need1=configured[1] && !fetch_done[1] && !count[1][COUNT_WIDTH-1];
 
     assign cfg_ready={2{!outstanding}} & ~active;
     assign ready[0]=configured[0] && (count[0]==BUFFER_DEPTH_COUNT || fetch_done[0]);
@@ -113,7 +115,7 @@ module kagura_pcm_prefetch #(
                         configured[i]<=0;
                         config_error[i]<=1;
                     end else begin
-                        end_addr[i]<=cfg_end[i*ADDR_WIDTH +: ADDR_WIDTH];
+                        end_addr[i]<=cfg_end[i*ADDR_WIDTH +: ADDR_WIDTH]-1'b1;
                         loop_addr[i]<=cfg_loop[i*ADDR_WIDTH +: ADDR_WIDTH];
                         fetch_addr[i]<=cfg_start[i*ADDR_WIDTH +: ADDR_WIDTH];
                         loop_enable[i]<=cfg_loop_enable[i];
@@ -137,7 +139,7 @@ module kagura_pcm_prefetch #(
                 discard_response<=0;
                 timeout_count<=0;
                 rr<=~selected_ch;
-                if(fetch_addr[selected_ch]==end_addr[selected_ch]-1'b1) begin
+                if(fetch_addr[selected_ch]==end_addr[selected_ch]) begin
                     if(loop_enable[selected_ch]) fetch_addr[selected_ch]<=loop_addr[selected_ch];
                     else fetch_done[selected_ch]<=1;
                 end else fetch_addr[selected_ch]<=fetch_addr[selected_ch]+1'b1;
