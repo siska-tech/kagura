@@ -243,3 +243,61 @@ Verilator: 新規`tb_psram_core`（公開register経由のABI 0.4全体）を含
 - 720p（`kagura_qspi_psram720.fs`、prefetch改善後の上表の版。ログ`build/nano9k-qspipsram720/pico-diag.log`・`pico-pcm.log`）: `info`はCAPS 0x7B。`diag`は全11項目PASSで、screen-heightは180。`psram`は2回とも0 mismatch（875〜885KB/s）。`pcm 30`はドラム61回の再発音でfault 0、メロディ停止なし、ERROR_CODE 0。720pのHDMI映像とPCM音声もユーザーが実機で確認した。
 
 未評価: prefetch改善後の480p版の実機（変更はprefetch内部のみで、720pの実機とsimで確認済み）、spi（1 lane）版、長時間連続再生、die 1、温度/電源変動。
+
+### COPY、SPI版、長時間再生、配置依存のwrite不良（2026-10-25）
+
+**COPY（COMMAND 05）**: PSRAMのCOPY_SRC（EXT 14..16）からLENGTH byteをVRAM_ADDRへ複写する。仕様は[register-map.md](register-map.md)。queueの64bit descriptorはそのままで、address欄に複写元（PSRAM）、data・flags欄に複写先（VRAMは0x10000未満）を入れる。engineはPSRAM read→VRAM writeをbyteごとに行う。coreのhost側PSRAM portには、次の2つを置いた。
+
+- 1-word read cache: 連続readは4 byteで1回のPSRAM readになる。PSRAM writeは必ずこのportを通るので、writeで無効化すれば一貫性が保てる。
+- 1段のrequest slot: engineのhandshakeを、arbiterのPCM側経路から切り離した（spipsramでsetup −1.584nsだった経路）。FENCEはslotが空になるのを待つ。
+
+`tb_psram_core`には次を追加した: 非整列COPY、範囲外（複写元下限、複写元上限越え、PSRAMへの複写先、pattern/mapを跨ぐ複写先）、LENGTH 0、VRAM_ADDR不変、PSRAM write後のcache無効化。
+
+**timing**: COPY追加でLogicが74%→77%になり、複数経路が負になった。構造で対処した。
+
+- AUDIO_COMMITのsnapshot受付を共通admissionから分離した。
+- PSRAM offset変換を2bit減算にし、registerと24bit減算器6個を削除した。
+- COPYの範囲判定を直接のbit比較にした。
+- audio shadow writeを1 cycle pipeline化した。100超のshadow registerへのCE fanoutで、spipsramでは−2.352nsだった。PCM_CMDと同じsettleで、反映まで次の要求を止める。
+
+既定option 1の最終値（Gowin V1.9.11.03）:
+
+| 構成 | Logic | 最悪setup | 最悪hold | recovery |
+|---|---:|---:|---:|---:|
+| qspipsram 480p | 77% | +0.196ns | +0.552ns | +0.524ns |
+| qspipsram 720p | 77% | +0.376ns | +0.555ns | +9.348ns |
+| spipsram 480p | 77% | +0.389ns | +0.552ns | +0.524ns |
+
+BSRAMは24/26のまま。77%ではP&R結果の振れが大きく、spipsramのoption 1の一版はrouterがPR0004で終了した。
+
+**PHY TX窓**: DQ/RWDSのODDR TX（output enable）へのfabric経路を、SDCの`report_timing -through`で確認したところpathが出なかった（D0は出る）。STAの対象外なので、controllerに`phy_dq_tx`/`phy_rwds_tx`（駆動区間を前後1 cycle広げた窓）を追加してPHYのTXへ接続し、pinごとにenable registerを置いた。`tb_hyperram_ctrl`は、窓がprotocol上の駆動を含み、かつmemoryがread dataを出すcycleに掛からないことを検査する。
+
+実機（B1、Pico H1、各bitstreamをSRAMへ一時書込み、すべて`Verify success`）:
+
+- spipsram 480p（COPY前の版）: `diag`全12項目PASS、`psram`・`pcm 30` PASS。続けて`pcm 600`を3回連続（約30分）実行し、ドラム再発音3,603回、status poll 21,193,068回、fault 0、メロディ停止なし、ERROR_CODE 0。
+- 最終RTLのqspipsram 480p・720p（上表の版）: `diag` PASS、`psram`×2・`copy`×2（2048/777 byte、非整列、0 mismatch）・`pcm 10` PASS。32767 byteのCOPYはFENCE込みで6.5〜7.0ms（4.7〜5.0MB/s）、hostからのupload（約880KB/s）の約5倍。1 frame 16.7msに対しpattern領域全体を約半frameで更新できる。
+
+**配置依存のPSRAM write不良（原因特定・修正済み）**: 同じRTL・同じnetlistでも、place optionによってPSRAMへのwriteが全く反映されない版ができた。single byte、FILL、uploadのいずれも反映されず、readは正しかった（正常版で書いた内容をCRCで照合）。SCK 1〜10MHzで変わらず、bitstreamごとに100%再現した。spipsramでは複数の配置に出て、qspipsramでは見つからなかった。
+
+- 原因から外したもの（いずれも差なし、または対策しても再現）:
+  - netlist上のPHY接続
+  - PLL設定（静的位相にしても再現）
+  - pin割当とI/O standard
+  - IOLOGICの種類と数
+  - PSRAM I/Oへのclockと入力interconnect遅延（SDF比較で差は1ns未満）
+  - TX窓の±1 cycle拡張
+  - RWDS入力IDDRの有無
+- 原因: `O_psram_reset_n`だけが、registerを通らずcontrollerの組合せ式`!(state==S_INIT && t<INIT/2)`から直接padへ出ていた。stateがXFER（011）からGAP（100）へ全bit同時に変わるとき、配線skewによってはINIT（000）を一瞬経由する。このときtも0に戻っているため、RESET#に数nsのlow glitchが出る。XFER→GAPはwriteの最終data直後なので、writeだけが失われる。readはその時点でdataを取り込み済みで影響を受けない。組合せglitchはSTAの対象外で、配置ごとの配線で決まる。
+- 修正: PHYでRESET#をregister出力にした（`reset_n_q`）。不良だった配置（option 0のroute 0・route 2）を含む4配置すべてで`psram`が合格した。同じ条件で修正前は不良だった。
+- 調査用に`KAGURA_PSRAM_DEBUG=1`のbuildを用意した。1 transactionの間、PSRAM pinのIDDR値と制御信号を48 cycle記録し、EXT 17/18（debug版のみ、ABI外）とPicoの`pdbg`で読める。正常版のwriteでは、CA `20 01 00 00 00 00`、dataのbyte 0だけRWDS=0、bytes 1〜3はRWDS=1（mask）と、設計どおりの波形を確認した。
+- 併せて、CLKOUTPを動的位相（PSDA/DUTYDA入力）から静的設定（`PSDA_SEL "0011"`、`DUTYDA_SEL "1000"`）へ変えた（STAの`-phase 67.5`と一致）。TX窓の拡張とpinごとのenable registerも、STA対象外の経路への余裕として残す。教訓として、PSRAM padへ出る信号はすべてregister（またはIOLOGIC）出力にする。
+
+最終RTL（既定option 1、Gowin V1.9.11.03）:
+
+| 構成 | Logic | 最悪setup | 実機 |
+|---|---:|---:|---|
+| qspipsram 480p | 77% | +0.233ns | `diag`、`psram`×2、`copy`×2、`pcm 20`すべてPASS |
+| qspipsram 720p | 77% | +0.040ns | 同上すべてPASS |
+| spipsram 480p | 77% | +0.056ns | 同上すべてPASS |
+
+BSRAMは24/26。720pとspipsramは違反なしだが、目標+0.10nsに届かない。最悪経路は既存のHDMI packet assemblerとregister読出しで、option 0でも改善しなかった。77%利用率での余裕確保は残課題である。

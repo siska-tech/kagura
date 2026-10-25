@@ -12,7 +12,7 @@ module tb_hyperram_ctrl;
     reg [3:0] data_mask=0;
     wire cmd_rdy,rd_data_valid,init_calib;
     wire [31:0] rd_data;
-    wire phy_reset_n,phy_cs_n,phy_ck_en,phy_dq_oe,phy_rwds_oe,phy_rwds_o_rise,phy_rwds_o_fall;
+    wire phy_reset_n,phy_cs_n,phy_ck_en,phy_dq_oe,phy_rwds_oe,phy_rwds_o_rise,phy_rwds_o_fall,phy_dq_tx,phy_rwds_tx;
     wire [7:0] phy_dq_o_rise,phy_dq_o_fall;
     wire [7:0] phy_dq_i_rise,phy_dq_i_fall;
 
@@ -21,7 +21,7 @@ module tb_hyperram_ctrl;
             ) dut(.clk,.rst_n,.lat_cycles(5'(LAT)),.rd_latency(3'(RDL)),.cmd,.cmd_reg,.cmd_en,.cmd_rdy,.addr,.wr_data,.data_mask,.rd_data,
           .rd_data_valid,.init_calib,.phy_reset_n,.phy_cs_n,.phy_ck_en,.phy_dq_oe,
           .phy_dq_o_rise,.phy_dq_o_fall,.phy_rwds_oe,.phy_rwds_o_rise,.phy_rwds_o_fall,
-          .phy_dq_i_rise,.phy_dq_i_fall);
+          .phy_dq_tx,.phy_rwds_tx,.phy_dq_i_rise,.phy_dq_i_fall);
 
     reg [7:0] mem [0:4095];
     reg [15:0] cr0=0;
@@ -107,6 +107,11 @@ module tb_hyperram_ctrl;
             end
         end
         if(phy_cs_n && (phy_ck_en||phy_dq_oe||phy_rwds_oe)) fail("activity with CS high");
+        // The PHY tristate windows contain the protocol drive and stay off the
+        // cycles in which the memory drives read data.
+        if(phy_dq_oe && !phy_dq_tx) fail("DQ drive outside its TX window");
+        if(phy_rwds_oe && !phy_rwds_tx) fail("RWDS drive outside its TX window");
+        if(!phy_cs_n && phy_ck_en && is_read && k>=LAT && k<LAT+2 && (phy_dq_tx || phy_rwds_tx)) fail("TX window during read data");
     end
 
     task automatic issue(input is_write,input [ADDR_W-1:0] a,input [31:0] d,input [3:0] m);

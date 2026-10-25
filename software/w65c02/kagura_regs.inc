@@ -121,6 +121,7 @@ KAGURA_CMD_FILL                             = $01
 KAGURA_CMD_FENCE                            = $02
 KAGURA_CMD_COMMIT                           = $03
 KAGURA_CMD_AUDIO_COMMIT                     = $04
+KAGURA_CMD_COPY                             = $05
 
 ; Extended register indices (EXT_REG_INDEX)
 KAGURA_EXT_SCROLL_X_L                       = $00
@@ -143,6 +144,9 @@ KAGURA_EXT_RS_Y                             = $10
 KAGURA_EXT_RS_MAX                           = $11
 KAGURA_EXT_PSRAM_SIZE_LOG2                  = $12
 KAGURA_EXT_PCM_CHANNELS                     = $13
+KAGURA_EXT_COPY_SRC_L                       = $14
+KAGURA_EXT_COPY_SRC_M                       = $15
+KAGURA_EXT_COPY_SRC_H                       = $16
 
 ; Extended register reset values
 KAGURA_EXT_SCROLL_X_L_RESET                 = $00
@@ -165,6 +169,9 @@ KAGURA_EXT_RS_Y_RESET                       = $00
 KAGURA_EXT_RS_MAX_RESET                     = $08
 KAGURA_EXT_PSRAM_SIZE_LOG2_RESET            = $16
 KAGURA_EXT_PCM_CHANNELS_RESET               = $02
+KAGURA_EXT_COPY_SRC_L_RESET                 = $00
+KAGURA_EXT_COPY_SRC_M_RESET                 = $00
+KAGURA_EXT_COPY_SRC_H_RESET                 = $00
 KAGURA_EXT_SCREEN_HEIGHT_FULL               = $F0
 KAGURA_EXT_SCREEN_HEIGHT_WIDE               = $B4
 

@@ -45,6 +45,11 @@ module tb_psram_core;
         do access(0,15,0); while(value[5:0]==0);
         access(1,R_WRITE,d);
     endtask
+    task automatic copy_src(input [23:0] a);
+        access(1,R_EXT_I,8'h14); access(1,R_EXT_D,a[7:0]);
+        access(1,R_EXT_I,8'h15); access(1,R_EXT_D,a[15:8]);
+        access(1,R_EXT_I,8'h16); access(1,R_EXT_D,a[23:16]);
+    endtask
     task automatic qcmd(input [7:0] op,input bit err=0);
         do access(0,15,0); while(value[5:0]==0);
         access(1,R_CMD,op,err);
@@ -98,7 +103,7 @@ module tb_psram_core;
         access(0,28,0); if(value!=8'h5B) $fatal(1,"CAPS %02h",value);
         access(1,R_EXT_I,8'h12); access(0,R_EXT_D,0); if(value!=22) $fatal(1,"PSRAM_SIZE_LOG2 %0d",value);
         access(1,R_EXT_I,8'h13); access(0,R_EXT_D,0); if(value!=2) $fatal(1,"PCM_CHANNELS %0d",value);
-        access(1,R_EXT_I,8'h14); access(1,R_EXT_D,1,1); expect_error(8'h04);
+        access(1,R_EXT_I,8'h17); access(1,R_EXT_D,1,1); expect_error(8'h04);
         // PCM register resets, reserved offsets, unimplemented A0.
         for(i=0;i<64;i++) begin ar(8'(96+i)); if(value!=0) $fatal(1,"PCM index %02h reset %02h",96+i,value); end
         aw(8'h63,8'h55); ar(8'h63); if(value!=0) $fatal(1,"reserved PCM offset kept a value");
@@ -199,8 +204,28 @@ module tb_psram_core;
         first=-1;
         for(i=0;i<16 && first<0;i++) if(cap_l[i]!=0) first=i;
         for(i=0;i<40;i++) if(first<0 || cap_l[first+i]!==16'($signed(s0(i)))*16) $fatal(1,"replay sample %0d",i);
+        // COPY: PSRAM -> VRAM in queue order, both ranges checked at acceptance.
+        set_addr(24'h500003); for(i=0;i<300;i++) qwrite(8'(i*11+5));
+        copy_src(24'h500003); set_addr(24'h000101); access(1,R_LEN_L,8'(300)); access(1,R_LEN_H,8'(300>>8));
+        qcmd(5); fence(5);
+        for(i=0;i<300;i+=7) begin read_byte(24'h000101+i,v); if(v!==8'(i*11+5)) $fatal(1,"COPY byte %0d = %02h",i,v); end
+        read_byte(24'h000101+299,v); if(v!==8'(299*11+5)) $fatal(1,"COPY last byte %02h",v);
+        read_byte(24'h000100,v); if(v!==8'h00) $fatal(1,"COPY wrote before its destination");
+        read_byte(24'h000101+300,v); if(v!==8'h00) $fatal(1,"COPY wrote past its destination");
+        // The cached PSRAM word must not survive a write to it.
+        set_addr(24'h500003+299); qwrite(8'hc3); fence(6);
+        copy_src(24'h500003+296); set_addr(24'h000200); access(1,R_LEN_L,4); access(1,R_LEN_H,0); qcmd(5); fence(7);
+        read_byte(24'h000203,v); if(v!==8'hc3) $fatal(1,"stale PSRAM word after write: %02h",v);
+        // Range errors: low source, source past the region, PSRAM destination,
+        // destination crossing pattern/map. LENGTH 0 is a no-op.
+        copy_src(24'h3ffffe); set_addr(24'h000000); access(1,R_LEN_L,4); qcmd(5,1); expect_error(8'h02);
+        copy_src(24'h7ffffe); qcmd(5,1); expect_error(8'h02);
+        copy_src(24'h500000); set_addr(24'h400000); qcmd(5,1); expect_error(8'h02);
+        set_addr(24'h007ffe); qcmd(5,1); expect_error(8'h02);
+        access(1,R_LEN_L,0); qcmd(5); fence(8); expect_error(8'h00);
+        access(0,R_ADDR_L,0); if(value!==8'hfe) $fatal(1,"COPY moved VRAM_ADDR");
         if(underruns!=0) $fatal(1,"%0d PCM underruns",underruns);
-        $display("PASS: tb_psram_core (PSRAM upload/readback/FILL/range, byte masks, PCM one-shot, loop at region top, host traffic, pause/resume, STOP, CONFIG_ERROR/CLEAR, replay)");
+        $display("PASS: tb_psram_core (PSRAM upload/readback/FILL/range, byte masks, PCM one-shot, loop at region top, host traffic, pause/resume, STOP, CONFIG_ERROR/CLEAR, replay, COPY with ranges and cache coherence)");
         $finish;
     end
     initial begin #200000000; $fatal(1,"tb_psram_core timeout"); end

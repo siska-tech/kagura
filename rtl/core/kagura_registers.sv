@@ -15,7 +15,8 @@
 // Indexed audio shadow/snapshot state lives in kagura_audio_registers.
 module kagura_registers #(
     parameter [7:0] CAPS=8'h00, // set only bits this bitstream implements
-    parameter integer LINES=240    // EXT 0A SCREEN_HEIGHT
+    parameter integer LINES=240,   // EXT 0A SCREEN_HEIGHT
+    parameter bit DEBUG=0          // PSRAM pin capture at EXT 17/18 (debug builds only, not ABI)
 ) (
     input wire clk, reset,
     input wire init_done,
@@ -57,7 +58,13 @@ module kagura_registers #(
     output reg [7:0] scroll_y, backdrop, raster_line,
     // Raster scroll shadow table (CAPS b6): entries {y, x[8:0], line}.
     output reg [3:0] rs_count,
-    output reg [199:0] rs_table
+    output reg [199:0] rs_table,
+    // DEBUG: EXT 17 selects a capture byte, EXT 18 reads it; writing 18 re-arms
+    // (b0: trigger on a read instead of a write).
+    output reg [7:0] dbg_index,
+    output wire dbg_arm,
+    output wire [7:0] dbg_arm_value,
+    input wire [7:0] dbg_rdata
 );
     localparam RS=CAPS[6];
     localparam PSRAM=CAPS[3];  // PSRAM region 400000-7FFFFF and PCM (ABI 0.4)
@@ -70,7 +77,7 @@ module kagura_registers #(
         SPR_OVF_INDEX=5'h1e, SPR_OVF_LINE=5'h1f;
     localparam integer E_FIFO_FULL=0, E_INVALID_ADDRESS=1, E_BAD_ACCESS=2, E_READ_COLLISION=3,
         E_NOT_READY=4, E_BUSY_CONFLICT=7;
-    localparam [7:0] OP_FILL=8'h01, OP_FENCE=8'h02, OP_COMMIT=8'h03,OP_AUDIO=8'h04, OP_WRITE=8'h10, OP_READ=8'h11;
+    localparam [7:0] OP_FILL=8'h01, OP_FENCE=8'h02, OP_COMMIT=8'h03,OP_AUDIO=8'h04, OP_COPY=8'h05, OP_WRITE=8'h10, OP_READ=8'h11;
 
     reg [7:0] irq_status, irq_enable, error_code;
     reg [5:0] overflow_index;
@@ -89,20 +96,21 @@ module kagura_registers #(
     reg [7:0] q_wdata;
     // COMMAND opcode and READ_REQUEST value decoded at capture, so the
     // admission and error logic does not compare q_wdata (high fanout) again.
-    reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_zero;
+    reg q_op_fill, q_op_fence, q_op_commit, q_op_audio, q_op_copy, q_zero;
     reg [2:0] rs_settle;
     assign req_ready=!q_valid && (!rsp_valid || rsp_ready) && !checks_stale && !queue_staging && !(|rs_settle) && !audio_settle;
     always @(posedge clk)
         if(reset) begin
             q_valid<=0; q_write<=0; q_addr<=0; q_wdata<=0;
-            q_op_fill<=0; q_op_fence<=0; q_op_commit<=0; q_op_audio<=0; q_zero<=1;
+            q_op_fill<=0; q_op_fence<=0; q_op_commit<=0; q_op_audio<=0; q_op_copy<=0; q_zero<=1;
         end
         else begin
             q_valid<=req_valid && req_ready;
             if(req_valid && req_ready) begin
                 q_write<=req_write; q_addr<=req_addr; q_wdata<=req_wdata;
                 q_op_fill<=req_wdata==OP_FILL; q_op_fence<=req_wdata==OP_FENCE;
-                q_op_commit<=req_wdata==OP_COMMIT; q_op_audio<=req_wdata==OP_AUDIO; q_zero<=req_wdata==0;
+                q_op_commit<=req_wdata==OP_COMMIT; q_op_audio<=req_wdata==OP_AUDIO; q_op_copy<=PSRAM && req_wdata==OP_COPY;
+                q_zero<=req_wdata==0;
             end
         end
     assign irq=|(irq_status & irq_enable);
@@ -134,6 +142,18 @@ module kagura_registers #(
         fill_end_q<=fill_end;
         length_zero_q<=length==0;
         fill_ok<=start_region_q!=0 && (length_zero_q || region(fill_end_q)==start_region_q);
+    end
+    // COPY (CAPS b3): the source range lies in PSRAM and the destination range
+    // (VRAM_ADDR, LENGTH) in one public region below PSRAM, checked the same way.
+    reg [23:0] copy_src;
+    wire [24:0] copy_end={1'b0,copy_src}+{9'b0,length}-25'd1;
+    reg [24:0] copy_end_q;
+    reg copy_start_q,copy_ok;
+    always @(posedge clk) begin
+        copy_start_q<=copy_src[23:22]==2'b01;               // region 6, PSRAM
+        copy_end_q<=copy_end;
+        copy_ok<=PSRAM && copy_start_q && (length_zero_q || copy_end_q[24:22]==3'b001) &&
+            start_region_q!=0 && start_region_q!=3'd6 && (length_zero_q || region(fill_end_q)==start_region_q);
     end
 // synthesis translate_off
     // fill_ok must reflect the current address and length when a FILL is decoded.
@@ -183,6 +203,11 @@ module kagura_registers #(
             8'h0a: ext_value=8'(LINES);
             8'h12: if(PSRAM) ext_value=8'd22; else ext_defined=0;
             8'h13: if(PSRAM) ext_value=8'd2; else ext_defined=0;
+            8'h14: if(PSRAM) begin ext_value=copy_src[7:0]; ext_writable=1; end else ext_defined=0;
+            8'h15: if(PSRAM) begin ext_value=copy_src[15:8]; ext_writable=1; end else ext_defined=0;
+            8'h16: if(PSRAM) begin ext_value=copy_src[23:16]; ext_writable=1; end else ext_defined=0;
+            8'h17: if(DEBUG) begin ext_value=dbg_index; ext_writable=1; end else ext_defined=0;
+            8'h18: if(DEBUG) begin ext_value=dbg_rdata; ext_writable=1; end else ext_defined=0;
             default: ext_defined=0;
         endcase
     end
@@ -264,6 +289,9 @@ module kagura_registers #(
                         if(full) errors[E_FIFO_FULL]=1;
                         if(audio_busy) errors[E_BUSY_CONFLICT]=1;
                         if(!audio_settings_valid) errors[E_BAD_ACCESS]=1;
+                    end else if(q_op_copy) begin
+                        if(full) errors[E_FIFO_FULL]=1;
+                        if(!copy_ok) errors[E_INVALID_ADDRESS]=1;
                     end else errors[E_BAD_ACCESS]=1;
                 end
                 EXT_DATA: if(rs_is_table && commit_busy) errors[E_BUSY_CONFLICT]=1;
@@ -277,7 +305,7 @@ module kagura_registers #(
                 VRAM_WRITE: enqueue=!full && addr_ok;
                 READ_REQUEST: enqueue=!full && addr_ok && q_zero && !read_busy && !read_ready;
                 COMMAND: enqueue=!full && (q_op_fill && fill_ok || q_op_fence || q_op_commit && !commit_busy && rs_ok
-                    || q_op_audio && !audio_busy && audio_settings_valid);
+                    || q_op_audio && !audio_busy && audio_settings_valid || q_op_copy && copy_ok);
                 default: ;
             endcase
             advance=enqueue && q_addr!=COMMAND;
@@ -292,16 +320,20 @@ module kagura_registers #(
     wire [7:0] desc_op=q_addr==VRAM_WRITE ? OP_WRITE : q_addr==READ_REQUEST ? OP_READ : q_wdata;
     wire [7:0] desc_data=q_addr==VRAM_WRITE ? q_wdata : q_op_fill ? fill_value : fence_value;
     wire is_commit=q_addr==COMMAND && q_op_commit;
-    wire [23:0] desc_addr=is_commit ? {4'b0,display_ctrl,scroll_x,scroll_y} : vram_addr;
+    // COPY: address = source (PSRAM), data/flags = destination VRAM_ADDR[15:0].
+    wire is_copy=q_addr==COMMAND && q_op_copy;
+    wire [23:0] desc_addr=is_commit ? {4'b0,display_ctrl,scroll_x,scroll_y} : is_copy ? copy_src : vram_addr;
     wire [15:0] desc_len=is_commit ? {backdrop,raster_line} : length;
-    wire [63:0] desc={8'h00,desc_data,desc_len,desc_addr,desc_op};
+    wire [63:0] desc=is_copy ? {vram_addr[15:0],desc_len,desc_addr,desc_op} : {8'h00,desc_data,desc_len,desc_addr,desc_op};
     reg push_q, advance_q;
     reg [63:0] desc_q;
     assign push=push_q;
     assign push_desc=desc_q;
     assign audio_index_write=wr && q_addr==AUDIO_INDEX;
     assign audio_data_write=wr && q_addr==AUDIO_DATA && audio_write_legal;
-    assign audio_capture=enqueue && q_addr==COMMAND && q_op_audio;
+    // Same admission as `enqueue` for AUDIO_COMMIT, decoded directly so the
+    // snapshot capture does not wait for the full command admission mux.
+    assign audio_capture=wr && q_addr==COMMAND && q_op_audio && !full && !audio_busy && audio_settings_valid && init_done;
     assign audio_wdata=q_wdata;
 
     // New events win over a same-cycle W1C clear.
@@ -311,6 +343,8 @@ module kagura_registers #(
     wire clear_overflow=w1c_irq && q_wdata[5];
     wire w1c_err=wr && q_addr==ERROR_CODE;
     wire ext_write=wr && q_addr==EXT_DATA && ext_writable && !rs_block;
+    assign dbg_arm=DEBUG && ext_write && ext_index==8'h18;
+    assign dbg_arm_value=q_wdata;
     // Validity of the shadow raster table (lines < LINES, strictly ascending,
     // only entries below RS_COUNT), registered in two stages; rs_settle keeps
     // requests off until it reflects the latest table write.
@@ -333,12 +367,12 @@ module kagura_registers #(
             done_tag<=0; frame_count<=0; ext_index<=0; read_busy<=0; read_ready<=0; read_result<=0;
             commit_busy<=0;
             scroll_x<=0; scroll_y<=0; backdrop<=0; raster_line<=8'd255;
-            rs_count<=0; rs_table<=0; rs_idx<=0; rs_settle<=0;
+            rs_count<=0; rs_table<=0; rs_idx<=0; rs_settle<=0; copy_src<=0; dbg_index<=0;
             rsp_valid<=0; rsp_rdata<=0; rsp_error<=0; checks_stale<=1; push_q<=0; desc_q<=0; advance_q<=0;
         end else begin
             push_q<=enqueue; desc_q<=desc; advance_q<=advance;
             checks_stale<=enqueue || advance || advance_q || (wr && (q_addr==ADDR_L || q_addr==ADDR_M || q_addr==ADDR_H
-                || q_addr==LENGTH_L || q_addr==LENGTH_H));
+                || q_addr==LENGTH_L || q_addr==LENGTH_H)) || (ext_write && ext_index>=8'h14 && ext_index<=8'h16);
             if(rsp_valid && rsp_ready) rsp_valid<=0;
             irq_status<=((w1c_irq ? irq_status & ~q_wdata : irq_status) | new_irq) & 8'h7f;
             if(clear_overflow) begin overflow_index<=0; overflow_line<=0; end
@@ -370,6 +404,10 @@ module kagura_registers #(
                 8'h02: scroll_y<=q_wdata;
                 8'h03: backdrop<=q_wdata;
                 8'h04: raster_line<=q_wdata;
+                8'h14: copy_src[7:0]<=q_wdata;
+                8'h15: copy_src[15:8]<=q_wdata;
+                8'h16: copy_src[23:16]<=q_wdata;
+                8'h17: dbg_index<=q_wdata;
                 8'h0b: rs_count<=q_wdata[3:0];
                 8'h0c: rs_idx<=q_wdata[2:0];
                 8'h10: rs_idx<=rs_idx+1'b1;

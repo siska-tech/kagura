@@ -61,14 +61,21 @@ module kagura_audio_registers #(
     wire pcm_cmd_write=data_write && pcm_index && pcm_off==5'h0f;
     // Registered: the command reaches the prefetcher one cycle later, keeping
     // the register decode out of its sample-count path.
-    // The command takes effect two cycles after the write and the status cache
-    // one more, so `settle` stalls the next register request for three cycles.
+    // A PCM command takes effect two cycles after the write and the status cache
+    // one more, so `settle` stalls the next register request for three cycles
+    // after any audio data write.
     reg [2:0] settle_sr;
     assign settle=|settle_sr;
+    // Shadow writes land one cycle after the register stage (the write enable
+    // fans out to every shadow register); `settle` covers them as well.
+    reg dw_q;
+    reg [7:0] wd_q;
     always @(posedge clk)
-        if(reset) begin pcm_prepare<=0; pcm_stop<=0; pcm_clear<=0; settle_sr<=0; end
+        if(reset) begin pcm_prepare<=0; pcm_stop<=0; pcm_clear<=0; settle_sr<=0; dw_q<=0; wd_q<=0; end
         else begin
-            settle_sr<={settle_sr[1:0],pcm_cmd_write};
+            settle_sr<={settle_sr[1:0],data_write};
+            dw_q<=data_write && write_legal;
+            wd_q<=wdata;
             pcm_prepare<={pcm_cmd_write && pcm_ch && wdata[0],pcm_cmd_write && !pcm_ch && wdata[0]};
             pcm_stop<={pcm_cmd_write && pcm_ch && wdata[1],pcm_cmd_write && !pcm_ch && wdata[1]};
             pcm_clear<={pcm_cmd_write && pcm_ch && wdata[2],pcm_cmd_write && !pcm_ch && wdata[2]};
@@ -151,38 +158,38 @@ module kagura_audio_registers #(
             underflow<=(underflow && !clear_underflow) || underflow_event;
             overflow<=(overflow && !clear_overflow) || overflow_event;
             if(index_write) index<=wdata;
-            if(data_write && write_legal) begin
+            if(dw_q) begin
                 if(channel_index) begin
                     for(integer c=0;c<6;c=c+1) if(ch==c) case(offset)
-                        0: if(c!=3) steps[24*c +:8]<=wdata;
-                        1: if(c!=3) steps[24*c+8 +:8]<=wdata;
-                        2: if(c!=3) steps[24*c+16 +:8]<=wdata;
-                        3: if(c<3) duties[8*c +:8]<=wdata;
-                        4: gains_l[8*c +:8]<=wdata;
-                        5: gains_r[8*c +:8]<=wdata;
-                        6: begin enables[c]<=wdata[0]; resets[c]<=wdata[1]; end
-                        7: if(c>=4) lengths[8*(c-4) +:8]<=wdata;
-                        8: if(c==3) noise_period[7:0]<=wdata;
-                        9: if(c==3) noise_period[15:8]<=wdata;
+                        0: if(c!=3) steps[24*c +:8]<=wd_q;
+                        1: if(c!=3) steps[24*c+8 +:8]<=wd_q;
+                        2: if(c!=3) steps[24*c+16 +:8]<=wd_q;
+                        3: if(c<3) duties[8*c +:8]<=wd_q;
+                        4: gains_l[8*c +:8]<=wd_q;
+                        5: gains_r[8*c +:8]<=wd_q;
+                        6: begin enables[c]<=wd_q[0]; resets[c]<=wd_q[1]; end
+                        7: if(c>=4) lengths[8*(c-4) +:8]<=wd_q;
+                        8: if(c==3) noise_period[7:0]<=wd_q;
+                        9: if(c==3) noise_period[15:8]<=wd_q;
                         default: ;
                     endcase
                 end
                 else if(pcm_index) case(pcm_off)
-                    5'h00: pcm_start[24*pcm_ch +:8]<=wdata;
-                    5'h01: pcm_start[24*pcm_ch+8 +:8]<=wdata;
-                    5'h02: pcm_start[24*pcm_ch+16 +:8]<=wdata;
-                    5'h04: pcm_end[24*pcm_ch +:8]<=wdata;
-                    5'h05: pcm_end[24*pcm_ch+8 +:8]<=wdata;
-                    5'h06: pcm_end[24*pcm_ch+16 +:8]<=wdata;
-                    5'h08: pcm_loop[24*pcm_ch +:8]<=wdata;
-                    5'h09: pcm_loop[24*pcm_ch+8 +:8]<=wdata;
-                    5'h0a: pcm_loop[24*pcm_ch+16 +:8]<=wdata;
-                    5'h0c: pcm_gain_l[8*pcm_ch +:8]<=wdata;
-                    5'h0d: pcm_gain_r[8*pcm_ch +:8]<=wdata;
-                    5'h0e: begin pcm_enable[pcm_ch]<=wdata[0]; pcm_loop_enable[pcm_ch]<=wdata[1]; end
+                    5'h00: pcm_start[24*pcm_ch +:8]<=wd_q;
+                    5'h01: pcm_start[24*pcm_ch+8 +:8]<=wd_q;
+                    5'h02: pcm_start[24*pcm_ch+16 +:8]<=wd_q;
+                    5'h04: pcm_end[24*pcm_ch +:8]<=wd_q;
+                    5'h05: pcm_end[24*pcm_ch+8 +:8]<=wd_q;
+                    5'h06: pcm_end[24*pcm_ch+16 +:8]<=wd_q;
+                    5'h08: pcm_loop[24*pcm_ch +:8]<=wd_q;
+                    5'h09: pcm_loop[24*pcm_ch+8 +:8]<=wd_q;
+                    5'h0a: pcm_loop[24*pcm_ch+16 +:8]<=wd_q;
+                    5'h0c: pcm_gain_l[8*pcm_ch +:8]<=wd_q;
+                    5'h0d: pcm_gain_r[8*pcm_ch +:8]<=wd_q;
+                    5'h0e: begin pcm_enable[pcm_ch]<=wd_q[0]; pcm_loop_enable[pcm_ch]<=wd_q[1]; end
                     default: ;
                 endcase
-                else if(index==8'he0) master<=wdata;
+                else if(index==8'he0) master<=wd_q;
             end
             if(commit_done) apply_busy<=0;
             if(capture) begin

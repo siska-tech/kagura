@@ -119,6 +119,7 @@
 #define KAGURA_CMD_FENCE                            0x02u
 #define KAGURA_CMD_COMMIT                           0x03u
 #define KAGURA_CMD_AUDIO_COMMIT                     0x04u
+#define KAGURA_CMD_COPY                             0x05u
 
 /* Extended register indices (EXT_REG_INDEX) */
 #define KAGURA_EXT_SCROLL_X_L                       0x00u
@@ -141,6 +142,9 @@
 #define KAGURA_EXT_RS_MAX                           0x11u
 #define KAGURA_EXT_PSRAM_SIZE_LOG2                  0x12u
 #define KAGURA_EXT_PCM_CHANNELS                     0x13u
+#define KAGURA_EXT_COPY_SRC_L                       0x14u
+#define KAGURA_EXT_COPY_SRC_M                       0x15u
+#define KAGURA_EXT_COPY_SRC_H                       0x16u
 
 /* Extended register reset values */
 #define KAGURA_EXT_SCROLL_X_L_RESET                 0x00u
@@ -163,6 +167,9 @@
 #define KAGURA_EXT_RS_MAX_RESET                     0x08u
 #define KAGURA_EXT_PSRAM_SIZE_LOG2_RESET            0x16u
 #define KAGURA_EXT_PCM_CHANNELS_RESET               0x02u
+#define KAGURA_EXT_COPY_SRC_L_RESET                 0x00u
+#define KAGURA_EXT_COPY_SRC_M_RESET                 0x00u
+#define KAGURA_EXT_COPY_SRC_H_RESET                 0x00u
 #define KAGURA_EXT_SCREEN_HEIGHT_FULL               0xF0u
 #define KAGURA_EXT_SCREEN_HEIGHT_WIDE               0xB4u
 

@@ -56,20 +56,31 @@ module kagura_hyperram_phy_gowin (
     assign O_psram_ck=ck_oddr;
     assign O_psram_ck_n=ck_n_oddr;
 
-    assign O_psram_reset_n=phy_reset_n;
+    // RESET# from a register: the controller derives phy_reset_n from its state
+    // and counter, and that decode glitched low as the state left XFER, which
+    // reset the memory right after a write's data on some placements (every
+    // write lost, reads intact). Starts asserted until the first clock.
+    reg reset_n_q=1'b0;
+    always @(posedge clk) reset_n_q<=phy_reset_n;
+    assign O_psram_reset_n=reset_n_q;
 
     // CS# goes through an ODDR like DQ so it brackets the delayed CK pulses.
     reg cs_n_q=1'b1;
     always @(posedge clk) cs_n_q<=phy_cs_n;
     ODDR #(.INIT(1'b1)) cs_ddr(.D0(cs_n_q),.D1(cs_n_q),.TX(1'b0),.CLK(clk),.Q0(O_psram_cs_n),.Q1());
 
-    // Output enables must line up with the registered data; register once on clk.
-    reg dq_oe_q,rwds_oe_q;
+    // Output enables line up with the registered data; register once on clk.
+    // Connect phy_dq_oe/phy_rwds_oe to the controller's widened phy_dq_tx /
+    // phy_rwds_tx: Gowin STA does not time the fabric path into an ODDR TX
+    // pin. Each pin gets its own active-low enable register (kept from merging)
+    // so the untimed route to its TX stays short.
+    (* syn_preserve=1 *) reg [7:0] dq_txn_q=8'hff;
+    (* syn_preserve=1 *) reg rwds_txn_q=1'b1;
     reg [7:0] dq_r_q,dq_f_q;
     reg rwds_r_q,rwds_f_q;
     always @(posedge clk) begin
-        dq_oe_q<=phy_dq_oe;
-        rwds_oe_q<=phy_rwds_oe;
+        dq_txn_q<={8{~phy_dq_oe}};
+        rwds_txn_q<=~phy_rwds_oe;
         dq_r_q<=phy_dq_o_rise;
         dq_f_q<=phy_dq_o_fall;
         rwds_r_q<=phy_rwds_o_rise;
@@ -80,14 +91,14 @@ module kagura_hyperram_phy_gowin (
     generate
         for(i=0;i<8;i=i+1) begin : dq
             wire o,oen,in_pin;
-            ODDR od(.D0(dq_r_q[i]),.D1(dq_f_q[i]),.TX(~dq_oe_q),.CLK(clk),.Q0(o),.Q1(oen));
+            ODDR od(.D0(dq_r_q[i]),.D1(dq_f_q[i]),.TX(dq_txn_q[i]),.CLK(clk),.Q0(o),.Q1(oen));
             IOBUF io(.I(o),.OEN(oen),.IO(IO_psram_dq[i]),.O(in_pin));
             IDDR id(.D(in_pin),.CLK(clk),.Q0(phy_dq_i_rise[i]),.Q1(phy_dq_i_fall[i]));
         end
     endgenerate
 
     wire rwds_o,rwds_oen,rwds_in;
-    ODDR rwds_ddr(.D0(rwds_r_q),.D1(rwds_f_q),.TX(~rwds_oe_q),.CLK(clk),.Q0(rwds_o),.Q1(rwds_oen));
+    ODDR rwds_ddr(.D0(rwds_r_q),.D1(rwds_f_q),.TX(rwds_txn_q),.CLK(clk),.Q0(rwds_o),.Q1(rwds_oen));
     IOBUF rwds_io(.I(rwds_o),.OEN(rwds_oen),.IO(IO_psram_rwds),.O(rwds_in));
     IDDR rwds_id(.D(rwds_in),.CLK(clk),.Q0(phy_rwds_i_rise),.Q1(phy_rwds_i_fall));
 endmodule

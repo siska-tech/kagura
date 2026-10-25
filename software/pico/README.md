@@ -58,6 +58,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `rd <off> [n]` / `wr <off> <val>` | レジスタの読み書き（16進） |
 | `w <addr> <len>` / `c <addr> <len>` | VRAMへのupload、読戻しCRC（uploader用） |
 | `psram [len]` | PSRAM版（`spipsram`/`qspipsram`、CAPS b3）でPSRAM領域の乱数位置へlen byte（既定2048、最大2048）をupload→FENCE→READ_REQUESTで読戻して照合し、速度を表示 |
+| `copy [len]` | PSRAM版でlen byte（既定2048）の乱数をPSRAMへ置き、COMMAND COPYでpattern領域の乱数位置へ複写してVRAMから読戻し照合する。続いて32767 byteの複写時間（FENCE込み）を表示 |
 | `pcm [seconds]` | PSRAM版で2秒のメロディ（PCM 0、loop）と150msのドラム（PCM 1、one-shot）をupload・照合し、0.5秒ごとにPREPARE＋AUDIO_COMMITでドラムを再発音。UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・ERROR_CODE・メロディの停止がなければ`PASS pcm`。既定10秒、`0`はキー入力まで |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 

@@ -47,7 +47,8 @@
     { "value": 1, "name": "FILL" },
     { "value": 2, "name": "FENCE" },
     { "value": 3, "name": "COMMIT" },
-    { "value": 4, "name": "AUDIO_COMMIT" }
+    { "value": 4, "name": "AUDIO_COMMIT" },
+    { "value": 5, "name": "COPY" }
   ],
   "ext": [
     { "index": 0, "name": "SCROLL_X_L", "doc_label": "SCROLL_X", "access": "RW shadow", "reset": 0 },
@@ -69,9 +70,12 @@
     { "index": 16, "name": "RS_Y", "doc_label": "RS_Y", "access": "RW shadow", "reset": 0 },
     { "index": 17, "name": "RS_MAX", "doc_label": "RS_MAX", "access": "RO", "reset": 8 },
     { "index": 18, "name": "PSRAM_SIZE_LOG2", "doc_label": "PSRAM_SIZE_LOG2", "access": "RO", "reset": 22 },
-    { "index": 19, "name": "PCM_CHANNELS", "doc_label": "PCM_CHANNELS", "access": "RO", "reset": 2 }
+    { "index": 19, "name": "PCM_CHANNELS", "doc_label": "PCM_CHANNELS", "access": "RO", "reset": 2 },
+    { "index": 20, "name": "COPY_SRC_L", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 },
+    { "index": 21, "name": "COPY_SRC_M", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 },
+    { "index": 22, "name": "COPY_SRC_H", "doc_label": "COPY_SRC", "access": "RW shadow", "reset": 0 }
   ],
-  "ext_implemented_end": 20,
+  "ext_implemented_end": 23,
   "audio": {
     "channel_stride": 16,
     "channels": [

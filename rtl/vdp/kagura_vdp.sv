@@ -6,6 +6,7 @@
 module kagura_vdp #(
     parameter [7:0] CAPS=8'h00,
     parameter integer VIDEO_ID_CODE=1,
+    parameter bit PSRAM_DEBUG=0,
     localparam integer XW=VIDEO_ID_CODE==4 ? 11 : 10
 ) (
     input wire sys_clk, sys_reset,
@@ -35,7 +36,9 @@ module kagura_vdp #(
     output wire psram_reset_n,psram_cs_n,psram_ck_en,psram_dq_oe,psram_rwds_oe,
     output wire [7:0] psram_dq_o_rise,psram_dq_o_fall,
     output wire psram_rwds_o_rise,psram_rwds_o_fall,
-    input wire [7:0] psram_dq_i_rise,psram_dq_i_fall
+    output wire psram_dq_tx,psram_rwds_tx,
+    input wire [7:0] psram_dq_i_rise,psram_dq_i_fall,
+    input wire psram_rwds_i_rise,psram_rwds_i_fall
 );
     wire render_start, line_write, render_done, vblank_start, vblank_live, underrun_event, line_start;
     wire [7:0] render_line, shown_line;
@@ -44,7 +47,7 @@ module kagura_vdp #(
     wire line_read;
     wire memory_ready,bank_ready;
     assign init_done=memory_ready && bank_ready;
-    kagura_core #(.CAPS(CAPS),.LINES(VIDEO_ID_CODE==4 ? 180 : 240)) core(.clk(sys_clk),.reset(sys_reset),
+    kagura_core #(.CAPS(CAPS),.LINES(VIDEO_ID_CODE==4 ? 180 : 240),.PSRAM_DEBUG(PSRAM_DEBUG)) core(.clk(sys_clk),.reset(sys_reset),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_addr(req_addr),
         .req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(rsp_ready),.rsp_rdata(rsp_rdata),
         .rsp_error(rsp_error),.irq(irq),.init_done(memory_ready),
@@ -57,7 +60,8 @@ module kagura_vdp #(
         .psram_reset_n(psram_reset_n),.psram_cs_n(psram_cs_n),.psram_ck_en(psram_ck_en),.psram_dq_oe(psram_dq_oe),
         .psram_rwds_oe(psram_rwds_oe),.psram_dq_o_rise(psram_dq_o_rise),.psram_dq_o_fall(psram_dq_o_fall),
         .psram_rwds_o_rise(psram_rwds_o_rise),.psram_rwds_o_fall(psram_rwds_o_fall),
-        .psram_dq_i_rise(psram_dq_i_rise),.psram_dq_i_fall(psram_dq_i_fall));
+        .psram_dq_tx(psram_dq_tx),.psram_rwds_tx(psram_rwds_tx),.psram_dq_i_rise(psram_dq_i_rise),.psram_dq_i_fall(psram_dq_i_fall),
+        .psram_rwds_i_rise(psram_rwds_i_rise),.psram_rwds_i_fall(psram_rwds_i_fall));
     kagura_line_display #(.VIDEO_ID_CODE(VIDEO_ID_CODE)) display(.sys_clk(sys_clk),.sys_reset(sys_reset),
         .memory_ready(memory_ready),.line_init_done(bank_ready),.frame_ready(frame_ready),
         .render_start(render_start),.render_line(render_line),.line_write(line_write),

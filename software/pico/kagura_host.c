@@ -364,6 +364,16 @@ kh_status kh_fill(uint32_t addr, uint16_t length, uint8_t value) {
     return s != KH_OK ? s : kh_check_errors();
 }
 
+kh_status kh_copy(uint32_t src, uint32_t dst, uint16_t length) {
+    uint8_t d[2] = {(uint8_t)length, (uint8_t)(length >> 8)};
+    kh_status s = KH_OK;
+    for (unsigned b = 0; b < 3 && s == KH_OK; b++) s = kh_ext_write((uint8_t)(KAGURA_EXT_COPY_SRC_L + b), (uint8_t)(src >> (8 * b)));
+    if (s == KH_OK) s = kh_set_vram_addr(dst);
+    if (s == KH_OK) s = kh_write(KAGURA_REG_LENGTH_L, true, d, 2);
+    if (s == KH_OK) s = kh_write_reg(KAGURA_REG_COMMAND, KAGURA_CMD_COPY);
+    return s != KH_OK ? s : kh_check_errors();
+}
+
 kh_status kh_fence(uint8_t tag, uint32_t timeout_us) {
     kh_status s = kh_write_reg(KAGURA_REG_FENCE_TAG, tag);
     if (s == KH_OK) s = kh_write_reg(KAGURA_REG_COMMAND, KAGURA_CMD_FENCE);

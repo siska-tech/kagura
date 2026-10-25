@@ -118,6 +118,7 @@ package kagura_abi_pkg;
     localparam logic [7:0] CMD_FENCE                            = 8'h2;
     localparam logic [7:0] CMD_COMMIT                           = 8'h3;
     localparam logic [7:0] CMD_AUDIO_COMMIT                     = 8'h4;
+    localparam logic [7:0] CMD_COPY                             = 8'h5;
 
     // Extended register indices (EXT_REG_INDEX)
     localparam logic [7:0] EXT_SCROLL_X_L                       = 8'h0;
@@ -140,6 +141,9 @@ package kagura_abi_pkg;
     localparam logic [7:0] EXT_RS_MAX                           = 8'h11;
     localparam logic [7:0] EXT_PSRAM_SIZE_LOG2                  = 8'h12;
     localparam logic [7:0] EXT_PCM_CHANNELS                     = 8'h13;
+    localparam logic [7:0] EXT_COPY_SRC_L                       = 8'h14;
+    localparam logic [7:0] EXT_COPY_SRC_M                       = 8'h15;
+    localparam logic [7:0] EXT_COPY_SRC_H                       = 8'h16;
 
     // Extended register reset values
     localparam logic [7:0] EXT_SCROLL_X_L_RESET                 = 8'h0;
@@ -162,6 +166,9 @@ package kagura_abi_pkg;
     localparam logic [7:0] EXT_RS_MAX_RESET                     = 8'h8;
     localparam logic [7:0] EXT_PSRAM_SIZE_LOG2_RESET            = 8'h16;
     localparam logic [7:0] EXT_PCM_CHANNELS_RESET               = 8'h2;
+    localparam logic [7:0] EXT_COPY_SRC_L_RESET                 = 8'h0;
+    localparam logic [7:0] EXT_COPY_SRC_M_RESET                 = 8'h0;
+    localparam logic [7:0] EXT_COPY_SRC_H_RESET                 = 8'h0;
     localparam logic [7:0] EXT_SCREEN_HEIGHT_FULL               = 8'hF0;
     localparam logic [7:0] EXT_SCREEN_HEIGHT_WIDE               = 8'hB4;
 

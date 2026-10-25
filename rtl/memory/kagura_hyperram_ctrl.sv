@@ -59,6 +59,15 @@ module kagura_hyperram_ctrl #(
     output logic phy_rwds_oe,
     output logic phy_rwds_o_rise,
     output logic phy_rwds_o_fall,
+    // Output-enable windows for the PHY tristate (TX) inputs: phy_dq_oe /
+    // phy_rwds_oe widened by one cycle on each side. Gowin STA does not time
+    // fabric paths into an ODDR TX pin, and a placement whose DQ7 enable was a
+    // cycle late turned every write CA into a read on hardware; the margin
+    // keeps a late or early enable inside the window. The extra cycles fall
+    // before CA (CK stopped), after CA or before write data (memory not
+    // driving during latency) and right after write data (CS high).
+    output logic phy_dq_tx,
+    output logic phy_rwds_tx,
     input  logic [7:0] phy_dq_i_rise,
     input  logic [7:0] phy_dq_i_fall
 );
@@ -98,6 +107,10 @@ module kagura_hyperram_ctrl #(
     assign phy_dq_oe=ca_phase || (data_phase && (op_write||op_cfg));
     // RWDS is a write mask only for memory writes; register writes leave it undriven.
     assign phy_rwds_oe=data_phase && op_write && !op_cfg;
+    wire writes=op_write || op_cfg;
+    wire after_write=state==S_GAP && t==0;   // the cycle after the last data cycle of a write
+    assign phy_dq_tx=(in_xfer && t<=4) || (in_xfer && writes && t>=data_t0-1'b1) || (after_write && writes);
+    assign phy_rwds_tx=(in_xfer && op_write && !op_cfg && t>=data_t0-1'b1) || (after_write && op_write && !op_cfg);
 
     always_comb begin
         phy_dq_o_rise=0;

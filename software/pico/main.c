@@ -375,7 +375,8 @@ static void help(void) {
            "  w <addr> <len>       upload len raw bytes to VRAM (hex addr), replies READY then OK len us crc32\n"
            "  c <addr> <len>       read VRAM back, replies CRC len us crc32\n"
            "  psram [len]          PSRAM upload/FENCE/readback compare (CAPS PSRAM, default 2048)\n"
-           "  pcm [seconds]        PCM loop + retriggered one-shot from PSRAM; default 10s, 0 runs until a key\n"
+           "  copy [len]           COMMAND COPY PSRAM -> pattern VRAM compare, and 32KiB copy timing\n"
+           "  pcm [seconds]       PCM loop + retriggered one-shot from PSRAM; default 10s, 0 runs until a key\n"
            "  clear                clear ERROR_CODE and IRQ.ERROR\n");
 }
 
@@ -412,6 +413,8 @@ int main(void) {
             if (s != KH_OK) printf("ERR show: %s 0x%02x\n", status_name(s), kh_last_error());
         }
         else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
+        else if (!strcmp(cmd, "pdbg")) kagura_psram_debug(a1 && !strcmp(a1, "r"), a2 ? (uint8_t)strtoul(a2, NULL, 16) : 0xc3u);
+        else if (!strcmp(cmd, "copy")) kagura_copy_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
         else if (!strcmp(cmd, "pcm")) {
             unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 10u;
             if (seconds > 600u) { printf("ERR seconds 0..600\n"); continue; }

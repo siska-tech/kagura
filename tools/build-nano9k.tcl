@@ -28,7 +28,7 @@ set cst {phase1.cst}
 # Board tops take VIDEO_ID_CODE (and the host top LANES) from this package.
 set config [file join $build_dir kagura_build_config.sv]
 set out [open $config w]
-puts $out "package kagura_build_config; localparam integer VIDEO_ID_CODE=[expr {$wide ? 4 : 1}]; localparam integer LANES=[expr {$base in {qspi qspipsram} ? 4 : 1}]; localparam bit PSRAM=[expr {$base in {spipsram qspipsram} ? 1 : 0}]; endpackage"
+puts $out "package kagura_build_config; localparam integer VIDEO_ID_CODE=[expr {$wide ? 4 : 1}]; localparam integer LANES=[expr {$base in {qspi qspipsram} ? 4 : 1}]; localparam bit PSRAM=[expr {$base in {spipsram qspipsram} ? 1 : 0}]; localparam bit PSRAM_DEBUG=[expr {[info exists ::env(KAGURA_PSRAM_DEBUG)] ? 1 : 0}]; endpackage"
 close $out
 set vdp {rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.sv rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv rtl/core/kagura_command_queue.sv rtl/core/kagura_vram_engine.sv rtl/core/kagura_registers.sv rtl/core/kagura_raster_scroll.sv rtl/core/kagura_core.sv rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv rtl/audio/kagura_pcm_control.sv rtl/audio/kagura_pcm_prefetch.sv rtl/memory/kagura_psram_arbiter.sv rtl/memory/kagura_psram_read_path.sv rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv rtl/memory/kagura_hyperram_ctrl.sv}
 # Line-handover payload bound: just under one pixel period of the mode.
@@ -130,6 +130,8 @@ if {$mode in {phase2boot720 demo720}} { set_option -place_option 0 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }
+# Optional post-P&R Verilog netlist for inspecting I/O packing.
+if {[info exists ::env(KAGURA_SIM_NETLIST)]} { set_option -gen_verilog_sim_netlist 1; set_option -gen_sdf 1 }
 # Keep readback enabled so SRAM/embFlash programming can be verified.
 set_option -bit_security 0
 run all

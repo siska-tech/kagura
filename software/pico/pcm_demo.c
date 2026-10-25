@@ -84,6 +84,58 @@ kh_status kagura_psram_test(size_t len) {
     return bad ? KH_DEVICE_ERROR : KH_OK;
 }
 
+// COPY: random bytes to PSRAM, COPY into the pattern area, read back from VRAM;
+// then time a full 32 KiB pattern-area COPY (content is not checked there).
+kh_status kagura_copy_test(size_t len) {
+    if (len == 0 || len > sizeof chunk) return KH_BAD_ARGUMENT;
+    if (!have_psram()) return KH_BAD_ARGUMENT;
+    uint32_t src = KAGURA_VRAM_PSRAM_BASE + 0x100000u + (next_rng() & 0xfffu);
+    uint32_t dst = KAGURA_VRAM_PATTERN_BASE + (next_rng() % (KAGURA_VRAM_PATTERN_SIZE - len));
+    for (size_t i = 0; i < len; i++) chunk[i] = (uint8_t)next_rng();
+    kh_status s = kh_vram_write(src, chunk, len);
+    if (s == KH_OK) s = kh_fence(0x42, 200000);
+    uint64_t t0 = time_us_64();
+    if (s == KH_OK) s = kh_copy(src, dst, (uint16_t)len);
+    if (s == KH_OK) s = kh_fence(0x43, 200000);
+    uint64_t t1 = time_us_64();
+    if (s == KH_OK) s = kh_vram_read(dst, back, len);
+    if (s != KH_OK) { printf("FAIL copy: driver %d ERROR_CODE 0x%02x\n", s, kh_last_error()); return s; }
+    size_t bad = 0;
+    for (size_t i = 0; i < len; i++) if (chunk[i] != back[i]) bad++;
+    uint64_t t2 = time_us_64();
+    s = kh_copy(KAGURA_VRAM_PSRAM_BASE, KAGURA_VRAM_PATTERN_BASE, (uint16_t)(KAGURA_VRAM_PATTERN_SIZE - 1u));
+    if (s == KH_OK) s = kh_fence(0x44, 500000);
+    uint64_t t3 = time_us_64();
+    printf("%s copy: %u bytes 0x%06lx -> 0x%06lx in %llu us incl. FENCE, %u mismatches; 32767 bytes in %llu us (%.1f KB/s)%s\n",
+           bad || s != KH_OK ? "FAIL" : "PASS", (unsigned)len, (unsigned long)src, (unsigned long)dst,
+           (unsigned long long)(t1 - t0), (unsigned)bad, (unsigned long long)(t3 - t2),
+           (t3 - t2) ? 32767 * 1000.0 / (double)(t3 - t2) : 0.0, s == KH_OK ? "" : " (driver error)");
+    return bad ? KH_DEVICE_ERROR : s;
+}
+
+// Debug bitstreams only (KAGURA_PSRAM_DEBUG): capture the PSRAM pins of one
+// write (or read) at 0x500000 and print 48 cycles: DQ rise, DQ fall, flags
+// {cs_n, ck_en, dq_tx, rwds_tx, dq_oe, rwds_oe, rwds rise, rwds fall}.
+kh_status kagura_psram_debug(bool on_read, uint8_t value) {
+    kh_status s = kh_ext_write(0x18, on_read ? 1u : 0u);
+    uint8_t v = 0;
+    if (s == KH_OK) s = on_read ? kh_vram_read(0x500000u, &v, 1) : kh_vram_write(0x500000u, &value, 1);
+    if (s == KH_OK) s = kh_fence(0x45, 200000);
+    if (s != KH_OK) { printf("ERR pdbg %d 0x%02x\n", s, kh_last_error()); return s; }
+    printf("PDBG %s 0x500000 %02x\n", on_read ? "read" : "write", on_read ? v : value);
+    for (unsigned c = 0; c < 48 && s == KH_OK; c++) {
+        uint8_t b[3] = {0};
+        for (unsigned k = 0; k < 3 && s == KH_OK; k++) {
+            s = kh_ext_write(0x17, (uint8_t)(4u * c + k));
+            if (s == KH_OK) s = kh_ext_read(0x18, &b[k]);
+        }
+        printf("%2u %02x %02x cs%u ck%u tx%u%u oe%u%u rwds%u%u\n", c, b[0], b[1], b[2] >> 7, (b[2] >> 6) & 1u,
+               (b[2] >> 5) & 1u, (b[2] >> 4) & 1u, (b[2] >> 3) & 1u, (b[2] >> 2) & 1u, (b[2] >> 1) & 1u, b[2] & 1u);
+    }
+    printf("PDBG END\n");
+    return s;
+}
+
 // Melody: eight 250 ms notes, a decaying square-ish tone with a 2nd harmonic.
 static int8_t melody_sample(uint32_t n) {
     static const float notes[8] = {523.25f, 659.25f, 783.99f, 1046.5f, 783.99f, 659.25f, 587.33f, 392.0f};
