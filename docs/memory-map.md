@@ -6,16 +6,18 @@
 |---|---|---|
 | 000000–007FFF | 1024 patterns ×32byte | RW、表示と仲裁 |
 | 008000–008FFF | 64×32 map ×2byte | RW、表示と仲裁 |
-| 009000–0091FF | shadow OAM、64×8byte | RW |
-| 009200–0093FF | active OAM | 非公開、アクセスエラー |
 | 009400–0095FF | shadow palette、256×2byte | RW、上位4bitは0 |
 | 009600–0097FF | active palette | 非公開、アクセスエラー |
 | 009800–0099FF | shadow wave、2×256 signed 8bit | RW |
 | 009A00–009BFF | active wave | 非公開、アクセスエラー |
+| 00A000–00A7FF | shadow OAM、256×8byte | RW |
+| 00A800–00AFFF | active OAM | 非公開、アクセスエラー |
 | 400000–7FFFFF | PSRAM（die 0、4MiB）。CAPS b3版のみ | RW、queue経由。内容は電源投入時に不定で消去しない。CAPS b3のない版ではアクセスエラー |
 | その他 | 未実装 | アクセスエラー |
 
 パレットwordはbits11:8 R、7:4 G、3:0 B。CPUの低byte/高byte書込みはshadowだけに作用する。高byteのbits7:4は無視し、読出し0。
+
+009000–0093FFはABI 0.4までのOAM（64個）の位置で、ABI 0.5では未実装（アクセスエラー）。OAMは256個に増やした際、palette/waveの位置を変えずに済むよう00A000へ移した。
 
 ## スプライト8byteレコード
 
@@ -24,13 +26,15 @@
 | 0 | X bits7:0 |
 | 1 | X bits9:8をbits1:0、残り予約0 |
 | 2 | Y bits7:0 |
-| 3 | Y bits9:8をbits1:0、残り予約0 |
+| 3 | Y bits9:8をbits1:0、bit2 enable、3 size16、4 Hflip、5 Vflip、6 behind、bit7予約0 |
 | 4 | tile bits7:0 |
 | 5 | tile bits9:8をbits1:0、paletteをbits5:2、bits7:6予約0 |
-| 6 | bit0 enable、1 size16、2 Hflip、3 Vflip、4 behind、7:5予約0 |
+| 6 | 予約0 |
 | 7 | 予約0 |
 
 予約bitへの書込みは無視、読出し0。disabledの内容も保持する。COMMIT以外ではactiveへ影響しない。
+
+ライン選択に要るY・enable・size16をbyte 2–3（word 1）に集めたので、選択回路は1件1wordの読出しで判定できる（[スケジュール](memory-access-schedule.md)）。ABI 0.4まではフラグがbyte 6にあった。
 
 ## 物理割当て（合成前の具体案）
 
@@ -40,15 +44,14 @@
 |---|---|---:|---:|---:|---|
 | Pattern | 2048×8 | 16 | 32768 B | 0 B | SP、systemでCPUと描画を時分割 |
 | Map | 2048×8 | 2 | 4096 B | 0 B | SP、上位/下位byte laneを独立write |
-| OAM shadow＋active | 1024×16 | 1 | 1024 B | 1024 B | SP、activeは4word/sprite |
+| OAM shadow＋active | 1024×16 | 2 | 4096 B | 0 B | SP、2048word（shadow 0..1023、active 1024..2047）、4word/sprite |
 | Palette shadow＋active | 1024×16 | 1 | 1024 B | 1024 B | SP、systemで色変換 |
 | Wave shadow＋active | 2048×8 | 1 | 1024 B | 1024 B | SP、audio優先の独立仲裁 |
 | Line A/B | 1024×16 | 2 | 1280 B | 2816 B | TDP、system RW/pixel R |
 | Command queue | 1024×16 | 1 | 256 B | 1792 B | SP、32 entries×64bit、4word逐次転送 |
 | Audio FIFO | 512×32 | 1 | 64 B | 1984 B | SDPB、16 stereo samples使用 |
-| 予備 | 未設定 | 1 | 0 | 2048 B相当 | HDMI追加RAM等のため保持 |
 
-計25ブロック、利用41536 B、モード上の未使用9664 B。各ブロックのparity相当2048bitは別枠で未使用。物理使用量25×18432bitで、byte payloadの単純合計とは一致しない。
+計26ブロック、利用44608 B、モード上の未使用8640 B。各ブロックのparity相当2048bitは別枠で未使用。物理使用量26×18432bitで、byte payloadの単純合計とは一致しない。256スプライト化でOAMが1→2個になり、予備ブロックはなくなった。実装の使用数はホスト版24→25/26、art ROMを含むデモ版25→26/26の見込みで、合成で確認する。
 
 Line word: bits11:0 RGB444、bit12 BG_SOLID、bit13 SPR_CLAIMED、15:14予約。pixel側はRGBだけ読む。スプライトのbehind判定と小番号優先のための2bitをRGBと同じRAMに保持し、別の画面幅フラグ配列を作らない。
 
@@ -56,11 +59,11 @@ commandの64bit descriptorは`opcode8 | address24 | length16 | data8 | flags8`�
 
 OAM/paletteの16bit RAM byte書込みは最大3 cycles（read/response/write）の不可分RMW。描画読出しとの間に割り込ませない。mapは実機修正後の2本のbyte lane構成でRMWを使わない。同一アドレスread-during-writeのデバイス依存値に依存しない。
 
-【実測】P1-06で上記25ブロックを推論wrapperで配置配線し、SP 22・SDPX9B 1・DPB 2の計25/26へmapされ、LUT/FF展開なし、system/pixel 2 clockのDPBでSTA違反0を確認した（[BSRAM評価](bsram-evaluation.md)）。C版DPBはread-before-writeを受け付けないため、line bankのsystem portは書込み中rdataを保持するnormal modeとした。全VDP実装時の配置・Fmaxは再評価する。音声FIFOのデータRAMはBSRAMでも、Gray pointer・同期器はFFを消費する。
+【実測】P1-06でOAM 1個版の25ブロックを推論wrapperで配置配線し、SP 22・SDPX9B 1・DPB 2の計25/26へmapされ、LUT/FF展開なし、system/pixel 2 clockのDPBでSTA違反0を確認した（[BSRAM評価](bsram-evaluation.md)）。C版DPBはread-before-writeを受け付けないため、line bankのsystem portは書込み中rdataを保持するnormal modeとした。全VDP実装時の配置・Fmaxは再評価する。音声FIFOのデータRAMはBSRAMでも、Gray pointer・同期器はFFを消費する。
 
 ## 起動
 
-巨大RAM配列へ非同期リセットを記述しない。実装ではsystem FSMから通常の同期write portを使い、pattern全16bank、mapの両byte lane、OAM/paletteのshadow/active/未使用word、waveの物理領域を並列に0へ書く。VRAM消去は2048 system cycle。キュー/FIFOはpointer resetで空にする。
+巨大RAM配列へ非同期リセットを記述しない。実装ではsystem FSMから通常の同期write portを使い、pattern全16bank、mapの両byte lane、OAMの全2048word、paletteのshadow/active/未使用word、waveの物理領域を並列に0へ書く。VRAM消去は2048 system cycle。キュー/FIFOはpointer resetで空にする。
 
 line bankも両方の512wordを0へ書く。pixel側のread gateが停止したことをsystem側へ同期してから消去を開始し、systemだけのreset時にも走査との衝突を防ぐ。VRAM/line消去完了はpixelへ2段同期し、それまではline要求・走査readを止め、RGBを黒に保つ。
 

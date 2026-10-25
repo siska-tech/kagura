@@ -60,7 +60,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
     // Raster scroll table in effect (ABI 0.3) and the staged one written to the shadow.
     integer rs_n=0, rs_line[0:7], rs_x[0:7], rs_y[0:7];
     integer t_line[0:7], t_x[0:7], t_y[0:7];
-    integer sprite_x[0:63],sprite_y[0:63],sprite_tile[0:63],sprite_pal[0:63],sprite_flags[0:63];
+    integer sprite_x[0:255],sprite_y[0:255],sprite_tile[0:255],sprite_pal[0:255],sprite_flags[0:255];
     function automatic [23:0] expected(input integer x,input integer y);
         integer lx, ly, px, py, row, col, idx,n,size,eligible,xx,yy,t,cp,sxe,sye;
         reg solid,claimed;
@@ -78,7 +78,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             idx=(bg_on && p!=0) ? m[13:10]*16+p : backdrop;
             c=palette[idx];
             solid=bg_on && p!=0; claimed=0; eligible=0;
-            if(SPRITES && spr_on) for(n=0;n<64;n=n+1) begin
+            if(SPRITES && spr_on) for(n=0;n<256;n=n+1) begin
                 size=(sprite_flags[n]&2)!=0 ? 16 : 8;
                 if((sprite_flags[n]&1)!=0 && ly>=sprite_y[n] && ly<sprite_y[n]+size) begin
                     eligible=eligible+1;
@@ -182,16 +182,20 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             wr(VRAM_WRITE,map[i][7:0]); wr(VRAM_WRITE,map[i][15:8]);
         end
         if(SPRITES) begin
-            set_addr(24'h009000);
-            for(i=0;i<64;i=i+1) begin
+            // All 256 entries: 20 on line 10 (overflow at index 16), then
+            // rows down the screen with 8px and disabled entries mixed in,
+            // and the last 16 straddling the top edge (negative Y).
+            set_addr(24'h00a000);
+            for(i=0;i<256;i=i+1) begin
                 sprite_x[i]=i<20 ? 100+(i%5)*2 : (i*19)%350-15;
-                sprite_y[i]=i<20 ? 10 : 60+i*2;
+                sprite_y[i]=i<20 ? 10 : i<240 ? 28+((i-20)*7)%200 : i-250;
                 sprite_tile[i]=i%16*4+3; sprite_pal[i]=i%16;
-                sprite_flags[i]=3 | ((i%8)*4);
+                sprite_flags[i]=(i>=64 && i%3==0 ? 1 : 3) | ((i%8)*4);
+                if(i>=20 && i%11==0) sprite_flags[i]=sprite_flags[i]&~1;
                 sprite_record=0;
                 sprite_record[9:0]=10'(sprite_x[i]); sprite_record[25:16]=10'(sprite_y[i]);
+                sprite_record[30:26]=5'(sprite_flags[i]);
                 sprite_record[41:32]=10'(sprite_tile[i]); sprite_record[45:42]=4'(sprite_pal[i]);
-                sprite_record[52:48]=5'(sprite_flags[i]);
                 for(integer k=0;k<8;k=k+1) wr(VRAM_WRITE,sprite_record[k*8 +: 8]);
             end
         end
@@ -225,9 +229,9 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             rd(IRQ_STATUS,v); if(v[5]) $fatal(1,"overflow after sprite disable");
         end
         if(RASTER) begin
-            // CAPS b6 and ABI_MINOR 4; RS_MAX reads 8.
+            // CAPS b6 and ABI_MINOR 5; RS_MAX reads 8.
             rd(5'h1c,v); if(v!==8'h41) $fatal(1,"CAPS %02h",v);
-            rd(5'h1b,v); if(v!==8'h04) $fatal(1,"ABI_MINOR %02h",v);
+            rd(5'h1b,v); if(v!==8'h05) $fatal(1,"ABI_MINOR %02h",v);
             wr(EXT_INDEX,8'h11); rd(EXT_DATA,v); if(v!==8) $fatal(1,"RS_MAX %0d",v);
             // R1: eight entries, the last on the final logical line.
             t_line[0]=3; t_line[1]=20; t_line[2]=21; t_line[3]=60; t_line[4]=100; t_line[5]=150; t_line[6]=LINES-2; t_line[7]=LINES-1;
@@ -282,7 +286,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         for(i=0;i<256;i=i+1) palette[i]=0;
         bg_on=0; spr_on=0; backdrop=0;
         check_frame(3);
-        if(max_cycles>(SPRITES ? 2633 : 697)) $fatal(1,"line render took %0d cycles",max_cycles);
+        if(max_cycles>(SPRITES ? 2585 : 697)) $fatal(1,"line render took %0d cycles",max_cycles);
         $display("PASS: VDP frames VIC%0d %0dx%0d (%0dx), SPRITES=%0d, 4 frames x %0d pixels vs reference, %0d line renders, max %0d cycles, VBLANK/RASTER/COMMIT_DONE, poisoned banks and system-only reset",
             VIC,H_ACTIVE,V_ACTIVE,SCALE,SPRITES,H_ACTIVE*V_ACTIVE,renders,max_cycles);
         $finish;

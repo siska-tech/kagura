@@ -16,13 +16,14 @@
 module kagura_registers #(
     parameter [7:0] CAPS=8'h00, // set only bits this bitstream implements
     parameter integer LINES=240,   // EXT 0A SCREEN_HEIGHT
+    parameter integer SPRITES=256, // EXT 05 MAX_SPRITES (256 reads as 0); OAM is SPRITES*8 bytes
     parameter bit DEBUG=0          // PSRAM pin capture at EXT 17/18 (debug builds only, not ABI)
 ) (
     input wire clk, reset,
     input wire init_done,
     input wire vblank_live,
     input wire [7:0] irq_events,      // pulses: b0 VBLANK, b1 RASTER, b5 SPR_OVERFLOW
-    input wire [5:0] sprite_overflow_index,
+    input wire [7:0] sprite_overflow_index,
     input wire [7:0] sprite_overflow_line,
     input wire [7:0] error_events,    // pulses: b5 LINE_UNDERRUN, b6 AUDIO_FIFO_ERROR
     input wire req_valid,
@@ -80,7 +81,7 @@ module kagura_registers #(
     localparam [7:0] OP_FILL=8'h01, OP_FENCE=8'h02, OP_COMMIT=8'h03,OP_AUDIO=8'h04, OP_COPY=8'h05, OP_WRITE=8'h10, OP_READ=8'h11;
 
     reg [7:0] irq_status, irq_enable, error_code;
-    reg [5:0] overflow_index;
+    reg [7:0] overflow_index;
     reg [7:0] overflow_line;
     reg [23:0] vram_addr;
     reg [15:0] inc, length;
@@ -121,7 +122,7 @@ module kagura_registers #(
     function automatic [2:0] region(input [24:0] a);
         if(a[24:15]==0) region=1;                          // pattern 000000-007FFF
         else if(a[24:12]==13'h0008) region=2;              // map 008000-008FFF
-        else if(a[24:9]==16'h0048) region=3;               // OAM shadow 009000-0091FF
+        else if(a[24:12]==13'h000a && a[11:0]<12'(SPRITES*8)) region=3; // OAM shadow 00A000-00A7FF
         else if(a[24:9]==16'h004a) region=4;               // palette shadow 009400-0095FF
         else if(a[24:9]==16'h004c) region=5;               // wave shadow 009800-0099FF
         else if(PSRAM && a[24:22]==3'b001) region=6;        // PSRAM 400000-7FFFFF
@@ -195,7 +196,7 @@ module kagura_registers #(
             8'h02: begin ext_value=scroll_y; ext_writable=1; end
             8'h03: begin ext_value=backdrop; ext_writable=1; end
             8'h04: begin ext_value=raster_line; ext_writable=1; end
-            8'h05: ext_value=8'd64;
+            8'h05: ext_value=8'(SPRITES);
             8'h06: ext_value=8'd16;
             8'h07: ext_value=8'd0;
             8'h08: ext_value=8'd4;
@@ -252,10 +253,10 @@ module kagura_registers #(
             ID0: read_value=8'h4b;
             ID1: read_value=8'h39;
             ABI_MAJOR: read_value=8'h00;
-            ABI_MINOR: read_value=8'h04;
+            ABI_MINOR: read_value=8'h05;
             CAPS_REG: read_value=CAPS;
             FRAME_COUNT: read_value=frame_count;
-            SPR_OVF_INDEX: read_value={2'b00,overflow_index};
+            SPR_OVF_INDEX: read_value=overflow_index;
             SPR_OVF_LINE: read_value=overflow_line;
             default: read_value=8'h00;
         endcase

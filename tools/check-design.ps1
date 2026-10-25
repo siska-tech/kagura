@@ -39,7 +39,7 @@ Assert-Equal ($c.pixel_hz / ($v.h_total * $v.v_total)) 60 'Frame rate'
 Assert-Equal ($c.pixel_hz * $budget.acr.n / (128 * $budget.acr.cts)) 48000 'ACR frequency'
 Assert-Equal $r.bg_tiles ([math]::Ceiling(($v.width + 7) / 8)) 'Worst-case tile count'
 $available = [math]::Floor($c.system_hz * $v.scale * $v.h_total / $c.pixel_hz)
-$cycles = $r.registered_sprites * $r.oam_cycles_per_sprite + $r.bg_tiles * $r.bg_cycles_per_tile + $r.line_sprites * ($r.sprite_setup_fetch_cycles + $r.sprite_width * $r.sprite_cycles_per_pixel) + $r.control_cycles
+$cycles = $r.registered_sprites * $r.oam_cycles_per_sprite + $r.line_sprites * $r.oam_hit_cycles + $r.bg_tiles * $r.bg_cycles_per_tile + $r.line_sprites * ($r.sprite_setup_fetch_cycles + $r.sprite_width * $r.sprite_cycles_per_pixel) + $r.control_cycles
 $cpu = $available - $cycles - $r.cdc_guard_cycles
 Assert-Equal $available $budget.expected.available_cycles 'Available cycles'
 Assert-Equal $cycles $budget.expected.renderer_cycles 'Renderer cycles'

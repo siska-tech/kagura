@@ -160,10 +160,9 @@ static void make_oam(unsigned frame, unsigned height) {
         unsigned tile = 64u + pose * 16u + i * 4u;
         unsigned n = i * 8u;
         work[n] = (uint8_t)x; work[n + 1] = (uint8_t)((x >> 8) & 3);
-        work[n + 2] = (uint8_t)y; work[n + 3] = (uint8_t)((y >> 8) & 3);
+        work[n + 2] = (uint8_t)y; work[n + 3] = (uint8_t)(((y >> 8) & 3) | (3u << 2));
         work[n + 4] = (uint8_t)tile;
         work[n + 5] = (uint8_t)(((tile >> 8) & 3u) | (8u << 2));
-        work[n + 6] = 3u;
     }
     for (unsigned i = 4; i < 16; i++) {
         unsigned p = (frame * 2u + i * 5u) & 63u;
@@ -171,9 +170,8 @@ static void make_oam(unsigned frame, unsigned height) {
         int y = (int)height / 2 + wave64(p) * 70 / 64;
         unsigned n = i * 8u, tile = 128;
         work[n] = (uint8_t)x; work[n + 1] = (uint8_t)((x >> 8) & 3);
-        work[n + 2] = (uint8_t)y; work[n + 3] = (uint8_t)((y >> 8) & 3);
+        work[n + 2] = (uint8_t)y; work[n + 3] = (uint8_t)(((y >> 8) & 3) | (1u << 2));
         work[n + 4] = (uint8_t)tile; work[n + 5] = (uint8_t)(8u << 2);
-        work[n + 6] = 1u;
     }
 }
 

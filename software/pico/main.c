@@ -99,8 +99,9 @@ static void palette_word(uint8_t index, uint16_t rgb444, kh_status *s) {
 }
 
 static void oam_entry(uint8_t n, int x, int y, uint16_t tile, uint8_t palette, uint8_t attr, kh_status *s) {
-    uint8_t e[8] = {(uint8_t)x, (uint8_t)((x >> 8) & 3), (uint8_t)y, (uint8_t)((y >> 8) & 3),
-                    (uint8_t)tile, (uint8_t)(((tile >> 8) & 3) | (palette << 2)), attr, 0};
+    // attr: b0 enable, b1 size16, b2 Hflip, b3 Vflip, b4 behind (OAM byte 3 bits 6:2).
+    uint8_t e[8] = {(uint8_t)x, (uint8_t)((x >> 8) & 3), (uint8_t)y, (uint8_t)(((y >> 8) & 3) | (attr << 2)),
+                    (uint8_t)tile, (uint8_t)(((tile >> 8) & 3) | (palette << 2)), 0, 0};
     if (*s == KH_OK) *s = kh_vram_write(KAGURA_VRAM_OAM_BASE + 8u * n, e, 8);
 }
 

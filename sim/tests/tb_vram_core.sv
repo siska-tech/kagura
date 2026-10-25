@@ -59,20 +59,20 @@ module tb_vram_core;
     task automatic wait_idle; reg [7:0] v; begin v=8'h80; while(v[7]) rd(STATUS,0,v); end endtask
 
     // Byte model of the public regions (indexed by VRAM address).
-    reg [7:0] mem [0:16'h9bff];
-    reg known [0:16'h9bff];
+    reg [7:0] mem [0:16'ha7ff];
+    reg known [0:16'ha7ff];
     function automatic bit public(input [23:0] a);
-        public=a<24'h009000 || (a>=24'h009000 && a<24'h009200) || (a>=24'h009400 && a<24'h009600)
+        public=a<24'h009000 || (a>=24'h00a000 && a<24'h00a800) || (a>=24'h009400 && a<24'h009600)
             || (a>=24'h009800 && a<24'h009a00);
     endfunction
     function automatic [7:0] stored(input [23:0] a,input [7:0] d);
         begin
             stored=(a>=24'h009400 && a<24'h009600 && a[0]) ? {4'h0,d[3:0]} : d;
-            if(a>=24'h009000 && a<24'h009200) case(a%8)
-                1,3: stored=d & 8'h03;
+            if(a>=24'h00a000 && a<24'h00a800) case(a%8)
+                1: stored=d & 8'h03;
+                3: stored=d & 8'h7f;
                 5: stored=d & 8'h3f;
-                6: stored=d & 8'h1f;
-                7: stored=0;
+                6,7: stored=0;
                 default: ;
             endcase
         end
@@ -119,7 +119,7 @@ module tb_vram_core;
     reg [7:0] v;
     reg [23:0] a;
     initial begin
-        for(i=0;i<=16'h9bff;i=i+1) known[i]=0;
+        for(i=0;i<=16'ha7ff;i=i+1) known[i]=0;
         #100; reset=0; repeat(4) @(posedge clk);
         expect_reg(STATUS,8'h00);
         wr(VRAM_WRITE,8'hff,1); expect_reg(ERROR_CODE,8'h10); expect_reg(ADDR_L,0);
@@ -134,28 +134,29 @@ module tb_vram_core;
         wr(READ_REQUEST,8'h01,1); expect_reg(ERROR_CODE,8'h04); clear_errors();
         // Extended registers: RW shadow, RO constants, undefined index.
         wr(EXT_INDEX,8'h04,0); expect_reg(EXT_DATA,8'd255); wr(EXT_DATA,8'd17,0); expect_reg(EXT_DATA,8'd17);
-        wr(EXT_INDEX,8'h05,0); expect_reg(EXT_DATA,8'd64); wr(EXT_DATA,8'd1,1);
+        wr(EXT_INDEX,8'h05,0); expect_reg(EXT_DATA,8'd0); wr(EXT_DATA,8'd1,1); // MAX_SPRITES 256 reads 0
         wr(EXT_INDEX,8'h0a,0); expect_reg(EXT_DATA,8'd240); wr(EXT_DATA,8'd1,1); clear_errors();
         wr(EXT_INDEX,8'h0b,0); expect_reg(EXT_DATA,8'd0); wr(EXT_DATA,8'd1,1); clear_errors();
         // Invalid addresses: refused, address register unchanged.
         cur_inc=1; set_inc(1);
-        cur_addr=24'h009200; set_addr(cur_addr); model_write(8'h11); expect_reg(ERROR_CODE,8'h02);
-        expect_reg(ADDR_L,8'h00); expect_reg(ADDR_M,8'h92); clear_errors();
+        cur_addr=24'h00a800; set_addr(cur_addr); model_write(8'h11); expect_reg(ERROR_CODE,8'h02);
+        expect_reg(ADDR_L,8'h00); expect_reg(ADDR_M,8'ha8); clear_errors();
+        cur_addr=24'h009000; set_addr(cur_addr); model_write(8'h12); expect_reg(ERROR_CODE,8'h02); clear_errors();
         cur_addr=24'h010000; set_addr(cur_addr); wr(READ_REQUEST,8'h00,1); clear_errors();
         // FILL range checks: crossing a region end is refused without partial effect.
         do_fill(24'h008ffe,16'd3,8'haa,1); clear_errors();
-        do_fill(24'h0091f0,16'd32,8'h55,1); clear_errors();
+        do_fill(24'h00a7f0,16'd32,8'h55,1); clear_errors();
         do_fill(24'h000000,16'd0,8'h00,0);
         // Every OAM record/byte lane: FILL uses the same reserved-bit masks
         // as single writes, and reserved bytes must read back as zero.
-        do_fill(24'h009000,16'd512,8'hff,0); wait_idle();
-        cur_addr=24'h009000; set_addr(cur_addr);
-        for(i=0;i<512;i=i+1) model_read();
+        do_fill(24'h00a000,16'd2048,8'hff,0); wait_idle();
+        cur_addr=24'h00a000; set_addr(cur_addr);
+        for(i=0;i<2048;i=i+1) model_read();
         // Region boundaries, palette masking, wave, map halves.
         foreach_case: begin
             reg [23:0] edges [0:11];
             edges[0]=24'h000000; edges[1]=24'h007fff; edges[2]=24'h008000; edges[3]=24'h0087ff;
-            edges[4]=24'h008800; edges[5]=24'h008fff; edges[6]=24'h009000; edges[7]=24'h0091ff;
+            edges[4]=24'h008800; edges[5]=24'h008fff; edges[6]=24'h00a000; edges[7]=24'h00a7ff;
             edges[8]=24'h009400; edges[9]=24'h0095ff; edges[10]=24'h009800; edges[11]=24'h0099ff;
             for(i=0;i<12;i=i+1) begin cur_addr=edges[i]; set_addr(cur_addr); model_write(8'hf0^i[7:0]); end
             for(i=0;i<12;i=i+1) begin cur_addr=edges[i]; set_addr(cur_addr); model_read(); end

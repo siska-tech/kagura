@@ -99,7 +99,7 @@ module tb_psram_core;
     always @(posedge clk) if(!reset && |dut.psram.pf_underrun) underruns++;
     initial begin
         #100; @(negedge clk); reset=0; wait(init_done);
-        access(0,27,0); if(value!=4) $fatal(1,"ABI_MINOR %0d",value);
+        access(0,27,0); if(value!=5) $fatal(1,"ABI_MINOR %0d",value);
         access(0,28,0); if(value!=8'h5B) $fatal(1,"CAPS %02h",value);
         access(1,R_EXT_I,8'h12); access(0,R_EXT_D,0); if(value!=22) $fatal(1,"PSRAM_SIZE_LOG2 %0d",value);
         access(1,R_EXT_I,8'h13); access(0,R_EXT_D,0); if(value!=2) $fatal(1,"PCM_CHANNELS %0d",value);

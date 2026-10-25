@@ -11,6 +11,7 @@
 module kagura_core #(
     parameter [7:0] CAPS=8'h00,
     parameter integer LINES=240,      // logical lines per frame (180 for 16:9)
+    parameter integer SPRITES=256,    // registered sprites, power of two 64..256 (EXT 05)
     // PSRAM controller timing at system 54MHz (hardware: 14 / 6, rtl/README.md)
     parameter integer PSRAM_LAT=14,
     parameter integer PSRAM_RDL=6,
@@ -266,10 +267,10 @@ module kagura_core #(
     wire [8:0] bg_scroll_x;
     wire [7:0] bg_scroll_y;
 
-    kagura_registers #(.CAPS(CAPS),.LINES(LINES),.DEBUG(PSRAM && PSRAM_DEBUG)) registers(
+    kagura_registers #(.CAPS(CAPS),.LINES(LINES),.SPRITES(SPRITES),.DEBUG(PSRAM && PSRAM_DEBUG)) registers(
         .clk(clk),.reset(reset),.init_done(init_done),.vblank_live(vblank_live),
         .irq_events({7'b0,vblank_start} | {6'b0,raster_event,1'b0} | {2'b00,sp_done && sp_overflow,5'b0}),
-        .sprite_overflow_index(sp_overflow_index),.sprite_overflow_line(sp_overflow_line),
+        .sprite_overflow_index(8'(sp_overflow_index)),.sprite_overflow_line(sp_overflow_line),
         .error_events({1'b0,audio_underflow_event || audio_overflow_event,underrun_event && init_done,5'b0}),
         .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),
         .req_addr(req_addr),.req_wdata(req_wdata),.rsp_valid(rsp_valid),.rsp_ready(rsp_ready),
@@ -290,7 +291,7 @@ module kagura_core #(
     kagura_command_queue queue(.clk(clk),.reset(reset),.push(push),.push_desc(push_desc),
         .push_ready(push_ready),.free(queue_free),.idle(queue_idle),.staging(queue_staging),
         .head_valid(head_valid),.head(head),.pop(pop));
-    kagura_vram_engine engine(.clk(clk),.reset(reset),.head_valid(head_valid),.head(head),.pop(pop),
+    kagura_vram_engine #(.SPRITES(SPRITES)) engine(.clk(clk),.reset(reset),.head_valid(head_valid),.head(head),.pop(pop),
         .busy(engine_busy),.vblank_start(vblank_start),
         .vram_valid(vram_valid),.vram_ready(vram_ready),.vram_write(vram_write),.vram_word(vram_word),
         .vram_addr(vram_addr),.vram_wdata(vram_wdata),.vram_rsp_valid(vram_rsp_valid),
@@ -304,7 +305,7 @@ module kagura_core #(
 
     wire render_hold, render_grant, map_read, pattern_read, palette_read;
     wire bg_hold,bg_done,sp_hold,sp_done,sp_overflow;
-    wire [5:0] sp_overflow_index;
+    wire [$clog2(SPRITES)-1:0] sp_overflow_index;
     wire [7:0] sp_overflow_line;
     reg rendering,use_sprites;
     reg [11:0] elapsed,last_cycles;
@@ -326,7 +327,7 @@ module kagura_core #(
     wire [8:0] bg_la,sp_la;
     wire [15:0] bg_ld,sp_ld;
     wire oam_read;
-    wire [9:0] oam_index;
+    wire [$clog2(SPRITES)+2:0] oam_index;
     assign pattern_read=sp_hold ? sp_pr : bg_pr;
     assign pattern_addr=sp_hold ? sp_pa : bg_pa;
     assign palette_read=sp_hold ? sp_pal : bg_pal;
@@ -339,7 +340,7 @@ module kagura_core #(
     wire [9:0] palette_index;
     wire [15:0] map_data, palette_data, oam_data;
     wire [7:0] pattern_data;
-    kagura_vram vram(.clk(clk),.reset(reset),.init_done(init_done),.valid(vram_valid),.ready(vram_ready),.write_in(vram_write),
+    kagura_vram #(.SPRITES(SPRITES)) vram(.clk(clk),.reset(reset),.init_done(init_done),.valid(vram_valid),.ready(vram_ready),.write_in(vram_write),
         .command_idle(vram_idle),.audio_wave_read(wave_read),.audio_wave_addr(wave_addr),.audio_wave_swap(wave_swap),.audio_wave_data(wave_data),
         .word_in(vram_word),.addr_in(vram_addr),.wdata_in(vram_wdata),.rsp_valid(vram_rsp_valid),.rdata(vram_rdata),
         .render_hold(render_hold),.render_grant(render_grant),
@@ -356,7 +357,7 @@ module kagura_core #(
         .palette_read(bg_pal),.palette_index(bg_pi),.palette_data(palette_data),
         .line_write(bg_lw),.line_addr(bg_la),.line_data(bg_ld),
         .done(bg_done),.cycles());
-    kagura_sprite_renderer sprites(.clk(clk),.reset(reset),.start(bg_done && use_sprites),.line(render_line),
+    kagura_sprite_renderer #(.SPRITES(SPRITES)) sprites(.clk(clk),.reset(reset),.start(bg_done && use_sprites),.line(render_line),
         .render_hold(sp_hold),.render_grant(render_grant),.oam_read(oam_read),.oam_index(oam_index),.oam_data(oam_data),
         .pattern_read(sp_pr),.pattern_addr(sp_pa),.pattern_data(pattern_data),
         .palette_read(sp_pal),.palette_index(sp_pi),.palette_data(palette_data),

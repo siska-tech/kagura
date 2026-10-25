@@ -96,7 +96,7 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 
 残る経路と次の候補:
 
-- pattern RAM出力 → sprite合成: 16:1のbank選択の直後に`pixels`書込みと最初の画素の可視判定がある。最初の画素の判定を1cycle遅らせる（1 spriteあたり+1cycle、最大16cycles/line）か、pattern出力をregisterで受ける（背景を含め読出しlatencyが変わる）案がある。描画期限（2633 cycles）と参照モデルに影響するため別の変更とする。
+- pattern RAM出力 → sprite合成: 16:1のbank選択の直後に`pixels`書込みと最初の画素の可視判定があった。256スプライト化（ABI 0.5）の際にdemoでこの経路が+0.006nsまで下がったため、最初の画素の判定を`pixels`の登録後の1cycle（`kagura_sprite_row`のFIRST状態）へ移した。1 spriteあたり+1cycle、最大16cycles/lineで、描画期限は2585 cycles。BSRAM出力は`pixels`の取込みだけに使う。
 - packet_assembler（pixel74）: 上流hdl-utilのBCH/parity経路。[16:9仕様](wide-mode.md)のとおりpipeline化の候補。上流ファイルは無改変で固定しているため、派生ソース生成（`tools/prepare-hdmi-stream.py`）側での対応を検討する。
 
 当面の受入れは「全構成でWNS≥+0.05ns」とし、上の2件の対応後に目標値を見直す。
@@ -116,4 +116,4 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 
 全構成の最小値は+0.063nsから+0.130nsへ改善した。最悪経路は構成ごとに移動しており、qspiはregister addressから音源capture、demo720はsequencer counter、その他の720p統合構成は主にpacket assemblerである。単一RTL経路の修正ではなく配置配線探索の改善であり、機能追加後に同じ余裕を保証するものではない。P&R時間は統合構成で増える。
 
-後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 25/26のため、BSRAMを使う拡張は別途空きを確保する。
+後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 26/26（256スプライト化後の見込み）で空きがないため、BSRAMを使う拡張は別途空きを確保する。

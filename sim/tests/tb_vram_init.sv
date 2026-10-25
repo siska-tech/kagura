@@ -12,7 +12,7 @@ module tb_vram_init;
         .write_in(write_req),.word_in(word_req),.addr_in(addr),.wdata_in(wd),.rsp_valid(rsp_valid),.rdata(data),
         .render_hold(hold),.render_grant(grant),.map_read(1'b0),.map_index(11'b0),.map_data(),
         .pattern_read(1'b0),.pattern_addr(15'b0),.pattern_data(),.palette_read(1'b0),.palette_index(10'b0),.palette_data(),
-        .oam_read(1'b0),.oam_index(10'b0),.oam_data());
+        .oam_read(1'b0),.oam_index(11'b0),.oam_data());
     genvar bank;
     generate for(bank=0;bank<16;bank=bank+1) begin: poison_patterns
         always @(posedge poison)
@@ -22,9 +22,9 @@ module tb_vram_init;
         for(integer n=0;n<2048;n=n+1) begin
             dut.map_lo.memory[n]=8'hff; dut.map_hi.memory[n]=8'hff; dut.wave.memory[n]=8'hff;
         end
+        for(integer n=0;n<2048;n=n+1) dut.oam_ram.ram.memory[n]=16'hffff;
         for(integer n=0;n<1024;n=n+1) begin
-            dut.word_ram[2].ram.ram.memory[n]=16'hffff;
-            dut.word_ram[3].ram.ram.memory[n]=16'hffff;
+            dut.palette_ram.ram.memory[n]=16'hffff;
         end
     end
     always @(negedge clk)
@@ -56,7 +56,8 @@ module tb_vram_init;
     task automatic check_all;
         begin
             for(integer a=0;a<16'h9000;a=a+1) read_zero(0,16'(a));
-            for(integer a=0;a<1024;a=a+1) begin read_zero(1,16'(a)); read_zero(1,16'h8000+16'(a)); end
+            for(integer a=0;a<2048;a=a+1) read_zero(1,16'(a));
+            for(integer a=0;a<1024;a=a+1) read_zero(1,16'h8000+16'(a));
             for(integer a=16'h9800;a<16'h9a00;a=a+1) read_zero(0,16'(a));
         end
     endtask

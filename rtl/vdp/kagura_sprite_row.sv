@@ -23,7 +23,7 @@ module kagura_sprite_row (
     output reg done,
     output reg [11:0] cycles
 );
-    localparam [2:0] IDLE=0,FETCH=1,PIX_READ=2,PIX_WAIT=3,PIX_MERGE=4,PIX_WRITE=5,PIX_NEXT=6;
+    localparam [2:0] IDLE=0,FETCH=1,PIX_READ=2,PIX_WAIT=3,PIX_MERGE=4,PIX_WRITE=5,PIX_NEXT=6,FIRST=7;
     reg [2:0] state;
     reg signed [10:0] x;
     reg [9:0] tile;
@@ -47,7 +47,10 @@ module kagura_sprite_row (
     wire [3:0] next_source=hflip ? (size16 ? 4'd15 : 4'd7)-next_pixel : next_pixel;
     wire [3:0] next_colour=pixels[63-4*next_source -: 4];
     wire signed [10:0] next_x=x+$signed({7'b0,next_pixel});
-    wire [3:0] first_colour=hflip ? pattern_data[3:0] : pixels[63:60];
+    // The first pixel is judged from the registered row (FIRST), one cycle
+    // after the last pattern byte, so the BSRAM output and bank mux only
+    // feed the `pixels` capture (timing at 54MHz).
+    wire [3:0] first_colour=!hflip ? pixels[63:60] : size16 ? pixels[3:0] : pixels[35:32];
     assign line_addr=screen_x_q;
     assign palette_index={2'b01,palette,colour_q};
     assign line_read=state==PIX_READ && render_grant && visible_q;
@@ -65,20 +68,21 @@ module kagura_sprite_row (
             if(render_grant) case(state)
                 IDLE: if(selected_valid) begin
                     x<={selected_entry[9],selected_entry[9:0]};
-                    size16<=selected_entry[49]; hflip<=selected_entry[50]; behind<=selected_entry[52];
-                    tile<=selected_entry[49] ? {selected_entry[41:34],2'b00} : selected_entry[41:32];
+                    size16<=selected_entry[27]; hflip<=selected_entry[28]; behind<=selected_entry[30];
+                    tile<=selected_entry[27] ? {selected_entry[41:34],2'b00} : selected_entry[41:32];
                     palette<=selected_entry[45:42];
-                    row_y<=selected_entry[51] ? (selected_entry[49] ? 4'd15 : 4'd7)-selected_row : selected_row;
+                    row_y<=selected_entry[29] ? (selected_entry[27] ? 4'd15 : 4'd7)-selected_row : selected_row;
                     fetch_byte<=0; pixel<=0; pixels<=0; cycles<=0; state<=FETCH;
                 end
                 FETCH: begin
                     if(fetch_byte!=0) pixels[63-8*(fetch_byte-1) -: 8]<=pattern_data;
-                    if(fetch_byte==byte_count) begin
-                        colour_q<=first_colour; screen_x_q<=x[8:0];
-                        visible_q<=x>=0 && x<11'sd320 && first_colour!=0;
-                        state<=PIX_READ;
-                    end
+                    if(fetch_byte==byte_count) state<=FIRST;
                     else fetch_byte<=fetch_byte+1'b1;
+                end
+                FIRST: begin
+                    colour_q<=first_colour; screen_x_q<=x[8:0];
+                    visible_q<=x>=0 && x<11'sd320 && first_colour!=0;
+                    state<=PIX_READ;
                 end
                 PIX_READ: begin write_pixel<=0; state<=PIX_WAIT; end
                 PIX_WAIT: state<=PIX_MERGE;

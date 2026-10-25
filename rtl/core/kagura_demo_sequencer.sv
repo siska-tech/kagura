@@ -8,7 +8,8 @@
 // 3. Map 64x32: tile (col+row) mod 16, palette row mod 16, H flip on odd
 //    columns of rows 8..15, V flip on odd columns of rows 16..23.
 //    SPRITES=1 also initializes all OAM, with eight 16px sprites exercising
-//    base-tile alignment, flips and behind; the last 56 records are disabled.
+//    base-tile alignment, flips and behind; records 8..63 are written as
+//    disabled and the rest stay disabled from the VRAM clear.
 // 4. BACKDROP=0, RASTER off, DISPLAY_CTRL=display+BG, COMMIT, wait for it.
 // 4b. Read back six bytes (map in both halves, pattern, palette) through
 //    READ_REQUEST/READ_RESULT and flag mismatches (hardware diagnosis).
@@ -332,9 +333,9 @@ module kagura_demo_sequencer #(
         if(oam_n<8) case(count[2:0])
             3'd0: oam_byte=8'd32+8'(oam_n*24);
             3'd2: oam_byte=8'd40+{oam_n[1:0],5'b0};
+            3'd3: oam_byte={1'b0,oam_n[2:0],2'b11,2'b00};
             3'd4: oam_byte={4'b0,oam_n[1:0],2'b11};
             3'd5: oam_byte={2'b0,4'(15-oam_n),2'b0};
-            3'd6: oam_byte={3'b0,oam_n[2:0],2'b11};
             default: ;
         endcase
     end
@@ -538,10 +539,9 @@ module kagura_demo_sequencer #(
             3'd0: scene_oam_byte<=x_c[7:0];
             3'd1: scene_oam_byte<={6'd0,x_c[9:8]};
             3'd2: scene_oam_byte<=y_c[7:0];
-            3'd3: scene_oam_byte<={6'd0,y_c[9:8]};
+            3'd3: scene_oam_byte<={4'd0,big_c,enable_c,y_c[9:8]};
             3'd4: scene_oam_byte<=tile_c[7:0];
             3'd5: scene_oam_byte<={2'd0,pal_c,tile_c[9:8]};
-            3'd6: scene_oam_byte<={6'd0,big_c,enable_c};
             default: scene_oam_byte<=0;
         endcase
     end
@@ -646,7 +646,7 @@ module kagura_demo_sequencer #(
                 S_OAM_ADDR: begin
                     case(count[1:0])
                         2'd0: issue(1,ADDR_L,8'h00);
-                        2'd1: issue(1,ADDR_M,8'h90);
+                        2'd1: issue(1,ADDR_M,8'ha0);
                         default: issue(1,ADDR_H,8'h00);
                     endcase
                     if(count[1:0]==2'd2) begin step<=S_OAM; count<=0; end else count<=count+1'b1;
@@ -746,7 +746,7 @@ module kagura_demo_sequencer #(
                 S_SCENE_ADDR: begin
                     case(count[1:0])
                         2'd0: issue(1,ADDR_L,8'h00);
-                        2'd1: issue(1,ADDR_M,8'h90);
+                        2'd1: issue(1,ADDR_M,8'ha0);
                         default: issue(1,ADDR_H,8'h00);
                     endcase
                     if(count[1:0]==2'd2) begin step<=S_SCENE_OAM; count<=0; end else count<=count+1'b1;

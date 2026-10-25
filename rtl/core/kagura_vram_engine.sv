@@ -7,7 +7,8 @@
 //   FILL: `length` consecutive bytes from `address` (not INC), 0 is a no-op.
 //   FENCE: all earlier commands are complete; fence_done with the tag.
 //   COMMIT: wait for the next VBlank start seen while COMMIT is the head,
-//     copy OAM and palette shadow words 0..255 to active 256..511, then
+//     copy the OAM shadow words 0..SPRITES*4-1 to the active half above
+//     them, then palette shadow words 0..255 to active 256..511, then
 //     commit_done with the snapshot taken at acceptance ([31:8],[47:32]).
 // Byte operations in the PSRAM region (address 400000-7FFFFF, ABI 0.4) use
 // the psram_* port instead of VRAM; an accepted PSRAM write is complete for
@@ -17,7 +18,9 @@
 //   COPY (ABI 0.4, CAPS b3): `length` bytes from PSRAM `address` to VRAM at
 //     {flags, data}, one PSRAM read then one VRAM write per byte.
 // Later commands wait until the current one is complete.
-module kagura_vram_engine (
+module kagura_vram_engine #(
+    parameter integer SPRITES=256
+) (
     input wire clk, reset,
     input wire head_valid,
     input wire [63:0] head,
@@ -57,7 +60,10 @@ module kagura_vram_engine (
     reg [23:0] addr;
     reg [15:0] remaining;
     reg more;                          // remaining!=0, kept with remaining (off the issue path)
-    reg [8:0] copy;                    // bit 8: 0 OAM, 1 palette; bits 7:0 word
+    localparam integer OW=$clog2(SPRITES)+2; // OAM shadow word index bits
+    reg copy_palette;                  // 0 OAM, 1 palette
+    reg [OW-1:0] copy;                 // shadow word; palette uses bits 7:0
+    wire copy_last=copy_palette ? &copy[7:0] : &copy;
     reg [15:0] copy_word;
     reg [15:0] dst;                    // COPY destination
     assign pop=state==IDLE && head_valid;
@@ -72,13 +78,15 @@ module kagura_vram_engine (
     assign psram_wdata=data;
     assign vram_word=state==COPY_READ || state==COPY_WRITE;
     assign vram_write=vram_word ? state==COPY_WRITE : op!=OP_READ;
-    // Word addresses: [15] 0 OAM / 1 palette, [9:0] word index.
-    assign vram_addr=vram_word ? {copy[8],6'b0,state==COPY_WRITE,copy[7:0]} : state==X_WRITE ? dst : addr[15:0]; // active = +256
+    // Word addresses: [15] 0 OAM / 1 palette, then the word index. The active
+    // half starts at word SPRITES*4 (OAM) or 256 (palette).
+    assign vram_addr=!vram_word ? (state==X_WRITE ? dst : addr[15:0]) :
+        copy_palette ? {1'b1,6'b0,state==COPY_WRITE,copy[7:0]} : 16'({state==COPY_WRITE,copy});
     assign vram_wdata=vram_word ? copy_word : {8'h00,data};
     wire issued=vram_valid && vram_ready || psram_valid && psram_ready;
     always @(posedge clk)
         if(reset) begin
-            state<=IDLE; op<=0; data<=0; addr<=0; remaining<=0; more<=0; copy<=0; copy_word<=0;
+            state<=IDLE; op<=0; data<=0; addr<=0; remaining<=0; more<=0; copy<=0; copy_palette<=0; copy_word<=0;
             read_done<=0; read_data<=0; fence_done<=0; fence_tag<=0;
             commit_done<=0; commit_snapshot<=0; audio_commit_done<=0; dst<=0;
         end else begin
@@ -101,12 +109,13 @@ module kagura_vram_engine (
                 WAIT_READ: if(vram_rsp_valid || psram_rsp_valid) begin
                     read_done<=1; read_data<=psram_op ? psram_rdata : vram_rdata[7:0]; state<=IDLE;
                 end
-                WAIT_VBLANK: if(vblank_start) begin copy<=0; state<=COPY_READ; end
+                WAIT_VBLANK: if(vblank_start) begin copy<=0; copy_palette<=0; state<=COPY_READ; end
                 COPY_READ: if(issued) state<=COPY_WAIT;
                 COPY_WAIT: if(vram_rsp_valid) begin copy_word<=vram_rdata; state<=COPY_WRITE; end
                 COPY_WRITE: if(issued) begin
-                    copy<=copy+1'b1;
-                    if(copy==9'h1ff) begin
+                    copy<=copy_last ? '0 : copy+1'b1;
+                    if(copy_last) copy_palette<=1;
+                    if(copy_last && copy_palette) begin
                         commit_done<=1; commit_snapshot<={remaining,addr}; state<=IDLE;
                     end else state<=COPY_READ;
                 end
