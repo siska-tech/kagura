@@ -55,6 +55,11 @@ module kagura_pcm_prefetch #(
     reg [ADDR_WIDTH-1:0] end_addr [0:1];   // last byte (END-1)
     reg [ADDR_WIDTH-1:0] loop_addr [0:1];
     reg [ADDR_WIDTH-1:0] fetch_addr [0:1];
+    // Next fetch address and END flag, registered from fetch_addr. A channel
+    // issues at most one request per response, so after each address change
+    // (configure or issue) the copy is one cycle stale and next_ok blocks it.
+    reg [ADDR_WIDTH-1:0] fetch_next [0:1];
+    reg [1:0] fetch_last,next_ok;
     reg [1:0] loop_enable;
     reg [1:0] configured;
     reg [1:0] fetch_done;
@@ -74,8 +79,8 @@ module kagura_pcm_prefetch #(
     wire push1=mem_rsp_valid && outstanding && !discard_response && !mem_rsp_error && outstanding_ch;
     // A request is issued only with no read outstanding, so the space a channel
     // needs is simply count < depth: the MSB of count (count <= depth).
-    wire need0=configured[0] && !fetch_done[0] && !count[0][COUNT_WIDTH-1];
-    wire need1=configured[1] && !fetch_done[1] && !count[1][COUNT_WIDTH-1];
+    wire need0=configured[0] && next_ok[0] && !fetch_done[0] && !count[0][COUNT_WIDTH-1];
+    wire need1=configured[1] && next_ok[1] && !fetch_done[1] && !count[1][COUNT_WIDTH-1];
 
     assign cfg_ready={2{!outstanding}} & ~active;
     assign ready[0]=configured[0] && (count[0]==BUFFER_DEPTH_COUNT || fetch_done[0]);
@@ -89,6 +94,15 @@ module kagura_pcm_prefetch #(
         else if(need1) begin selected_valid=1; selected_ch=1; end
         mem_req_valid=!outstanding && selected_valid;
         mem_req_addr=selected_ch ? fetch_addr[1] : fetch_addr[0];
+    end
+
+    always @(posedge clk) begin
+        for(int c=0;c<2;c=c+1) begin
+            fetch_last[c]<=fetch_addr[c]==end_addr[c];
+            fetch_next[c]<=fetch_addr[c]==end_addr[c] ? loop_addr[c] : fetch_addr[c]+1'b1;
+        end
+        next_ok[0]<=!reset && !(cfg_valid[0] && cfg_ready[0]) && !(mem_req_valid && mem_req_ready && !selected_ch);
+        next_ok[1]<=!reset && !(cfg_valid[1] && cfg_ready[1]) && !(mem_req_valid && mem_req_ready && selected_ch);
     end
 
     integer i;
@@ -139,10 +153,10 @@ module kagura_pcm_prefetch #(
                 discard_response<=0;
                 timeout_count<=0;
                 rr<=~selected_ch;
-                if(fetch_addr[selected_ch]==end_addr[selected_ch]) begin
-                    if(loop_enable[selected_ch]) fetch_addr[selected_ch]<=loop_addr[selected_ch];
+                if(fetch_last[selected_ch]) begin
+                    if(loop_enable[selected_ch]) fetch_addr[selected_ch]<=fetch_next[selected_ch];
                     else fetch_done[selected_ch]<=1;
-                end else fetch_addr[selected_ch]<=fetch_addr[selected_ch]+1'b1;
+                end else fetch_addr[selected_ch]<=fetch_next[selected_ch];
             end
 
             if(mem_rsp_valid && outstanding) begin

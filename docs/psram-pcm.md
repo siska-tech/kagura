@@ -226,10 +226,10 @@ Gowin V1.9.11.03（Education）の評価:
 
 | 構成 | Logic | Register | BSRAM | rPLL | 最悪setup | 最悪hold | recovery | removal |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| qspipsram 480p | 6309 | 4533 | 24/26 | 2/2 | +0.100ns | +0.552ns | +0.541ns | +0.793ns |
-| qspipsram 720p | 6351 | 4678 | 24/26 | 2/2 | +0.044ns | +0.555ns | +7.498ns | +0.569ns |
+| qspipsram 480p | 6338 | 4729 | 24/26 | 2/2 | +0.166ns | +0.439ns | +0.541ns | +0.594ns |
+| qspipsram 720p | 6353 | 4730 | 24/26 | 2/2 | +0.345ns | +0.559ns | +7.205ns | +0.567ns |
 
-480pの最悪setupは既存のraster scroll register経路で、目標+0.10nsに一致する。720pの最悪setupは既存の上流`packet_assembler`（pixel74）経路で違反ではないが、目標+0.10nsに届かない。place_option 0では逆にprefetch経路が−0.073nsになったため、既定のoption 1を採る。720pの余裕改善は残課題。
+両構成とも既定のplace_option 1・route_option 1。最初の統合版では720pの最悪setupが上流`packet_assembler`（pixel74）の+0.044nsで目標+0.10nsに届かなかった。place_option 0では逆にprefetchの`configured`→`fetch_addr`が−0.073nsになった。そこで、prefetchが次の要求addressとEND判定を1 cycle前にregisterへ用意する構造へ変えた（1 outstandingなので、address変更直後の1 cycleだけ要求を止めれば足りる）。その結果、上表のとおり両構成で目標を満たした。480pの最悪setupは既存register経路、720pは既存HDMI経路である。
 
 Verilator: 新規`tb_psram_core`（公開register経由のABI 0.4全体）を含む全56件が合格。ABI_MINORを固定値で照合していた既存試験4件は4へ更新した。
 
@@ -240,4 +240,6 @@ Verilator: 新規`tb_psram_core`（公開register経由のABI 0.4全体）を含
 - `psram`: 乱数位置0x67FF7Bの2048 byteが0 mismatch。upload＋FENCEは877KB/sで、VRAM（911KB/s）と同等。
 - `pcm`: 2秒のloopメロディ（PCM 0）と150msのドラム（PCM 1、one-shot）を、0.5秒ごとにPREPARE＋AUDIO_COMMITで61回再発音した。446,543回のstatus pollの間、UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・メロディ停止・ERROR_CODEはすべて0。HDMI音声もユーザーが実機で確認した。upload表示の37KB/sはPico側の浮動小数sample生成が律速で、転送速度ではない。
 
-未評価: 720p版の実機、spi（1 lane）版、長時間連続再生、die 1、温度/電源変動。
+- 720p（`kagura_qspi_psram720.fs`、prefetch改善後の上表の版。ログ`build/nano9k-qspipsram720/pico-diag.log`・`pico-pcm.log`）: `info`はCAPS 0x7B。`diag`は全11項目PASSで、screen-heightは180。`psram`は2回とも0 mismatch（875〜885KB/s）。`pcm 30`はドラム61回の再発音でfault 0、メロディ停止なし、ERROR_CODE 0。720pのHDMI映像とPCM音声もユーザーが実機で確認した。
+
+未評価: prefetch改善後の480p版の実機（変更はprefetch内部のみで、720pの実機とsimで確認済み）、spi（1 lane）版、長時間連続再生、die 1、温度/電源変動。
