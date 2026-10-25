@@ -52,7 +52,7 @@ module tb_pcm_audio_path;
     task automatic check_sample(input signed [15:0] value);
         begin
             @(posedge sample_valid); #1;
-            if(left!==value || right!==value || last_cycles!=29)
+            if(left!==value || right!==value || last_cycles!=30)
                 $fatal(1,"integrated sample %0d got %0d,%0d cycles %0d expected %0d",observed,left,right,last_cycles,value);
             observed=observed+1;
         end

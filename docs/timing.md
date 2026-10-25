@@ -96,7 +96,7 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 
 残る経路と次の候補:
 
-- pattern RAM出力 → sprite合成: 16:1のbank選択の直後に`pixels`書込みと最初の画素の可視判定がある。最初の画素の判定を1cycle遅らせる（1 spriteあたり+1cycle、最大16cycles/line）か、pattern出力をregisterで受ける（背景を含め読出しlatencyが変わる）案がある。描画期限（2633 cycles）と参照モデルに影響するため別の変更とする。
+- pattern RAM出力 → sprite合成: 16:1のbank選択の直後に`pixels`書込みと最初の画素の可視判定があった。256スプライト化（ABI 0.5）の際にdemoでこの経路が+0.006nsまで下がったため、最初の画素の判定を`pixels`の登録後の1cycle（`kagura_sprite_row`のFIRST状態）へ移した。1 spriteあたり+1cycle、最大16cycles/lineで、描画期限は2585 cycles。BSRAM出力は`pixels`の取込みだけに使う。
 - packet_assembler（pixel74）: 上流hdl-utilのBCH/parity経路。[16:9仕様](wide-mode.md)のとおりpipeline化の候補。上流ファイルは無改変で固定しているため、派生ソース生成（`tools/prepare-hdmi-stream.py`）側での対応を検討する。
 
 当面の受入れは「全構成でWNS≥+0.05ns」とし、上の2件の対応後に目標値を見直す。
@@ -116,4 +116,48 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 
 全構成の最小値は+0.063nsから+0.130nsへ改善した。最悪経路は構成ごとに移動しており、qspiはregister addressから音源capture、demo720はsequencer counter、その他の720p統合構成は主にpacket assemblerである。単一RTL経路の修正ではなく配置配線探索の改善であり、機能追加後に同じ余裕を保証するものではない。P&R時間は統合構成で増える。
 
-後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 25/26のため、BSRAMを使う拡張は別途空きを確保する。
+後続拡張では必須条件WNS≥0/TNS=0に加え、全構成WNS≥+0.10nsを開発中の下限、+0.20nsを目標とする。+0.10nsを下回る変更は、経路を短くする設計変更または機能分離を先に検討し、配置optionの再探索だけを恒久対策にしない。demo系はBSRAM 26/26（256スプライト化後の見込み）で空きがないため、BSRAMを使う拡張は別途空きを確保する。
+
+### 256スプライト化後の経路短縮（2026-10-25）
+
+256スプライト化（`cf7f6b0`）のP&Rで、変更していない経路が配置の変動で期限を割った。繰り返し現れた次の4経路を、出力を変えずに短くした。
+
+| 経路 | 変更 |
+|---|---|
+| packet_assembler（pixel74）counter → BCH parity | `rtl/hdmi/kagura_packet_assembler.sv`に置換。counterで選ぶbit muxをshift registerにし、counterの範囲判定を1cycle先にregisterで作る。`tb_packet_assembler`が原版と毎cycleの出力一致を検査 |
+| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし |
+| audio_transport（pixel74）tick_acc | 定数加算と比較を直列から並列に（`tick_acc < TICK_NUM`を前提に等価） |
+| hdmi guard/preamble（pixel74）cy → video_guard | cyの行判定をregisterで受ける。cyは行内で一定で、判定はcx≥frame_width−10でだけ使う |
+
+【実測】Gowin Education V1.9.11.03、`tools/run-baseline.ps1`、最小setup slack（`cf7f6b0` → この変更）。
+
+| 構成 | slack |
+|---|---:|
+| demo / demo720 | +0.78 → +0.03ns / +0.003 → **−0.69ns** |
+| phase2 / phase2720 | +0.58 → +2.29ns / −0.46 → +0.39ns |
+| spi / spi720 | +0.47 → +0.91ns / +0.49 → +0.43ns |
+| qspi / qspi720 | +0.045 → +0.87ns / +0.46 → +0.008ns |
+| phase2boot / phase2boot720 | +0.07 → +0.009ns / −1.22 → +0.096ns |
+
+対象の4経路は元の形では最悪経路から消えたが、分割後の段や別の場所が最悪経路へ移った（phase2720は分割後のaudio product register、phase2boot720は追加した`guard_line`、demo720は`kagura_tmds_channel`の`video_data`→`qm1`、qspi720はaudio_packetsの`cx`判定、phase2bootはregistersの`ext_index`→`rs_table`）。Register数は約+280。単一のP&R結果だけでは配置変動が支配要因とは断定しない。
+
+demo720はsetup違反9 endpointで、pixel74の`video_data`→`qm1`（−0.691ns）だけでなく、system54の`init_done`→OAM address（−0.531ns）、`q_addr`→`error_code`（−0.251ns）等も違反した。phase2boot720の+0.096ns、demoの+0.028ns、qspi720の+0.008ns、phase2bootの+0.009nsも、丸め前の値では開発下限+0.10nsに達していない。この変更はタイミング改善として未受入れであり、実機確認用のdemo720は`cf7f6b0`のbitstream（+0.003ns）を使った（[検証状況](validation-status.md)）。
+
+後続修正では次の経路を構造で短縮した。
+
+- TMDS encoderの入力をregisterで受け、外部`video_data`配線とpopcount/prefix XORを別cycleにした。全lane・全modeで上流encoderの3 pixel遅れと一致することを試験する。
+- PSRAM CK enableの第2段を`clk_ck`下降端へ移した。system54立上りから12.731nsを確保しつつ、ODDRが値を取る次の`clk_ck`立上りは従来と同じである。
+- EXT_DATAとRS entry選択をPSRAM構成だけ事前register化し、非PSRAM構成へ追加FFを残さない。
+
+Gowin Education V1.9.11.03で監査時の境界構成を再P&Rした結果は次のとおり。すべてsetup/hold違反0で、開発下限+0.10nsを満たした。実機はこの修正版bitstreamでは未確認である。
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
+|---|---:|---:|---:|---:|---:|
+| demo720 | 6871 | 4545 | 26/26 | +0.181ns | +0.563ns |
+| phase2boot720 | 5933 | 4533 | 25/26 | +0.683ns | +0.558ns |
+| spipsram | 6673 | 5138 | 25/26 | +0.851ns | +0.563ns |
+| qspipsram720 | 6649 | 5141 | 25/26 | +0.113ns | +0.555ns |
+
+`tools/run-baseline.ps1`は+0.10nsを既定gateとし、spipsram、qspipsram、qspipsram720も既定対象に含める。dirty buildは差分hashを含む固有directoryへ保存し、manifestへtracked diffと対象sourceのSHA-256を記録するため、同じHEAD上の試行が互いの証跡を上書きしない。
+高密度720pのphase2boot720とqspipsram720はroute option 2、demo720は従来どおりplace option 0を使用する。
+`tools/test-verilator.sh`は共有build/logへの同時実行をlockで拒否し、並行回帰による実行物・summaryの相互上書きを防ぐ。

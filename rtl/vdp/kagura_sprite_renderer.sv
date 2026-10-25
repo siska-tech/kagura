@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Whole-line sprite pass. Hold RAM ownership until both scanning and the last
 // row composite finish; selector completion alone can precede the last row.
-module kagura_sprite_renderer (
+module kagura_sprite_renderer #(
+    parameter integer SPRITES=256
+) (
     input wire clk, reset, start,
     input wire [7:0] line,
     output reg render_hold,
     input wire render_grant,
     output wire oam_read,
-    output wire [9:0] oam_index,
+    output wire [$clog2(SPRITES)+2:0] oam_index,
     input wire [15:0] oam_data,
     output wire pattern_read,
     output wire [14:0] pattern_addr,
@@ -21,14 +23,14 @@ module kagura_sprite_renderer (
     input wire [15:0] line_rdata,
     output reg done,
     output wire overflow,
-    output wire [5:0] overflow_index,
+    output wire [$clog2(SPRITES)-1:0] overflow_index,
     output wire [7:0] overflow_line
 );
     wire valid,ready,scan_done,row_busy;
     wire [63:0] entry;
     wire [3:0] row;
     reg scan_finished;
-    kagura_sprite_selector select_line(.clk(clk),.reset(reset),.start(start),.line(line),.sprite_enable(1'b1),
+    kagura_sprite_selector #(.SPRITES(SPRITES)) select_line(.clk(clk),.reset(reset),.start(start),.line(line),.sprite_enable(1'b1),
         .render_hold(),.render_grant(render_grant),.oam_read(oam_read),.oam_index(oam_index),.oam_data(oam_data),
         .selected_valid(valid),.selected_ready(ready),.selected_entry(entry),.selected_index(),.selected_row(row),
         .selected_count(),.overflow(overflow),.overflow_index(overflow_index),.overflow_line(overflow_line),.done(scan_done),.cycles());

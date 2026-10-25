@@ -4,7 +4,7 @@ module tb_sprite_irq;
     reg reset=1,valid=0,write_req=0;
     reg [4:0] addr=0;
     reg [7:0] wdata=0,events=0,ov_line=0;
-    reg [5:0] ov_index=0;
+    reg [7:0] ov_index=0;
     wire ready,rsp_valid,rsp_error,irq;
     wire [7:0] rdata;
     reg [7:0] value;
@@ -28,7 +28,7 @@ module tb_sprite_irq;
             @(negedge clk); events=0;
         end
     endtask
-    task automatic pulse(input reg[5:0] n,input reg[7:0] y);
+    task automatic pulse(input reg[7:0] n,input reg[7:0] y);
         begin
             @(negedge clk); ov_index=n; ov_line=y; events=8'h20;
             @(negedge clk); events=0;
@@ -51,9 +51,9 @@ module tb_sprite_irq;
         access(1,5'h01,8'h01,0); expect_capture(16,10,1); // unrelated W1C
         access(1,5'h01,8'h20,0); expect_capture(0,0,0);
         if(irq) $fatal(1,"IRQ not cleared");
-        pulse(63,239); expect_capture(63,239,1);
-        ov_index=6'd23; ov_line=8'd100;
-        access(1,5'h01,8'h20,1); expect_capture(23,100,1); // new event wins clear
+        pulse(255,239); expect_capture(255,239,1);
+        ov_index=8'd223; ov_line=8'd100;
+        access(1,5'h01,8'h20,1); expect_capture(223,100,1); // new event wins clear
         @(negedge clk); reset=1;
         @(negedge clk); reset=0;
         expect_capture(0,0,0);

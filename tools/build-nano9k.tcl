@@ -48,7 +48,7 @@ if {$base in {bootprobe magicprobe}} {
     set_option -use_mspi_as_gpio 1
 } elseif {$base in {hdmi phase2 phase2boot demo spi qspi spipsram qspipsram}} {
     set upstream {audio_info_frame audio_sample_packet auxiliary_video_information_info_frame packet_assembler source_product_description_info_frame tmds_channel}
-    set local [list $config build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_hdmi_stream_eval.sv boards/tang-nano-9k/kagura_phase1_top.sv]
+    set local [list $config build/generated/kagura_hdmi_stream.sv rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv rtl/hdmi/kagura_hdmi_stream_eval.sv boards/tang-nano-9k/kagura_phase1_top.sv]
     set top kagura_phase1_top
     set sdc {phase1.sdc phase1-audio.sdc}
     if {$wide} { lappend sdc phase1-720p.sdc }
@@ -127,10 +127,9 @@ set_option -route_option 1
 # packet_assembler path (pixel74) to about -1.0/-0.56ns with option 1; option 0
 # gives +0.16/+0.02ns.
 if {$mode in {phase2boot720 demo720}} { set_option -place_option 0 }
-# qspipsram720: the same upstream packet_assembler path (pixel74) is +0.035ns
-# with the defaults and +0.048ns with place option 0; route option 2 gives
-# +0.111ns (docs/psram-pcm.md).
-if {$mode eq "qspipsram720"} { set_option -route_option 2 }
+# qspipsram720 remains the densest 720p build. Route option 2 keeps its pixel
+# paths short; the PSRAM CK-enable crossing is handled structurally in the PHY.
+if {$mode in {phase2boot720 qspipsram720}} { set_option -route_option 2 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }

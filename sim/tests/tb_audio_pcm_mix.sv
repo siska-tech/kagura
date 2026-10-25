@@ -43,7 +43,7 @@ module tb_audio_pcm_mix;
     task automatic check(input integer left_sum,input integer right_sum);
         begin
             @(posedge sample_valid); #1;
-            if(last_cycles!=29) $fatal(1,"PCM mix took %0d cycles",last_cycles);
+            if(last_cycles!=30) $fatal(1,"PCM mix took %0d cycles",last_cycles);
             if(sample_left!==expected(left_sum,cfg_master) || sample_right!==expected(right_sum,cfg_master))
                 $fatal(1,"PCM mix got %0d,%0d expected %0d,%0d",sample_left,sample_right,
                     expected(left_sum,cfg_master),expected(right_sum,cfg_master));
@@ -76,7 +76,7 @@ module tb_audio_pcm_mix;
         pcm_sample0=-8'sd128; pcm_sample1=-8'sd128;
         check(-128*510,-128*510);
 
-        $display("PASS: optional PCM 2ch mix, snapshots, 29/64 cycles and saturation");
+        $display("PASS: optional PCM 2ch mix, snapshots, 30/64 cycles and saturation");
         $finish;
     end
     initial begin #2000000; $fatal(1,"PCM mixer timeout"); end

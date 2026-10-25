@@ -1,6 +1,6 @@
-# Register Specification / ABI 0.4
+# Register Specification / ABI 0.5
 
-【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=4（0.2で16:9モード用のCAPS b5とEXT 0Aを追加、0.3でラスタスクロール用のCAPS b6とEXT 0B..11、0.4でPSRAM・PCM用のCAPS b3、EXT 12..16、PSRAM領域、PCM音源レジスタ、COPYを追加。下記「ABI 0.2」「ABI 0.3」「ABI 0.4」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
+【設計】この文書をv0.1実装の規範とする。ABI_MAJOR=0、ABI_MINOR=5（0.2で16:9モード用のCAPS b5とEXT 0Aを追加、0.3でラスタスクロール用のCAPS b6とEXT 0B..11、0.4でPSRAM・PCM用のCAPS b3、EXT 12..16、PSRAM領域、PCM音源レジスタ、COPYを追加、0.5でスプライト登録数を256にしOAMの位置とレコード配置を変更。下記「ABI 0.2」〜「ABI 0.5」）。予約bitsはread 0/write ignored、未定義register read 0/write error。ROへのwrite、WOへのreadはBAD_ACCESS。全register reset=0（明示したID/CAPS/INC/MASTER_GAIN以外）。読出し副作用はREAD_RESULTのみ。通常registerの応答は最大2system cycles。status読出しは破壊的でない。
 
 ## 32byte直接窓（CPU base $9F00）
 
@@ -33,10 +33,10 @@
 | 18 | ID0 | RO | reset/read 0x4B ('K') |
 | 19 | ID1 | RO | 0x39 ('9') |
 | 1A | ABI_MAJOR | RO | 0 |
-| 1B | ABI_MINOR | RO | 4 |
+| 1B | ABI_MINOR | RO | 5 |
 | 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM（PSRAM領域とPCM 2ch）,b4 SPR16=1,b5 WIDE（320×180）,b6 RSCROLL、残り0。全体版は0x53、16:9版は0x73、PSRAM版はそれぞれ0x5B、0x7B |
 | 1D | FRAME_COUNT_L | RO | VBlankイベントで増える8bit counter、wrap。snapshot不要な8bit値 |
-| 1E | SPR_OVERFLOW_INDEX | RO | 最初にline上限を超えたsprite番号0..63。IRQ b5 clearで0に戻す |
+| 1E | SPR_OVERFLOW_INDEX | RO | 最初にline上限を超えたsprite番号0..255。IRQ b5 clearで0に戻す |
 | 1F | SPR_OVERFLOW_LINE | RO | 最初にoverflowした論理Y。IRQ b5 clearで0に戻す |
 
 CAPSは機能を実装したbitstreamだけが立てる。Phase 1のテストtopにKAGURA全体CAPSを偽装しない。ENGINE_BUSYはキュー非空またはcommand実行中、READ_BUSYは受理済みREADの実行完了待ち、COMMIT_BUSYは映像COMMIT専用である。audio待ちはAUDIO_STATUSを参照する。
@@ -75,7 +75,7 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 | 02 | SCROLL_Y bits7:0 | RW shadow /0 |
 | 03 | BACKDROP palette index | RW shadow /0 |
 | 04 | RASTER_LINE 0..LINES−1（240または180）、LINES..255 disable | RW shadow /255 |
-| 05 | MAX_SPRITES | RO/64 |
+| 05 | MAX_SPRITES（登録数。0は256） | RO/0（256） |
 | 06 | MAX_LINE_SPRITES | RO/16（削減版は8） |
 | 07 | PATTERN_COUNT_L | RO/0 |
 | 08 | PATTERN_COUNT_H | RO/4（1024） |
@@ -147,3 +147,14 @@ COMMITは受付時にCOMMIT_BUSYを立てる。同時に1件だけ、再投入�
 - PCM音源レジスタはaudio index 60..9F（[音源仕様](audio-spec.md)）。GAIN・ENABLEはAUDIO_COMMITで反映し、START/END/LOOP/LOOP_ENABLEはPREPAREで取り込む。
 - host規約: PREPARE前に、そのsampleのuploadの後へFENCEを置いて完了を確認する。PREPARE済み・再生中のchが参照する範囲（START..END−1）は書き換えない（再生結果は不定）。別の範囲へのupload・readbackは再生と並行してよく、PCMの補充が優先される。
 - 典型手順: `VRAM_ADDR=START`→VRAM_WRITEでsampleを転送→FENCE→START/END/LOOP/CONTROL.LOOP_ENABLEを設定→PCM_CMD.PREPARE→PCM_STATUS.READYをpoll→GAIN・CONTROL.ENABLEを設定→AUDIO_COMMIT。
+
+## ABI 0.5（256スプライト）
+
+検討は[メモリマップ](memory-map.md)と[スケジュール](memory-access-schedule.md)。直接窓・EXTの配置は変えない。0.4以前と互換性はない（利用中のソフトがない段階での変更）。
+
+- ABI_MINORを5にした。全bitstreamが0.5を返す。
+- 登録スプライトを64→256個にした。1ラインの上限16個、小番号優先、behindの規則は変えない。EXT 05 MAX_SPRITESは8bitに収まらないため、0を256と読む。
+- shadow OAMを009000–0091FFから00A000–00A7FF（256×8byte）へ移した。009000–0093FFは未実装（アクセスエラー）。palette・waveの位置は変えない。
+- レコードのフラグ（enable、size16、Hflip、Vflip、behind）をbyte 6からbyte 3のbits6:2へ移し、byte 6を予約にした（[スプライト8byteレコード](memory-map.md#スプライト8byteレコード)）。X・tile・paletteの位置は変えない。
+- SPR_OVERFLOW_INDEXは0..255の8bit全体を使う。
+- COMMITのコピー量はOAM 1024word＋palette 256wordになった。VBlank内に収まる（[スケジュール](memory-access-schedule.md)）。

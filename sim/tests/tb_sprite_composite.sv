@@ -4,9 +4,10 @@ module tb_sprite_composite;
     reg reset=1,start=0,grant=1,enable=1;
     reg [7:0] line=0;
     wire hold,oam_read,valid,ready,overflow,scan_done,row_busy,row_done;
-    wire [9:0] oam_addr,pal_addr;
+    wire [10:0] oam_addr;
+    wire [9:0] pal_addr;
     wire [63:0] entry;
-    wire [5:0] index,overflow_index;
+    wire [7:0] index,overflow_index;
     wire [3:0] local_row;
     wire [4:0] count;
     wire [7:0] overflow_line;
@@ -22,9 +23,9 @@ module tb_sprite_composite;
     kagura_sprite_row renderer(clk,reset,grant,valid,ready,entry,local_row,row_busy,
         pat_read,pat_addr,pat_data,pal_read,pal_addr,pal_data,line_read,line_write,line_addr,line_wd,line_rd,row_done,row_cycles);
 
-    reg [15:0] oam [0:1023], palette [0:511], bank [0:319], reference_line [0:319];
+    reg [15:0] oam [0:2047], palette [0:511], bank [0:319], reference_line [0:319];
     reg [7:0] pattern [0:32767];
-    integer xs[0:63],ys[0:63],tiles[0:63],pals[0:63],flags[0:63];
+    integer xs[0:255],ys[0:255],tiles[0:255],pals[0:255],flags[0:255];
     integer i,j,tests=0,max_cycles=0,writes=0;
     always @(posedge clk) if(!reset) begin
         if(oam_read) oam_data<=oam[oam_addr];
@@ -47,8 +48,8 @@ module tb_sprite_composite;
         reg [63:0] r;
         begin
             xs[n]=x; ys[n]=y; tiles[n]=t; pals[n]=p; flags[n]=f;
-            r=0; r[9:0]=10'(x); r[25:16]=10'(y); r[41:32]=10'(t); r[45:42]=4'(p); r[52:48]=5'(f);
-            for(integer k=0;k<4;k=k+1) oam[256+n*4+k]=r[k*16 +:16];
+            r=0; r[9:0]=10'(x); r[25:16]=10'(y); r[30:26]=5'(f); r[41:32]=10'(t); r[45:42]=4'(p);
+            for(integer k=0;k<4;k=k+1) oam[1024+n*4+k]=r[k*16 +:16];
         end
     endtask
     task automatic run_line(input integer y,input reg on,input reg stalls);
@@ -61,7 +62,7 @@ module tb_sprite_composite;
             end
             selected=0; first_overflow=-1;
             // Reference rasterizer, independent of the pipeline and RAM ports.
-            for(n=0;n<64;n=n+1) begin
+            for(n=0;n<256;n=n+1) begin
                 size=(flags[n]&2)!=0 ? 16 : 8;
                 if(on && (flags[n]&1)!=0 && y>=ys[n] && y<ys[n]+size) begin
                     selected=selected+1;
@@ -91,7 +92,7 @@ module tb_sprite_composite;
                 if(scan_done) finished=1;
                 if(ticks>6000) $fatal(1,"compositor timeout");
             end
-            if(!stalls && ticks>1936) $fatal(1,"sprite cycle budget %d",ticks);
+            if(!stalls && ticks>1888) $fatal(1,"sprite cycle budget %d",ticks);
             if(!stalls && ticks>max_cycles) max_cycles=ticks;
             if(count!=(selected>16 ? 16 : selected) || overflow!=(first_overflow>=0)) $fatal(1,"selection/overflow");
             if(overflow && (overflow_index!=first_overflow || overflow_line!=y)) $fatal(1,"overflow capture");
@@ -103,8 +104,8 @@ module tb_sprite_composite;
     initial begin
         for(i=0;i<32768;i=i+1) pattern[i]={4'((i*7+i/8)%16),4'((i*3+i/32)%16)};
         for(i=0;i<512;i=i+1) palette[i]=i<256 ? 16'hdead : {4'b0,12'((i-256)*13+7)};
-        for(i=0;i<1024;i=i+1) oam[i]=16'hffff;
-        for(i=0;i<64;i=i+1) put(i,0,511,0,0,0);
+        for(i=0;i<2048;i=i+1) oam[i]=16'hffff;
+        for(i=0;i<256;i=i+1) put(i,0,511,0,0,0);
         #100; @(negedge clk); reset=0;
         run_line(0,1,0);
         // Every combination of size, flips and behind; odd 16px base tiles
@@ -118,19 +119,23 @@ module tb_sprite_composite;
         // a later foreground sprite cannot leak through, but transparent can.
         put(0,100,0,0,1,17); put(1,100,0,1,2,1);
         run_line(0,1,0); run_line(0,0,0);
-        // Worst-case line selection/rendering: 64 overlaps, only first 16.
-        for(i=0;i<64;i=i+1) put(i,100,0,i*4+3,i%16,3 | ((i%8)*4));
+        // Worst-case line selection/rendering: 256 overlaps, only first 16.
+        for(i=0;i<256;i=i+1) put(i,100,0,i*4+3,i%16,3 | ((i%8)*4));
         run_line(7,1,0); run_line(8,1,1); run_line(15,1,0);
         // Offscreen early sprites consume all slots, suppressing visible 17th.
         for(i=0;i<16;i=i+1) put(i,-512,0,i,0,3);
         put(16,20,0,0,1,3); run_line(0,1,0);
+        // Worst-case scan order: the 16 hits are the last entries.
+        for(i=0;i<256;i=i+1) put(i,0,511,0,0,1);
+        for(i=240;i<256;i=i+1) put(i,(i-240)*19,0,i*4+3,i%16,3 | ((i%8)*4));
+        run_line(9,1,0); run_line(10,1,1);
         // Varied scenes with non-overlap and clipping at all signed extremes.
         for(j=0;j<32;j=j+1) begin
-            for(i=0;i<64;i=i+1) put(i,(i*37+j*11)%1024-512,(i*13+j)%280-20,(i*17+j*3)%1024,i%16,(i*7+j)%32);
+            for(i=0;i<256;i=i+1) put(i,(i*37+j*11)%1024-512,(i*13+j)%280-20,(i*17+j*3)%1024,i%16,(i*7+j)%32);
             run_line(j*7%240,1,j%2);
         end
         // Reset while a row is in flight and grant is removed, then restart.
-        for(i=0;i<64;i=i+1) put(i,100,0,i*4,0,3);
+        for(i=0;i<256;i=i+1) put(i,100,0,i*4,0,3);
         @(negedge clk); line=0; enable=1; grant=1; start=1;
         @(negedge clk); start=0;
         wait(row_busy); @(negedge clk); grant=0; reset=1;

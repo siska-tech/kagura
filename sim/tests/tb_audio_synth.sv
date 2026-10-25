@@ -92,7 +92,7 @@ module tb_audio_synth;
                 if(scaled_l< -32768 || scaled_r< -32768) neg_clip=neg_clip+1;
                 expected_l=scaled_l>32767 ? 32767 : scaled_l< -32768 ? -32768 : int'(scaled_l);
                 expected_r=scaled_r>32767 ? 32767 : scaled_r< -32768 ? -32768 : int'(scaled_r);
-                due=clock_count+23;
+                due=clock_count+24;
             end else div_count=div_count+1;
             if(apply_valid && apply_ready) begin
                 bad=lengths[3:0]<5 || lengths[3:0]>8 || lengths[7:4]<5 || lengths[7:4]>8;
@@ -115,7 +115,7 @@ module tb_audio_synth;
         if(apply_done!==expect_done || apply_error!==expect_error || apply_busy!==m_pending)
             $fatal(1,"apply handshake/snapshot mismatch");
         if(valid || clock_count==due) begin
-            if(!valid || clock_count!=due || cycles!=23 || wave_needed!=0)
+            if(!valid || clock_count!=due || cycles!=24 || wave_needed!=0)
                 $fatal(1,"sample cadence/latency %d due %d cycles %d waves %b",clock_count,due,cycles,wave_needed);
             if(left_sample!==16'(expected_l) || right_sample!==16'(expected_r))
                 $fatal(1,"sample %d got %d,%d expected %d,%d",observed,left_sample,right_sample,expected_l,expected_r);
@@ -216,7 +216,7 @@ module tb_audio_synth;
         repeat(4) @(negedge clk); reset=0; samples(4);
         if(pos_clip==0 || neg_clip==0 || rejected!=7) $fatal(1,"coverage: clips %d/%d rejected %d",pos_clip,neg_clip,rejected);
         $fclose(raw);
-        $display("PASS: six-voice synth, %0d stereo samples vs integer model, %0d applies, %0d invalid; 23/64 cycles, pulse/wave/noise, full LFSR period, snapshots, reset, pan and saturation",observed,applies,rejected);
+        $display("PASS: six-voice synth, %0d stereo samples vs integer model, %0d applies, %0d invalid; 24/64 cycles, pulse/wave/noise, full LFSR period, snapshots, reset, pan and saturation",observed,applies,rejected);
         $finish;
     end
     initial begin #1000000000; $fatal(1,"audio synth timeout"); end

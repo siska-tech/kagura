@@ -21,7 +21,7 @@ foreach path {
     build/generated/kagura_hdmi_stream.sv
     rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv
     rtl/audio/kagura_test_tone.sv rtl/hdmi/kagura_audio_packets.sv
-    rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_hdmi_stream_eval.sv
+    rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv rtl/hdmi/kagura_hdmi_stream_eval.sv
     rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv
     rtl/platform/kagura_gowin_serializer.sv rtl/platform/kagura_nano9k_clocks.sv
     rtl/memory/kagura_hyperram_ctrl.sv rtl/memory/kagura_hyperram_phy_gowin.sv

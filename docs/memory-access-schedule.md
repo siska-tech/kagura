@@ -16,26 +16,28 @@ system_slots  = floor(54 MHz * logical_line) = 3428 cycles
 
 | 処理 | 最悪アクセス/操作 | 予約cycles |
 |---|---|---:|
-| スプライト評価 | 64×4word OAM読出し。1件4要求＋1応答排出＋1判定 | 64×6 = 384 |
+| スプライト評価 | 256件のword 1（Y・enable・size）を毎cycle連続読出し。選択した1件ごとにword 0/2の読出しと、後続の読出し済み2件の破棄・再読出しで4cycles | 256×1＋16×4 = 320 |
 | BG tile fetch/emit | fine scrollありで41タイル。1map読出し2cycles、4 pattern bytesを5cycles、8 pixelsをpalette pipelineへ8cycles、排出2cycles | 41×17 = 697 |
-| Sprite row fetch/setup | 16個×16px。8 pattern bytesを9cycles、座標/反転setup4cycles | 16×13 = 208 |
+| Sprite row fetch/setup | 16個×16px。8 pattern bytesを9cycles、座標/反転setupと初画素の判定5cycles | 16×14 = 224 |
 | Sprite composite | 256候補pixels。line読出し2、palette読出し2、conditional write1。透明・画面外でも上限から減算しない | 256×5 = 1280 |
 | 制御 | 開始、境界クリップ、bank/tag、done等の上限 | 64 |
-| **描画計** | | **2633** |
+| **描画計** | | **2585** |
 | CDC/切替ガード | 往復同期とpixel prefetch余裕 | **64** |
-| **CPU等に残す枠** | 3428−2633−64 | **731** |
+| **CPU等に残す枠** | 3428−2585−64 | **779** |
+
+スプライト評価は、読出しword・判定・選択の各段をregisterで区切る3段pipeline。RAMのenable/addressが同じcycleの比較結果に依存しない。ABI 0.4までの64個版は1件6cycles（4word読出し＋排出＋判定）の逐次処理で384 cycles、描画計2633、CPU枠731だった。256個をこの方式で走査すると1536 cyclesとなり480pの期限を超えるため、レコード配置を変えて1件1wordの判定にした（[メモリマップ](memory-map.md)）。
 
 BGの41×8=328候補画素のうち320だけ書く。各BG tileでpaletteの読み要求を1cycleに1件出し、その応答RGBを別RAMのlineへ書くため、paletteとlineが独立であることが必須。8pixelを順次3cyclesずつ処理する実装では上記予算を満たさない。
 
-総VRAM要求: map41 word、pattern BG164byte＋sprite128byte=292byte、OAM256word、palette最大328＋256=584word、line BG320write＋sprite256read＋256write（実際はtransparent/claimedで減少）。RAM群は独立。これらを1本の共有メモリへ移すと同じ計算は使えない。
+総VRAM要求: map41 word、pattern BG164byte＋sprite128byte=292byte、OAM最大320word（走査256＋選択16件×4）、palette最大328＋256=584word、line BG320write＋sprite256read＋256write（実際はtransparent/claimedで減少）。RAM群は独立。これらを1本の共有メモリへ移すと同じ計算は使えない。
 
-CPU残枠は3cycles/RMWなら最大243 byte operations/論理ライン（約3.827MB/sの局所理論値）。これはCPUソフト実効帯域でも保証スループットでもない。CPUバス自体の上限3.375M accesses/s、命令fetch、FIFO制御、FILL待機で実効値は低下する。
+CPU残枠は3cycles/RMWなら最大259 byte operations/論理ライン（約4.079MB/sの局所理論値）。これはCPUソフト実効帯域でも保証スループットでもない。CPUバス自体の上限3.375M accesses/s、命令fetch、FIFO制御、FILL待機で実効値は低下する。
 
 ## 調停
 
 グローバルな固定優先度1本へ統合しない。
 
-- line/palette/pattern/map/OAM: 描画の予約区間を優先、完了後の731 cycles以上をCPU/commandへ供給。長いCPU RMWは描画開始を跨がせない。
+- line/palette/pattern/map/OAM: 描画の予約区間を優先、完了後の779 cycles以上をCPU/commandへ供給。長いCPU RMWは描画開始を跨がせない。
 - waveform RAM: 最大6ch演算中の2ch波形読出しを優先。その他をCPU/コピーへ。画像メモリと独立。
 - command RAM: enqueue/descriptor fetchを交互処理。キュー実行待ちはenqueueを阻害しない限り受け付ける。
 - audio FIFO: 書込system、読出pixel。映像メモリの仲裁から独立。
@@ -52,8 +54,8 @@ line0はVBlank中に準備。line239完了後は通常のn+1要求を止め、VB
 ## VBlankの時間
 
 45 physical lines = 約1.428571ms、system約77142 cycles。
-OAM active 256word、palette active 256wordのコピーを各word read/response/write=3cyclesとして1536 cycles。line0描画2633、ガード64を含め4233 cycles。その他制御を1024 cycles予約しても5257 cycles。VBlank予算内という算定であり、COMMIT遅延はFSMで検証する。waveはコピーせず、AUDIO_COMMITによるsample境界でのbank交換を用いる。
+OAM active 1024word、palette active 256wordのコピーを各word read/response/write=3cyclesとして3840 cycles。line0描画2585、ガード64を含め6489 cycles。その他制御を1024 cycles予約しても7513 cycles。VBlank予算内という算定であり、COMMIT遅延はFSMで検証する。waveはコピーせず、AUDIO_COMMITによるsample境界でのbank交換を用いる。
 
 ## 悪条件テスト
 
-X fine scroll=7、全タイルパターン不連続、64個Y一致、先頭16個16×16、全不透明、全て重なり、反転、behind混在、最大CPU投入、FILL継続、全音源ch発音を組み合わせる。2633 cycles以内・表示bankへの書込み0・CPU残枠731以上をカウンタとassertで確認。8個版の算定は384+697+8×93+64=1889 cycles（ガード別）となり、タイミング余裕を増やせるがソフトへ上限変更の通知が必要。
+X fine scroll=7、全タイルパターン不連続、256個Y一致、先頭16個16×16、末尾16個だけ選択、全不透明、全て重なり、反転、behind混在、最大CPU投入、FILL継続、全音源ch発音を組み合わせる。2585 cycles以内・表示bankへの書込み0・CPU残枠779以上をカウンタとassertで確認。8個版の算定は(256+8×4)+697+8×94+64=1801 cycles（ガード別）となり、タイミング余裕を増やせるがソフトへ上限変更の通知が必要。

@@ -14,7 +14,7 @@ module tb_fill_timing;
     integer pushes=0;
     always @(posedge clk) if(push) pushes=pushes+1;
     kagura_registers dut(.clk(clk),.reset(reset),.init_done(1'b1),.vblank_live(1'b0),
-        .irq_events(8'b0),.sprite_overflow_index(6'b0),.sprite_overflow_line(8'b0),.error_events(8'b0),
+        .irq_events(8'b0),.sprite_overflow_index(8'b0),.sprite_overflow_line(8'b0),.error_events(8'b0),
         .req_valid(valid),.req_ready(ready),.req_write(write_req),.req_addr(addr),.req_wdata(wdata),
         .rsp_valid(rsp_valid),.rsp_ready(1'b1),.rsp_rdata(rdata),.rsp_error(rsp_error),.irq(),
         .push(push),.push_desc(push_desc),.push_ready(1'b1),.queue_free(6'd32),.queue_idle(1'b1),.queue_staging(1'b0),
@@ -53,9 +53,9 @@ module tb_fill_timing;
         fill_at(24'h007f00,16'd256,1);   // ends at 007FFF
         fill_at(24'h007f00,16'd257,0);   // crosses into map
         fill_at(24'h008000,16'd4096,1);  // whole map
-        fill_at(24'h00a000,16'd1,0);     // unimplemented
+        fill_at(24'h009000,16'd1,0);     // unimplemented
         fill_at(24'h009400,16'd512,1);   // palette shadow
-        fill_at(24'h0091ff,16'd2,0);     // OAM shadow into active OAM
+        fill_at(24'h00a7ff,16'd2,0);     // OAM shadow into active OAM
         // VRAM_WRITE advances the address; the FILL right after uses the new one.
         write1(5'h10,8'h01); write1(5'h11,8'h00);
         write1(5'h04,8'hff); write1(5'h05,8'h7f); write1(5'h06,8'h00);

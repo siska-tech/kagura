@@ -2,7 +2,8 @@
 // VRAM (docs/memory-map.md) with a command-side port and renderer ports.
 //   0000-7FFF pattern  16x SP 2048x8 (bank = addr[14:11])
 //   8000-8FFF map      2x 2048x8 byte lanes (word = addr[11:1])
-//   9000-91FF OAM      1024x16 RMW RAM, shadow words 0..255, active 256..511
+//   A000-A7FF OAM      SPRITES*8 x16 RMW RAM (2048 for 256), shadow words
+//                      0..SPRITES*4-1, active half above
 //   9400-95FF palette  1024x16 RMW RAM, shadow 0..255, active 256..511;
 //                      high bytes keep bits 3:0 only
 //   9800-99FF wave     SP 2048x8, shadow bytes 0..511
@@ -13,12 +14,14 @@
 // BSRAM outputs are slow). This keeps the engine's request logic away from
 // the RAM enables (timing at 54MHz).
 //   word=0: byte access at a public address (the register block checks it)
-//   word=1: 16-bit access, addr[15]=0 OAM / 1 palette, addr[9:0] word index
+//   word=1: 16-bit access, addr[15]=0 OAM / 1 palette, addr[10:0] word index
 //           including the active halves (used by COMMIT)
 // Renderer: raise render_hold; once render_grant is high the renderer owns
 // every RAM (the command port is stalled and no RMW is in flight). Each read
 // port returns data one edge after its enable.
-module kagura_vram (
+module kagura_vram #(
+    parameter integer SPRITES=256
+) (
     input wire clk, reset,
     output reg init_done,
     output wire command_idle,
@@ -44,7 +47,7 @@ module kagura_vram (
     input wire [9:0] palette_index,
     output wire [15:0] palette_data,
     input wire oam_read,
-    input wire [9:0] oam_index,
+    input wire [$clog2(SPRITES)+2:0] oam_index,
     output wire [15:0] oam_data
 );
     wire [3:0] word_ready, word_ready_next;
@@ -77,7 +80,7 @@ module kagura_vram (
         else if(go) pending<=0;
     wire is_pattern=!word && !addr[15];
     wire is_map=!word && addr[15:12]==4'h8;
-    wire is_oam=word ? !addr[15] : addr[15:9]==7'b1001_000;     // 9000-91FF
+    wire is_oam=word ? !addr[15] : addr[15:12]==4'ha;          // A000-A7FF
     wire is_palette=word ? addr[15] : addr[15:9]==7'b1001_010;  // 9400-95FF
     wire is_wave=!word && addr[15:9]==7'b1001_100;               // 9800-99FF
 
@@ -126,32 +129,29 @@ module kagura_vram (
     wire [15:0] word_rd [0:3];
     assign word_rd[0]=map_data;
     assign word_rd[1]=map_data;
-    wire [9:0] word_addr=word ? addr[9:0] : {2'b00,addr[8:1]};
+    // OAM: SPRITES*8 words, shadow in the lower half. Palette: 1024 words.
+    localparam integer OAW=$clog2(SPRITES)+3;
+    wire [OAW-1:0] oam_addr=word ? addr[OAW-1:0] : {1'b0,addr[OAW-1:1]};
+    wire [9:0] palette_addr=word ? addr[9:0] : {2'b00,addr[8:1]};
     reg [7:0] byte_data;
     always @* begin
         byte_data=is_palette && addr[0] ? {4'h0,wdata[3:0]} : wdata[7:0];
         if(is_oam) case(addr[2:0])
-            3'd1,3'd3: byte_data={6'b0,wdata[1:0]};
+            3'd1: byte_data={6'b0,wdata[1:0]};
+            3'd3: byte_data={1'b0,wdata[6:0]};
             3'd5: byte_data={2'b0,wdata[5:0]};
-            3'd6: byte_data={3'b0,wdata[4:0]};
-            3'd7: byte_data=0;
+            3'd6,3'd7: byte_data=0;
             default: ;
         endcase
     end
     wire [15:0] word_data=is_palette ? {4'h0,wdata[11:0]} : wdata;
-    wire [3:0] alt_read={render_grant && palette_read,render_grant && oam_read,
-        render_grant && map_read && map_index[10],render_grant && map_read && !map_index[10]};
-    wire [9:0] alt_addr [0:3];
-    assign alt_addr[0]=map_index[9:0];
-    assign alt_addr[1]=map_index[9:0];
-    assign alt_addr[2]=oam_index;
-    assign alt_addr[3]=palette_index;
-    generate for(i=2;i<4;i=i+1) begin: word_ram
-        kagura_ram_rmw16 #(.DEPTH(1024)) ram(clk,reset,clear_write || (go_graphics && word_sel[i]),word_ready[i],
-            clearing || write,!clearing && !word,addr[0],clearing ? init_index[9:0] : word_addr,
-            clearing ? 16'b0 : word ? word_data : {8'h00,byte_data},word_rsp[i],word_rd[i],
-            word_ready_next[i],alt_read[i],alt_addr[i]);
-    end endgenerate
+    wire [15:0] ram_wdata=clearing ? 16'b0 : word ? word_data : {8'h00,byte_data};
+    kagura_ram_rmw16 #(.DEPTH(SPRITES*8)) oam_ram(clk,reset,clear_write || (go_graphics && word_sel[2]),word_ready[2],
+        clearing || write,!clearing && !word,addr[0],clearing ? init_index[OAW-1:0] : oam_addr,
+        ram_wdata,word_rsp[2],word_rd[2],word_ready_next[2],render_grant && oam_read,oam_index);
+    kagura_ram_rmw16 #(.DEPTH(1024)) palette_ram(clk,reset,clear_write || (go_graphics && word_sel[3]),word_ready[3],
+        clearing || write,!clearing && !word,addr[0],clearing ? init_index[9:0] : palette_addr,
+        ram_wdata,word_rsp[3],word_rd[3],word_ready_next[3],render_grant && palette_read,palette_index);
     assign oam_data=word_rd[2];
     assign palette_data=word_rd[3];
 

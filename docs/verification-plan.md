@@ -27,7 +27,7 @@ topのinoutは`data_in/data_out/data_oe`へ分けてテストし、board wrapper
 | Sprite | signed座標端、8/16、16×16基底、transparent、behind、小番号優先 | 全画素一致、17個目overflow index/line一致 |
 | Commit | FIFO直前/直後write、VBlank直前/直後token、shadow更新 | active切替時刻・snapshotが仕様どおり、二重受付なし |
 | Line banks | y=0/1/478/479/480/524、done遅延、reset片側 | 2行同bank、tag照合、期限失敗は黒＋error、partial表示0 |
-| Scheduler | 最悪画面＋最大CPU＋全音源 | renderer<=2633 cycles、guard64確保、CPU枠>=731 cycles |
+| Scheduler | 最悪画面＋最大CPU＋全音源 | renderer<=2585 cycles、guard64確保、CPU枠>=779 cycles |
 | Audio | 各step/duty/wave長、enable、seed、左右gain、clip | sample-by-sample整数model一致、noise周期32767、左右混線なし |
 | HDMI video | 全RGB/制御、line/frame境界 | 800×525、2倍画素、running disparity/制御記号がdecoderと整合 |
 | HDMI audio | 連番L/R、InfoFrame/ACR競合、FIFO位相 | 48k samples/s、欠落/重複0、BCH/checksum/channel status一致 |

@@ -20,7 +20,7 @@ module tb_register_abi;
     generate for(g=0;g<2;g=g+1) begin: dut
         kagura_registers #(.CAPS(g ? CAPS_VALUE_WIDE : CAPS_VALUE_FULL),.LINES(g ? 180 : 240)) regs(
             .clk(clk),.reset(reset),.init_done(1'b0),.vblank_live(1'b0),
-            .irq_events(8'b0),.sprite_overflow_index(6'b0),.sprite_overflow_line(8'b0),.error_events(8'b0),
+            .irq_events(8'b0),.sprite_overflow_index(8'b0),.sprite_overflow_line(8'b0),.error_events(8'b0),
             .req_valid(valid && sel==g),.req_ready(ready[g]),.req_write(write_req),.req_addr(addr),.req_wdata(wdata),
             .rsp_valid(rsp_valid[g]),.rsp_ready(1'b1),.rsp_rdata(rdata[g]),.rsp_error(rsp_error[g]),.irq(),
             .push(),.push_desc(),.push_ready(1'b1),.queue_free(6'd32),.queue_idle(1'b1),.queue_staging(1'b0),

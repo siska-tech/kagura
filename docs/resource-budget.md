@@ -10,19 +10,19 @@
 | Bus/register/IRQ | 650 | 650 | 0 | 0 | 0 |
 | VRAM/control/queue | 500 | 350 | 19 | 0 | 0 |
 | Tile/palette/line banks | 900 | 450 | 3 | 0 | 0 |
-| Sprite | 1300 | 650 | 1 | 0 | 0 |
+| Sprite | 1300 | 650 | 2 | 0 | 0 |
 | PSG/noise/mixer | 650 | 550 | 0 | 0 | 2 |
 | Wave | 300 | 250 | 1 | 0 | 0 |
 | Clock/reset/integration | 400 | 300 | 0 | 2 | 0 |
-| **計** | **6700** | **4700** | **25** | **2** | **2** |
+| **計** | **6700** | **4700** | **26** | **2** | **2** |
 | デバイス総量 | 8640 | 6480 | 26 | 2 | 20 |
-| 予備 | 1940 | 1780 | 1 | 0 | 18 |
+| 予備 | 1940 | 1780 | 0 | 0 | 18 |
 
-VRAM行の19はpattern16＋map2＋queue1。Tile行の3はpalette1＋line2。Sprite行はOAM1、Wave行はwave1。audio FIFOはHDMI行に1回だけ計上。LUT RAMは初期設計では必須0bit、必要になればLUT予算と一緒に再配分する。小レジスタ、snapshot、同期器、スプライト一時行32/64bit等はFF予算に含む。
+VRAM行の19はpattern16＋map2＋queue1。Tile行の3はpalette1＋line2。Sprite行はOAM2（256個のshadow＋active）、Wave行はwave1。audio FIFOはHDMI行に1回だけ計上。LUT RAMは初期設計では必須0bit、必要になればLUT予算と一緒に再配分する。小レジスタ、snapshot、同期器、スプライト一時行32/64bit等はFF予算に含む。
 
 ## 実装の測定値
 
-全体の測定値は[検証状況](validation-status.md)、720pの構成別数値は[16:9仕様](wide-mode.md)を参照。CPU/ホスト版は24/26 BSRAM、art ROMを含むデモ版は25/26（`443900a`以降。art ROMのpROMが2→1個）であり、上記25ブロックの設計予算とは区別する。
+全体の測定値は[検証状況](validation-status.md)、720pの構成別数値は[16:9仕様](wide-mode.md)を参照。CPU/ホスト版は24/26 BSRAM、art ROMを含むデモ版は25/26（`443900a`以降。art ROMのpROMが2→1個）であり（いずれも64スプライト時の測定）、上記26ブロックの設計予算とは区別する。256スプライトではOAMが1個増え、ホスト版25/26、デモ版26/26の見込み。
 
 合成のcell数とP&Rの使用数を両方保存する。LogicとLUTを混同せず、各clockのslackと制約例外を報告する。個別moduleの合成量を単純加算して統合使用量としない。変更後は同じ構成・EDAで再測定する。
 
@@ -31,9 +31,9 @@ VRAM行の19はpattern16＋map2＋queue1。Tile行の3はpalette1＋line2。Spri
 | 順序 | 変更 | 効果・失うもの | 元仕様への回復条件 |
 |---:|---|---|---|
 | 1 | wave 256→32 | address/演算を小さくする。単独BSRAM1個は普通は減らない | 配置余裕と音源テスト合格 |
-| 2 | sprite演算器を時分割 | LUTを減らすがcycles増加 | 2633cyclesの期限内、余裕実測 |
+| 2 | sprite演算器を時分割 | LUTを減らすがcycles増加 | 2585cyclesの期限内、余裕実測 |
 | 3 | 16→8 sprites/line | 744描画cycles減。密集時欠落増 | P&R＋負荷試験で16個版合格 |
-| 4 | 64→32 registered sprites | OAM走査192cycles減。BSRAMは残りやすい | FFと描画期限に余裕 |
+| 4 | 256→128 registered sprites | OAM走査128cycles減、**OAMのBSRAM1個削減**（`SPRITES=128`、EXT 05は128） | BSRAMと描画期限に余裕 |
 | 5 | pattern 1024→512 | **BSRAM8個削減**、パターン資産半減 | 26個以内・全体STA合格 |
 | 6 | palette bank減 | 色表現減、物理RAM削減は別検討 | RGB/priority回帰試験 |
 | 7 | map 64×32→32×32 | **BSRAM1個削減**、横map幅256に変化 | メモリ予算回復、scroll ABI更新 |

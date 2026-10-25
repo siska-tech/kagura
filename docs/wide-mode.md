@@ -18,13 +18,13 @@
 | H total × V total | 800 × 525 | 1650 × 750 |
 | 論理1ライン | 物理2ライン、63.49µs | 物理4ライン、88.89µs |
 | system cycles/論理ライン | 3428 | 4800 |
-| 描画2633＋ガード64後のCPU枠 | 731 | 2103 |
+| 描画2585＋ガード64後のCPU枠 | 779 | 2151 |
 | VBlank | 45ライン、約77142 cycles | 30ライン、36000 cycles |
 | ACR (48kHz) | N=6144, CTS=25200 | N=6144, CTS=74250 |
 
 PLL: 27MHz×55/4 = 371.25MHz（IDIV_SEL=3, FBDIV_SEL=54, ODIV_SEL=2、VCO 742.5MHz、PFD 6.75MHz）、CLKDIV /5で74.25MHz。27MHz基準との整数比を保つので、共通referenceによる固定N/CTSの前提（[hdmi-design-decision.md](hdmi-design-decision.md)）は成り立つ。
 
-VBlankの必要量は[スケジュール](memory-access-schedule.md)の5257 cyclesで、36000 cyclesに収まる。BSRAMは増えない。line bankは320画素のまま、マップ64×32（512×256px）は180ラインを覆う。
+VBlankの必要量は[スケジュール](memory-access-schedule.md)の7513 cyclesで、36000 cyclesに収まる。16:9モード自体ではBSRAMは増えない。line bankは320画素のまま、マップ64×32（512×256px）は180ラインを覆う。
 
 ## 変更箇所
 

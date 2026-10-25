@@ -17,7 +17,7 @@ PSRAMからの直接描画やフレームバッファ化は別段階とする。
 
 ## 現状と成立条件
 
-- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は23cycles/sample、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
+- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は24cycles/sample（PCM有効時30）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
 - 既存音声出力がPCMであることと、メモリから任意sampleを読むPCM音源があることは別。現在は後者が未実装。
 - [現行記録](validation-status.md)の`d501a1f`測定ではホスト版24/26、デモ25/26 BSRAM。最小setupはqspi +0.142ns、demo720 +0.130ns等。これは今回checkoutの再測定ではない。統合時に新しい基準を取得する。
 - `kagura_nano9k_clocks.sv`はvideo/systemでPLLを2個使用済み。PSRAM向けに3個目を追加できない。system用PLLの出力・分周・位相出力を共用できるか、選定IPとデバイスの制約を確認する。周波数や位相は未決定。system54MHzとvideo clockの維持を優先する。
@@ -310,3 +310,9 @@ BSRAMは24/26のまま。77%ではP&R結果の振れが大きく、spipsramのop
 | spipsram 480p | 76% | +0.226ns | +0.559ns | 同上すべてPASS |
 
 BSRAMは24/26。3構成とも目標+0.10nsを満たした。
+
+### 256スプライト後のtiming監査対応（2026-10-26）
+
+共通HDMI経路の短縮後、配置変動でqspipsram720のPSRAM CK enable経路やRS register読出しが限界へ移ったため、PHYとregister decodeを追加修正した。CK enableの第2段FFを67.5°位相`clk_ck`の下降端へ移し、ODDRが値を取る次の立上りを変えずにsystem54からの予算を3.472nsから12.731nsへ広げた。PSRAM構成ではEXT_DATA判定とRS entry選択結果をregister化し、非PSRAM構成ではこれらを合成から除外する。
+
+Gowin V1.9.11.03の再P&RではspipsramがLogic 6673、Register 5138、BSRAM 25/26、setup +0.851ns、hold +0.563ns。qspipsram720はLogic 6649、Register 5141、BSRAM 25/26、setup +0.113ns、hold +0.555ns。両方ともsetup/hold違反0で+0.10ns目標を満たした。qspipsram720はroute option 2、spipsramは共通option 1を使う。この修正版はsimulationとSTAの対象であり、PSRAM CKの下降端FFを含む実機再確認は未実施である。

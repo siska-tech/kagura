@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Based on hdl-util/hdmi src/tmds_channel.sv by Sameer Puri
 // (https://github.com/sameer), revision 83b1c9543a91b776671a44e68e130f81cae437b7.
-// Modified for KAGURA-9: prefix XOR and a three-stage pipeline.
+// Modified for KAGURA-9: prefix XOR and a four-stage pipeline.
 // Apache-2.0 option; see third_party/hdl-util-hdmi/LICENSE-APACHE.
 // Pipelined replacement for hdl-util tmds_channel (HDMI 1.4a 5.4 encoding,
 // 5.2.2.1 / 5.2.3.3 guard bands) with the same ports and output sequence,
-// two pixel clocks later (3-cycle latency instead of 1). Needed at 74.25MHz:
+// three pixel clocks later (4-cycle latency instead of 1). Needed at 74.25MHz:
 // the upstream single-cycle 8b/10b path does not fit GW1NR-9.
+//   0: isolate the stream's high-fanout video bus from the encoder.
 //   1: transition minimisation. XNOR stage k equals the XOR prefix with odd
 //      bits inverted, so q_m is a prefix XOR, not a serial chain.
 //   2: ones count of q_m[7:0].
@@ -23,15 +24,27 @@ module kagura_tmds_channel #(
     input logic [2:0] mode,  // 0 control, 1 video, 2 video guard, 3 island, 4 island guard
     output logic [9:0] tmds = 10'b1101010100
 );
+    // Stage 0.  In a full demo build the video bus is routed across a nearly
+    // full device.  Register it before the popcount/prefix logic so placement
+    // delay is not charged to the same 74.25MHz path as that logic.
+    logic [7:0] video0 = 8'd0;
+    logic [2:0] mode0 = 3'd0;
+    logic [1:0] ctrl0 = 2'd0;
+    logic [3:0] island0 = 4'd0;
+    always_ff @(posedge clk_pixel) begin
+        video0 <= video_data;
+        mode0 <= mode; ctrl0 <= control_data; island0 <= data_island_data;
+    end
+
     // Stage 1
     logic [3:0] n1d;
     logic [7:0] prefix;
     logic use_xnor;
     always_comb begin
-        n1d = 4'(video_data[0]) + 4'(video_data[1]) + 4'(video_data[2]) + 4'(video_data[3])
-            + 4'(video_data[4]) + 4'(video_data[5]) + 4'(video_data[6]) + 4'(video_data[7]);
-        use_xnor = n1d > 4'd4 || (n1d == 4'd4 && video_data[0] == 1'b0);
-        for (int k = 0; k < 8; k++) prefix[k] = ^(video_data & (8'hff >> (7 - k)));
+        n1d = 4'(video0[0]) + 4'(video0[1]) + 4'(video0[2]) + 4'(video0[3])
+            + 4'(video0[4]) + 4'(video0[5]) + 4'(video0[6]) + 4'(video0[7]);
+        use_xnor = n1d > 4'd4 || (n1d == 4'd4 && video0[0] == 1'b0);
+        for (int k = 0; k < 8; k++) prefix[k] = ^(video0 & (8'hff >> (7 - k)));
     end
     logic [8:0] qm1 = 9'd0;
     logic [2:0] mode1 = 3'd0, mode2 = 3'd0;
@@ -39,7 +52,7 @@ module kagura_tmds_channel #(
     logic [3:0] island1 = 4'd0, island2 = 4'd0;
     always_ff @(posedge clk_pixel) begin
         qm1 <= {~use_xnor, prefix ^ (use_xnor ? 8'b10101010 : 8'b00000000)};
-        mode1 <= mode; ctrl1 <= control_data; island1 <= data_island_data;
+        mode1 <= mode0; ctrl1 <= ctrl0; island1 <= island0;
     end
     // Stage 2
     logic [8:0] qm2 = 9'd0;

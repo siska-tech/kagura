@@ -120,7 +120,7 @@ module tb_hyperram_pcm_chain;
         wait(apply_done);
         for(integer n=0;n<8;n=n+1) begin
             @(posedge sample_valid); #1;
-            if(audio_l!==16'($signed(expected[32+n])) || audio_r!==16'($signed(expected[32+n])) || last_cycles!=29)
+            if(audio_l!==16'($signed(expected[32+n])) || audio_r!==16'($signed(expected[32+n])) || last_cycles!=30)
                 $fatal(1,"chain sample %0d got %0d,%0d expected %0d",n,audio_l,audio_r,$signed(expected[32+n]));
         end
         if(!done_seen || active[0] || (|underrun) || (|config_error) || (|memory_error))

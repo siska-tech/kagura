@@ -3,6 +3,15 @@
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
+# Build directories and the summary are shared by every invocation.  Refuse a
+# concurrent run instead of allowing two regressions to overwrite each
+# other's executables, logs and result rows.
+mkdir -p build/verilator
+exec 9>build/verilator/.regression.lock
+if ! flock -n 9; then
+    echo "FAIL: another Verilator regression is already running" >&2
+    exit 1
+fi
 # Environment:
 #   KAGURA_STRICT_VERSION=1  fail unless verilator matches tools/verilator.version (CI)
 #   KAGURA_SEED=<n>          runtime seed for $urandom (default 1)
@@ -19,7 +28,6 @@ fi
 seed="${KAGURA_SEED:-1}"
 test_timeout="${KAGURA_TEST_TIMEOUT:-1800}"
 echo "seed $seed, per-test timeout ${test_timeout}s"
-mkdir -p build/verilator
 python3 sim/tests/test_boot_image.py
 # Stale outputs would be mistaken for this run's evidence.
 rm -f build/verilator/*.run.log build/verilator/*.raw build/verilator/*.wav build/verilator/*.ppm build/verilator/*.vcd
@@ -58,6 +66,8 @@ run_test tb_tmds_channel third_party/hdl-util-hdmi/src/tmds_channel.sv \
     sim/tests/tb_tmds_channel.sv
 run_test tb_tmds_pipeline third_party/hdl-util-hdmi/src/tmds_channel.sv rtl/hdmi/kagura_tmds_channel.sv \
     sim/tests/tb_tmds_pipeline.sv
+run_test tb_packet_assembler third_party/hdl-util-hdmi/src/packet_assembler.sv rtl/hdmi/kagura_packet_assembler.sv \
+    sim/tests/tb_packet_assembler.sv
 run_test tb_serializer_reset rtl/platform/kagura_gowin_serializer.sv sim/tests/tb_serializer_reset.sv
 run_test tb_async_fifo rtl/memory/kagura_async_fifo.sv sim/tests/tb_async_fifo.sv
 run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
@@ -70,7 +80,7 @@ run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
 python3 tools/prepare-hdmi-stream.py
 # The same stream at VIC1 (640x480) and VIC4 (1280x720, docs/wide-mode.md).
 for stream_test in tb_hdmi_stream tb_hdmi_stream720; do
-    run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv \
+    run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv \
         rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv \
         rtl/hdmi/kagura_audio_packets.sv rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_source_bars.sv rtl/hdmi/kagura_hdmi_stream_eval.sv \
         third_party/hdl-util-hdmi/src/audio_sample_packet.sv \
