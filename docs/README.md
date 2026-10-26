@@ -1,17 +1,37 @@
 # ドキュメント案内
 
-初めて使う場合は[ビルド・テスト手順](build-and-test.md)と[検証状況・既知の制約](validation-status.md)から読む。
+初めて使う場合は[アーキテクチャ](architecture.md)で全体を把握し、[ビルド・テスト](build-and-test.md)と[検証状況](validation-status.md)を確認する。
 
-| 目的 | 文書 |
+## 使う
+
+| 文書 | 内容 |
 |---|---|
-| ボード接続・ピン | [ボード資料](../boards/tang-nano-9k/README.md)、[ピン一覧](../boards/tang-nano-9k/pin-inventory.csv) |
-| ホストから制御 | [レジスタABI](register-map.md)、[SPI/QSPI](host-interface.md)、[Pico host firmware](../software/pico/README.md)、[CPUタイミング](timing.md) |
-| 映像・音声データ | [メモリマップ](memory-map.md)、[音源仕様](audio-spec.md)、[16:9モード](wide-mode.md)、[ラスタスクロール検討](raster-scroll.md) |
-| 内部実装 | [アーキテクチャ](architecture.md)、[メモリアクセス](memory-access-schedule.md)、[RTL一覧](../rtl/README.md) |
-| 設計根拠 | [成立性とリスク](hardware-feasibility.md)、[資源予算](resource-budget.md)、[HDMI設計判断](hdmi-design-decision.md) |
-| 個別の評価根拠 | [BSRAM](bsram-evaluation.md)、[HDMI合成](hdmi-synthesis-evaluation.md)、[音声packet](audio-packet-integration.md) |
-| 検証・今後の開発 | [検証計画](verification-plan.md)、[M0基準記録](baseline.md)、[機材一覧](equipment.md)、[実機試験表](p1-07-hardware-test.md)、[ロードマップ](implementation-roadmap.md) |
-| 出典・依存 | [出典台帳](sources.md)、[第三者IP方針](../THIRD_PARTY.md) |
-| PSRAM・PCM拡張案 | [PSRAM活用・PCM 2ch追加の検討](psram-pcm.md) |
+| [アーキテクチャ](architecture.md) | 仕様の概要、ブロック構成、clock、ビルド構成とCAPS、LED |
+| [プログラミングガイド](programming-guide.md) | ホストからの初期化・転送・sprite・COMMIT・音源・PCMの手順 |
+| [レジスタ仕様](register-map.md) | ABI 0.5の直接窓、command、extended register（規範） |
+| [メモリマップ](memory-map.md) | VRAM/PSRAMのaddress、pattern・map・palette・OAM・waveの形式 |
+| [映像仕様](video.md) | 表示モード、背景・sprite、優先順位、COMMIT、ラスタIRQ・ラスタスクロール |
+| [音源仕様](audio-spec.md) | 6ch音源、PCM 2ch、AUDIO_COMMIT、mixer |
+| [ホストインターフェース](host-interface.md) | SPI/QSPIのピン・timing・transaction・flow制御 |
+| [クロック・リセット・CPUバス](timing.md) | clock、CDC、reset、W65C02Sバス、STAの基準 |
+| [ROM-less boot](romless-boot.md) | SPI FlashからのW65C02S起動（`phase2boot`） |
 
-仕様・設計予算、simulation、P&R、実機確認は別の証拠として扱う。評価資料の古い構成の数値は現行版の保証ではなく、測定条件と制約を併せて参照する。
+## 内部と根拠
+
+| 文書 | 内容 |
+|---|---|
+| [メモリアクセススケジュール](memory-access-schedule.md) | 1ラインの描画上限、仲裁、line bank、VBlankの時間 |
+| [PSRAM](psram.md) | PSRAM controller・PHY・仲裁、COPY、物理層の設定 |
+| [HDMI出力](hdmi.md) | hdl-utilからの派生、timing、音声packet、ACR |
+| [RTL一覧](../rtl/README.md)、[試験一覧](../sim/README.md) | moduleとtestbench |
+| [ボード資料](../boards/tang-nano-9k/README.md)、[ピン一覧](../boards/tang-nano-9k/pin-inventory.csv) | Tang Nano 9Kのピン・ヘッダ・回路図の照合 |
+
+## 開発・検証
+
+| 文書 | 内容 |
+|---|---|
+| [ビルド・テスト・書込み](build-and-test.md) | simulation、生成、Gowinビルド、SRAM/Flash書込み、CI |
+| [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
+| [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |
+| [Pico host firmware](../software/pico/README.md) | 配線、コマンド、実機確認の記録 |
+| [出典](sources.md)、[第三者IP](../THIRD_PARTY.md) | 一次資料と外部ソース |

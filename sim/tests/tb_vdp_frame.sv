@@ -106,11 +106,31 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
     always @(posedge sys) if(dut.render_done) begin
         renders=renders+1; if(render_cycles>max_cycles) max_cycles=render_cycles;
     end
+    // RASTER events and the physical line showing at the last one. Only this
+    // block writes them; check_raster compares counts before and after.
+    integer raster_total=0, raster_cy=-1;
+    always @(posedge sys) if(dut.core.raster_event) begin raster_total=raster_total+1; raster_cy=cy; end
     task automatic commit_and_wait;
         begin
             wr(IRQ_STATUS,8'h7f); wr(COMMAND,8'h03);
             v=8'h10; while(v[4]) rd(STATUS,v);  // COMMIT_BUSY clears after the copy
             rd(IRQ_STATUS,v); if(!v[4]) $fatal(1,"COMMIT_DONE not raised");
+        end
+    endtask
+    // RASTER_LINE takes effect at the COMMIT; the following frame must raise
+    // exactly one RASTER at physical y=SCALE*line (none for line >= LINES).
+    task automatic check_raster(input integer line);
+        reg [7:0] f0, f;
+        integer start, n;
+        begin
+            ext(8'h04,8'(line)); commit_and_wait();
+            // Count over one whole frame, from one VBlank start to the next.
+            rd(FRAME_COUNT,f0); f=f0; while(f==f0) rd(FRAME_COUNT,f);
+            start=raster_total;
+            f0=f; while(f==f0) rd(FRAME_COUNT,f);
+            n=raster_total-start;
+            if(line<LINES ? n!=1 || raster_cy!=SCALE*line : n!=0)
+                $fatal(1,"RASTER_LINE %0d: %0d events, last at y=%0d",line,n,raster_cy);
         end
     endtask
     // Writes the staged table to the shadow registers (RS_INDEX 0 first).
@@ -223,6 +243,8 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         check_frame(1);
         // Configuration C: background on again with the same scroll.
         bg_on=1; spr_on=0; wr(DISPLAY_CTRL,8'h03); commit_and_wait(); check_frame(2);
+        // RASTER position: first, middle and last logical line, then disabled.
+        check_raster(0); check_raster(100); check_raster(LINES-1); check_raster(LINES);
         if(SPRITES) begin
             wr(IRQ_STATUS,8'h20); rd(5'h1e,v); if(v!=0) $fatal(1,"overflow index not cleared");
             rd(5'h1f,v); if(v!=0) $fatal(1,"overflow line not cleared");
@@ -291,7 +313,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             VIC,H_ACTIVE,V_ACTIVE,SCALE,SPRITES,H_ACTIVE*V_ACTIVE,renders,max_cycles);
         $finish;
     end
-    initial begin #300000000; $fatal(1,"vdp frame timeout"); end
+    initial begin #700000000; $fatal(1,"vdp frame timeout"); end
     always @(negedge pix)
         if(!pix_reset && !dut.display.memory_up_sync[1] && rgb!==0)
             $fatal(1,"nonblack output before memory ready");

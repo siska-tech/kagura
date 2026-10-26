@@ -87,10 +87,15 @@ module kagura_vram #(
     // Pattern banks: renderer address when granted, else the command port.
     wire [7:0] pattern_rd [0:15];
     wire [14:0] pat_a=clearing ? {4'b0,init_index} : render_grant ? pattern_addr : addr[14:0];
+    // Renderer reads already include render_grant (checked below), while
+    // go_graphics requires !render_hold. OR the disjoint clients directly:
+    // another grant mux here would feed the RAM-idle/renderer control chain
+    // back into every pattern-bank CE.
     genvar i;
     generate for(i=0;i<16;i=i+1) begin: pattern
         kagura_ram_sp #(.DEPTH(2048),.WIDTH(8)) ram(clk,
-            clear_write || (render_grant ? pattern_read && pattern_addr[14:11]==i : go_graphics && is_pattern && addr[14:11]==i),
+            clear_write || (pattern_read && pattern_addr[14:11]==i) ||
+                (go_graphics && is_pattern && addr[14:11]==i),
             clearing || (!render_grant && write),pat_a[10:0],clearing ? 8'b0 : wdata[7:0],pattern_rd[i]);
     end endgenerate
     reg [3:0] pat_bank_q;

@@ -1,10 +1,8 @@
-# Tang Nano 9K platform notes
+# Tang Nano 9K
 
-Phase 1の試験top/CST/SDCを追加し、配置配線とbitstream生成を実行済み。STA数値違反0、I/O・CDC制約監査済み。カラーバー版を内蔵Flashへ書込み、電源投入起動でPCディスプレイ1台の映像・音声を確認。**P1-07実機互換性試験は未完了**（[手順と記録表](../../docs/p1-07-hardware-test.md)）。結果は[検証状況](../../docs/validation-status.md)、再現手順とLEDの参照先は[ビルドガイド](../../docs/build-and-test.md)に記載。
+KAGURA-9の対象ボード。board top（`kagura_*_top.sv`）、ピン制約（`*.cst`）、タイミング制約（`*.sdc`）、ピン一覧（[pin-inventory.csv](pin-inventory.csv)）を置く。CST/SDCは`tools/build-nano9k.tcl`が構成ごとに連結してbuildディレクトリへ書き出す。ビルドと書込みは[ビルド・テスト](../../docs/build-and-test.md)、構成とLEDは[アーキテクチャ](../../docs/architecture.md#ビルド構成とcaps)を参照。
 
-【資料確認】公式CSTと回路図の調査値。実基板との照合前なので、このファイルは配線承認済みCSTではない。
-
-CPU不要の`demo` topは背景・スプライトに6ch音源を追加し、HDMIへ出力する。音源の初期設定と512byteの波形転送（両bank）はsequencerが行い、以後は縦スクロールシューティング風の画面を毎フレーム動かしながら、内蔵の約15秒ループ曲をAUDIO_COMMITで演奏する（最初の1周目前半はリードなし）。S2で全体をresetし、映像と音声の初期化から曲頭へ戻る。左1kHz／右500Hzの固定テスト音を出すPhase 1試験topとは異なる音になる。ビルド・検証結果は[検証状況](../../docs/validation-status.md)を参照。
+## 基本のピン
 
 | 機能 | FPGA package pin |
 |---|---|
@@ -13,50 +11,70 @@ CPU不要の`demo` topは背景・スプライトに6ch音源を追加し、HDMI
 | TMDS D0 P/N | 71/70 |
 | TMDS D1 P/N | 73/72 |
 | TMDS D2 P/N | 75/74 |
-| onboard button S2 | 4（1.8V側、10kΩ pull-up、押下でLow。CPU resetへ直結しない）。S1はpin 3 |
+| reset（S2） | 4（1.8V側、10kΩ pull-up、押下でlow）。S1はpin 3（未使用） |
+| LED1..6（active low） | 10、11、13、14、15、16 |
 
-出典: [公式CST](https://github.com/sipeed/TangNano-9K-example/blob/c3b795799f23de91982be52db4273a8eea100cdb/hdmi/src/hdmi.cst)、[公式回路図](https://dl.sipeed.com/fileList/TANG/Nano%209K/2_Schematic/Tang_Nano_9k_3672_Schematic.pdf)。差動出力の実部品・電源・DDC/HPDは回路図と実物で照合し、任意のLVDS pinへ移さない。
+## board top
 
-## CPU接続候補（設計、未配線）
+| top | 構成 | CST |
+|---|---|---|
+| `kagura_phase1_top` | `hdmi`（カラーバー＋固定テスト音） | `phase1.cst` |
+| `kagura_phase1_dvi_top` | `dvi` | `phase1.cst` |
+| `kagura_demo_top` | `demo` | `phase1.cst` |
+| `kagura_phase2_top` | `phase2`（W65C02S） | `phase1.cst`＋`phase2-cpu.cst` |
+| `kagura_phase2_boot_top` | `phase2boot` | 上記＋`boot.cst` |
+| `kagura_host_top` | `spi`・`qspi`・`spipsram`・`qspipsram` | `phase1.cst`＋`host.cst` |
+| `kagura_boot_probe_top`、`kagura_flash_magic_probe_top` | `bootprobe`、`magicprobe` | `boot-probe.cst` |
 
-| 論理信号 | package pin候補 |
+HDMI streamのinstance名は全topで`kagura_phase1_top`と揃えてあり、`phase1.cst`・`phase1*.sdc`を共有する。他に、BSRAM・PSRAM・HyperRAMの評価用top（`kagura_bsram_eval_top`、`kagura_psram_eval_top`、`kagura_hyperram_*_top`）がある（[PSRAM](../../docs/psram.md#評価用top)）。
+
+## SPI/QSPIホスト（`host.cst`）
+
+| 信号 | pin | ヘッダ |
+|---|---:|---|
+| IO0 (MOSI) | 28 | J5-8 |
+| IO1 (MISO) | 29 | J5-9 |
+| IO2 | 30 | J5-10 |
+| IO3 | 33 | J5-11 |
+| SCK | 35 | J5-14 |
+| /CS | 42 | J5-16 |
+| BUSY | 26 | J5-6 |
+| READY | 27 | J5-7 |
+| /IRQ | 49 | J6-20 |
+
+pin 36〜39（TFカード）はHi-Z・pullなし。詳細は[ホストインターフェース](../../docs/host-interface.md)、Picoとの配線は[Pico firmware](../../software/pico/README.md#配線)。
+
+## CPU接続
+
+`phase2`・`phase2boot`のW65C02Sバス（`phase2-cpu.cst`）。すべて3.3VのBank 1/2。
+
+| 論理信号 | package pin |
 |---|---|
-| D0..D7 | 28,29,30,33,34,40,35,41 |
-| A0..A4 | 31,32,36,37,38 |
+| D0..D7 | 28, 29, 30, 33, 34, 40, 35, 41 |
+| A0..A4 | 31, 32, 36, 37, 38 |
 | /CS | 42 |
 | RWB | 48 |
-| PHI2 output | 25 |
-| CPU reset release制御 | 27 |
-| /IRQ open drain | 39 |
+| PHI2出力 | 25 |
+| CPU reset release | 27（pull-down） |
+| /IRQ（open drain） | 39 |
 
-計18本。既存tn_vdpの3.3V使用例と公式net名を照合した候補で、ヘッダの物理位置は別途ピン図で照合する。RDY追加なら1本追加。/RESET線はFPGA出力を直接CPUへつなぐだけで設定前保証ができるわけではなく、[reset設計](../../docs/timing.md)の外部回路を通す。
+計18本。/RESETはFPGA出力を直接CPUへつながず、[外部のreset保持回路](../../docs/timing.md#irqとcpu-reset)を通す。`phase2boot`はさらにpin 26を`BOOT_MAP`出力、pin 59〜62をオンボードSPI Flashに使う（[ROM-less boot](../../docs/romless-boot.md#ピン)）。
 
-### ROM-less boot構成
+## 共有と禁止事項
 
-`phase2boot`/`phase2boot720`は上記CPU信号に加え、pin 26を`BOOT_MAP`出力として使い、オンボードP25Q32Uをpin 59（SCLK）、60（CS#）、61（MOSI）、62（MISO）から読み出す。対象構成だけ`-use_mspi_as_gpio 1`を有効にする。`BOOT_MAP`はFPGA設定前にlowとなる外付けpull-downを前提とし、設定後はブート窓を有効にするためhigh、`$FFFF`読出し後のPHI2 low期間にlowへ戻る。
+- pin 31〜35・40〜42はRGB LCD、36〜39はTFカード、48・49はSPI LCDと共有する。CPU版はTFカード未挿入・LCD未接続を条件とする。HDMIとRGB LCDは同時に使わない。
+- **J5-23/24とJ6-12〜17にはHDMIのTMDS信号がそのまま出ている**。何も接続しない（stubになり信号品質を損なう）。ブレッドボードに基板ごと挿さない。
+- J6-2〜9はBank 3の1.8V。3.3Vの信号へ接続しない。1.8V側のLED・buttonのピンを3.3Vのバスへ混ぜない。
+- BL702、JTAG、MODE、DONEのピンは転用しない。
 
-Flash読出しとCPU起動はRTL simulation済みだが、MSPI兼用ピンからの実Flash読出し、Flashへの安全な書込み、外部decode/RESB保持回路、W65C02S実機起動は未検証である。[ROM-less boot実現可能性](../../docs/romless-boot-feasibility.md)のStage 1・3・5を完了するまで実用構成として扱わない。
+## 回路図との照合（2026-10-23）
 
-CPU/HDMI不要の`bootprobe`構成はStage 1用で、LED 6本を順にJEDEC ID=`85 60 16`、有効なK9BT image、error code bit 3〜0として表示する。`BOOT_MAP`はlow固定。期待IDは実機で未確認のため、ID LEDが消灯しても読出し自体が失敗したとは限らず、最初の実測後に値を確定する。
+[pin-inventory.csv](pin-inventory.csv)は、ヘッダJ5/J6の全48ピンについてpackage pin、site、bank、VCCIO、回路図net、共有負荷、KAGURAでの用途を記録している。出典は手元の基板（シルク「3674」）に対応するSipeed公式回路図`Tang_nano_9K_3674_schematics.pdf`（2024-03-11、SHA256 `5e720b0d128dab277896290ca41bb290c5a533adf04b4c4baa4546844be8f3d8`）。比較に3672版回路図（SHA256 `71ccf1b7731589c8bc5b4c1dcf0c8906f52831785c703732d43a70f01ec574ec`）と外形図（2×24ピン、2.54mmピッチ、列間22.82mm）も参照した。
 
-36..39はTFカード系、31/32/33/34等はLCD系と共有するため、初版はTFカード未挿入・LCD未接続。HDMIとRGB LCDも共有するので同時使用しない。BL702/JTAG/Flash/MODE/DONEは転用しない。1.8V側のLED/button/header pinを3.3V CPUへ混ぜない。
+- 基板版: シルク「3674」、Rev表記なし。3672版との違いはBL702側（JTAGのI/O電源が1.8V、TCKは分圧）で、FPGAのピン割当て、J5/J6、HDMI回路は同じ。chip IDは`0x1100481B`（GW1NR-9C）。
+- J6-18は+5V（USB VBUS）、J6-23はGND、J6-24は+3V3。J6-19〜22はPIN48/49/31/32。
+- ヘッダの向き: 両ヘッダともUSB側が1番、HDMI側が24番（USB側の端がJ5=38・J6=63、HDMI側の端がJ5=69・J6=3V3）。
+- HDMI出力はAC結合（100nF）＋送信側の49.9Ω pull-up（3.3V）。HDMI connectorの+5V（pin 18）はダイオード経由で供給し、HPDはFPGAに接続されていない。
+- オンボードSPI Flash（U3、PUYA P25Q32U、32Mbit）: CS=60、SCLK=59、SI=61、SO=62（bank 1、3.3V）。WP/IO2とRESET/IO3はFPGAへ配線されず4.7kΩでpull-up。
 
-## Pin inventory（回路図照合、2026-10-23）
-
-[pin-inventory.csv](pin-inventory.csv)に、ヘッダJ5/J6の全48ピンについてpackage pin、site、bank、VCCIO、回路図net、共有負荷、KAGURAでの用途を記録した。出典は手元の基板（シルク「3674」）に対応するSipeed公式回路図`Tang_nano_9K_3674_schematics.pdf`（2024-03-11、取得時SHA256 `5e720b0d128dab277896290ca41bb290c5a533adf04b4c4baa4546844be8f3d8`）。比較として3672版回路図（2021-09-22、SHA256 `71ccf1b7731589c8bc5b4c1dcf0c8906f52831785c703732d43a70f01ec574ec`）と外形図`Tang_Nano_9K_3672_size.pdf`（2×24ピン、2.54mmピッチ、列間22.82mm）も参照した。
-
-- 基板版: 実基板のシルクは「3674」でRev表記なし。3674回路図の改版履歴表は3672版と同じ6200〜6202（名称・シルクのみの変更）。3672版との違いはBL702側で、JTAGのI/O電源がVCCO3（1.8V）になり、TCKは3.6kΩ/4.7kΩ分圧でFPGAへ入る。FPGAのピン割当て、ヘッダJ5/J6、HDMI回路は両版で同じ。チップIDは`0x1100481B`（GW1NR-9C）を読出しで確認済み。
-- CPU候補18本はすべてJ5/J6に出ており、3.3VのBank 1/2。上表の割当てと一致した。共有負荷はRGB LCD（31〜35、40〜42）、TF card（36〜39）、SPI LCD（48）で、初版はTF card未挿入・LCD未接続を条件とする。
-- **J5-23/24とJ6-12〜17はHDMIのTMDS信号**がそのまま出ている。何も接続しない（stubになり信号品質を損なう）。
-- J6-2〜9はBank 3の1.8V。3.3VのCPUへ接続しない。
-- J6-18は+5V（USB VBUS）、J6-23はGND、J6-24は+3V3。J6-19〜22はPIN48/49/31/32（当初の読み取りで1つずれていたものを、3674回路図と実基板の確認で訂正）。
-- ヘッダの向き: 実基板のシルクで、USB側の端がJ5=38・J6=63、HDMI側の端がJ5=69・J6=3V3。両ヘッダともUSB側が1番、HDMI側が24番で、回路図の割当てと一致した。
-- HDMI出力はAC結合（100nF）＋送信側の49.9Ω pull-up（3.3V）の構成で、HDMI connectorの+5V（pin 18）はダイオード経由で供給、HPDはFPGAに接続されていない。
-
-型番・基板版が異なる場合はCST生成前に停止する。未確認のpinを推測でCSTへ追加しない。
-
-## PSRAMとHDMIのPLL共用評価
-
-`kagura_hyperram_hdmi_top.sv`はsystem PLLの54MHz CLKOUT/67.5° CLKOUTPを使い、die 0全4MiBのUART memtestとHDMIカラーバー・48kHzテスト音を同時実行する。`tools/build-gowin-hyperram-hdmi.tcl 480|720`でビルドする（作業ディレクトリはモード別に分ける）。UART TXはpin 17、115200 8N1。LED下位4本はmemtestのinit/clean/ever-fail/pass、上位2本はHDMI underflow/overflowを示す。
-
-2026-10-25に両モードでPLL 2個・STA setup/hold違反0、各64連続passエラー0、ユーザーによる映像・音声正常を確認した。720pの既存OSER10 reset例外と、外部PSRAM端子タイミングのSTA範囲には注意する。数値・制約・再現手順は[PSRAM/PCM記録](../../docs/psram-pcm.md)を参照。本体rendererやPCM再生を統合した構成ではない。
+型番・基板版が異なる場合はCSTを使う前に照合する。未確認のピンを推測でCSTへ追加しない。

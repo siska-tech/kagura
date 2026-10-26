@@ -5,7 +5,7 @@
 # Defaults build the flashable HDMI+audio
 # colour-bar image; stress keeps all TMDS encoder logic for P1-05 measurement.
 # A 720 suffix (not for dvi) builds the 16:9 mode: 1280x720p60, VIC4, 320x180
-# logical screen (docs/wide-mode.md).
+# logical screen (docs/video.md).
 set root [file normalize [file join [file dirname [info script]] ..]]
 set build_dir [pwd]
 if {[info exists ::env(KAGURA_BUILD_DIR)]} {
@@ -125,18 +125,16 @@ set_option -top_module $top
 set name [dict get {hdmi kagura_phase1 dvi kagura_phase1_dvi phase2 kagura_phase2 phase2boot kagura_phase2boot bootprobe kagura_boot_probe magicprobe kagura_flash_magic_probe demo kagura_demo spi kagura_spi qspi kagura_qspi spipsram kagura_spi_psram qspipsram kagura_qspi_psram} $base]
 if {$wide} { set name [expr {$base eq "hdmi" ? "kagura_hdmi720" : "${name}720"}] }
 set_option -output_base_name $name
-# Integrated builds are placement-sensitive even at 54MHz: option 1 improves
-# every measured configuration and raises the minimum setup slack from 0.063ns
-# to 0.130ns (docs/timing.md).  Keep both stages explicit and reproducible.
+# Integrated builds are placement-sensitive even at 54MHz. Keep both stages
+# explicit and reproducible; measured margins are in docs/validation-status.md.
 set_option -place_option 1
 set_option -route_option 1
-# phase2boot720/demo720: the raster scroll table moved the upstream
-# packet_assembler path (pixel74) to about -1.0/-0.56ns with option 1; option 0
-# gives +0.16/+0.02ns.
-if {$mode in {phase2boot720 demo720}} { set_option -place_option 0 }
-# qspipsram720 remains the densest 720p build. Route option 2 keeps its pixel
-# paths short; the PSRAM CK-enable crossing is handled structurally in the PHY.
-if {$mode in {phase2boot720 qspipsram720}} { set_option -route_option 2 }
+# phase2boot720 retains its placement exception. After shortening packet-start
+# and VRAM paths, demo720 meets the development margin with default option 1.
+if {$mode eq "phase2boot720"} { set_option -place_option 0 }
+# Route option 2 keeps qspipsram720's pixel paths and spipsram's EXT read mux
+# within the development margin. PSRAM CK-enable CDC is handled in the PHY.
+if {$mode in {phase2boot720 qspipsram720 spipsram}} { set_option -route_option 2 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }

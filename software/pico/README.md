@@ -2,7 +2,7 @@
 
 Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstreamを操作する診断firmwareとVRAM uploader。[ホスト仕様](../../docs/host-interface.md)のトランザクションを、PIOで10MHz以下のmode 0として実装する。レジスタ定数は生成ヘッダ[`kagura_regs.h`](../include/kagura_regs.h)を使う。既定のboardは`pico`。Pico Wでも`-DPICO_BOARD=pico_w`で同じ配線のまま使える（無線機能とGP23〜25・29は使わない）。
 
-【未検証】実機での動作は未確認。下の手順で確認した結果を記録してから合格とする。
+SPI/QSPIとも5MHzで全診断に合格している（記録は「実機確認の手順」）。PSRAM版のbitstreamでは`psram`・`copy`・`pcm`・`stress`も使える。
 
 ## 配線
 
@@ -21,7 +21,7 @@ Raspberry Pi Pico（RP2040、機材H1）からTang Nano 9KのSPI/QSPI bitstream�
 | /IRQ | GP10 | 14 | 49 | J6-20 | open drain。4.7kΩでPico 3V3(OUT)（pin 36）へpull-up |
 | GND | GND | 3, 8, 13 | GND | J6-23 | 2本以上 |
 
-SPI/QSPIで配線は同じ。bitstreamは`tools/build-nano9k.tcl spi`または`qspi`（[ビルドガイド](../../docs/build-and-test.md)）で作り、firmwareの`mode`を一致させる。
+SPI/QSPIで配線は同じ。bitstreamは`tools/build-nano9k.tcl spi`・`qspi`・`spipsram`・`qspipsram`（[ビルドガイド](../../docs/build-and-test.md)）で作り、firmwareの`mode`を一致させる。
 
 ### ブレッドボードで組む場合
 
@@ -80,7 +80,7 @@ QSPI 5MHz推奨。ABI 0.3の`RSCROLL`がないbitstreamでも動作するが、b
 
 ## 実機確認の手順
 
-[ロードマップ](../../docs/implementation-roadmap.md)M2の完了条件に対応する。各段階でオシロ（M1、2ch）を使い、SCKと対象信号の波形を確認する。
+外部ホスト接続の受入手順。各段階でオシロ（M1、2ch）を使い、SCKと対象信号の波形を確認する。
 
 1. SPI bitstreamで`div 10`（1MHz）→`diag`。合格したら`div 4`、`div 2`、`div 1`（10MHz）と上げ、合格した最大値を記録する。
 2. QSPI bitstreamで`mode qspi`にして同じ手順。

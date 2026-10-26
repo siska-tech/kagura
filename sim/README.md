@@ -1,35 +1,48 @@
-# Simulation layout
+# Simulation
 
-`tests/`にSystemVerilogの単体・統合・負荷テストを配置する。pixel/audioの参照モデル、busホストモデル、HDMI decoderもtestbench内に実装している。専用C++ harnessと`verilator/`・`reference/`ディレクトリは未実装。
+`tests/`にSystemVerilogの単体・統合試験を置く。参照モデル、busのホストモデル、HDMI decoder、PSRAMのmodelはtestbench内（共有部品は`support/`）に実装している。WSL/Linuxのrootから`bash tools/test-verilator.sh`で全試験（57件）を実行する。手順・環境変数は[ビルド・テスト](../docs/build-and-test.md#シミュレーション)。
 
-`tests/tb_phase1_sources.sv`は2frameの映像と746 stereo samplesを自己判定する。[ビルド・テスト手順](../docs/build-and-test.md)を参照。全体の検証範囲は[Verification Plan](../docs/verification-plan.md)、設計数値の検査は`tools/check-design.ps1`を参照。
+- 画像はPPM、音声はraw PCMとWAVとして`build/verilator/`へ保存する。期待値はRTLの出力からではなく、独立した参照モデルや仕様の値から作る。
+- 波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する。
+- 専用のC++ harness、`verilator/`・`reference/`ディレクトリは使っていない（空）。
 
-WSL/Linuxではリポジトリrootから`bash tools/test-verilator.sh`で基礎source、TMDS、CPU/SPI/QSPI bus、VRAM、背景・sprite、6ch音源、デモ、720p表示の試験を実行できる。Verilator、g++、make、python3が必要。SystemVerilog testbenchを`--binary --timing`で動かし、build/runログと画像・音声出力を`build/verilator/`へ保存する。波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する（[ビルドガイド](../docs/build-and-test.md)）。Verilator 5.032での検証結果は[検証状況](../docs/validation-status.md)と[16:9記録](../docs/wide-mode.md)を参照。
+## 試験一覧
 
-`tests/tb_register_abi.sv`は生成されたABI package（`spec/registers.json`由来）とregister RTLのreset値・access可否・EXT・音源indexを照合する。挙動の検査は従来の手書きテストが担う。
+| 分野 | 試験 | 内容 |
+|---|---|---|
+| HDMI | `tb_phase1_sources` | カラーバーと固定テスト音の2フレーム・746 stereo sample |
+| | `tb_tmds_channel`、`tb_tmds_pipeline` | TMDSの復号、上流encoderとの出力一致（60万symbol） |
+| | `tb_packet_assembler` | 上流assemblerとの毎cycle一致 |
+| | `tb_audio_packets` | 2048 stereo pairのBCH・metadata・ACR |
+| | `tb_hdmi_stream`、`tb_hdmi_stream720` | packet開始位置の毎pixel照合、TERC4から1024 stereo pair、ACR、AVI、平均48kHzを復号 |
+| | `tb_serializer_reset` | OSER10のlocal RESETを使わない接続（GSRは対象外） |
+| | `tb_async_fifo` | 深さ16の満杯、1024語の順序・wrap、非空reset、空pop |
+| メモリ | `tb_bsram_wrappers` | RAM wrapperのlatency、dual clock、byte RMWの不可分性 |
+| | `tb_vram_init` | 全RAMにpoisonを入れてから、command readで0を確認 |
+| host bus | `tb_w65c02_bus` | 要求回数、OE、read setup/hold、IRQ、reset解除、締切 |
+| | `tb_spi_bus`、`tb_qspi_bus` | 10MHzのホストモデル、BUSY、中断、競合（`tb_host_bus.sv`） |
+| | `tb_startup_cpu` | VDPの初期化とline 0の準備からCPU adapterのreset解除まで |
+| register・queue | `tb_vram_core` | 公開registerの検査、領域境界、拒否時の副作用、FILL/FENCE、満杯、順序 |
+| | `tb_register_abi` | 生成ABI packageとregister RTLのreset値・access可否 |
+| | `tb_fill_timing` | 最大速度の連続要求でFILLの範囲検査が間に合うこと |
+| | `tb_sprite_irq` | SPR_OVERFLOWの捕捉とclearの規則 |
+| 映像 | `tb_vdp_frame`、`tb_vdp_frame720` | 背景の4フレーム全画素比較、IRQ、RASTERの発生位置（先頭・中間・最終ライン・無効値）、systemだけのreset、描画cycle上限 |
+| | `tb_vdp_sprites`、`tb_vdp_sprites720` | spriteを含む全画素比較、優先順位、behind、16個/line超過 |
+| | `tb_raster_scroll`、`tb_raster_scroll720` | ラスタスクロール表の全画素比較 |
+| | `tb_sprite_selector`、`tb_sprite_composite` | sprite選択と合成の単体 |
+| デモ | `tb_demo_sequencer`、`tb_demo_sprites`、`tb_demo_raster` | sequencer＋VDPの画面 |
+| | `tb_demo_audio`、`tb_demo_music` | デモの映像・音声と曲 |
+| | `tb_demo_shooter`、`tb_demo_wall`、`tb_demo_flicker`、`tb_demo_shooter720`、`tb_demo_shooter_raster`、`tb_demo_shooter_raster720` | シューティング画面の全画素比較 |
+| 音源 | `tb_audio_synth` | 6chと整数モデルの34770 stereo sample比較、25 cycle/sample |
+| | `tb_audio_pcm_mix` | PCMのgain・snapshot・飽和、31 cycle/sample |
+| | `tb_audio_core` | 公開register経由のAUDIO_COMMIT順序、wave bank交換、拒否 |
+| PCM・PSRAM | `tb_pcm_prefetch`、`tb_pcm_timeout` | 先読みの範囲拒否・one-shot・loop・underrun、応答timeoutと遅延応答の破棄 |
+| | `tb_pcm_audio_path` | 可変latencyのmemoryからmixerまでの縦通し |
+| | `tb_psram_byte_bridge`、`tb_psram_read_cdc`、`tb_psram_arbiter` | byte→word変換とcache、CDC mailbox、host/PCMの仲裁と待ち時間 |
+| | `tb_hyperram_ctrl` | cycle単位のHyperRAM protocol checker（CS high時間、競合、mask、register空間） |
+| | `tb_psram_pcm_chain`、`tb_hyperram_pcm_chain`、`tb_hyperram_pcm_source` | controller（modelまたは実RTL）からPCM出力までの縦通し |
+| | `tb_psram_core` | CAPS b3の`kagura_core`を公開ABIで検査（upload、FILL、COPY、PCMのPREPARE〜DONE、一時停止、STOP、CLEAR） |
+| boot | `tb_flash_reader`、`tb_boot_image_check`、`tb_boot_window`、`tb_boot_controller`、`tb_romless_boot_system` | [ROM-less boot](../docs/romless-boot.md#検証) |
+| | `test_boot_image.py` | boot image生成器（Python） |
 
-同じrunnerで`tests/tb_async_fifo.sv`も実行する。depth16の満杯、1024語の順序・wrap、nonempty reset、empty popの検査が合格済み。
-
-`tests/tb_pcm_prefetch.sv`は可変応答遅延のメモリmodelを使い、PCM 2ch先読みの不正範囲拒否、one-shot、loop境界、補給停止時のunderrunを検査する。
-`tests/tb_pcm_timeout.sv`は初期prefill中の応答timeout、遅延応答の破棄、buffer非混入、drain後のSTARTからの再設定を検査する。
-`tests/tb_audio_pcm_mix.sv`はPCM 2chの独立L/R gain、commit snapshot、live sample入力、正負飽和、31/64cyclesを整数計算と照合する。既存`tb_audio_synth`はPCM無効時の6音源を25cyclesで照合する。
-`tests/tb_pcm_audio_path.sv`は可変レイテンシmemory model、prefetch、48kHz境界pulse、PCM mixerを接続し、signed sampleの順序とone-shot末尾sampleの保持を縦通しで検査する。
-`tests/tb_psram_byte_bridge.sv`は32bit controllerのbackpressure、4 byte lane、1-word cache hit、word/byte address変換と整列、calibration喪失時のerror応答を検査する。
-`tests/tb_psram_read_cdc.sv`は非同期なsystem/memory clock間で302 readを往復させ、要求backpressure、可変応答遅延、error、reset後の再利用を検査する。
-`tests/tb_psram_core.sv`はCAPS b3の`kagura_core`を実controllerとCAを独立にdecodeするmemory modelへ接続し、公開register経由でABI 0.4を検査する。PSRAM領域へのupload・READ_REQUEST読戻し・FILL・範囲外のINVALID_ADDRESS、byte maskによる隣接byteの保持、EXT 12/13、PCM registerのreset値と予約offset、PREPARE→READY→AUDIO_COMMITでの2ch開始、one-shotのDONE、領域上端を跨ぐloop、再生中のhost転送でUNDERRUNなし、ENABLE=0/1の一時停止と途切れない再開、STOP、CONFIG_ERRORとCLEAR、PREPARE直後のSTATUSが旧READYを返さないこと、終了したone-shotの再生を照合する。
-`tests/tb_psram_arbiter.sv`はランダムな所要時間の1-outstanding controller modelへPCM側(byte bridge型)とhost側(読み書き混在・mask付き)を同時に流し、応答の振り分け、data、両側の最大待ち時間を検査する。
-`tests/tb_hyperram_ctrl.sv`は`kagura_hyperram_ctrl`をcycle単位のHyperRAM protocol checkerへ接続し、reset pulse、CR0書込み、register空間のwrite/read、CAの各field、固定latency、CS high時間、バス競合、write mask、40 word乱数write/readの往復を検査する。PHYと実機timingは対象外で、実機値は`rtl/README.md`に記録している。
-`tests/tb_psram_pcm_chain.sv`は32bit PSRAM controller model、1-word cache、非同期CDC、prefetch、PCM mixerを縦通しし、8個のsigned sampleを2 controller commandsで左右へ出力することを検査する。
-
-`tests/tb_hyperram_pcm_chain.sv`は自作`kagura_hyperram_ctrl`を実際に接続した縦通し試験。lat_cycles=14、rd_latency=6、54MHzで、初期CR0設定、2 wordのupload、交互byte maskによる部分write、read pathのcache/CDC、prefetch、mixerを検査する。独立した期待値の8個のsigned sampleと左右出力が一致し、read command 2回、31cycles/sample、one-shot完了、underrun/errorなしを要求する。`support/kagura_hyperram_pair_model.sv`はCAを独立に復号するbyte-pair境界モデルであり、Gowin PHY、DDR端子、CK位相・RWDS captureの実機検証ではない。
-
-`tests/tb_flash_reader.sv`はROM-less boot向けの単線SPI readerをFlashモデルへ接続し、JEDEC ID、`03h`連続読出し、byte境界でのbackpressure、長さ0の拒否を検査する。
-`tests/tb_boot_image_check.sv`は32-byteヘッダ、配置範囲、entry、header/payload CRCを検査し、各拒否理由を確認する。
-`tests/tb_boot_window.sv`は6502スタブ、RESET/BRKベクタ、保護されたデータポートとpayload backpressureを検査する。
-`tests/tb_boot_controller.sv`はFlashモデルを使い、JEDEC確認、二重読出し、CRC検査、先読み、ブート窓までを統合検査する。
-`tests/tb_romless_boot_system.sv`はW65C02Sのスタブ命令モデル、SRAM/decodeモデル、Flashモデルを接続し、全payloadのコピー、entry到達、データポート消費数、KAGURA/SRAMの排他選択を検査する。
-`tests/test_boot_image.py`はホスト側のブートイメージ生成器について、header/payload CRC、padding、配置範囲の拒否を検査する。
-
-`tb_audio_packets`は2048 stereo pairsとBCH/metadata/ACR、`tb_hdmi_stream`はpartial-group reset後の1024 stereo pairsをTERC4から復号する。[統合評価条件](../docs/audio-packet-integration.md)を参照。
-
-`tb_serializer_reset`はGowin primitiveを機能stubへ置き換え、OSER10のlocal RESETが無効であることを検査する。chip GSRの生成源、専用配線、OSER10内部の動作はRTL simulation対象外で、P&Rの生成netlist監査と[実機試験表](../docs/p1-07-hardware-test.md)のreset反復で確認する。
+`support/kagura_hyperram_pair_model.sv`はCAを独立に復号するbyte-pair境界のPSRAM modelで、Gowin PHYやCKの位相、実機timingは対象外。

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// 32-byte register window, ABI 0.4 (docs/register-map.md). Every request is
+// 32-byte register window, ABI 0.5 (docs/register-map.md). Every request is
 // answered two system cycles after acceptance (the ABI allows two).
 // The address check is registered one cycle and the FILL range check two
 // cycles after VRAM_ADDR/LENGTH change (they do not fit in one 54MHz

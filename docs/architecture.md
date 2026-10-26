@@ -1,65 +1,127 @@
-# Architecture Specification / ABI 0.2
+# アーキテクチャ
 
-## 推奨v0.1
+KAGURA-9はTang Nano 9K（GW1NR-9C）1枚で動く、外部ホスト制御型のビデオ・サウンドチップである。ホストは32 byteのレジスタ窓だけを操作し、FPGAが背景・spriteの描画、6ch音源とPCM 2chの合成、HDMI（映像＋48kHz音声）出力を行う。
 
-【設計】320×240、640×480/60Hz出力、背景1面、64×32の8×8タイルマップ、4bppの1024パターン共用、16色×16パレット、RGB444。256スプライト登録・最大16個/ライン。6音源ch、48kHz/16bitステレオ。3.3V W65C02S/3.375MHz、32byte I/O窓、RDYなし。PSRAM/PCM/DMA/COPY/ビットマップ/ラスタ書換えはv0.1の対象外。
+## 仕様の概要
 
-上記は製品v0.1の設計ベースライン。現行ABIは0.2で、[16:9モード](wide-mode.md)では320×180を1280×720へ4倍表示する。実装・測定状況は[README](../README.md)から各検証記録を参照する。数値変更時はABIとCAPSを更新する。16個/ラインは[スケジュール](memory-access-schedule.md)の条件を満たす場合のみ採用し、不足時の8個版は別capabilityとして通知する。
+| 分野 | 仕様 |
+|---|---|
+| 画面 | 320×240を640×480p60へ2倍、または320×180を1280×720p60へ4倍（bitstreamで選択） |
+| 背景 | 1面、64×32 mapの8×8 tile、1024 pattern（4bpp）、scroll X/Y、ライン別scroll表8 entry |
+| sprite | 256個登録、16個/line、8×8または16×16、反転、behind、小番号優先 |
+| 色 | RGB444、16色×16 palette（256色） |
+| 音源 | pulse 3、noise 1、wavetable 2（各最大256 sample）。PSRAM版はsigned 8bit PCM 2chを追加 |
+| 音声出力 | 48kHz・16bitステレオ、HDMI audio sample packet |
+| メモリ | VRAM 約44KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCMとCOPYの元に使う |
+| ホスト | W65C02S（3.3V、3.375MHz、RDYなし）、またはSPI/QSPI（実測5MHz） |
+| ABI | 0.5（[レジスタ仕様](register-map.md)） |
 
-## モジュール境界
+## ブロック構成
 
 ```mermaid
 flowchart LR
-    CPU[W65C02S] --> BUS[bus/w65c02 adapter]
-    BUS --> REG[core/registers + IRQ]
-    REG --> FIFO[memory/ordered command queue]
-    FIFO --> MEM[VRAM + shadow tables]
-    MEM --> RENDER[vdp/line renderer]
-    RENDER --> LINE[RGB line banks A/B]
-    LINE --> SCALE[vdp/2x or 4x scaler]
-    SCALE --> HDMI[hdmi/protocol]
-    REG --> AUDIO[audio/6 voices + mixer]
-    AUDIO --> AFIFO[stereo async FIFO]
-    AFIFO --> HDMI
-    HDMI --> PHY[platform/OSER10 + differential output]
+    HOST[W65C02S / SPI・QSPI host] --> BUS[bus adapter]
+    BUS -->|req/rsp| REG[registers + IRQ]
+    REG --> Q[command queue 32]
+    Q --> ENG[command engine]
+    ENG --> VRAM[VRAM<br/>pattern/map/OAM/palette/wave]
+    ENG --> PSRAM[PSRAM controller<br/>CAPS b3]
+    VRAM --> REN[background + sprite renderer]
+    REN --> LB[line bank A/B]
+    LB --> DISP[line display<br/>2x / 4x]
+    DISP --> HDMI[HDMI protocol + TMDS]
+    REG --> AREG[audio registers]
+    AREG --> SYN[6ch + PCM mixer]
+    VRAM -->|wave| SYN
+    PSRAM -->|PCM prefetch| SYN
+    SYN --> AF[audio FIFO]
+    AF --> HDMI
+    HDMI --> SER[OSER10 x4 + ELVDS]
 ```
 
-| ブロック | クロック | 契約 |
+| ブロック | clock | 役割 | 主なRTL |
+|---|---|---|---|
+| bus adapter | system | 外部バスを1アクセス1要求の`req/rsp`へ変換 | `rtl/bus/` |
+| registers | system | 32 byte窓、EXT、IRQ、error、commandの検査と投入 | `rtl/core/kagura_registers.sv` |
+| command queue / engine | system | 64bit descriptor 32件を順に実行（WRITE/READ/FILL/FENCE/COMMIT/AUDIO_COMMIT/COPY） | `kagura_command_queue.sv`、`kagura_vram_engine.sv` |
+| VRAM | system | BSRAM群。描画器とcommandを時分割 | `rtl/vdp/kagura_vram.sv` |
+| renderer | system | 1論理ラインの背景→sprite合成 | `kagura_bg_renderer.sv`、`kagura_sprite_*.sv`、`kagura_raster_scroll.sv` |
+| line display | system→pixel | line bankの受渡し、拡大、VBlank・ラスタ通知 | `kagura_line_display.sv` |
+| audio | system（48kHz enable） | shadow/snapshot、6ch＋PCMの合成 | `rtl/audio/` |
+| PSRAM | system | HyperBus型controller、PHY、host/PCMの仲裁 | `rtl/memory/kagura_hyperram_*.sv`、`kagura_psram_*.sv` |
+| HDMI | pixel、serial | 音声packet、ACR、InfoFrame、TMDS、serializer | `rtl/hdmi/`、`rtl/platform/` |
+| boot | system | ROM-less boot（`phase2boot`のみ） | `rtl/boot/` |
+
+## clockとreset
+
+| domain | 周波数 | 生成 |
 |---|---|---|
-| CPU adapter | system 54MHz | 外部バスを1アクセス1要求に変換、上位層へCPU固有信号を渡さない |
-| register/IRQ/command | system | レジスタ副作用・受付順序を管理 |
-| VRAM/renderer | system | 1回の描画要求で1論理ラインを完成、所有権を返す |
-| line banks | A:system RW、B:pixel R | 2個のTDP RAM。所有権により同一bankの同時読書きを禁止 |
-| scaler/HDMI protocol | pixel 25.2MHz / 74.25MHz | 2×2 / 4×4ピクセル複製。RGB444各成分を17倍してRGB888化 |
-| audio | system、48kHz enable | サンプル単位の更新。低速fabric clockを増やさない |
-| audio FIFO | system→pixel | 32bit L/Rペアを不可分に送る |
-| serializer | pixel + 126MHz / 371.25MHz | プラットフォーム専用、LSB firstを検証。VIC4のreset例外は[timing](timing.md)を参照 |
+| reference | 27MHz | 基板の発振器（pin 52） |
+| system | 54MHz | PLL（27×2）。PSRAM版はCLKOUTP（67.5°）をPSRAMのCKに使う |
+| TMDS serial | 126MHz / 371.25MHz | video PLL（27×14/3、または27×55/4） |
+| pixel | 25.2MHz / 74.25MHz | serialのCLKDIV /5 |
+| CPU PHI2 | 3.375MHz | systemの16分周。registerから出力し、内部をPHI2でclockしない |
+| 音声sample | 48kHz | systemの1125分周のclock enable |
 
-## CPU非依存内部インターフェース
+systemとpixelは同じ発振器由来でも位相関係を仮定せず、CDCとして扱う（line要求・完了はtoggle＋保持payload、音声はGray pointerの非同期FIFO）。外部reset（S2、pin 4）またはPLLのlock喪失でchip GSRを直ちにassertし、両PLLのlock後に解除する。その後、pixel/systemの各domainが4段の同期器でresetを解除する。詳細は[クロック・リセット・CPUバス](timing.md)。
 
-`req_valid, req_ready, req_write, req_addr[4:0], req_wdata[7:0]`、`rsp_valid, rsp_ready, rsp_rdata[7:0], rsp_error`。
-system立上りのvalid&&readyでちょうど1回受付。validはreadyまでpayload固定。最大1未応答、応答は受付順、読書きとも応答あり。応答はreadyまで保持。CPU adapterは読出し結果をバス時間内に取得するため、レジスタ処理を最大2 system cyclesに制限する。VRAMアクセス自体はキュー経由の非同期操作とする。
+## CPU非依存インターフェース
 
-レジスタ要求のreadyはcommand組立中などに一時的に下がる。W65C02Sの1アクセス16 system cyclesの間隔ではRDYなしで処理できる設計とし、SPI/QSPI adapterは要求が受理されるまで保持する。キュー満杯等による投入拒否は`rsp_error`とsticky errorを返し、ホストはSTATUS/ERROR_CODEで検出する。将来のZ80/6809/RISC-V adapterもこの契約へ変換する。
+bus adapterとレジスタブロックの間は、CPUに依存しない次の信号で接続する。
 
-## 画素・スプライト規約
+```text
+req_valid, req_ready, req_write, req_addr[4:0], req_wdata[7:0]
+rsp_valid, rsp_ready, rsp_rdata[7:0], rsp_error
+```
 
-- パターンは行優先、1byteに左画素をbits7:4、右画素をbits3:0で格納。
-- 背景マップはlittle endian 16bit。bits9:0 tile、13:10 palette、14 H flip、15 V flip。
-- 背景画素0はBACKDROP色に置換し、背景不透明フラグを0にする。その他は`palette*16+pixel`。
-- スプライト画素0は透明。透明画素は優先順位の権利を取得しない。
-- スプライト同士は小さい登録番号を優先。先に最上位の不透明スプライトを決め、そのbehind属性と背景不透明を比較する。背景に隠れた上位スプライトの下から下位スプライトを透過表示しない。
-- behind=0なら背景の前、behind=1なら背景が画素0の時だけ表示。
-- 座標は符号付き10bit、-512..511。幅・高さ計算は11bit以上、画面範囲[0,319]×[0,LINES−1]（LINES=240または180）でクリップ。符号なしwrapは禁止。
-- 16×16は連続する4タイルを2×2配置。基底番号の下位2bitを無視し、base=tile&0x3FC。参照はbase+2*(localY/8)+localX/8。反転は16×16全体へ先に適用。
-- line selectionはenableかつYが重なることだけでカウント。Xが完全に画面外でも16個枠を消費する。17個目以降を描画せず、最初の超過をsticky記録。
+- system clockの立上りで`valid && ready`のとき1要求を受け付ける。validは受理されるまでpayloadを保持する。
+- 未応答は最大1件。応答は受付順で、readにもwriteにも返し、`rsp_ready`まで保持する。応答は受付から2 cycle後。
+- 直前のwriteの内部検査（address範囲、FILL範囲、ラスタ表、音源register）が反映されるまで、`req_ready`は数cycle下がる。W65C02Sの1アクセス16 cycleやSPI/QSPIのbyte間隔はこれより長い。
+- 拒否（queue満杯など）は`rsp_error`とsticky ERROR_CODEで返す。hostはSTATUS・ERROR_CODEで検出する。
 
-## 属性の更新とフレーム
+別のCPU（Z80、6809、8080型バス等）もこの契約へ変換するadapterを追加すれば接続できる。
 
-CPUはOAM/パレットのshadow領域を更新する。COMMITは順序付きコマンドで、先行書込み完了後、次のVBlank開始でshadow→activeをコピーする。コピー中は関連CPUメモリアクセスを止める。後続VRAMコマンドはCOMMIT完了まで進めない。小規模display/scroll/backdrop/raster設定はCOMMIT受付時にスナップショットする。
+## ビルド構成とCAPS
 
-COMMIT待ちは最大1件。active OAM/パレットはフレーム中不変。パターンと背景マップは単一バンクなので書換えのティアリングは防げない。必要な更新はVBlank中に行うか未使用タイルへ書いてマップを切り替える。全VRAMを二重化したとの保証はしない。
+`tools/build-nano9k.tcl <構成>`で選ぶ。`720`を付けると16:9版（dvi・bootprobe・magicprobeを除く）。
 
-VBlankは物理y=480（16:9版は720）のx=0でイベント発生。active更新とline0の先読みをVBlank内に完了する。ラスタIRQは比較値0..LINES−1（240または180）に対し最初の複製行y=SCALE*RASTER（SCALE=2または4）、x=0で1回。LINES..255は無効。IRQ自体は既に描画された当該ラインを変更できない。ラスタ更新のうちscrollだけは、ABI 0.3（CAPS b6）のライン別scrollテーブルとして実装した。ホストがIRQで書き換えるのではなく、COMMITのVBlankでactive化した最大8 entryを、背景のライン描画開始時にハードウェアが引く（[raster-scroll.md](raster-scroll.md)）。それ以外のラスタ更新は別ABIで定義する。
+| 構成 | 内容 | host | CAPS（480p / 720p） | 出力basename |
+|---|---|---|---|---|
+| `hdmi` | カラーバー＋左1kHz／右500Hz固定音 | なし | 窓なし | `kagura_phase1` / `kagura_hdmi720` |
+| `dvi` | 音声なしの比較用 | なし | 窓なし | `kagura_phase1_dvi` |
+| `demo` | 内蔵sequencerのシューティングデモ＋6ch演奏 | なし（内蔵） | 0x53 / 0x73 | `kagura_demo` |
+| `phase2` | VDP＋音源、W65C02S接続 | W65C02S | 0x53 / 0x73 | `kagura_phase2` |
+| `phase2boot` | `phase2`＋SPI FlashからのROM-less boot | W65C02S | 0x53 / 0x73 | `kagura_phase2boot` |
+| `spi` / `qspi` | VDP＋音源、SPI/QSPI接続 | SPI/QSPI | 0x53 / 0x73 | `kagura_spi` / `kagura_qspi` |
+| `spipsram` / `qspipsram` | 上記＋PSRAM・PCM 2ch・COPY | SPI/QSPI | 0x5B / 0x7B | `kagura_spi_psram` / `kagura_qspi_psram` |
+| `bootprobe` | Flash読出し・boot image検査だけ（LED表示） | なし | 窓なし | `kagura_boot_probe` |
+| `magicprobe` | FlashのJEDEC IDと0x100000の`K9BT`の読出し確認（LED表示） | なし | 窓なし | `kagura_flash_magic_probe` |
 
-期限超過時は未完成bankを表示しない。その論理ラインのSCALE個のコピー（2または4）を黒にし、LINE_UNDERRUNをセットする。line tagが一致しない古い完了通知は廃棄し、次の要求で再同期する。
+CAPSのbit: b0 HDMI_AUDIO、b1 WAVE、b3 PSRAM、b4 SPR16、b5 WIDE、b6 RSCROLL（b2 RDYは常に0）。W65C02S版にPSRAM構成はない。
+
+## LED
+
+LEDはactive low（`led_n[0]`がpin 10の基板LED1、`led_n[5]`がpin 16のLED6）。
+
+| LED | `hdmi` | `demo` | `phase2`・ホスト版 | `phase2boot` |
+|---|---|---|---|---|
+| 1 | reset解除 | reset解除 | reset解除 | boot ready |
+| 2 | mute | 表示frameで点滅 | adapter `late`（期限違反） | adapter `late` |
+| 3 | audio underflow | pattern/palette読戻し不一致 | audio underflow | boot error code b0 |
+| 4 | audio overflow | map不一致またはsprite 16個/line超過 | audio overflow | boot error |
+| 5 | system PLL lock | system PLL lock | system PLL lock | system PLL lock |
+| 6 | video PLL lock | video PLL lock | video PLL lock | video PLL lock |
+
+underflow・overflow・`late`はresetまで点灯を保持する。demoのLED4はsceneの編隊がline上限を超える区間で点灯するのが正常。`bootprobe`の表示は[ROM-less boot](romless-boot.md#bootprobe)。
+
+## ディレクトリ
+
+| path | 内容 |
+|---|---|
+| `rtl/` | 合成対象のRTL（[RTL一覧](../rtl/README.md)） |
+| `boards/tang-nano-9k/` | board top、CST、SDC、ピン一覧（[ボード資料](../boards/tang-nano-9k/README.md)） |
+| `sim/` | SystemVerilog testbenchと参照モデル（[sim](../sim/README.md)） |
+| `spec/` | レジスタ定義`registers.json`、設計予算`design-budget.json` |
+| `software/` | 生成ヘッダ、Pico host firmware、W65C02S用include |
+| `tools/` | ビルド・生成・検査・書込みのscript |
+| `third_party/` | 固定revisionのhdl-util/hdmi（[第三者IP](../THIRD_PARTY.md)） |

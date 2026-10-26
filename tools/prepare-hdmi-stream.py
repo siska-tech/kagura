@@ -40,6 +40,19 @@ replace_once('        tmds_channel #(.CN(i)) tmds_channel (', '        kagura_tm
 # Same output sequence without the counter-indexed bit mux in front of the BCH
 # update; checked against the upstream module by sim/tests/tb_packet_assembler.sv.
 replace_once('        packet_assembler packet_assembler (', '        kagura_packet_assembler packet_assembler (')
+# Predict the packet-start pulse one pixel ahead. The registered pulse is
+# consumed at exactly the original cx, but the range/modulo decode no longer
+# chains into the audio scheduler's count and packet-selection enables.
+# START_X=0 in both board modes, so reset cannot start inside a packet.
+replace_once('''        logic packet_enable;
+        assign packet_enable = data_island_period_instantaneous && 5'(cx + screen_width + 18) == 5'd0;
+''', '''        logic packet_enable = 0;
+        always_ff @(posedge clk_pixel)
+            if (reset) packet_enable <= 0;
+            else packet_enable <= num_packets_alongside > 0 &&
+                cx >= screen_width + 13 && cx < screen_width + 13 + num_packets_alongside * 32 &&
+                5'(cx + screen_width + 19) == 5'd0;
+''')
 # The guard/preamble line test from a register. cy is constant from cx 1 to the
 # end of the line (START_X is 0) and the test is used only at cx >= frame_width-10,
 # so the output is unchanged; cy no longer feeds these flags combinationally.

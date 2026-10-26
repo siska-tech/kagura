@@ -66,7 +66,7 @@ if {$source eq "pcm"} {
     set_option -output_base_name kagura_hyperram_pcm$mode
 }
 # 720p option 1 misses the system54 -> 67.5-degree PSRAM CK-enable setup
-# path; option 0 passes with the same phase constraint (see docs/psram-pcm.md).
+# path; option 0 passes with the same phase constraint (see docs/psram.md).
 set_option -place_option [expr {$wide ? 0 : 1}]
 set_option -route_option 1
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }

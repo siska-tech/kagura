@@ -52,6 +52,15 @@ module tb_hdmi_stream_core #(parameter integer VIC=1);
         end
     end
     always @(negedge pix) begin
+        // Check the packet-start edge against the protocol coordinates,
+        // independently of the registered look-ahead implementation. This
+        // catches a one-pixel shift even if complete packets still decode.
+        if(!reset && dut.protocol.true_hdmi_output.packet_enable !==
+            (dut.protocol.cx >= dut.protocol.screen_width+14 &&
+             dut.protocol.cx < dut.protocol.screen_width+14+
+                 dut.protocol.true_hdmi_output.num_packets_alongside*32 &&
+             ((int'(dut.protocol.cx)-int'(dut.protocol.screen_width)-14)%32)==0))
+            $fatal(1,"packet start shifted at cx=%0d",dut.protocol.cx);
         if(reset) bit_index=0;
         else if(emitted_mode==3) begin
             for(j=0;j<3;j=j+1) nib[j]=decode(dut.protocol.tmds_internal[j]);
