@@ -29,4 +29,8 @@ module kagura_nano9k_clocks #(
         .CLKOUT(system_clk),.CLKOUTP(psram_ck),.LOCK(system_lock),.CLKIN(clk27),.CLKFB(1'b0),
         .RESET(~reset_n),.RESET_P(1'b0),.FBDSEL(6'b0),.IDSEL(6'b0),.ODSEL(6'b0),
         .PSDA(4'b0),.DUTYDA(4'b0),.FDLY(4'b0));
+    // The GSR source must not depend on a fabric register: GSR holds every
+    // fabric FF at INIT. PLL LOCK and the external reset pin remain live while
+    // GSR is asserted, so release cannot deadlock on its own synchronizer.
+    GSR chip_gsr(.GSRI(reset_n && pixel_lock && system_lock));
 endmodule

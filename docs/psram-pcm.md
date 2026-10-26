@@ -363,3 +363,18 @@ V1.9.12.04は`pixel`と`system54`を独立PLL間のクロックとして解析�
 `spipsram`のツール表示上のsetup violated endpoints 2は、チェックscriptの注記どおりOSER10 RESETのrecovery違反をsetup数に含むもので、通常setupとholdは正。480pの既知recoveryは依然として残る。720pはsetup/hold/recovery/removalの負slackがなく、開発目標+0.10nsも満たした。
 
 Verilator 5.032の全57試験は合格。B1へStandard版`qspipsram720`をSRAM一時書込みし、programmerのProgram and Verifyは終了code 0、ID `0x1100481B`。Pico H1をQSPI 2.5MHzで実行し、`diag`は全11項目PASS、PSRAM 2048 byteは0 mismatch（upload+FENCE 870.0KB/s）、COPY 2048 byteは0 mismatch、32767 byteは6.235ms（5255.3KB/s）、`pcm 20`は41回のdrum再発音と297,694 status pollのfault 0、melody inactive 0、ERROR_CODE 0でPASS。この作業で内蔵Flashは変更していない。映像・音声の目視/聴感確認とS2 reset後の再試験は未実施。
+
+#### OSER10 resetのchip GSR化
+
+Standard版480pで残ったOSER10 RESET recovery違反は、FCLKをIOLOGICへ直接配る一方、fabric FFのclock insertionが約2.6nsあり、lane別FFからRESETまでをFCLK半周期内へ収める必要があったことが原因だった。配置、FF edge、multicycle、局所max-delayでは4 laneすべてを安定して閉じられなかった。
+
+最初にFCLK同期器から専用GSRを駆動した案は、GSRがその同期器を含む全fabric FFをINITへ保持するため自己ロックし、実機でREADY=0となったので破棄した。最終案は`kagura_nano9k_clocks`で`reset_n && pixel_lock && system_lock`をfabric FFを介さずGSRへ直接入力する。4個のOSER10は`GSREN=true, LSREN=false`、RESET端子は0固定とし、旧lane FFの配置制約と720p専用false pathを削除した。GSR解除後は既存のpixel/system各4段同期器がdomain別resetを解除する。
+
+| EDA | 構成 | Logic | Register | BSRAM | setup | hold |
+|---|---|---:|---:|---:|---:|---:|
+| Standard V1.9.12.04 | spipsram 480p | 6495 | 5249 | 25/26 | +2.355ns | +0.539ns |
+| Standard V1.9.12.04 | qspipsram720 | 6477 | 5252 | 25/26 | +0.793ns | +0.382ns |
+| Education V1.9.11.03 | spipsram 480p | 6767 | 5133 | 25/26 | +0.369ns | +0.559ns |
+| Education V1.9.11.03 | qspipsram720 | 6686 | 5136 | 25/26 | +0.987ns | +0.552ns |
+
+4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。映像・音声の目視/聴感とS1/S2でのreset反復は未実施である。

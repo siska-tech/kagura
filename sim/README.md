@@ -32,4 +32,4 @@ WSL/Linuxではリポジトリrootから`bash tools/test-verilator.sh`で基礎s
 
 `tb_audio_packets`は2048 stereo pairsとBCH/metadata/ACR、`tb_hdmi_stream`はpartial-group reset後の1024 stereo pairsをTERC4から復号する。[統合評価条件](../docs/audio-packet-integration.md)を参照。
 
-`tb_serializer_reset`はGowin primitiveを機能stubへ置き換え、入力resetのFCLK位相を変えて非同期assert、serializer内の3 FCLK立上り後の解除、4 lane同時解除を検査する。OSER10端子の物理的なrecovery/removalと配線遅延は対象外で、[実機試験表](../docs/p1-07-hardware-test.md)の720p反復と区別する。
+`tb_serializer_reset`はGowin primitiveを機能stubへ置き換え、OSER10のlocal RESETが無効であることを検査する。chip GSRの生成源、専用配線、OSER10内部の動作はRTL simulation対象外で、P&Rの生成netlist監査と[実機試験表](../docs/p1-07-hardware-test.md)のreset反復で確認する。
