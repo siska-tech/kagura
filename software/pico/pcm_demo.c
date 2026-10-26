@@ -1,23 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 // ABI 0.4 PSRAM and PCM checks for a spipsram/qspipsram bitstream (CAPS b3).
 //   psram: random upload to the PSRAM region, FENCE, byte readback compare.
-//   pcm:   a 2-second looping melody on PCM 0 and a drum one-shot on PCM 1
-//          retriggered every 0.5 s with PREPARE + AUDIO_COMMIT, while the
+//   pcm:   a 2-second looping melody on PCM 0 and a recorded piano one-shot
+//          on PCM 1, retriggered every 2 s with PREPARE + AUDIO_COMMIT, while the
 //          status of both channels is watched for UNDERRUN and errors.
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
 #include "pcm_demo.h"
+#include "piano_c4_sample.h"
 
-#define MELODY_ADDR 0x400000u
+#define LOW_ADDR 0x400000u      // melody, or the note with PCM_DEMO_MOVE
+#define HIGH_ADDR 0x480000u
 #define MELODY_BYTES 96000u     // 2 s at 48 kHz
-#define DRUM_ADDR 0x480000u
-#define DRUM_BYTES 7200u        // 150 ms
+#define NOTE_BYTES PIANO_C4_SAMPLE_COUNT
 
 static uint8_t chunk[2048], back[2048];
 static uint32_t rng = 0x2468ace1u;
-static uint32_t next_rng(void) { rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; return rng; }
+static uint32_t next_rng_state(uint32_t *state) {
+    *state ^= *state << 13;
+    *state ^= *state >> 17;
+    *state ^= *state << 5;
+    return *state;
+}
+static uint32_t next_rng(void) { return next_rng_state(&rng); }
 
 static kh_status pcm_reg(unsigned p, uint8_t off, uint8_t value) {
     return kh_audio_write((uint8_t)KAGURA_AUDIO_PCM_INDEX(p, off), value);
@@ -136,7 +143,7 @@ kh_status kagura_psram_debug(bool on_read, uint8_t value) {
     return s;
 }
 
-// Melody: eight 250 ms notes, a decaying square-ish tone with a 2nd harmonic.
+// Eight 250 ms notes forming a two-second looping phrase.
 static int8_t melody_sample(uint32_t n) {
     static const float notes[8] = {523.25f, 659.25f, 783.99f, 1046.5f, 783.99f, 659.25f, 587.33f, 392.0f};
     uint32_t note = n / 12000u, t = n % 12000u;
@@ -144,14 +151,6 @@ static int8_t melody_sample(uint32_t n) {
     float env = expf(-x * 6.0f) * (t < 96u ? (float)t / 96.0f : 1.0f);
     float w = sinf(6.2831853f * f * x) + 0.35f * sinf(12.566371f * f * x);
     int v = (int)(env * w * 90.0f);
-    return (int8_t)(v > 127 ? 127 : v < -127 ? -127 : v);
-}
-
-static int8_t drum_sample(uint32_t n) {
-    float x = (float)n / 48000.0f;
-    float tone = sinf(6.2831853f * (160.0f - 600.0f * x) * x) * expf(-x * 25.0f);
-    float noise = ((int)(next_rng() & 0xffu) - 128) / 128.0f * expf(-x * 60.0f);
-    int v = (int)((tone * 0.8f + noise * 0.35f) * 120.0f);
     return (int8_t)(v > 127 ? 127 : v < -127 ? -127 : v);
 }
 
@@ -165,41 +164,88 @@ static kh_status upload_generated(uint32_t addr, uint32_t bytes, int8_t (*gen)(u
     return s;
 }
 
-kh_status kagura_pcm_demo(uint32_t seconds) {
+static int8_t zero_sample(uint32_t n) { (void)n; return 0; }
+
+static kh_status upload_bytes(uint32_t addr, const int8_t *data, uint32_t bytes) {
+    kh_status s = KH_OK;
+    for (uint32_t off = 0; off < bytes && s == KH_OK; off += sizeof chunk) {
+        uint32_t n = bytes - off < sizeof chunk ? bytes - off : sizeof chunk;
+        s = kh_vram_write(addr + off, (const uint8_t *)data + off, n);
+    }
+    return s;
+}
+
+kh_status kagura_pcm_demo(uint32_t seconds, unsigned flags, int master) {
     if (!have_psram()) return KH_BAD_ARGUMENT;
+    // MOVE exchanges the two PSRAM locations, to tell an address-dependent
+    // read fault from a property of the sample; SOLO leaves the melody off.
+    // NONOTE never starts the note channel; ZERO plays silence in its place.
+    const bool solo = flags & PCM_DEMO_SOLO, nonote = flags & PCM_DEMO_NONOTE, zero = flags & PCM_DEMO_ZERO;
+    const uint32_t MELODY_ADDR = flags & PCM_DEMO_MOVE ? HIGH_ADDR : LOW_ADDR;
+    const uint32_t NOTE_ADDR = flags & PCM_DEMO_MOVE ? LOW_ADDR : HIGH_ADDR;
     uint8_t st0 = 0, st1 = 0;
     uint64_t t0 = time_us_64();
     kh_status s = kh_clear_errors();
     if (s == KH_OK) s = pcm_reg(0, KAGURA_AUDIO_PCM_CMD, KAGURA_AUDIO_PCM_CMD_STOP | KAGURA_AUDIO_PCM_CMD_CLEAR);
     if (s == KH_OK) s = pcm_reg(1, KAGURA_AUDIO_PCM_CMD, KAGURA_AUDIO_PCM_CMD_STOP | KAGURA_AUDIO_PCM_CMD_CLEAR);
     if (s == KH_OK) s = upload_generated(MELODY_ADDR, MELODY_BYTES, melody_sample);
-    if (s == KH_OK) s = upload_generated(DRUM_ADDR, DRUM_BYTES, drum_sample);
+    if (s == KH_OK) s = zero ? upload_generated(NOTE_ADDR, NOTE_BYTES, zero_sample) : upload_bytes(NOTE_ADDR, piano_c4_sample, NOTE_BYTES);
     if (s == KH_OK) s = kh_fence(0x41, 500000);
     uint64_t t1 = time_us_64();
     if (s != KH_OK) { printf("FAIL pcm upload: %d ERROR_CODE 0x%02x\n", s, kh_last_error()); return s; }
-    printf("uploaded %u + %u bytes in %llu us (%.1f KB/s)\n", MELODY_BYTES, DRUM_BYTES,
-           (unsigned long long)(t1 - t0), (MELODY_BYTES + DRUM_BYTES) * 1000.0 / (double)(t1 - t0));
+    printf("uploaded %u + %u bytes in %llu us (%.1f KB/s)\n", MELODY_BYTES, NOTE_BYTES,
+           (unsigned long long)(t1 - t0), (MELODY_BYTES + NOTE_BYTES) * 1000.0 / (double)(t1 - t0));
     // Spot-check the upload through READ_REQUEST before playing it.
     s = kh_vram_read(MELODY_ADDR + 12345u, back, 64);
     for (uint32_t i = 0; s == KH_OK && i < 64; i++)
         if (back[i] != (uint8_t)melody_sample(12345u + i)) { printf("FAIL pcm readback at +%lu\n", (unsigned long)(12345u + i)); return KH_DEVICE_ERROR; }
+    // The recorded note is compared in full: a corrupted upload sounds like distortion.
+    uint32_t mismatches = 0, first_bad = 0;
+    uint8_t first_got = 0;
+    for (uint32_t off = 0; s == KH_OK && off < NOTE_BYTES; off += sizeof back) {
+        uint32_t n = NOTE_BYTES - off < sizeof back ? NOTE_BYTES - off : sizeof back;
+        s = kh_vram_read(NOTE_ADDR + off, back, n);
+        for (uint32_t i = 0; s == KH_OK && i < n; i++)
+            if (back[i] != (zero ? 0u : (uint8_t)piano_c4_sample[off + i]) && !mismatches++) { first_bad = off + i; first_got = back[i]; }
+    }
+    if (s != KH_OK) { printf("FAIL piano readback: %d ERROR_CODE 0x%02x\n", s, kh_last_error()); return s; }
+    if (mismatches) {
+        printf("FAIL piano readback: %lu/%u bytes differ, first at +%lu (got %02x expected %02x)\n",
+               (unsigned long)mismatches, NOTE_BYTES, (unsigned long)first_bad,
+               first_got, zero ? 0u : (unsigned)(uint8_t)piano_c4_sample[first_bad]);
+        return KH_DEVICE_ERROR;
+    }
+    printf("piano readback: %u bytes match\n", NOTE_BYTES);
 
-    s = pcm_range(0, MELODY_ADDR, MELODY_ADDR + MELODY_BYTES, MELODY_ADDR, true);
-    if (s == KH_OK) s = pcm_range(1, DRUM_ADDR, DRUM_ADDR + DRUM_BYTES, DRUM_ADDR, false);
-    if (s == KH_OK) s = pcm_prepare(0, &st0);
-    if (s == KH_OK) s = pcm_prepare(1, &st1);
-    if (s == KH_OK) s = pcm_reg(0, KAGURA_AUDIO_PCM_GAIN_L, 150);
-    if (s == KH_OK) s = pcm_reg(0, KAGURA_AUDIO_PCM_GAIN_R, 110);
-    if (s == KH_OK) s = pcm_reg(1, KAGURA_AUDIO_PCM_GAIN_L, 140);
-    if (s == KH_OK) s = pcm_reg(1, KAGURA_AUDIO_PCM_GAIN_R, 200);
-    if (s == KH_OK) s = pcm_reg(0, KAGURA_AUDIO_PCM_CONTROL, KAGURA_AUDIO_PCM_CONTROL_ENABLE | KAGURA_AUDIO_PCM_CONTROL_LOOP_ENABLE);
-    if (s == KH_OK) s = pcm_reg(1, KAGURA_AUDIO_PCM_CONTROL, KAGURA_AUDIO_PCM_CONTROL_ENABLE);
+    // swap puts the note on PCM 0 and the melody on PCM 1, to tell a channel
+    // fault from a property of the sample.
+    const unsigned mel = flags & PCM_DEMO_SWAP ? 1u : 0u, note = 1u - mel;
+    uint8_t *st_mel = mel ? &st1 : &st0, *st_note = note ? &st1 : &st0;
+    s = pcm_range(mel, MELODY_ADDR, MELODY_ADDR + MELODY_BYTES, MELODY_ADDR, true);
+    if (s == KH_OK) s = pcm_range(note, NOTE_ADDR, NOTE_ADDR + NOTE_BYTES, NOTE_ADDR, false);
+    if (s == KH_OK) s = pcm_prepare(mel, st_mel);
+    if (s == KH_OK) s = pcm_prepare(note, st_note);
+    const bool mute = flags & PCM_DEMO_MUTE;
+    if (s == KH_OK) s = pcm_reg(mel, KAGURA_AUDIO_PCM_GAIN_L, mute ? 0 : 150);
+    if (s == KH_OK) s = pcm_reg(mel, KAGURA_AUDIO_PCM_GAIN_R, mute ? 0 : 110);
+    const bool mute_note = flags & PCM_DEMO_MUTE_NOTE;
+    if (s == KH_OK) s = pcm_reg(note, KAGURA_AUDIO_PCM_GAIN_L, mute_note ? 0 : 128);
+    if (s == KH_OK) s = pcm_reg(note, KAGURA_AUDIO_PCM_GAIN_R, mute_note ? 0 : 128);
+    if (s == KH_OK) s = pcm_reg(mel, KAGURA_AUDIO_PCM_CONTROL, (solo ? 0 : KAGURA_AUDIO_PCM_CONTROL_ENABLE) | KAGURA_AUDIO_PCM_CONTROL_LOOP_ENABLE);
+    if (s == KH_OK) s = pcm_reg(note, KAGURA_AUDIO_PCM_CONTROL, nonote ? 0 : KAGURA_AUDIO_PCM_CONTROL_ENABLE);
+    if (s == KH_OK && master >= 0) s = kh_audio_write(KAGURA_AUDIO_MASTER_GAIN, (uint8_t)master);
+    uint8_t master_now = 0;
+    if (s == KH_OK) s = kh_audio_read(KAGURA_AUDIO_MASTER_GAIN, &master_now);
+    if (s == KH_OK) printf("MASTER_GAIN %u\n", master_now);
     if (s == KH_OK) s = kh_audio_commit(100000);
     if (s != KH_OK) { printf("FAIL pcm start: %d ERROR_CODE 0x%02x status %02x %02x\n", s, kh_last_error(), st0, st1); return s; }
 
     unsigned hits = 1, faults = 0, inactive = 0, polls = 0;
-    uint64_t end = time_us_64() + (uint64_t)(seconds ? seconds : 3600u) * 1000000u, next_hit = time_us_64() + 500000u;
-    printf("playing: melody loop on PCM 0, drum on PCM 1 every 0.5 s%s\n", seconds ? "" : " (any key stops)");
+    uint64_t end = time_us_64() + (uint64_t)(seconds ? seconds : 3600u) * 1000000u, next_hit = time_us_64() + 2000000u;
+    printf("playing: melody loop on PCM %u at 0x%06lx%s, %s on PCM %u at 0x%06lx%s every 2 s%s\n",
+           mel, (unsigned long)MELODY_ADDR, solo ? " (off)" : mute ? " (gain 0)" : "",
+           zero ? "silence" : "recorded piano C4", note, (unsigned long)NOTE_ADDR,
+           nonote ? " (off)" : mute_note ? " (gain 0)" : "", seconds ? "" : " (any key stops)");
     while (s == KH_OK && time_us_64() < end) {
         if (!seconds && getchar_timeout_us(0) != PICO_ERROR_TIMEOUT) break;
         s = pcm_status(0, &st0);
@@ -207,10 +253,10 @@ kh_status kagura_pcm_demo(uint32_t seconds) {
         polls++;
         const uint8_t bad = KAGURA_AUDIO_PCM_STATUS_UNDERRUN | KAGURA_AUDIO_PCM_STATUS_CONFIG_ERROR | KAGURA_AUDIO_PCM_STATUS_MEMORY_ERROR;
         if ((st0 | st1) & bad) { faults++; printf("  fault: status %02x %02x\n", st0, st1); break; }
-        if (!(st0 & KAGURA_AUDIO_PCM_STATUS_ACTIVE)) inactive++;
-        if (s == KH_OK && time_us_64() >= next_hit) {
-            next_hit += 500000u;
-            s = pcm_prepare(1, &st1);           // the finished one-shot replays from START
+        if (!solo && !(*st_mel & KAGURA_AUDIO_PCM_STATUS_ACTIVE)) inactive++;
+        if (s == KH_OK && !nonote && time_us_64() >= next_hit) {
+            next_hit += 2000000u;
+            s = pcm_prepare(note, st_note);     // the finished one-shot replays from START
             if (s == KH_OK) s = kh_audio_commit(100000);
             if (s == KH_OK) hits++;
         }
@@ -223,7 +269,7 @@ kh_status kagura_pcm_demo(uint32_t seconds) {
     pcm_reg(1, KAGURA_AUDIO_PCM_CONTROL, 0);
     kh_audio_commit(100000);
     bool ok = s == KH_OK && !faults && !inactive && !err;
-    printf("%s pcm: %u drum hits, %u status polls, %u faults, melody inactive %u, ERROR_CODE 0x%02x%s\n",
+    printf("%s pcm: %u piano notes, %u status polls, %u faults, melody inactive %u, ERROR_CODE 0x%02x%s\n",
            ok ? "PASS" : "FAIL", hits, polls, faults, inactive, err, s == KH_OK ? "" : " (driver error)");
     return ok ? KH_OK : (s != KH_OK ? s : KH_DEVICE_ERROR);
 }

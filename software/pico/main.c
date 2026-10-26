@@ -377,7 +377,10 @@ static void help(void) {
            "  c <addr> <len>       read VRAM back, replies CRC len us crc32\n"
            "  psram [len]          PSRAM upload/FENCE/readback compare (CAPS PSRAM, default 2048)\n"
            "  copy [len]           COMMAND COPY PSRAM -> pattern VRAM compare, and 32KiB copy timing\n"
-           "  pcm [seconds]       PCM loop + retriggered one-shot from PSRAM; default 10s, 0 runs until a key\n"
+           "  pcm|piano [s] [opts] PCM melody loop + retriggered piano from PSRAM; default 10s, 0 runs until a key\n"
+           "                       opts: swap (piano on PCM 0), move (exchange PSRAM locations), solo (melody off),\n"
+           "                       mute / mutep (melody / piano read but at gain 0), m=<n> (MASTER_GAIN 0..255)\n"
+           "                       nonote (piano channel never started), zero (silence in place of the piano)\n"
            "  clear                clear ERROR_CODE and IRQ.ERROR\n");
 }
 
@@ -416,10 +419,18 @@ int main(void) {
         else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
         else if (!strcmp(cmd, "pdbg")) kagura_psram_debug(a1 && !strcmp(a1, "r"), a2 ? (uint8_t)strtoul(a2, NULL, 16) : 0xc3u);
         else if (!strcmp(cmd, "copy")) kagura_copy_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
-        else if (!strcmp(cmd, "pcm")) {
+        else if (!strcmp(cmd, "pcm") || !strcmp(cmd, "piano")) {
             unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 10u;
             if (seconds > 600u) { printf("ERR seconds 0..600\n"); continue; }
-            kagura_pcm_demo(seconds);
+            unsigned flags = 0;
+            int master = -1;
+            for (char *f = a2; f; f = strtok(NULL, " ")) {
+                if (!strncmp(f, "m=", 2)) master = (int)(strtoul(f + 2, NULL, 0) & 0xffu);
+                flags |= !strcmp(f, "swap") ? PCM_DEMO_SWAP : !strcmp(f, "move") ? PCM_DEMO_MOVE : !strcmp(f, "solo") ? PCM_DEMO_SOLO :
+                         !strcmp(f, "mute") ? PCM_DEMO_MUTE : !strcmp(f, "mutep") ? PCM_DEMO_MUTE_NOTE :
+                         !strcmp(f, "nonote") ? PCM_DEMO_NONOTE : !strcmp(f, "zero") ? PCM_DEMO_ZERO : 0u;
+            }
+            kagura_pcm_demo(seconds, flags, master);
         }
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {
