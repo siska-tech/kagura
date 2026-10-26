@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Standalone HDMI/48kHz test. No CPU connection is needed for this bitstream.
 // VIDEO_ID_CODE 1: 640x480; 4: 1280x720 (the 16:9 physical-layer gate,
-// docs/wide-mode.md). tools/build-nano9k.tcl writes kagura_build_config.
+// docs/video.md). tools/build-nano9k.tcl writes kagura_build_config.
 module kagura_phase1_top #(
     parameter integer VIDEO_ID_CODE=kagura_build_config::VIDEO_ID_CODE
 ) (

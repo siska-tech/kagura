@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Raster scroll (docs/raster-scroll.md). Up to 8 entries {line, x, y}, strictly
+// Raster scroll (docs/video.md). Up to 8 entries {line, x, y}, strictly
 // ascending by line. An entry applies from its logical line on and stays in
 // effect until the next entry; before the first entry and at line 0 without a
 // hit the frame SCROLL_X/Y apply. The shadow table is copied on `load`

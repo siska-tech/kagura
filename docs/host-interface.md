@@ -1,120 +1,95 @@
-# Host Interface: SPI / QSPI(PIO) mode
+# ホストインターフェース: SPI / QSPI
 
-【設計】W65C02Sパラレルバスの代替として、32byteレジスタ窓をSPI（1bit）またはQSPI（4bit）で操作するホストインターフェース。ホストはRP2040/RP2350等のMCUを想定し、QSPIはPIOでの駆動を前提とする。[architecture.md](architecture.md)のCPU非依存`req/rsp`契約へ変換する別のフロントエンドであり、レジスタABI・コマンドキュー・VRAM以降は変更しない。
+W65C02Sのパラレルバスの代わりに、32 byteのレジスタ窓をSPI（1bit）またはQSPI（4bit）で操作する。ホストはRP2040/RP2350などのMCUを想定し、QSPIはPIOでの駆動を前提にする。`kagura_spi_adapter`（`LANES=1`/`4`）が[CPU非依存の`req/rsp`](architecture.md#cpu非依存インターフェース)へ変換するので、レジスタABI・queue・VRAM以降はW65C02S版と同じである。
 
-## 位置づけ
-
-- 1本の`kagura_spi_adapter`を`LANES=1`（SPI）/`LANES=4`（QSPI）でparameter化する。別ブロックにしない。
-- W65C02S adapterとは同じピンを共有するためbitstream単位で選択する。実行時の切替はしない。
-- W65C02S実機がなくても、Raspberry Pi Pico等からレジスタ・VRAM・音源を実機試験できることを第一の目的とする。CPU接続試験（Phase 2）の代わりにはならない。
+- 構成`spi`・`qspi`・`spipsram`・`qspipsram`（とその`720`版）で使う。W65C02S adapterとは同じピンを共有するため、bitstreamで選ぶ。
+- 参照実装はRaspberry Pi Pico用の[host firmware](../software/pico/README.md)。
 
 ## ピン
 
-W65C02S用の3.3Vピン（[pin-inventory.csv](../boards/tang-nano-9k/pin-inventory.csv)）を流用する。
+| 信号 | pin | 方向 | 備考 |
+|---|---:|---|---|
+| SCK | 35 | in | pull-down |
+| /CS | 42 | in | pull-up（ホストなしで非選択） |
+| IO0 (MOSI) | 28 | in、QSPIはinout | |
+| IO1 (MISO) | 29 | out、QSPIはinout | SPIでは/CS lowの間だけ駆動 |
+| IO2 | 30 | QSPIのみinout | SPIでは使わない（Hi-Z） |
+| IO3 | 33 | QSPIのみinout | SPIでは使わない（Hi-Z） |
+| /IRQ | 49 | open drain | 外部に3.3Vのpull-upが要る |
+| BUSY | 26 | out | queueの空きが少ない（下記） |
+| READY | 27 | out | VRAM・line bankの初期化と最初のline 0の準備が終わると1 |
 
-| 信号 | pin | 旧用途 | 方向 | 備考 |
-|---|---:|---|---|---|
-| SCK | 35 | D6 | in | GCLKT_4。後続の直接クロック化（後述）の余地を残す |
-| /CS | 42 | /CS | in | pull-up |
-| IO0 (MOSI) | 28 | D0 | in / QSPIはinout | |
-| IO1 (MISO) | 29 | D1 | out / QSPIはinout | SPIでは/CS low中だけ駆動 |
-| IO2 | 30 | D2 | QSPIのみinout | SPIでは未使用（Hi-Z） |
-| IO3 | 33 | D3 | QSPIのみinout | SPIでは未使用（Hi-Z） |
-| /IRQ | 49 | 未使用 | open-drain | 外部3.3V pull-up |
-| BUSY | 26 | RDY候補 | out | キュー空き不足（後述） |
-| READY | 27 | reset release | out | VRAM/line初期化と最初のline0完了で1 |
-
-pin 36〜39（J5-1〜4、TFカードのSCLK/MOSI/CS/MISO）はホスト用にFPGAから駆動せず、pull無しのHi-Zとする（`host.cst`の`sd_hiz`）。TFカードへはホストが直接アクセスする。pin 49はSPI LCDのRSと共有するため、SPI LCDは接続しない。
-
-READYはCPUのRESBを駆動しない。ホストはREADY=1を待つか、ID0/ID1とSTATUS.INIT_DONEをpollしてから操作する。
+すべて3.3VのBank 1/2。pin 36〜39（J5-1〜4、TFカードのSCLK/MOSI/CS/MISO）はFPGAから駆動せずpullなしのHi-Zにしてあり、ホストがTFカードを直接使える。pin 49はSPI LCDのRSと共有するので、SPI LCDは接続しない。READYはCPUのRESBを駆動しない。ホストはREADY=1を待つか、ID0/ID1とSTATUS.INIT_DONEをpollしてから操作する。
 
 ## 電気・タイミング
 
-【設計】SCK/CS/IOはsystem 54MHzで2FF同期してオーバーサンプリングする。SPI mode 0（CPOL=0, CPHA=0）、MSB first。
+SCK・/CS・IOはsystem 54MHzで2FF同期してオーバーサンプリングする。SPI mode 0（CPOL=0、CPHA=0）、MSB first。
 
 | 記号 | 規定 | 根拠 |
 |---|---|---|
-| f_SCK | ≤ 10MHz、duty 45–55% | 半周期 ≥ 2.7 system cycles |
-| t_CSS | /CS立下り→最初のSCK立上り ≥ 200ns | SPIはこの間にFIFO_STATUSを取得してMISOへ出す |
+| f_SCK | 設計上 ≤ 10MHz、duty 45–55% | 半周期 ≥ 2.7 system cycle |
+| t_CSS | /CS立下り→最初のSCK立上り ≥ 200ns | SPIはこの間にFIFO_STATUSを取得する |
 | t_CSH | 最後のSCK立下り→/CS立上り ≥ 20ns | |
-| t_CSW | /CS high時間 ≥ 200ns | 直前の書込み要求の受付を完了させる |
+| t_CSW | /CS high ≥ 200ns | 直前のwrite要求の受付を完了させる |
 | t_DIS | /CS立上り→FPGA出力Hi-Z ≤ 100ns | ホストはこの後にIOを駆動する |
 
-【算定】FPGAは各SCK立上りを検出した直後に次のbitを出力する（立下りではない）。立上りRからFPGA出力の変化まではR+37〜55.6ns＋出力遅延。10MHzでは次の立上りまで約34ns以上のsetup、ホスト側hold ≥ 37nsが残る。入力は立上り後最初に見えた同期サンプルを採用し、ホストのデータは前の立下りから次の立下りまで安定している必要がある。
+FPGAは各SCK立上りを検出した直後に次のbitを出す（立下りではない）。立上りから出力の変化までは37〜55.6ns＋出力遅延で、10MHzでは次の立上りまで約34ns以上のsetup、ホスト側hold ≥ 37nsが残る。入力は立上り後に最初に見えた同期sampleを使うので、ホストは前の立下りから次の立下りまでデータを保持する。
 
-【未検証】実機のpad遅延・配線・ホストの入力setupを含む10MHz動作はオシロとPico実機で確認する。不足時はf_SCKを下げる。
+【実測】ブレッドボード配線のPicoでは、SPI/QSPIとも5MHzで全診断に合格し、10MHzでは読戻しにbit化けが出た。この配線での運用値は5MHzとする。simulation（`tb_spi_bus`/`tb_qspi_bus`）では12.5MHzまで合格し、約15MHzで失敗する。
 
 ## トランザクション
 
-/CS lowの1区間が1トランザクション。1byte = SPIでは8 SCK、QSPIでは2 SCK（上位nibbleが先、IO3=MSB）。
+/CS lowの1区間が1トランザクション。1 byteはSPIで8 SCK、QSPIで2 SCK（上位nibbleが先、IO3がMSB）。
 
-**byte0（header）**
+**byte 0（header）**
 
 | bit | 意味 |
 |---|---|
 | 7 | 1=read、0=write |
-| 6 | INC: 1=dataごとにoffsetを+1（32でwrap）、0=同じoffsetを繰り返す |
-| 5 | 予約。1ならトランザクション全体を無視（要求を出さない、QSPIは駆動しない） |
+| 6 | INC: 1=data byteごとにoffsetを+1（32でwrap）、0=同じoffsetを繰り返す |
+| 5 | 予約。1ならトランザクション全体を無視する（要求を出さず、QSPIは駆動しない） |
 | 4:0 | レジスタoffset（$9F00窓と同じ） |
 
-SPIではheader送信中のMISOに、/CS立下り時点の**FIFO_STATUS**（b5:0空きentries、b7 FULL）を返す。QSPIでは返さない（必要ならoffset 0Fをreadする）。
+SPIではheaderの送信中、MISOに/CS立下り時点の**FIFO_STATUS**（b5:0 空きentry、b7 FULL）を返す。QSPIは返さない（必要ならoffset 0Fをreadする）。
 
-**write**: header後の各byteがそれぞれ1回の書込み要求になる。`header=0x07`（VRAM_WRITE、INC=0）でVRAMへ連続転送できる。完了したbyteだけが要求になる。
+**write**: header後の各byteがそれぞれ1回のwrite要求になる。`header=0x07`（VRAM_WRITE、INC=0）でVRAMへ連続転送できる。最後まで受け取ったbyteだけが要求になる。
 
-**read**: header、**count N**（1..255、0は256）、**dummy 1byte**、続いてdata N byte。countとdummyはホストが送る（dummyの値は無視）。
+**read**: header、**count N**（1..255、0は256）、**dummy 1 byte**、続いてdata N byte。countとdummyはホストが送る（dummyの値は無視）。
 
-- data byte kのレジスタ読出しは、**直前のbyte（dummyまたはdata k−1）の最後から2番目のchunkの立上り**で発行する。SPIではbit1、QSPIでは上位nibbleの立上り。以後に/CSを上げても、READ_RESULTのように副作用のあるレジスタは消費済みとなる。
-- 読出し要求はちょうどN回。N byte目以降に追加でclockしたbyteは0を返し、要求を出さない。countがないと最終byteの先読みでREAD_RESULTを1回余分に消費してしまうため、headerとdataの間にcountを置く。
-- QSPI: ホストはcount最後の立上り直後の立下りでIOを解放する。FPGAはdummyの最初の立上りを検出してからIOを駆動し、/CS high検出で解放する。
+- data byte kのレジスタ読出しは、直前のbyte（dummyまたはdata k−1）の最後から2番目のchunkの立上りで発行する（SPIはbit 1、QSPIは上位nibble）。その後に/CSを上げても、READ_RESULTのような副作用のあるレジスタは消費済みになる。
+- 読出し要求はちょうどN回。N byteを超えてclockしたbyteは0を返し、要求を出さない（countがないと最終byteの先読みでREAD_RESULTを1回余分に消費するため）。
+- QSPI: ホストはcountの最後の立上りの直後の立下りでIOを解放する。FPGAはdummyの最初の立上りを検出してからIOを駆動し、/CS highの検出で解放する。
 
-**中断**: byteの途中で/CSを上げると、そのbyteは捨てて要求を出さない。header途中の中断も同じ。
+**中断**: byteの途中で/CSを上げると、そのbyteを捨てて要求を出さない。headerの途中も同じ。
 
 ## フロー制御
 
-コマンドキュー（32 entries）はVRAM描画の空き枠でしか消費されない。SPI 10MHzは1byte=約43 system cycles、QSPI 10MHzは約10.8 cyclesで、VRAM_WRITEやFILLを連続投入するとキューが埋まる。満杯時の受付拒否は従来通りFIFO_FULLのsticky error/IRQ（[register-map.md](register-map.md)）で、addressは進まない。拒否を避ける手段を2つ用意する。
+queue（32 entry）は描画の空き時間にしか消費されない。SPI 10MHzの1 byteは約43 system cycle、QSPI 10MHzは約10.8 cycleで、VRAM_WRITEやFILLを連続投入するとqueueが埋まる。満杯のときの要求はFIFO_FULLとして拒否され、addressは進まない（[レジスタ仕様](register-map.md)）。拒否を避ける手段を2つ用意する。
 
-1. **headerのFIFO_STATUS（SPI）**: 空きentries数以下のキュー消費byte（VRAM_WRITE、READ_REQUEST、COMMAND）だけをそのトランザクションで送る。値は/CS立下り時点の下限。
-2. **BUSYピン**: `queue_free < 3`でhigh。ホストはキューを消費する各data byteの最初のSCK立上りより前にBUSY=0を確認する。PIOでは`wait 0 pin`で表現できる。マージンは「直前のbyteが未反映」と「送信中のbyte」の2個分に1個のガードを加えた値。【実測】試験ではマージン2で合格、1でFIFO_FULLが発生した。
+1. **headerのFIFO_STATUS（SPI）**: 空きentry数以下のqueue消費byte（VRAM_WRITE、READ_REQUEST、COMMAND）だけをそのトランザクションで送る。値は/CS立下り時点の下限。
+2. **BUSYピン**: queueの空きが3未満でhigh。ホストはqueueを消費する各data byteの最初のSCK立上りより前にBUSY=0を確認する（PIOでは`wait 0 pin`）。余裕は「直前のbyteが未反映」と「送信中のbyte」の2個に1個のガードを加えた値。
 
-adapter内部の要求は1件だけ保持する。前の要求が受け付けられないうちに次のbyteが完了した場合と、readデータが期限に間に合わなかった場合は、adapterのsticky `late`を立てる（LEDへ出す。レジスタABIには載せない）。
+adapter内の要求は1件だけ保持する。前の要求が受理される前に次のbyteが完了した場合と、readのデータが期限に間に合わなかった場合は、adapterのsticky `late`を立てる（LED2に出す。ABIには載せない）。
 
-## 規約上の注意
+## ホスト側の注意
 
-- 書込み要求の間隔はレジスタブロックの停止（コマンド投入後の約7 system cycles）より長い必要がある。QSPI 10MHzの10.8 cyclesはこれを満たすが余裕は小さい。f_SCKを上げる場合は再評価する。
-- RMW命令やindexed dummy readの問題はない。ただしINC=1のreadでREAD_RESULT(09)を跨ぐと結果を消費する。
-- VRAMの読出しは従来通りREAD_REQUEST→STATUS.READ_READY→READ_RESULT。ブロックreadは後続。
+- write要求の間隔は、command投入後にレジスタブロックが止まる約7 system cycleより長い必要がある。QSPI 10MHzの10.8 cycleは満たすが余裕は小さい。
+- INC=1のreadでREAD_RESULT（09）を跨ぐと結果を消費する。
+- VRAMの読出しはREAD_REQUEST→STATUS.READ_READY→READ_RESULTの順。block readはない。
+- 転送速度の実測（Pico、5MHz、32KiBのupload＋全域読戻し照合）はSPIで570.2KB/s、QSPIで1,023.1KB/s。PSRAMへのupload＋FENCEはQSPI 2.5MHzで約870KB/s。
 
 ## 検証
 
-`tb_spi_bus`/`tb_qspi_bus`（[sim/tests/tb_host_bus.sv](../sim/tests/tb_host_bus.sv)）は実コアとadapterを結合し、ホストモデルからf_SCK=10MHz・上記の最小t_CSS/t_CSWで以下を確認する。
+`tb_spi_bus`/`tb_qspi_bus`（`sim/tests/tb_host_bus.sv`）は実コアとadapterを結合し、ホストモデルからf_SCK=10MHz、最小のt_CSS/t_CSWで次を確認する。
 
-- ID/ABI/CAPSのINC read、レジスタwrite/read、ランダム混在とモデル比較
-- SPI headerのFIFO_STATUS
-- count超過分が0で要求を出さないこと
-- VRAM連続書込み64byteの読出し照合、長いFILL中のBUSY待ち、短いFILLの連続投入でBUSYが繰り返し切り替わる状態（約25回待機）でFIFO_FULLなし
-- byte途中/header途中の中断、予約bit header、要求数の一致
-- ホスト側のsetup/hold（5ns/5ns）、QSPIのIO駆動競合なし、/IRQ、`late`なし
+- ID/ABI/CAPSのINC read、レジスタのwrite/read、ランダムな混在とモデル比較
+- SPI headerのFIFO_STATUS、count超過分が0で要求を出さないこと
+- VRAM連続書込み64 byteの読戻し、長いFILL中のBUSY待ち、短いFILLの連続投入（BUSYの繰返し）でFIFO_FULLなし
+- byte途中・header途中の中断、予約bitのheader、要求数の一致
+- ホスト側のsetup/hold（5ns/5ns）、QSPIのIO駆動の競合なし、/IRQ、`late`なし
 
-【実測】2026-10-23、Verilator 5.032でSPI/QSPIとも合格。感度確認として、BUSYマージン1ではFIFO_FULL、SCK周期66ns（約15MHz）では読出し値の誤りで失敗し、80ns（12.5MHz）では合格した。10MHz規定に対するシミュレーション上の余裕であり、pad遅延を含む実機の余裕ではない。
+## 今後の候補
 
-```sh
-bash tools/test-verilator.sh
-```
-
-【実測】Gowin 1.9.11.03 EducationでSPI/QSPI両topのbitstream生成に成功。setup/hold違反0。
-
-| top | Logic | Register | BSRAM | 最小setup slack |
-|---|---:|---:|---:|---:|
-| SPI | 4376 | 3100 | 24/26 | +0.172ns（register decode） |
-| QSPI | 4358 | 3102 | 24/26 | +0.049ns（audio register） |
-| 参考: W65C02S top | 4327 | 3067 | 24/26 | — |
-
-上表はadapter導入時の測定。現行値は[M0基準記録](baseline.md)を参照。最小slackの経路はどちらも既存のコア内で、adapterではない。SCK/CS/IOは同期器入口までfalse path、出力のclock-to-outはP&Rのport timingで確認する。Pico用の診断firmwareとVRAM uploaderは[software/pico](../software/pico/README.md)。2026-10-25のPico実機試験ではSPI/QSPIとも5MHzで診断合格、10MHzでbit化けを確認した。5MHzの32KiB upload＋全域読戻し照合はSPI 570.2KB/s、QSPI 1,023.1KB/sで、両方式ともheader/data途中中断の副作用なし・直後の通信復帰、S2 reset・Pico USB再接続後の再合格を確認した。配線条件・残項目を含む詳細は[検証状況](validation-status.md)を参照。
-
-ボード用topは`boards/tang-nano-9k/kagura_host_top.sv`。`tools/build-nano9k.tcl spi`または`qspi`でビルドする。LANESはビルドディレクトリに生成するpackage `kagura_build_config`で与え（16:9版は`spi720`/`qspi720`）、stream部のinstance名を`kagura_phase1_top`と揃えてphase1.cstの配置制約を共有する。
-
-## 後続
-
-- **SCK直接クロック**: SCKをpin35（GCLK）からクロックとしてIOB FFで受け、async FIFOでsystemへ渡せば25MHz以上が狙える。CDCとSTA制約が増えるため、オーバーサンプリング版の実機合格後に評価する。
-- **8080型8bitパラレル**: /WR /RD strobeをオーバーサンプリングする同種のフロントエンドで実現できる。必要になった時点で別parameterまたは別moduleとして追加する。
-- **ブロックread / burst VRAM write**: 1byte=1 descriptorの効率はSPI帯域より低い。実測後にコマンド追加を検討する。追加する場合のABI版番号は互換性評価後に決める。
+- **SCKの直接clock化**: SCKをGCLK（pin 35）からclockとして受けてasync FIFOでsystemへ渡せば、25MHz以上を狙える。CDCとSTA制約が増える。
+- **8080型8bitパラレル**: /WR・/RD strobeをオーバーサンプリングする同種のadapterで実現できる。
+- **block read・burst write**: 1 byte=1 descriptorの効率はSPIの帯域より低い。必要になればABIの拡張として検討する。

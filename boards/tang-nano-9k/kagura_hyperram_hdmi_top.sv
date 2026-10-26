@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Shared system PLL: full die-0 UART memtest alongside HDMI bars/48kHz tone.
 // VIDEO_ID_CODE 1: 640x480; 4: 1280x720 (the 16:9 physical-layer gate,
-// docs/wide-mode.md). tools/build-gowin-hyperram-hdmi.tcl writes the config.
+// docs/video.md). tools/build-gowin-hyperram-hdmi.tcl writes the config.
 module kagura_hyperram_hdmi_top #(
     parameter integer VIDEO_ID_CODE=kagura_build_config::VIDEO_ID_CODE
 ) (

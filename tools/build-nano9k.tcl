@@ -5,7 +5,7 @@
 # Defaults build the flashable HDMI+audio
 # colour-bar image; stress keeps all TMDS encoder logic for P1-05 measurement.
 # A 720 suffix (not for dvi) builds the 16:9 mode: 1280x720p60, VIC4, 320x180
-# logical screen (docs/wide-mode.md).
+# logical screen (docs/video.md).
 set root [file normalize [file join [file dirname [info script]] ..]]
 set build_dir [pwd]
 if {[info exists ::env(KAGURA_BUILD_DIR)]} {

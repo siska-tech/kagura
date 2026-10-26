@@ -2,7 +2,7 @@
 // GW1NR-9C, 27MHz reference. Verify frequency/routing in P&R reports.
 // VIDEO_ID_CODE 1: 27*14/3 = 126MHz serial, 25.2MHz pixel.
 // VIDEO_ID_CODE 4: 27*55/4 = 371.25MHz serial (VCO 742.5MHz, PFD 6.75MHz),
-// 74.25MHz pixel (docs/wide-mode.md).
+// 74.25MHz pixel (docs/video.md).
 module kagura_nano9k_clocks #(
     parameter integer VIDEO_ID_CODE=1,
     parameter bit PSRAM_CK_ENABLE=0

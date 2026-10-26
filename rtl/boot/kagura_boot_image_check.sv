@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Streaming validator for the ROM-less boot image format documented in
-// docs/romless-boot-feasibility.md section 9.  Feed the 32-byte header followed
+// docs/romless-boot.md (image format).  Feed the 32-byte header followed
 // immediately by its payload.  No payload storage is required.
 module kagura_boot_image_check (
     input wire clk,

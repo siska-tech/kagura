@@ -1,25 +1,42 @@
-# Memory Map / BSRAM配置案
+# メモリマップ
 
-【設計】CPUは24bit論理アドレスを使用するがv0.1では下表の範囲だけを実装する（PSRAM領域はABI 0.4のCAPS b3版のみ）。上位アドレスを無視してaliasさせない。未実装領域はINVALID_ADDRESS、読出し結果は0。多byte値はlittle endian。
+ホストから見えるVRAM・PSRAMのaddressと、データ形式、BSRAMへの物理配置。
+
+## 公開address
+
+addressは24bit。下表の範囲だけを実装し、上位bitを無視したaliasはしない。表にない範囲へのアクセスはINVALID_ADDRESS（読出し結果は0）。多byte値はlittle endian。
 
 | VRAM address | 用途 | CPUアクセス |
 |---|---|---|
-| 000000–007FFF | 1024 patterns ×32byte | RW、表示と仲裁 |
-| 008000–008FFF | 64×32 map ×2byte | RW、表示と仲裁 |
-| 009400–0095FF | shadow palette、256×2byte | RW、上位4bitは0 |
-| 009600–0097FF | active palette | 非公開、アクセスエラー |
-| 009800–0099FF | shadow wave、2×256 signed 8bit | RW |
-| 009A00–009BFF | active wave | 非公開、アクセスエラー |
-| 00A000–00A7FF | shadow OAM、256×8byte | RW |
-| 00A800–00AFFF | active OAM | 非公開、アクセスエラー |
-| 400000–7FFFFF | PSRAM（die 0、4MiB）。CAPS b3版のみ | RW、queue経由。内容は電源投入時に不定で消去しない。CAPS b3のない版ではアクセスエラー |
-| その他 | 未実装 | アクセスエラー |
+| 000000–007FFF | pattern、1024個×32 byte | RW。描画と時分割 |
+| 008000–008FFF | 背景map、64×32 entry×2 byte | RW。描画と時分割 |
+| 009400–0095FF | shadow palette、256色×2 byte | RW。COMMITでactiveへ |
+| 009600–0097FF | active palette | 非公開（アクセスエラー） |
+| 009800–0099FF | shadow wave、ch4/ch5×256 byte | RW。AUDIO_COMMITでbank交換 |
+| 009A00–009BFF | active wave | 非公開（アクセスエラー） |
+| 00A000–00A7FF | shadow OAM、256 sprite×8 byte | RW。COMMITでactiveへ |
+| 00A800–00AFFF | active OAM | 非公開（アクセスエラー） |
+| 400000–7FFFFF | PSRAM（4MiB）。CAPS b3版のみ | RW。queue経由。電源投入時の内容は不定で、起動時に消去しない |
 
-パレットwordはbits11:8 R、7:4 G、3:0 B。CPUの低byte/高byte書込みはshadowだけに作用する。高byteのbits7:4は無視し、読出し0。
+009000–0093FFはABI 0.4までのOAMの位置で、現在は未実装。active領域はhostから読めず、COMMIT・AUDIO_COMMITでだけ変わる。
 
-009000–0093FFはABI 0.4までのOAM（64個）の位置で、ABI 0.5では未実装（アクセスエラー）。OAMは256個に増やした際、palette/waveの位置を変えずに済むよう00A000へ移した。
+## 画素と背景
 
-## スプライト8byteレコード
+- **pattern**: 8×8画素、4bpp、32 byte。行優先で1行4 byte、1 byteの上位nibble（bits7:4）が左の画素。pattern tはaddress `t*32`から。
+- **背景map**: 64×32 entry（512×256画素）。entry (col,row)はaddress `0x8000 + (row*64+col)*2`の16bit word。
+
+| map bit | 内容 |
+|---|---|
+| 9:0 | pattern番号 |
+| 13:10 | palette番号（0..15） |
+| 14 | 左右反転 |
+| 15 | 上下反転 |
+
+- **palette**: 256色、各16bit word。bits11:8 R、7:4 G、3:0 B（RGB444）。color index = palette番号×16 + 画素値。上位byteのbits7:4は書込み無視・読出し0。出力時は各4bitを2回並べてRGB888にする（例: 0xF→0xFF）。
+
+## sprite 8byteレコード
+
+sprite nのshadowはaddress `0xA000 + n*8`。
 
 | byte | 内容 |
 |---|---|
@@ -27,46 +44,50 @@
 | 1 | X bits9:8をbits1:0、残り予約0 |
 | 2 | Y bits7:0 |
 | 3 | Y bits9:8をbits1:0、bit2 enable、3 size16、4 Hflip、5 Vflip、6 behind、bit7予約0 |
-| 4 | tile bits7:0 |
-| 5 | tile bits9:8をbits1:0、paletteをbits5:2、bits7:6予約0 |
+| 4 | pattern番号 bits7:0 |
+| 5 | pattern番号 bits9:8をbits1:0、paletteをbits5:2、bits7:6予約0 |
 | 6 | 予約0 |
 | 7 | 予約0 |
 
-予約bitへの書込みは無視、読出し0。disabledの内容も保持する。COMMIT以外ではactiveへ影響しない。
+- X・Yは符号付き10bit（−512..511）。画面外の部分はclipする。
+- size16=0は8×8、1は16×16。16×16はpattern番号の下位2bitを無視した`base=tile&0x3FC`から連続する4 patternを、左上base、右上base+1、左下base+2、右下base+3に並べる。反転は16×16全体に掛かる。
+- 予約bitへの書込みは無視、読出しは0。disabledのspriteも内容を保持する。
+- 1ラインの選択に使うY・enable・size16をbyte 2–3（word 1）に集め、選択回路が1 sprite 1 wordで判定できるようにしている。
+- 表示規則（優先順位、behind、16個/line）は[映像仕様](video.md#sprite)。
 
-ライン選択に要るY・enable・size16をbyte 2–3（word 1）に集めたので、選択回路は1件1wordの読出しで判定できる（[スケジュール](memory-access-schedule.md)）。ABI 0.4まではフラグがbyte 6にあった。
+## wave
 
-## 物理割当て（合成前の具体案）
+009800–0098FFがch4、009900–0099FFがch5のshadow。各byteがsigned 8bitのsample。LEN_LOG2で使う長さを選び、短い長さでは先頭だけを使う（[音源仕様](audio-spec.md)）。
 
-9bit/18bitモードの余剰ビットを無理に使わず、8/16/32bitモードで数える。小領域を別RAMに分割するとブロック数が増えるため、同じ行にあるshadow/activeは1個の配列へ明示的に配置する。
+## PSRAM
+
+CAPS b3版のPSRAM領域は、GW1NR-9内蔵PSRAM（2 die）のdie 0の4MiB。VRAMと同じVRAM_WRITE・VRAM_READ_REQUEST・FILLの対象で、addressとINCの規則、範囲検査、queueでの順序保証も同じ。PCMの再生元とCOPYの複写元になる。詳細は[PSRAM](psram.md)。
+
+## 物理配置（BSRAM）
+
+Tang Nano 9KのGW1NR-9は18Kbit BSRAMを26個持つ。8/16/32bit幅で1個2048 byte相当として数える。同じ行にあるshadowとactiveは1個の配列へまとめて置く。
 
 | 用途 | 構成/個 | 個数 | 利用payload | 8/16/32bit構成の未使用容量 | ポート |
 |---|---|---:|---:|---:|---|
-| Pattern | 2048×8 | 16 | 32768 B | 0 B | SP、systemでCPUと描画を時分割 |
-| Map | 2048×8 | 2 | 4096 B | 0 B | SP、上位/下位byte laneを独立write |
-| OAM shadow＋active | 1024×16 | 2 | 4096 B | 0 B | SP、2048word（shadow 0..1023、active 1024..2047）、4word/sprite |
-| Palette shadow＋active | 1024×16 | 1 | 1024 B | 1024 B | SP、systemで色変換 |
-| Wave shadow＋active | 2048×8 | 1 | 1024 B | 1024 B | SP、audio優先の独立仲裁 |
-| Line A/B | 1024×16 | 2 | 1280 B | 2816 B | TDP、system RW/pixel R |
-| Command queue | 1024×16 | 1 | 256 B | 1792 B | SP、32 entries×64bit、4word逐次転送 |
-| Audio FIFO | 512×32 | 1 | 64 B | 1984 B | SDPB、16 stereo samples使用 |
+| Pattern | 2048×8 | 16 | 32768 B | 0 B | SP。描画とhostを時分割 |
+| Map | 2048×8 | 2 | 4096 B | 0 B | SP。下位/上位byte laneを独立に書く |
+| OAM shadow＋active | 1024×16 | 2 | 4096 B | 0 B | SP。2048 word（shadow 0..1023、active 1024..2047） |
+| Palette shadow＋active | 1024×16 | 1 | 1024 B | 1024 B | SP |
+| Wave shadow＋active | 2048×8 | 1 | 1024 B | 1024 B | SP。音源の読出しを優先 |
+| Line bank ×2 | 1024×16 | 2 | 1280 B | 2816 B | TDP。system書込み／pixel読出し |
+| Command queue | 1024×16 | 1 | 256 B | 1792 B | SP。32 entry×64bit |
+| Audio FIFO | 512×32 | 1 | 64 B | 1984 B | SDP。16 stereo sample |
 
-計26ブロック、利用44608 B、モード上の未使用8640 B。各ブロックのparity相当2048bitは別枠で未使用。物理使用量26×18432bitで、byte payloadの単純合計とは一致しない。256スプライト化でOAMが1→2個になり、予備ブロックはなくなった。実装の使用数はホスト版24→25/26、art ROMを含むデモ版25→26/26の見込みで、合成で確認する。
+計26ブロック、利用44608 B、モード上の未使用8640 B（`spec/design-budget.json`と`tools/check-design.ps1`の設計モデル）。実装では、合成器が小さいaudio FIFOを分散RAMへ置くことがあり、ホスト・CPU版は25/26、art ROMを持つdemo版は26/26を使う（[検証状況](validation-status.md#資源とタイミング)）。PCMの先読みbuffer（各ch 32 byte）はFF/分散RAMで、BSRAMを増やさない。
 
-Line word: bits11:0 RGB444、bit12 BG_SOLID、bit13 SPR_CLAIMED、15:14予約。pixel側はRGBだけ読む。スプライトのbehind判定と小番号優先のための2bitをRGBと同じRAMに保持し、別の画面幅フラグ配列を作らない。
+- line wordは`bits11:0 RGB444、bit12 BG_SOLID、bit13 SPR_CLAIMED、15:14予約`。pixel側はRGBだけを読み、2bitはsprite合成の優先判定に使う。
+- OAM・paletteへのbyte書込みは16bit wordの不可分なread-modify-write（最大3 cycle）で、描画の読出しを途中に挟まない。mapは2本のbyte laneで、RMWを使わない。
+- command descriptorは`opcode8 | address24 | length16 | data8 | flags8`の64bit。queueのwrite pointerは4 wordを書き終えてから進め、読出し側も4 wordを揃えてから実行する。
 
-commandの64bit descriptorは`opcode8 | address24 | length16 | data8 | flags8`の情報量。メモリ格納順はword0 bits15:0から。キューに公開するwrite pointerは4word全てを書いた後だけ進める。1件の取得も4wordを揃えてから実行。CPUバス16 system cycles/アクセスに対し、最大4word書込みと4word取出しを収容する。CPU向けFULLには組立中の予約entryも含める。
+## 起動時の初期化
 
-OAM/paletteの16bit RAM byte書込みは最大3 cycles（read/response/write）の不可分RMW。描画読出しとの間に割り込ませない。mapは実機修正後の2本のbyte lane構成でRMWを使わない。同一アドレスread-during-writeのデバイス依存値に依存しない。
+巨大なRAMに非同期resetは使わず、resetの解除後にsystem domainのFSMが通常のwrite portで全RAMを並列に0へ書く（2048 cycle）。pattern全16 bank、mapの両lane、OAMの全2048 word、paletteの全word、waveの全域が対象。queueとFIFOはpointerのresetで空にする。
 
-【実測】P1-06でOAM 1個版の25ブロックを推論wrapperで配置配線し、SP 22・SDPX9B 1・DPB 2の計25/26へmapされ、LUT/FF展開なし、system/pixel 2 clockのDPBでSTA違反0を確認した（[BSRAM評価](bsram-evaluation.md)）。C版DPBはread-before-writeを受け付けないため、line bankのsystem portは書込み中rdataを保持するnormal modeとした。全VDP実装時の配置・Fmaxは再評価する。音声FIFOのデータRAMはBSRAMでも、Gray pointer・同期器はFFを消費する。
+line bankは、pixel側の読出しが止まったことをsystem側で確認してから両bankを0にする。systemだけがresetされた場合も走査と衝突しない。消去が終わるまでpixel側は黒を出す。
 
-## 起動
-
-巨大RAM配列へ非同期リセットを記述しない。実装ではsystem FSMから通常の同期write portを使い、pattern全16bank、mapの両byte lane、OAMの全2048word、paletteのshadow/active/未使用word、waveの物理領域を並列に0へ書く。VRAM消去は2048 system cycle。キュー/FIFOはpointer resetで空にする。
-
-line bankも両方の512wordを0へ書く。pixel側のread gateが停止したことをsystem側へ同期してから消去を開始し、systemだけのreset時にも走査との衝突を防ぐ。VRAM/line消去完了はpixelへ2段同期し、それまではline要求・走査readを止め、RGBを黒に保つ。
-
-STATUS.INIT_DONEはVRAM消去完了で1。初期化中のVRAM_WRITE/READ_REQUEST/COMMANDはNOT_READYで拒否し、queueやアドレスを進めない。デモはINIT_DONEをpollしてから書き込む。CPU接続topはVRAM/line初期化、pixel domain ready、最初のline0準備を待ち、その後8回のPHI2パルスを送ってからCPU resetを解除する。
-
-paletteは黒、OAMはdisableが初期状態。6ch音源の起動muteは音源統合時の課題であり、現在の独立した固定テスト音を停止する機能ではない。
+結果として、paletteは全色黒、OAMは全sprite disable、mapとpatternは0、音源は全ch無効で起動する。STATUS.INIT_DONE=1まではVRAM操作をNOT_READYで拒否する（[レジスタ仕様](register-map.md#起動)）。

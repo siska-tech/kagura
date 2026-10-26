@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Shared PLL, PSRAM upload/read path, two PCM loops under host traffic and HDMI audio.
 // VIDEO_ID_CODE 1: 640x480; 4: 1280x720 (the 16:9 physical-layer gate,
-// docs/wide-mode.md). tools/build-gowin-hyperram-hdmi.tcl writes the config.
+// docs/video.md). tools/build-gowin-hyperram-hdmi.tcl writes the config.
 module kagura_hyperram_pcm_top #(
     parameter integer VIDEO_ID_CODE=kagura_build_config::VIDEO_ID_CODE
 ) (

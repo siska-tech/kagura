@@ -78,7 +78,7 @@ run_test tb_audio_packets rtl/memory/kagura_async_fifo.sv \
     third_party/hdl-util-hdmi/src/source_product_description_info_frame.sv \
     third_party/hdl-util-hdmi/src/packet_assembler.sv sim/tests/tb_audio_packets.sv
 python3 tools/prepare-hdmi-stream.py
-# The same stream at VIC1 (640x480) and VIC4 (1280x720, docs/wide-mode.md).
+# The same stream at VIC1 (640x480) and VIC4 (1280x720, docs/video.md).
 for stream_test in tb_hdmi_stream tb_hdmi_stream720; do
     run_test "$stream_test" build/generated/kagura_hdmi_stream.sv rtl/hdmi/kagura_tmds_channel.sv rtl/hdmi/kagura_packet_assembler.sv \
         rtl/memory/kagura_async_fifo.sv rtl/audio/kagura_audio_transport.sv \
@@ -116,7 +116,7 @@ run_test tb_audio_core "${CORE_SOURCES[@]}" sim/tests/tb_audio_core.sv
 run_test tb_psram_core "${CORE_SOURCES[@]}" sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_psram_core.sv
 run_test tb_vdp_frame "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv
-# tb_vdp_frame720/tb_vdp_sprites720: 320x180 on 1280x720 (docs/wide-mode.md).
+# tb_vdp_frame720/tb_vdp_sprites720: 320x180 on 1280x720 (docs/video.md).
 for vdp_test in tb_vdp_sprites tb_vdp_frame720 tb_vdp_sprites720 tb_raster_scroll tb_raster_scroll720; do
     run_test "$vdp_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
         rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv sim/tests/tb_vdp_sprites.sv

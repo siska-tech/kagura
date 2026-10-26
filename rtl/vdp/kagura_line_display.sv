@@ -10,7 +10,7 @@
 //   the first successful handover). Stale done tags are ignored.
 // Each logical pixel is shown SCALExSCALE; RGB444 is widened by nibble
 // duplication. VIDEO_ID_CODE 1: 640x480 in 800x525, SCALE 2, 240 lines;
-// 4: 1280x720 in 1650x750, SCALE 4, 180 lines (docs/wide-mode.md).
+// 4: 1280x720 in 1650x750, SCALE 4, 180 lines (docs/video.md).
 // The system side never writes the displayed bank and the pixel side never
 // reads the requested one, so the dual-clock banks never collide.
 module kagura_line_display #(
