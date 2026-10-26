@@ -14,7 +14,7 @@
 | | `tb_tmds_channel`、`tb_tmds_pipeline` | TMDSの復号、上流encoderとの出力一致（60万symbol） |
 | | `tb_packet_assembler` | 上流assemblerとの毎cycle一致 |
 | | `tb_audio_packets` | 2048 stereo pairのBCH・metadata・ACR |
-| | `tb_hdmi_stream`、`tb_hdmi_stream720` | TERC4から1024 stereo pair、ACR、AVI、平均48kHzを復号 |
+| | `tb_hdmi_stream`、`tb_hdmi_stream720` | packet開始位置の毎pixel照合、TERC4から1024 stereo pair、ACR、AVI、平均48kHzを復号 |
 | | `tb_serializer_reset` | OSER10のlocal RESETを使わない接続（GSRは対象外） |
 | | `tb_async_fifo` | 深さ16の満杯、1024語の順序・wrap、非空reset、空pop |
 | メモリ | `tb_bsram_wrappers` | RAM wrapperのlatency、dual clock、byte RMWの不可分性 |

@@ -1,6 +1,6 @@
 # 検証状況と既知の制約
 
-2026-10-27時点（`ae9ddcd`）の検証状況。simulation、P&R/STA、実機確認は別の証拠として扱い、片方の合格をもう片方の代わりにしない。
+2026-10-27時点（`a5a9ca2`に下記のタイミング改善を適用）の検証状況。simulation、P&R/STA、実機確認は別の証拠として扱い、片方の合格をもう片方の代わりにしない。
 
 ## 証拠の種類
 
@@ -35,21 +35,31 @@
 
 ## 資源とタイミング
 
-Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。下表はRASTER最終ラインの修正を含むRTLでの`run-baseline.ps1`全16構成の結果（Education V1.9.11.03、2026-10-27）。
+Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。下表はRASTER最終ラインの修正とタイミング改善を含むRTLでの`run-baseline.ps1`全16構成の結果（Education V1.9.11.03、2026-10-27）。P&R optionは`tools/build-nano9k.tcl`の既定値で、環境変数の上書きは使っていない。
 
 | 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
 |---|---:|---:|---:|---:|---:|
-| hdmi / hdmi720 | 834 / 850 | 665 / 667 | 0 | +7.026 / +2.684ns | +0.565 / +0.559ns |
+| hdmi / hdmi720 | 837 / 848 | 666 / 668 | 0 | +7.020 / +4.665ns | +0.708 / +0.562ns |
 | dvi | 93 | 55 | 0 | +33.104ns | +0.708ns |
-| phase2 / phase2720 | 5094 / 5058 | 4164 / 4165 | 25/26 | +3.156 / **+0.020ns** | +0.552 / +0.559ns |
-| phase2boot / phase2boot720 | 5999 / 5946 | 4542 / 4543 | 25/26 | +1.521 / +1.857ns | +0.557 / +0.557ns |
-| demo / demo720 | 6866 / 6888 | 4554 / 4555 | 26/26 | **+0.068 / +0.076ns** | +0.552 / +0.570ns |
-| spi / spi720 | 5117 / 5146 | 4197 / 4198 | 25/26 | +1.630 / **+0.035ns** | +0.412 / +0.566ns |
-| qspi / qspi720 | 5186 / 5107 | 4199 / 4200 | 25/26 | +0.236 / **+0.063ns** | +0.408 / +0.552ns |
-| spipsram | 6750 | 5148 | 25/26 | +0.752ns | +0.552ns |
-| qspipsram / qspipsram720 | 6723 / 6733 | 5150 / 5151 | 25/26 | +1.374 / +1.080ns | +0.552 / +0.552ns |
+| phase2 / phase2720 | 5072 / 5092 | 4165 / 4166 | 25/26 | +0.612 / +1.689ns | +0.552 / +0.552ns |
+| phase2boot / phase2boot720 | 5897 / 5886 | 4543 / 4544 | 25/26 | +2.087 / +1.929ns | +0.562 / +0.558ns |
+| demo / demo720 | 6874 / 6885 | 4555 / 4556 | 26/26 | +0.269 / +0.190ns | +0.561 / +0.555ns |
+| spi / spi720 | 5096 / 5150 | 4198 / 4199 | 25/26 | +1.487 / +1.186ns | +0.408 / +0.559ns |
+| qspi / qspi720 | 5143 / 5105 | 4200 / 4201 | 25/26 | +0.760 / +1.615ns | +0.408 / +0.555ns |
+| spipsram | 6719 | 5149 | 25/26 | +2.137ns | +0.552ns |
+| qspipsram / qspipsram720 | 6724 / 6666 | 5151 / 5152 | 25/26 | +1.103 / +1.479ns | +0.552 / +0.552ns |
 
-すべてsetup/hold違反0。太字の5構成は開発下限の+0.10nsに届いていない。最悪経路は、720p版がHDMI protocol側の`cx`からaudio_packetsのCE（pixel74）、demo系がVRAMのpattern RAMのCEへの経路で、どれもRASTERの修正で加えたlogicを通らない。修正前のRTLではphase2720 +0.182、spi720 +0.694、qspi720 +0.517、demo +0.147、demo720 +0.007nsで、配置の変動で既存の小さい余裕が表に出たものである。chip GSR化の後、Standard版の480p/720pにもrecovery/removalの負slackはない。デバイス総量はLUT4 8640、FF 6480、BSRAM 26、PLL 2で、PSRAM版のLogicは約76〜78%に達する。demo系はart ROMを含めBSRAMを使い切っている。
+全16構成でsetup/hold違反0、TNS=0、recovery/removalの負slackなし。すべて開発下限の+0.10nsを満たす。最小はdemo720の+0.190ns（demo sequencerの`count[5]`→`count[8]`）で、目標の+0.20nsには0.010ns届かないが、今回の受入値とする。改善前に下限未達だった5構成はphase2720 +0.020、spi720 +0.035、qspi720 +0.063、demo +0.068、demo720 +0.076nsで、RASTERの追加logicを通らない既存経路だった。
+
+構造的な対策は次の3点。Verilator 5.032の全57試験が合格し、HDMIのpacket開始位置は480p/720pで毎pixel照合した。
+
+- HDMIの`packet_enable`を1 pixel前に判定してregisterへ入れ、元と同じ開始位置を保ったまま`cx`のdecodeと音声packet制御の経路を分割する。
+- 16×16 spriteのtile番号は4の倍数へ整列済みなので、row/column offsetの加算をbit連結に置き換え、RAM bankのCE手前のcarry chainを除去する。
+- pattern RAMのCEは、grant済みrenderer読出しと排他的なcommandアクセスを直接ORし、重複したgrant muxを除去する。
+
+構造変更後はdemo720のplace optionを0から1へ戻した（0ではOAM RAMアドレスへの経路が−1.401ns）。spipsramはroute option 1でEXT読出しmuxの余裕が+0.064nsとなったため、2へ変更して+2.137nsを確保した。他の構成のP&R optionとSDCは変更していない。証跡は`reports/a5a9ca2-raster-timing/`に保存し、統合STA summaryには構成別の元manifestのpathを記録している。同じRTL・生成HDMI・制約のhashを照合して集計し、optionを変更した2構成は最終build scriptで再測定した。今回のタイミング改善後の実機試験は未実施。
+
+デバイス総量はLUT4 8640、FF 6480、BSRAM 26、PLL 2で、PSRAM版のLogicは約77〜78%に達する。demo系はart ROMを含めBSRAMを使い切っている。
 
 ## 既知の制約
 
@@ -76,7 +86,7 @@ Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純�
 |---|---|
 | HDMI互換性 | 2機種以上×2ケーブルで起動20回・抜挿10回・各1時間（[実機試験](hardware-test.md)） |
 | chip GSR版のreset反復 | S1/S2で720pのreset 20回ずつ |
-| タイミングの余裕 | 720pのaudio_packets（`cx`→CE）とVRAMのCE経路を構造的に短縮し、`run-baseline.ps1`の全16構成でWNS ≥ +0.10ns |
+| タイミングの余裕の維持 | 今後の変更でも全16構成でWNS ≥ +0.10nsを維持 |
 | W65C02S接続 | 外部回路の製作、実CPUでID読出し・VRAM・IRQ・音源、バス波形のsetup/hold実測 |
 | ROM-less boot | 実CPUでの起動（[ROM-less boot](romless-boot.md)） |
 | SPI/QSPIの高速化 | 配線の改善またはSCK直接clock化で10MHz以上 |

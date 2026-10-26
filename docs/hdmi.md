@@ -12,6 +12,7 @@ protocol部は固定revisionの[hdl-util/hdmi](https://github.com/hdl-util/hdmi/
 | `packet_picker` → `kagura_audio_packets` | pixel domainだけで動く固定48kHz/16bitステレオのscheduler。header/subはpacket_enableの端でregisterへ入れる |
 | `tmds_channel` → `kagura_tmds_channel` | 8b/10b encoderをpipeline化（74.25MHz用）。上流と一定の遅れで同じ符号列 |
 | `packet_assembler` → `kagura_packet_assembler` | counterで選ぶbit muxをshift registerにし、BCH更新の経路を短くする |
+| `packet_enable` | 開始位置を1 pixel前に判定してregisterへ入れ、元と同じcycleでschedulerを動かす。`cx`のdecodeから音声packet制御への組合せ経路を分割する |
 
 serializerは`rtl/platform/kagura_gowin_serializer.sv`（OSER10×4、10:1、LSB first）で、board topの`ELVDS_OBUF`から差動出力する。OSER10はchip GSRで4 lane同時にresetを解除する（[clockとreset](timing.md#reset)）。
 
@@ -42,7 +43,7 @@ packet帯域の目安（480p）: 音声packet 12000/s、ACR 1000/s、InfoFrame�
 | `tb_tmds_channel` / `tb_tmds_pipeline` | 上流encoderとの一致（pipeline版は60万symbol、全lane・全mode） |
 | `tb_packet_assembler` | 上流assemblerと毎cycleの出力一致 |
 | `tb_audio_packets` | 2048 stereo pairのBCH・metadata・ACRを復号して照合 |
-| `tb_hdmi_stream` / `tb_hdmi_stream720` | TMDS/TERC4を復号し、partial-group reset後の1024 stereo pair、ACR（CTS）、AVI（VIC・aspect）、平均48kHzを確認 |
+| `tb_hdmi_stream` / `tb_hdmi_stream720` | packet開始位置を毎pixel照合。TMDS/TERC4を復号し、partial-group reset後の1024 stereo pair、ACR（CTS）、AVI（VIC・aspect）、平均48kHzを確認 |
 | `tb_serializer_reset` | OSER10のlocal RESETを使わない接続であること（GSRとprimitive内部はsimulation対象外） |
 
 decoderはtestbench内の独立実装で、送信側の関数を写したものを唯一の基準にしない。

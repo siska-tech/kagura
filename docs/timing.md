@@ -73,6 +73,6 @@ W65C02S版のピンは[ボード資料](../boards/tang-nano-9k/README.md#cpu接�
 - 必須条件: 全構成でsetup/hold WNS ≥ 0、TNS = 0、未制約の同期経路なし。
 - 開発中の下限は全構成でWNS ≥ +0.10ns、目標は+0.20ns。下回る変更は、配置optionの探索だけで済ませず、経路を短くする設計変更を先に検討する。
 - `tools/run-baseline.ps1`は+0.10nsを既定のgateとして全構成をビルドし、構成ごとのmanifestを`reports/<revision>/<tool>/<構成>/`へ保存する。
-- P&Rの既定は`place_option 1`、`route_option 1`。`demo720`・`phase2boot720`はplace option 0、`phase2boot720`・`qspipsram720`はroute option 2を使う（`tools/build-nano9k.tcl`）。
+- P&Rの既定は`place_option 1`、`route_option 1`。`phase2boot720`はplace option 0、`phase2boot720`・`qspipsram720`・`spipsram`はroute option 2を使う（`tools/build-nano9k.tcl`）。`demo720`はpacket開始判定とVRAM経路の短縮後、place option 1に戻した。
 - reset入力・LED・TMDS出力には外部同期のI/O delayを設定しない（resetは非同期assert、LEDは状態表示、TMDSはOSER10から出力）。SPI/QSPIの入力は同期器の入口までfalse path。
 - 合成成功とP&Rのsetup/hold収束は別の証拠として扱う。各構成の最新値は[検証状況](validation-status.md#資源とタイミング)。

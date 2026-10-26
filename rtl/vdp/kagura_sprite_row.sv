@@ -38,7 +38,9 @@ module kagura_sprite_row (
     assign busy=state!=IDLE;
     assign selected_ready=state==IDLE && render_grant;
     wire [3:0] byte_count=size16 ? 4'd8 : 4'd4;
-    wire [9:0] fetch_tile=size16 ? tile+{8'b0,row_y[3],fetch_byte[2]} : tile;
+    // 16px tiles are aligned to four at capture, so the row/column offset
+    // replaces their low bits without a carry chain before the RAM bank CE.
+    wire [9:0] fetch_tile=size16 ? {tile[9:2],row_y[3],fetch_byte[2]} : tile;
     assign pattern_read=state==FETCH && render_grant && fetch_byte<byte_count;
     assign pattern_addr={fetch_tile,row_y[2:0],fetch_byte[1:0]};
     // Prepare the next pixel before PIX_READ, keeping the barrel select and
