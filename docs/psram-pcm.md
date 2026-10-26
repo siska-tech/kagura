@@ -17,7 +17,7 @@ PSRAMからの直接描画やフレームバッファ化は別段階とする。
 
 ## 現状と成立条件
 
-- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は24cycles/sample（PCM有効時30）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
+- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は25cycles/sample（PCM有効時31）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
 - 既存音声出力がPCMであることと、メモリから任意sampleを読むPCM音源があることは別。現在は後者が未実装。
 - [現行記録](validation-status.md)の`d501a1f`測定ではホスト版24/26、デモ25/26 BSRAM。最小setupはqspi +0.142ns、demo720 +0.130ns等。これは今回checkoutの再測定ではない。統合時に新しい基準を取得する。
 - `kagura_nano9k_clocks.sv`はvideo/systemでPLLを2個使用済み。PSRAM向けに3個目を追加できない。system用PLLの出力・分周・位相出力を共用できるか、選定IPとデバイスの制約を確認する。周波数や位相は未決定。system54MHzとvideo clockの維持を優先する。
@@ -377,4 +377,20 @@ Standard版480pで残ったOSER10 RESET recovery違反は、FCLKをIOLOGICへ直
 | Education V1.9.11.03 | spipsram 480p | 6767 | 5133 | 25/26 | +0.369ns | +0.559ns |
 | Education V1.9.11.03 | qspipsram720 | 6686 | 5136 | 25/26 | +0.987ns | +0.552ns |
 
-4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。S1で720p映像が正常で、PCM melodyが明瞭に聞こえることもユーザーが確認した。drumは強い音割れとして聞こえたが、melodyが正常で、生成波形のクリップは7200 sample中2 sample、mixerの推定peakも16bit飽和未満であるため、HDMI/PCM経路ではなくPicoデモのnoise成分と再trigger時の立上りを含む音色上の問題として分離する。S1/S2でのreset反復は未実施である。
+4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。S1で720p映像が正常で、PCM melodyが明瞭に聞こえることもユーザーが確認した。drumは強い音割れとして聞こえたが、melodyが正常で、生成波形のクリップは7200 sample中2 sample、mixerの推定peakも16bit飽和未満であるため、HDMI/PCM経路ではなくPicoデモのnoise成分と再trigger時の立上りを含む音色上の問題として分離する。S1/S2でのreset反復は未実施である。**【訂正】この切り分けは誤りだった。** 音割れは合成器の乗算器入力でチャンネル間の漏れが起きていたためで、音色の問題ではない（[合成器のチャンネル間漏れ](#合成器のチャンネル間漏れ2026-10-27)）。
+
+### 合成器のチャンネル間漏れ（2026-10-27）
+
+Picoデモのdrumを、CC0の実録ピアノC4（72000 byte、one-shot）へ置き換えたところ、ピアノがFM音源のような金属音になった。8bit化後のデータをPCで再生すると綺麗で、PSRAMの全量読戻しも一致した。Picoデモへ切り分け用のオプション（`software/pico/README.md`）を加え、`qspipsram720`の実機で次を確認した。
+
+| 試験 | 結果 | 分かったこと |
+|---|---|---|
+| `swap`（PCM 0/1入替え）、`move`（PSRAM配置入替え） | 歪みはピアノについてくる | チャンネル番号・アドレスに依存しない |
+| `solo`（ピアノのみ）、`m=1..16`（MASTER_GAIN） | 単独は綺麗、和は音量を下げても歪む | 振幅・飽和・TVではない |
+| `mute`（メロディをgain 0で読出し）、`zero`（ピアノの代わりに0）、`nonote` | 綺麗 | 2ch同時読出しでもデータは化けない |
+| `mutep`（ピアノをgain 0） | 金属音 | gain 0の音源が出力へ漏れる |
+| `swap mute`、`swap mutep` | gain 0にした側（メロディ／ピアノ）が聞こえる | 漏れは乗算器で起きる。PSRAM経路ではgain 0の音源は鳴らせない |
+
+`kagura_audio_synth`はL/R各1個の乗算器を全音源の「sample×gain」と「和×MASTER」で共用し、乗算器の入力を`state`から組合せ回路で選んでいた（`state==MASTER ? sum : voice_sample`、`state==MASTER ? master : gain`）。この経路はSTA上も合成器で最も厳しく（`state`→係数選択→乗算→`master_product`/`voice_product`、setup slack +1.0〜1.2ns）、実機では直前の音源のsampleが次の積へ混入していた。RTL、Gowin V1.9.12.04の配置配線後ネットリストの機能シミュレーション（ランダム3000 sample）、実HyperRAM controllerとmodelを含むcore全体の3.5秒再生（全pop照合）はいずれも誤りを示さず、論理ではなく実機のタイミングで生じていた。drumの音割れを初めて記録したのは、この経路に手を入れた`6b5a31d`以降の聴感確認である。
+
+修正では乗算器の入力を専用レジスタ（`operand_l/r`、`gain_l/r`）にし、使う1cycle前に読み込む。sampleはVOICE/WAVE、gainはPREP、和とMASTERは新設のLOADで読み込むため、乗算器の前にstateの復号が入らない。1 sampleは25 cycles（PCM有効時31）、上限1125に対して影響はない。Verilator 5.032の全57試験は合格した。Standard V1.9.12.04の`qspipsram720`はsetup/hold違反0（最悪setup +0.807ns、VDP CDC。hold +0.536ns）で、合成器の経路は最悪経路の一覧から外れた。B1へSRAM一時書込みし、`pcm 20`でピアノが綺麗に鳴ること、`mutep`・`swap mute`でgain 0の音源が聞こえないことをユーザーが確認した。内蔵Flashは変更していない。

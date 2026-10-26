@@ -40,7 +40,7 @@ Gowin Education V1.9.11.03、GW1NR-LV9QN88PC6/I5。LogicはGowin集計値であ�
 | qspi / qspi720 | 4399 / 4450 | 3270 / 3271 | 24/26 | +0.142ns / +0.192ns |
 | demo / demo720 | 6268 / 6253 | 3624 / 3625 | 25/26 | +0.634ns / +0.130ns |
 
-**OSER10 resetはchip GSRへ移行した**。`reset_n && pixel_lock && system_lock`をfabric FFを介さずGSRへ入力し、4個のOSER10を`GSREN=true`とする。旧720p recovery/removal false pathは削除済みで、Standard V1.9.12.04とEducation V1.9.11.03の480p/720pはいずれも負slackなし。GSR版720pはSRAM Program/Verify後にREADY、全自動診断、PSRAM/COPY/PCMが合格した。S1で映像正常とPCM melodyの明瞭な再生を確認した。drumの歪みはmelodyと伝送errorが正常なこと、および生成値・gainの数値監査からPicoデモ波形の音色問題として切り分けた。S1/S2でのreset反復は未実施。[タイミング仕様](timing.md)と[実機試験表](p1-07-hardware-test.md)を参照。
+**OSER10 resetはchip GSRへ移行した**。`reset_n && pixel_lock && system_lock`をfabric FFを介さずGSRへ入力し、4個のOSER10を`GSREN=true`とする。旧720p recovery/removal false pathは削除済みで、Standard V1.9.12.04とEducation V1.9.11.03の480p/720pはいずれも負slackなし。GSR版720pはSRAM Program/Verify後にREADY、全自動診断、PSRAM/COPY/PCMが合格した。S1で映像正常とPCM melodyの明瞭な再生を確認した。drumの歪みは当初Picoデモ波形の音色問題としたが誤りで、合成器の乗算器入力で直前の音源のsampleが混入していた。乗算器の入力をレジスタ化して修正し、実録ピアノとgain 0の漏れがないことを実機で確認した（[合成器のチャンネル間漏れ](psram-pcm.md#合成器のチャンネル間漏れ2026-10-27)）。S1/S2でのreset反復は未実施。[タイミング仕様](timing.md)と[実機試験表](p1-07-hardware-test.md)を参照。
 
 CPU/ホスト版は24 BSRAM、art ROMを含むデモは25 BSRAM（`443900a`以降。それ以前は26で予備なし）。設計予算25 BSRAMと実装使用量は区別する。単体の比較根拠は[HDMI評価](hdmi-synthesis-evaluation.md)、[音声packet評価](audio-packet-integration.md)、[BSRAM評価](bsram-evaluation.md)に残している。
 

@@ -125,7 +125,7 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 | 経路 | 変更 |
 |---|---|
 | packet_assembler（pixel74）counter → BCH parity | `rtl/hdmi/kagura_packet_assembler.sv`に置換。counterで選ぶbit muxをshift registerにし、counterの範囲判定を1cycle先にregisterで作る。`tb_packet_assembler`が原版と毎cycleの出力一致を検査 |
-| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし |
+| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし。その後、残った`state`→乗算器入力の選択経路で実機に音源間の漏れが出たため、乗算器入力もregister化した（25/31 cycles、[合成器のチャンネル間漏れ](psram-pcm.md#合成器のチャンネル間漏れ2026-10-27)） |
 | audio_transport（pixel74）tick_acc | 定数加算と比較を直列から並列に（`tick_acc < TICK_NUM`を前提に等価） |
 | hdmi guard/preamble（pixel74）cy → video_guard | cyの行判定をregisterで受ける。cyは行内で一定で、判定はcx≥frame_width−10でだけ使う |
 

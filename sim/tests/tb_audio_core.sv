@@ -78,7 +78,7 @@ module tb_audio_core;
         do access(0,0,0); while(!value[2]); access(0,9,0);
         if(value!=8'he0) $fatal(1,"shadow bank read");
         access(1,14,4); ar(8'h46,1); fence(3);
-        // Wait for the first post-apply sample to finish (24 cycles).
+        // Wait for the first post-apply sample to finish (25 cycles).
         repeat(30) @(negedge clk); sample_check(-512,1020,8);
         if(swaps!=2) $fatal(1,"second bank swap");
         // FIFO events clear independently from global ERROR_CODE / IRQ.
