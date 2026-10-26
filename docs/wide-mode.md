@@ -114,7 +114,7 @@ GW1NR-9 C6のOSER10とエミュレートLVDSで742.5Mbpsが少なくとも1台�
 - lane別fabric RESETとその配置制約を廃止し、外部resetと2個のPLL LOCKから直接生成するchip GSRでOSER10を同時解除する。
 - 16:9版だけ`place_option 1`を使う。既定配置ではdemo720がpixel74で−0.010nsだった。
 
-**OSER10 RESETの扱い（現行版）**: レーン別fabric RESETは配線が1〜5nsで変動し、Standard版では480pでもrecovery違反となった。現行版は外部resetとPLL LOCKをfabric FFを介さずchip GSRへ入れ、全fabricと4個のOSER10をPLL安定までINITへ保持する。旧720p false pathは削除した。Standard V1.9.12.04とEducation V1.9.11.03の480p/720pで負slackはない。GSR版720pのcold bootと自動診断は合格したが、S1/S2での映像・音声reset反復は未実施である。
+**OSER10 RESETの扱い（現行版）**: レーン別fabric RESETは配線が1〜5nsで変動し、Standard版では480pでもrecovery違反となった。現行版は外部resetとPLL LOCKをfabric FFを介さずchip GSRへ入れ、全fabricと4個のOSER10をPLL安定までINITへ保持する。旧720p false pathは削除した。Standard V1.9.12.04とEducation V1.9.11.03の480p/720pで負slackはない。GSR版720pのcold boot、自動診断、S1での映像とPCM melody再生は合格したが、S1/S2でのreset反復は未実施である。
 
 **検証**
 

@@ -377,4 +377,4 @@ Standard版480pで残ったOSER10 RESET recovery違反は、FCLKをIOLOGICへ直
 | Education V1.9.11.03 | spipsram 480p | 6767 | 5133 | 25/26 | +0.369ns | +0.559ns |
 | Education V1.9.11.03 | qspipsram720 | 6686 | 5136 | 25/26 | +0.987ns | +0.552ns |
 
-4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。映像・音声の目視/聴感とS1/S2でのreset反復は未実施である。
+4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。S1で720p映像が正常で、PCM melodyが明瞭に聞こえることもユーザーが確認した。drumは強い音割れとして聞こえたが、melodyが正常で、生成波形のクリップは7200 sample中2 sample、mixerの推定peakも16bit飽和未満であるため、HDMI/PCM経路ではなくPicoデモのnoise成分と再trigger時の立上りを含む音色上の問題として分離する。S1/S2でのreset反復は未実施である。
