@@ -48,6 +48,7 @@ module kagura_line_display #(
     localparam integer V_ACTIVE=VIDEO_ID_CODE==4 ? 720 : 480;
     localparam integer SHIFT=VIDEO_ID_CODE==4 ? 2 : 1;
     localparam integer SCALE=1<<SHIFT;
+    localparam integer LINES=V_ACTIVE>>SHIFT;
     // Line 0 is requested three physical lines before the frame starts.
     localparam integer LINE0_Y=V_TOTAL-3;
     // Scan decisions are made for the position two pixel clocks ahead
@@ -85,6 +86,9 @@ module kagura_line_display #(
     reg [7:0] req_line;
     reg display, blank, started;
     reg vblank_toggle, underrun_toggle, vblank_level;
+    // The last logical line starts without a request behind it; this toggle
+    // reports its start (line_start) the way a request reports the others.
+    reg last_toggle;
     (* ASYNC_REG="TRUE" *) reg [1:0] done_sync;
     reg done_seen;
     reg [7:0] done_tag_pix;
@@ -129,7 +133,7 @@ module kagura_line_display #(
     always @(posedge pix_clk)
         if(pix_reset) begin
             req_toggle<=0; req_bank<=1; req_line<=0; display<=0; blank<=1; started<=0;
-            vblank_toggle<=0; underrun_toggle<=0; vblank_level<=0;
+            vblank_toggle<=0; underrun_toggle<=0; vblank_level<=0; last_toggle<=0;
             done_sync<=0; done_seen<=0; done_tag_pix<=0; done_valid<=0;
         end else begin
             done_sync<={done_sync[0],done_toggle};
@@ -145,6 +149,7 @@ module kagura_line_display #(
                 req_toggle<=~req_toggle; req_bank<=~display; done_valid<=0;
                 req_line<=cy==10'(LINE0_Y) ? 8'd0 : 8'(cy>>SHIFT)+1'b1;
             end
+            if(memory_up_sync[1] && cx==0 && cy==10'(V_ACTIVE-SCALE)) last_toggle<=~last_toggle;
             display<=display_now; blank<=blank_now;
             if(swap) started<=1;
             if(line_begin && !swap && started && memory_up_sync[1]) underrun_toggle<=~underrun_toggle;
@@ -164,16 +169,16 @@ module kagura_line_display #(
     end
 
     // ---------------- system domain ----------------
-    (* ASYNC_REG="TRUE" *) reg [1:0] req_sync, vblank_sync, underrun_sync, live_sync;
-    reg req_seen, vblank_seen, underrun_seen;
+    (* ASYNC_REG="TRUE" *) reg [1:0] req_sync, vblank_sync, underrun_sync, live_sync, last_sync;
+    reg req_seen, vblank_seen, underrun_seen, last_seen;
     reg write_bank;
     reg done_toggle;
     reg [7:0] done_tag;
     assign vblank_live=live_sync[1];
     always @(posedge sys_clk)
         if(sys_reset) begin
-            req_sync<=0; vblank_sync<=0; underrun_sync<=0; live_sync<=0;
-            req_seen<=0; vblank_seen<=0; underrun_seen<=0; write_bank<=1;
+            req_sync<=0; vblank_sync<=0; underrun_sync<=0; live_sync<=0; last_sync<=0;
+            req_seen<=0; vblank_seen<=0; underrun_seen<=0; last_seen<=0; write_bank<=1;
             render_start<=0; render_line<=0; vblank_start<=0; underrun_event<=0;
             line_start<=0; shown_line<=0; done_toggle<=0; done_tag<=0;
         end else begin
@@ -181,6 +186,7 @@ module kagura_line_display #(
             vblank_sync<={vblank_sync[0],vblank_toggle};
             underrun_sync<={underrun_sync[0],underrun_toggle};
             live_sync<={live_sync[0],vblank_level};
+            last_sync<={last_sync[0],last_toggle};
             render_start<=0; vblank_start<=0; underrun_event<=0; line_start<=0;
             if(req_sync[1]!=req_seen) begin
                 // Payload has been stable since the toggle changed.
@@ -188,6 +194,8 @@ module kagura_line_display #(
                 // A request for line L>0 is made as line L-1 starts showing.
                 if(req_line!=0) begin line_start<=1; shown_line<=req_line-1'b1; end
             end
+            // A physical line apart from the last request, so never the same edge.
+            if(last_sync[1]!=last_seen) begin last_seen<=last_sync[1]; line_start<=1; shown_line<=8'(LINES-1); end
             if(vblank_sync[1]!=vblank_seen) begin vblank_seen<=vblank_sync[1]; vblank_start<=1; end
             if(underrun_sync[1]!=underrun_seen) begin underrun_seen<=underrun_sync[1]; underrun_event<=1; end
             if(render_done) begin done_toggle<=~done_toggle; done_tag<=render_line; end

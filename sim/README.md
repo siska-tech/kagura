@@ -26,7 +26,7 @@
 | | `tb_register_abi` | 生成ABI packageとregister RTLのreset値・access可否 |
 | | `tb_fill_timing` | 最大速度の連続要求でFILLの範囲検査が間に合うこと |
 | | `tb_sprite_irq` | SPR_OVERFLOWの捕捉とclearの規則 |
-| 映像 | `tb_vdp_frame`、`tb_vdp_frame720` | 背景の4フレーム全画素比較、IRQ、systemだけのreset、描画cycle上限 |
+| 映像 | `tb_vdp_frame`、`tb_vdp_frame720` | 背景の4フレーム全画素比較、IRQ、RASTERの発生位置（先頭・中間・最終ライン・無効値）、systemだけのreset、描画cycle上限 |
 | | `tb_vdp_sprites`、`tb_vdp_sprites720` | spriteを含む全画素比較、優先順位、behind、16個/line超過 |
 | | `tb_raster_scroll`、`tb_raster_scroll720` | ラスタスクロール表の全画素比較 |
 | | `tb_sprite_selector`、`tb_sprite_composite` | sprite選択と合成の単体 |

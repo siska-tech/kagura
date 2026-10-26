@@ -35,22 +35,24 @@
 
 ## 資源とタイミング
 
-Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。全16構成の`run-baseline.ps1`は、最新のRTL（`f730319`以降）では再実行していない。下表は各構成の直近の測定値である。
+Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。下表はRASTER最終ラインの修正を含むRTLでの`run-baseline.ps1`全16構成の結果（Education V1.9.11.03、2026-10-27）。
 
-| 構成 | EDA | 測定時点 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
-|---|---|---|---:|---:|---:|---:|---:|
-| qspipsram720 | Standard V1.9.12.04 | `f730319` | — | — | 25/26 | +0.807ns | +0.536ns |
-| qspipsram720 | Education V1.9.11.03 | chip GSR化（`0bf6dad`） | 6686 | 5136 | 25/26 | +0.987ns | +0.552ns |
-| spipsram | Standard V1.9.12.04 | chip GSR化 | 6495 | 5249 | 25/26 | +2.355ns | +0.539ns |
-| spipsram | Education V1.9.11.03 | chip GSR化 | 6767 | 5133 | 25/26 | +0.369ns | +0.559ns |
-| demo720 | Education V1.9.11.03 | 256 sprite後の経路短縮 | 6871 | 4545 | 26/26 | +0.181ns | +0.563ns |
-| phase2boot720 | Education V1.9.11.03 | 同上 | 5933 | 4533 | 25/26 | +0.683ns | +0.558ns |
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
+|---|---:|---:|---:|---:|---:|
+| hdmi / hdmi720 | 834 / 850 | 665 / 667 | 0 | +7.026 / +2.684ns | +0.565 / +0.559ns |
+| dvi | 93 | 55 | 0 | +33.104ns | +0.708ns |
+| phase2 / phase2720 | 5094 / 5058 | 4164 / 4165 | 25/26 | +3.156 / **+0.020ns** | +0.552 / +0.559ns |
+| phase2boot / phase2boot720 | 5999 / 5946 | 4542 / 4543 | 25/26 | +1.521 / +1.857ns | +0.557 / +0.557ns |
+| demo / demo720 | 6866 / 6888 | 4554 / 4555 | 26/26 | **+0.068 / +0.076ns** | +0.552 / +0.570ns |
+| spi / spi720 | 5117 / 5146 | 4197 / 4198 | 25/26 | +1.630 / **+0.035ns** | +0.412 / +0.566ns |
+| qspi / qspi720 | 5186 / 5107 | 4199 / 4200 | 25/26 | +0.236 / **+0.063ns** | +0.408 / +0.552ns |
+| spipsram | 6750 | 5148 | 25/26 | +0.752ns | +0.552ns |
+| qspipsram / qspipsram720 | 6723 / 6733 | 5150 / 5151 | 25/26 | +1.374 / +1.080ns | +0.552 / +0.552ns |
 
-すべてsetup/hold違反0。chip GSR化の後、Standard版の480p/720pにもrecovery/removalの負slackはない。デバイス総量はLUT4 8640、FF 6480、BSRAM 26、PLL 2で、PSRAM版のLogicは約76〜78%に達する。demo系はart ROMを含めBSRAMを使い切っている。
+すべてsetup/hold違反0。太字の5構成は開発下限の+0.10nsに届いていない。最悪経路は、720p版がHDMI protocol側の`cx`からaudio_packetsのCE（pixel74）、demo系がVRAMのpattern RAMのCEへの経路で、どれもRASTERの修正で加えたlogicを通らない。修正前のRTLではphase2720 +0.182、spi720 +0.694、qspi720 +0.517、demo +0.147、demo720 +0.007nsで、配置の変動で既存の小さい余裕が表に出たものである。chip GSR化の後、Standard版の480p/720pにもrecovery/removalの負slackはない。デバイス総量はLUT4 8640、FF 6480、BSRAM 26、PLL 2で、PSRAM版のLogicは約76〜78%に達する。demo系はart ROMを含めBSRAMを使い切っている。
 
 ## 既知の制約
 
-- **RASTER IRQの最終ライン**: RASTER_LINE=LINES−1（239/179）ではIRQが発生しない（[映像仕様](video.md#ラスタirq)）。
 - **SPI/QSPIの速度**: ブレッドボード配線では5MHzが上限。10MHzは設計上の値で、実機では未達。
 - **内蔵Flashの照合表示**: programmerが`Verify Failed at 0`を表示する。電源再投入後の起動は確認済みだが、Flashのreadback照合とは扱わない。
 - **TCL製テレビ**: 480pで無信号（Sipeed公式のDVIサンプルでも同じ）。原因は未特定。
@@ -74,8 +76,7 @@ Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純�
 |---|---|
 | HDMI互換性 | 2機種以上×2ケーブルで起動20回・抜挿10回・各1時間（[実機試験](hardware-test.md)） |
 | chip GSR版のreset反復 | S1/S2で720pのreset 20回ずつ |
-| 最新RTLの全構成測定 | `run-baseline.ps1`の全16構成でWNS ≥ +0.10ns |
+| タイミングの余裕 | 720pのaudio_packets（`cx`→CE）とVRAMのCE経路を構造的に短縮し、`run-baseline.ps1`の全16構成でWNS ≥ +0.10ns |
 | W65C02S接続 | 外部回路の製作、実CPUでID読出し・VRAM・IRQ・音源、バス波形のsetup/hold実測 |
 | ROM-less boot | 実CPUでの起動（[ROM-less boot](romless-boot.md)） |
-| RASTER IRQの最終ライン | RTLの修正、または仕様の範囲を0..LINES−2へ変更 |
 | SPI/QSPIの高速化 | 配線の改善またはSCK直接clock化で10MHz以上 |
