@@ -316,3 +316,50 @@ BSRAMは24/26。3構成とも目標+0.10nsを満たした。
 共通HDMI経路の短縮後、配置変動でqspipsram720のPSRAM CK enable経路やRS register読出しが限界へ移ったため、PHYとregister decodeを追加修正した。CK enableの第2段FFを67.5°位相`clk_ck`の下降端へ移し、ODDRが値を取る次の立上りを変えずにsystem54からの予算を3.472nsから12.731nsへ広げた。PSRAM構成ではEXT_DATA判定とRS entry選択結果をregister化し、非PSRAM構成ではこれらを合成から除外する。
 
 Gowin V1.9.11.03の再P&RではspipsramがLogic 6673、Register 5138、BSRAM 25/26、setup +0.851ns、hold +0.563ns。qspipsram720はLogic 6649、Register 5141、BSRAM 25/26、setup +0.113ns、hold +0.555ns。両方ともsetup/hold違反0で+0.10ns目標を満たした。qspipsram720はroute option 2、spipsramは共通option 1を使う。この修正版はsimulationとSTAの対象であり、PSRAM CKの下降端FFを含む実機再確認は未実施である。
+
+### 非Education版V1.9.12.04での再ビルド（2026-10-26）
+
+checkout `3f3a647`（tracked変更なし）を、ライセンス導入済みの非Education版 Gowin V1.9.12.04で`tools/run-baseline.ps1`から再ビルドした。代表として480pの`spipsram`と、最密な720pの`qspipsram720`を選び、合成・P&R・bitstream生成はいずれも終了code 0で完了した。ただしSTAは次のとおり不合格であり、現行制約のまま非Education版へ切り替えることはできない。
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold | 最悪recovery | 判定 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| spipsram 480p | 6575 | 5254 | 25/26 | +0.374ns | -2.352ns | -3.697ns | STA不合格 |
+| qspipsram720 | 6476 | 5257 | 25/26 | -1.181ns | -2.349ns | +6.634ns | STA不合格 |
+
+両構成ともhold違反は33 endpoint。最悪経路を含む多くは`pixel`と`system54`間のV​​DP CDCで、`phase3-vdp.sdc`が第一同期段へ`set_max_delay`だけを指定しているため、V1.9.12.04が独立PLL間のholdを0ns要求として解析したものだった。audio FIFOには新版向けの`set_false_path -hold`が既にあるが、V​​DP CDCには同等の指定がない。`qspipsram720`のsetup違反は5 endpointで、最悪は`done_tag`からpixel側CEへのCDC（-1.181ns）。`spipsram`のsetup欄は正だが、setup違反数4はOSER10 RESETのrecovery違反を含む。480pの最悪recoveryは、以前のHDMI単体で確認した-0.041nsより悪い-3.697nsとなった。
+
+証跡は`reports/3f3a647/Gowin_V1.9.12.04_x64/`のmanifest・summaryと、`build/baseline/spipsram`・`build/baseline/qspipsram720`のレポートおよびbitstream。これはビルドとSTAだけの確認で、生成bitstreamの実機書込みは行っていない。次にV​​DP CDCのhold例外を同期器第一段だけへ限定して追加し、setup側max-delayを維持したまま両構成を再P&Rする必要がある。480p OSER10 resetは例外で隠さず、配置またはreset経路を別途修正する。
+
+#### CDC hold違反33 endpointの監査
+
+V1.9.12.04は`pixel`と`system54`を独立PLL間のクロックとして解析しながら、holdでは両者にrelation 0.000nsを置いている。レポート上の最悪holdはclock skew -3.158nsによるもので、このPLL間に定まった位相関係がない設計の物理要件を表していない。33 endpointを「配線を遅くしてholdを直す」対象とするのは不適切である。
+
+違反経路は次の2種類に分類できる。
+
+| 分類 | レポート上の例 | RTL上の取扱い | hold判定 |
+|---|---|---|---|
+| 2段同期器の第一段 | `req/vblank/underrun/live_sync[0]`、`scan_quiet_sync[0]`、`audio_uf/audio_mute_sync[0]`、逆方向の`done_sync[0]`と`memory_up_sync[0]` | `ASYNC_REG`2段でmetastabilityを受ける境界。第一段までは10nsのmax-delayで配線を制限 | PLL間のhold解析は無意味。第一段に限定したhold false-pathは妥当 |
+| toggleに付帯するbundled payload | `req_line`/`req_bank`→`render_line`/`shown_line`/`write_bank`、逆方向の`done_tag`→`done_tag_pix` | payloadはtoggleと同時に更新後、toggleが2段同期を通過する間保持。受信側はtoggle edge確認時にだけpayloadを取得 | 非同期clock間のholdは無意味。ただしholdを外すだけでは不可で、payloadのmax-delayと保持protocolを残す |
+
+480pの最悪25 pathはすべて`pixel25`→`system54`で、上記2分類に属する。内訳は、表示された25 pathのうち第一段CDCが7 path、bundled payloadが18 path。720pの最悪25 pathも同様に第一段CDCが7 path、bundled payloadが18 pathである。Gowinの自動レポートは違反数を33 endpointと集計する一方、`report_timing -hold -max_paths 25`のため残り8 endpointの個別名はこの証跡に出力されていない。少なくとも出力された25 pathには同一clock内の真のhold違反や、同期器第二段以降の違反はない。
+
+したがって、現時点の結論は「33 endpointのhold数自体は非同期CDCに対する偽の失敗」である。ただし修正は全clock間を一括false-pathにせず、第一段とbundled payloadの対象pinだけに`set_false_path -hold`を追加する。既存の10ns/18ns/36ns/12ns max-delayはsetup側の実要件として維持し、再P&R後にsetup/max-delay違反を独立に判定する。特に`qspipsram720`の`done_tag`系setup -1.181nsは真のmax-delay未達なので、hold例外で解決した扱いにしない。
+
+#### CDC例外とmax-delay経路の修正・再検証
+
+`KAGURA_TIMING_AUDIT=1`のとき`report_timing -hold -max_paths 100`を追加する監査出力を`build-nano9k.tcl`に用意し、Standard V1.9.12.04で33 endpointを全件出力した。非表示だった8 endpointは、すべて`req_line_1_s0/Q`から`shown_line_[0..7]_s0/CE`への経路だった。`req_line!=0`で生成され、request toggleが2段同期した受信eventと同時にだけ使われるbundled controlである。これにより33件の内訳は、同期器第一段7、payloadのD入力18、同payloadからのCE入力8と確定した。
+
+`phase3-vdp.sdc`に同期器第一段のD pinと`req_line/req_bank`から`system54`までの経路だけを対象とする`set_false_path -hold`を追加した。`vdp-480p.sdc`/`vdp-720p.sdc`には`done_tag`から対応pixel clockまでのhold例外を追加した。SUG940-2.0.5Eの定義どおり、`set_false_path -hold`はhold/removalだけに適用され、既存の10ns/18ns/36ns/12ns `set_max_delay`はsetup/recovery側に残る。修正後のStandard版は`spipsram`と`qspipsram720`の両方でhold違反0となった。
+
+`qspipsram720`の旧`done_tag`最悪経路は、制約12.000ns、clock skew -4.732ns、データ遅延8.375ns（cell 1.947ns、route 5.970ns、C2Q 0.458ns）で、slack -1.181ns。遅延の71%が配線で、`done_tag==req_line`の比較から`done_tag_pix`8bitのCEへfanoutする構造が主因だった。`done_edge`で`done_tag_pix`を無条件に取込み、一致結果だけを`done_valid`へ入れる構造へ変更した。第一回の再P&Rでデータ遅延は5.800ns、slackは+1.038nsに改善した。続いて残った`memory_ready && line_init_done`→`memory_up_sync[0]`の-0.259nsは、system側に専用`memory_up`レジスタを追加し、大fanoutとANDゲートをCDC入力から分離した。
+
+最終のStandard V1.9.12.04 P&R/STA結果:
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold | recovery | setup/hold違反 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| spipsram 480p | 6575 | 5255 | 25/26 | +2.567ns | +0.527ns | -1.763ns | 0 / 0 |
+| qspipsram720 | 6572 | 5258 | 25/26 | +0.643ns | +0.530ns | +8.453ns | 0 / 0 |
+
+`spipsram`のツール表示上のsetup violated endpoints 2は、チェックscriptの注記どおりOSER10 RESETのrecovery違反をsetup数に含むもので、通常setupとholdは正。480pの既知recoveryは依然として残る。720pはsetup/hold/recovery/removalの負slackがなく、開発目標+0.10nsも満たした。
+
+Verilator 5.032の全57試験は合格。B1へStandard版`qspipsram720`をSRAM一時書込みし、programmerのProgram and Verifyは終了code 0、ID `0x1100481B`。Pico H1をQSPI 2.5MHzで実行し、`diag`は全11項目PASS、PSRAM 2048 byteは0 mismatch（upload+FENCE 870.0KB/s）、COPY 2048 byteは0 mismatch、32767 byteは6.235ms（5255.3KB/s）、`pcm 20`は41回のdrum再発音と297,694 status pollのfault 0、melody inactive 0、ERROR_CODE 0でPASS。この作業で内蔵Flashは変更していない。映像・音声の目視/聴感確認とS2 reset後の再試験は未実施。
