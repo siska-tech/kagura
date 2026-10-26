@@ -6,7 +6,7 @@
 
 `audio/kagura_audio_registers.sv`がindexed shadowとAUDIO_COMMIT snapshotを保持し、command engineが先行VRAM操作の完了後に`audio/kagura_audio_synth.sv`へ渡す。次sample境界でwaveのactive/shadow bankと設定を同時に切り替える。demo/CPU topは6ch音源をHDMI FIFOへ接続し、Phase 1 topは固定テスト音を維持する。
 
-`core/kagura_core.sv`はCAPS b3（ABI 0.4、[register-map.md](../docs/register-map.md)）のとき、PSRAM controller、host/PCM arbiter、PCM read path、prefetch、PCM controlを生成し、PHY境界（`psram_*`のbyte組）だけを外へ出す。b3がない構成ではこれらを生成せず、出力は定数、入力は未使用で、6音源・24cycles/sampleの動作のままである。command engine（`core/kagura_vram_engine.sv`）は400000–7FFFFFのbyte操作をPSRAM portへ回し、coreはそれを32bit wordの1 byte lane（RWDS mask）へ変換してarbiterのhost側へ渡す。
+`core/kagura_core.sv`はCAPS b3（ABI 0.4、[register-map.md](../docs/register-map.md)）のとき、PSRAM controller、host/PCM arbiter、PCM read path、prefetch、PCM controlを生成し、PHY境界（`psram_*`のbyte組）だけを外へ出す。b3がない構成ではこれらを生成せず、出力は定数、入力は未使用で、6音源・25cycles/sampleの動作のままである。command engine（`core/kagura_vram_engine.sv`）は400000–7FFFFFのbyte操作をPSRAM portへ回し、coreはそれを32bit wordの1 byte lane（RWDS mask）へ変換してarbiterのhost側へ渡す。
 `audio/kagura_pcm_prefetch.sv`は可変レイテンシreadを各chの先読みbuffer（coreでは32 byte）へ格納する。設定、prefetch完了、再生開始を分離し、one-shot・loop・underrun・容量境界・応答timeoutを扱う。timeout後は遅延応答を破棄してから再設定を許可する。停止と同じsample tickでは消費しないので、一時停止後は途切れなく続きから再生する。
 `audio/kagura_pcm_control.sv`は公開PCM_CMD（PREPARE/STOP/CLEAR）とAUDIO_COMMIT境界を、prefetchの設定受付・開始・停止へ変換し、READYとstickyなDONE/UNDERRUN/CONFIG_ERROR/MEMORY_ERRORを保持する。PREPAREの受付でPCM read pathの1-word cacheを捨てる。PCM register（audio index 60..9F）は`audio/kagura_audio_registers.sv`の`PCM`版が持ち、PCM_CMDのwrite後はSTATUSが反映されるまで次のregister要求を止める。
 `audio/kagura_audio_synth.sv`は`PCM_ENABLE`時にsigned 8bit PCM 2chを既存6音源の後段で同じ共有乗算器へ通す。PCM gain/enableはAUDIO_COMMIT snapshot、sample値は各48kHz境界の入力を使い、全8音源を29cyclesで処理する。

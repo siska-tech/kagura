@@ -111,10 +111,10 @@ GW1NR-9 C6のOSER10とエミュレートLVDSで742.5Mbpsが少なくとも1台�
 
 - `kagura_tmds_channel`: 上流`tmds_channel`と同じ出力列を3段パイプラインで出す（レイテンシ1→3）。カラーバー評価では入力が定数に近く見えなかったが、VDPの任意RGBでは上流の1段8b/10bが−9.1nsとなった。`tb_tmds_pipeline`で上流と2クロック遅れで一致することを60万シンボル確認し、XNORマスクを壊した改変版を3サイクル目で検出することも確かめた。生成コアの差し替えは`tools/prepare-hdmi-stream.py`。
 - `kagura_line_display`: 2画素先の走査判定（ライン開始、表示範囲、RAMアドレス）を3画素先の座標から1クロック前にレジスタ化。done tagとの比較もcyだけから作る`next_line`との登録済み比較にした。帰結として、line doneはライン開始の2 pixel clock前までに届く必要がある（従来は1）。間に合わない場合は従来どおりそのラインを黒にしてLINE_UNDERRUN。
-- 2つの同期段`serial_reset_0/1`もレーン複製の間（R2C40）へ`INS_LOC`で置き、FCLK内の経路を1サイクルで閉じた。
+- lane別fabric RESETとその配置制約を廃止し、外部resetと2個のPLL LOCKから直接生成するchip GSRでOSER10を同時解除する。
 - 16:9版だけ`place_option 1`を使う。既定配置ではdemo720がpixel74で−0.010nsだった。
 
-**OSER10 RESETの扱い（16:9版）**: レーン複製からIOLOGICのRESET端子までの配線はビルドごとに1〜5nsで変わり、recovery検査が使うFCLK半周期（1.347ns）に収められない。PCLK起点に変える案も試したが、VIC1でもFCLK立下り基準のrecoveryが−1.12nsとなったため取り消した。16:9版ではこのrecovery/removal検査を`phase1-720p.sdc`でfalse pathとし、解除はFCLK/PCLKに対して非同期とみなす。リセット後のレーン整列は実機確認項目とする。VIC1版は全検査を維持する。
+**OSER10 RESETの扱い（現行版）**: レーン別fabric RESETは配線が1〜5nsで変動し、Standard版では480pでもrecovery違反となった。現行版は外部resetとPLL LOCKをfabric FFを介さずchip GSRへ入れ、全fabricと4個のOSER10をPLL安定までINITへ保持する。旧720p false pathは削除した。Standard V1.9.12.04とEducation V1.9.11.03の480p/720pで負slackはない。GSR版720pのcold boot、自動診断、S1での映像とPCM melody再生は合格したが、S1/S2でのreset反復は未実施である。
 
 **検証**
 

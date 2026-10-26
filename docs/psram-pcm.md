@@ -17,7 +17,7 @@ PSRAMからの直接描画やフレームバッファ化は別段階とする。
 
 ## 現状と成立条件
 
-- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は24cycles/sample（PCM有効時30）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
+- 音源は`rtl/audio/kagura_audio_synth.sv`、設定は`kagura_audio_registers.sv`。54MHz/1125で48kHz、現行演算は25cycles/sample（PCM有効時31）、設計上限64cycles。メモリ待ちを演算FSMへ入れず、準備済みsampleだけを渡す。
 - 既存音声出力がPCMであることと、メモリから任意sampleを読むPCM音源があることは別。現在は後者が未実装。
 - [現行記録](validation-status.md)の`d501a1f`測定ではホスト版24/26、デモ25/26 BSRAM。最小setupはqspi +0.142ns、demo720 +0.130ns等。これは今回checkoutの再測定ではない。統合時に新しい基準を取得する。
 - `kagura_nano9k_clocks.sv`はvideo/systemでPLLを2個使用済み。PSRAM向けに3個目を追加できない。system用PLLの出力・分周・位相出力を共用できるか、選定IPとデバイスの制約を確認する。周波数や位相は未決定。system54MHzとvideo clockの維持を優先する。
@@ -316,3 +316,81 @@ BSRAMは24/26。3構成とも目標+0.10nsを満たした。
 共通HDMI経路の短縮後、配置変動でqspipsram720のPSRAM CK enable経路やRS register読出しが限界へ移ったため、PHYとregister decodeを追加修正した。CK enableの第2段FFを67.5°位相`clk_ck`の下降端へ移し、ODDRが値を取る次の立上りを変えずにsystem54からの予算を3.472nsから12.731nsへ広げた。PSRAM構成ではEXT_DATA判定とRS entry選択結果をregister化し、非PSRAM構成ではこれらを合成から除外する。
 
 Gowin V1.9.11.03の再P&RではspipsramがLogic 6673、Register 5138、BSRAM 25/26、setup +0.851ns、hold +0.563ns。qspipsram720はLogic 6649、Register 5141、BSRAM 25/26、setup +0.113ns、hold +0.555ns。両方ともsetup/hold違反0で+0.10ns目標を満たした。qspipsram720はroute option 2、spipsramは共通option 1を使う。この修正版はsimulationとSTAの対象であり、PSRAM CKの下降端FFを含む実機再確認は未実施である。
+
+### 非Education版V1.9.12.04での再ビルド（2026-10-26）
+
+checkout `3f3a647`（tracked変更なし）を、ライセンス導入済みの非Education版 Gowin V1.9.12.04で`tools/run-baseline.ps1`から再ビルドした。代表として480pの`spipsram`と、最密な720pの`qspipsram720`を選び、合成・P&R・bitstream生成はいずれも終了code 0で完了した。ただしSTAは次のとおり不合格であり、現行制約のまま非Education版へ切り替えることはできない。
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold | 最悪recovery | 判定 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| spipsram 480p | 6575 | 5254 | 25/26 | +0.374ns | -2.352ns | -3.697ns | STA不合格 |
+| qspipsram720 | 6476 | 5257 | 25/26 | -1.181ns | -2.349ns | +6.634ns | STA不合格 |
+
+両構成ともhold違反は33 endpoint。最悪経路を含む多くは`pixel`と`system54`間のV​​DP CDCで、`phase3-vdp.sdc`が第一同期段へ`set_max_delay`だけを指定しているため、V1.9.12.04が独立PLL間のholdを0ns要求として解析したものだった。audio FIFOには新版向けの`set_false_path -hold`が既にあるが、V​​DP CDCには同等の指定がない。`qspipsram720`のsetup違反は5 endpointで、最悪は`done_tag`からpixel側CEへのCDC（-1.181ns）。`spipsram`のsetup欄は正だが、setup違反数4はOSER10 RESETのrecovery違反を含む。480pの最悪recoveryは、以前のHDMI単体で確認した-0.041nsより悪い-3.697nsとなった。
+
+証跡は`reports/3f3a647/Gowin_V1.9.12.04_x64/`のmanifest・summaryと、`build/baseline/spipsram`・`build/baseline/qspipsram720`のレポートおよびbitstream。これはビルドとSTAだけの確認で、生成bitstreamの実機書込みは行っていない。次にV​​DP CDCのhold例外を同期器第一段だけへ限定して追加し、setup側max-delayを維持したまま両構成を再P&Rする必要がある。480p OSER10 resetは例外で隠さず、配置またはreset経路を別途修正する。
+
+#### CDC hold違反33 endpointの監査
+
+V1.9.12.04は`pixel`と`system54`を独立PLL間のクロックとして解析しながら、holdでは両者にrelation 0.000nsを置いている。レポート上の最悪holdはclock skew -3.158nsによるもので、このPLL間に定まった位相関係がない設計の物理要件を表していない。33 endpointを「配線を遅くしてholdを直す」対象とするのは不適切である。
+
+違反経路は次の2種類に分類できる。
+
+| 分類 | レポート上の例 | RTL上の取扱い | hold判定 |
+|---|---|---|---|
+| 2段同期器の第一段 | `req/vblank/underrun/live_sync[0]`、`scan_quiet_sync[0]`、`audio_uf/audio_mute_sync[0]`、逆方向の`done_sync[0]`と`memory_up_sync[0]` | `ASYNC_REG`2段でmetastabilityを受ける境界。第一段までは10nsのmax-delayで配線を制限 | PLL間のhold解析は無意味。第一段に限定したhold false-pathは妥当 |
+| toggleに付帯するbundled payload | `req_line`/`req_bank`→`render_line`/`shown_line`/`write_bank`、逆方向の`done_tag`→`done_tag_pix` | payloadはtoggleと同時に更新後、toggleが2段同期を通過する間保持。受信側はtoggle edge確認時にだけpayloadを取得 | 非同期clock間のholdは無意味。ただしholdを外すだけでは不可で、payloadのmax-delayと保持protocolを残す |
+
+480pの最悪25 pathはすべて`pixel25`→`system54`で、上記2分類に属する。内訳は、表示された25 pathのうち第一段CDCが7 path、bundled payloadが18 path。720pの最悪25 pathも同様に第一段CDCが7 path、bundled payloadが18 pathである。Gowinの自動レポートは違反数を33 endpointと集計する一方、`report_timing -hold -max_paths 25`のため残り8 endpointの個別名はこの証跡に出力されていない。少なくとも出力された25 pathには同一clock内の真のhold違反や、同期器第二段以降の違反はない。
+
+したがって、現時点の結論は「33 endpointのhold数自体は非同期CDCに対する偽の失敗」である。ただし修正は全clock間を一括false-pathにせず、第一段とbundled payloadの対象pinだけに`set_false_path -hold`を追加する。既存の10ns/18ns/36ns/12ns max-delayはsetup側の実要件として維持し、再P&R後にsetup/max-delay違反を独立に判定する。特に`qspipsram720`の`done_tag`系setup -1.181nsは真のmax-delay未達なので、hold例外で解決した扱いにしない。
+
+#### CDC例外とmax-delay経路の修正・再検証
+
+`KAGURA_TIMING_AUDIT=1`のとき`report_timing -hold -max_paths 100`を追加する監査出力を`build-nano9k.tcl`に用意し、Standard V1.9.12.04で33 endpointを全件出力した。非表示だった8 endpointは、すべて`req_line_1_s0/Q`から`shown_line_[0..7]_s0/CE`への経路だった。`req_line!=0`で生成され、request toggleが2段同期した受信eventと同時にだけ使われるbundled controlである。これにより33件の内訳は、同期器第一段7、payloadのD入力18、同payloadからのCE入力8と確定した。
+
+`phase3-vdp.sdc`に同期器第一段のD pinと`req_line/req_bank`から`system54`までの経路だけを対象とする`set_false_path -hold`を追加した。`vdp-480p.sdc`/`vdp-720p.sdc`には`done_tag`から対応pixel clockまでのhold例外を追加した。SUG940-2.0.5Eの定義どおり、`set_false_path -hold`はhold/removalだけに適用され、既存の10ns/18ns/36ns/12ns `set_max_delay`はsetup/recovery側に残る。修正後のStandard版は`spipsram`と`qspipsram720`の両方でhold違反0となった。
+
+`qspipsram720`の旧`done_tag`最悪経路は、制約12.000ns、clock skew -4.732ns、データ遅延8.375ns（cell 1.947ns、route 5.970ns、C2Q 0.458ns）で、slack -1.181ns。遅延の71%が配線で、`done_tag==req_line`の比較から`done_tag_pix`8bitのCEへfanoutする構造が主因だった。`done_edge`で`done_tag_pix`を無条件に取込み、一致結果だけを`done_valid`へ入れる構造へ変更した。第一回の再P&Rでデータ遅延は5.800ns、slackは+1.038nsに改善した。続いて残った`memory_ready && line_init_done`→`memory_up_sync[0]`の-0.259nsは、system側に専用`memory_up`レジスタを追加し、大fanoutとANDゲートをCDC入力から分離した。
+
+最終のStandard V1.9.12.04 P&R/STA結果:
+
+| 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold | recovery | setup/hold違反 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| spipsram 480p | 6575 | 5255 | 25/26 | +2.567ns | +0.527ns | -1.763ns | 0 / 0 |
+| qspipsram720 | 6572 | 5258 | 25/26 | +0.643ns | +0.530ns | +8.453ns | 0 / 0 |
+
+`spipsram`のツール表示上のsetup violated endpoints 2は、チェックscriptの注記どおりOSER10 RESETのrecovery違反をsetup数に含むもので、通常setupとholdは正。480pの既知recoveryは依然として残る。720pはsetup/hold/recovery/removalの負slackがなく、開発目標+0.10nsも満たした。
+
+Verilator 5.032の全57試験は合格。B1へStandard版`qspipsram720`をSRAM一時書込みし、programmerのProgram and Verifyは終了code 0、ID `0x1100481B`。Pico H1をQSPI 2.5MHzで実行し、`diag`は全11項目PASS、PSRAM 2048 byteは0 mismatch（upload+FENCE 870.0KB/s）、COPY 2048 byteは0 mismatch、32767 byteは6.235ms（5255.3KB/s）、`pcm 20`は41回のdrum再発音と297,694 status pollのfault 0、melody inactive 0、ERROR_CODE 0でPASS。この作業で内蔵Flashは変更していない。映像・音声の目視/聴感確認とS2 reset後の再試験は未実施。
+
+#### OSER10 resetのchip GSR化
+
+Standard版480pで残ったOSER10 RESET recovery違反は、FCLKをIOLOGICへ直接配る一方、fabric FFのclock insertionが約2.6nsあり、lane別FFからRESETまでをFCLK半周期内へ収める必要があったことが原因だった。配置、FF edge、multicycle、局所max-delayでは4 laneすべてを安定して閉じられなかった。
+
+最初にFCLK同期器から専用GSRを駆動した案は、GSRがその同期器を含む全fabric FFをINITへ保持するため自己ロックし、実機でREADY=0となったので破棄した。最終案は`kagura_nano9k_clocks`で`reset_n && pixel_lock && system_lock`をfabric FFを介さずGSRへ直接入力する。4個のOSER10は`GSREN=true, LSREN=false`、RESET端子は0固定とし、旧lane FFの配置制約と720p専用false pathを削除した。GSR解除後は既存のpixel/system各4段同期器がdomain別resetを解除する。
+
+| EDA | 構成 | Logic | Register | BSRAM | setup | hold |
+|---|---|---:|---:|---:|---:|---:|
+| Standard V1.9.12.04 | spipsram 480p | 6495 | 5249 | 25/26 | +2.355ns | +0.539ns |
+| Standard V1.9.12.04 | qspipsram720 | 6477 | 5252 | 25/26 | +0.793ns | +0.382ns |
+| Education V1.9.11.03 | spipsram 480p | 6767 | 5133 | 25/26 | +0.369ns | +0.559ns |
+| Education V1.9.11.03 | qspipsram720 | 6686 | 5136 | 25/26 | +0.987ns | +0.552ns |
+
+4構成ともsetup/hold違反0で、Standard版のrecovery/removalにも負slackはない。B1へStandard `qspipsram720`をSRAM一時書込みし、Program/Verify、READY、`diag`全11項目、PSRAM 2048 byte（0 mismatch、866.0KB/s）、COPY 2048/32767 byte（0 mismatch、32767 byteは6.252ms）、`pcm 20`（41回再発音、297,695 poll、fault 0）が合格した。内蔵Flashは変更していない。S1で720p映像が正常で、PCM melodyが明瞭に聞こえることもユーザーが確認した。drumは強い音割れとして聞こえたが、melodyが正常で、生成波形のクリップは7200 sample中2 sample、mixerの推定peakも16bit飽和未満であるため、HDMI/PCM経路ではなくPicoデモのnoise成分と再trigger時の立上りを含む音色上の問題として分離する。S1/S2でのreset反復は未実施である。**【訂正】この切り分けは誤りだった。** 音割れは合成器の乗算器入力でチャンネル間の漏れが起きていたためで、音色の問題ではない（[合成器のチャンネル間漏れ](#合成器のチャンネル間漏れ2026-10-27)）。
+
+### 合成器のチャンネル間漏れ（2026-10-27）
+
+Picoデモのdrumを、CC0の実録ピアノC4（72000 byte、one-shot）へ置き換えたところ、ピアノがFM音源のような金属音になった。8bit化後のデータをPCで再生すると綺麗で、PSRAMの全量読戻しも一致した。Picoデモへ切り分け用のオプション（`software/pico/README.md`）を加え、`qspipsram720`の実機で次を確認した。
+
+| 試験 | 結果 | 分かったこと |
+|---|---|---|
+| `swap`（PCM 0/1入替え）、`move`（PSRAM配置入替え） | 歪みはピアノについてくる | チャンネル番号・アドレスに依存しない |
+| `solo`（ピアノのみ）、`m=1..16`（MASTER_GAIN） | 単独は綺麗、和は音量を下げても歪む | 振幅・飽和・TVではない |
+| `mute`（メロディをgain 0で読出し）、`zero`（ピアノの代わりに0）、`nonote` | 綺麗 | 2ch同時読出しでもデータは化けない |
+| `mutep`（ピアノをgain 0） | 金属音 | gain 0の音源が出力へ漏れる |
+| `swap mute`、`swap mutep` | gain 0にした側（メロディ／ピアノ）が聞こえる | 漏れは乗算器で起きる。PSRAM経路ではgain 0の音源は鳴らせない |
+
+`kagura_audio_synth`はL/R各1個の乗算器を全音源の「sample×gain」と「和×MASTER」で共用し、乗算器の入力を`state`から組合せ回路で選んでいた（`state==MASTER ? sum : voice_sample`、`state==MASTER ? master : gain`）。この経路はSTA上も合成器で最も厳しく（`state`→係数選択→乗算→`master_product`/`voice_product`、setup slack +1.0〜1.2ns）、実機では直前の音源のsampleが次の積へ混入していた。RTL、Gowin V1.9.12.04の配置配線後ネットリストの機能シミュレーション（ランダム3000 sample）、実HyperRAM controllerとmodelを含むcore全体の3.5秒再生（全pop照合）はいずれも誤りを示さず、論理ではなく実機のタイミングで生じていた。drumの音割れを初めて記録したのは、この経路に手を入れた`6b5a31d`以降の聴感確認である。
+
+修正では乗算器の入力を専用レジスタ（`operand_l/r`、`gain_l/r`）にし、使う1cycle前に読み込む。sampleはVOICE/WAVE、gainはPREP、和とMASTERは新設のLOADで読み込むため、乗算器の前にstateの復号が入らない。1 sampleは25 cycles（PCM有効時31）、上限1125に対して影響はない。Verilator 5.032の全57試験は合格した。Standard V1.9.12.04の`qspipsram720`はsetup/hold違反0（最悪setup +0.807ns、VDP CDC。hold +0.536ns）で、合成器の経路は最悪経路の一覧から外れた。B1へSRAM一時書込みし、`pcm 20`でピアノが綺麗に鳴ること、`mutep`・`swap mute`でgain 0の音源が聞こえないことをユーザーが確認した。内蔵Flashは変更していない。

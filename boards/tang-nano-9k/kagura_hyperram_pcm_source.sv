@@ -220,7 +220,7 @@ module kagura_hyperram_pcm_source #(
             if(sample_valid && check_pending) begin
                 checked_samples<=checked_samples+1'b1;
                 check_pending<=0;
-                if(last_cycles!=30) synth_error<=1;
+                if(last_cycles!=31) synth_error<=1;
                 if((sample_left!=expected_l || sample_right!=expected_r) && !(&mix_errors))
                     mix_errors<=mix_errors+1'b1;
             end

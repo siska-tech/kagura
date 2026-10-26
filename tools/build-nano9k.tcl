@@ -112,6 +112,13 @@ proc merge_into {path names} {
 }
 merge_into [file join $build_dir kagura_${mode}.cst] $cst
 merge_into [file join $build_dir kagura_${mode}.sdc] $sdc
+# Optional audit output: the default timing report lists only 25 paths even
+# when more endpoints fail.  Keep this out of release builds unless requested.
+if {[info exists ::env(KAGURA_TIMING_AUDIT)]} {
+    set audit [open [file join $build_dir kagura_${mode}.sdc] a]
+    puts $audit {report_timing -hold -max_paths 100 -max_common_paths 1}
+    close $audit
+}
 add_file -type cst [file join $build_dir kagura_${mode}.cst]
 add_file -type sdc [file join $build_dir kagura_${mode}.sdc]
 set_option -top_module $top

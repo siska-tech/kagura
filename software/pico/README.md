@@ -59,7 +59,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `w <addr> <len>` / `c <addr> <len>` | VRAMへのupload、読戻しCRC（uploader用） |
 | `psram [len]` | PSRAM版（`spipsram`/`qspipsram`、CAPS b3）でPSRAM領域の乱数位置へlen byte（既定2048、最大2048）をupload→FENCE→READ_REQUESTで読戻して照合し、速度を表示 |
 | `copy [len]` | PSRAM版でlen byte（既定2048）の乱数をPSRAMへ置き、COMMAND COPYでpattern領域の乱数位置へ複写してVRAMから読戻し照合する。続いて32767 byteの複写時間（FENCE込み）を表示 |
-| `pcm [seconds]` | PSRAM版で2秒のメロディ（PCM 0、loop）と150msのドラム（PCM 1、one-shot）をupload・照合し、0.5秒ごとにPREPARE＋AUDIO_COMMITでドラムを再発音。UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・ERROR_CODE・メロディの停止がなければ`PASS pcm`。既定10秒、`0`はキー入力まで |
+| `pcm [seconds] [swap] [move] [solo] [mute] [mutep] [nonote] [zero] [m=<n>]` / `piano ...` | PSRAM版で2秒のメロディ（PCM 0、loop）とCC0の実録ピアノC4（PCM 1、one-shot）をuploadし、ピアノ72000 byteを全量読戻し照合したうえで、2秒ごとにPREPARE＋AUDIO_COMMITで単音を再発音。UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・ERROR_CODE・メロディの停止がなければ`PASS pcm`。`swap`でピアノをPCM 0、メロディをPCM 1へ、`move`で両者のPSRAM配置（0x400000/0x480000）を入れ替え、`solo`でメロディを鳴らさない、`mute`/`mutep`でメロディ/ピアノをゲイン0のまま再生（PSRAM読出しだけ行う）、`nonote`でピアノのチャンネルを動かさず、`zero`でピアノの代わりに無音を再生、`m=<n>`で開始前にMASTER_GAINを設定する（使用値を表示）。既定10秒、`0`はキー入力まで |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 
 `diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → 全6音源を1秒鳴動しwave bank交換を読戻し → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音、および基板LED2（adapterの`late`）が消灯のままであることを目視確認する。LED1はreset解除表示なので正常動作中は点灯する。

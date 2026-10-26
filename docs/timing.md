@@ -27,9 +27,9 @@ HDMI pixelとserializerは関連clock。これらをfalse pathにしない。sys
 
 FIFOのGray同期は制御信号の同期であり、多bit PCM値を独立2FF同期する方法ではない。通常のCDC例外は同期器入口に限定し、Gray転送のmax delay/bus skewも制約する。各domainのresetは同期解除する。
 
-**720p（VIC4）のOSER10 RESETは例外**。lane別FFからOSER10 RESETへの配線がFCLK半周期に収まらないため、[phase1-720p.sdc](../boards/tang-nano-9k/phase1-720p.sdc)でこの経路をfalse pathとし、OSER10での解除はFCLK/PCLKに対して非同期として扱う。FCLK同期器とlane別FFまでの経路は1サイクルで解析する。VIC1ではOSER10 RESETのrecovery/removal検査も維持する。720p版の「STA違反0」は除外経路のタイミング保証を含まない。リセット後のレーン整列は実機確認項目であり、1台での確認と複数sink・長時間試験の残課題は[16:9記録](wide-mode.md)を参照。
+**OSER10 resetはchip GSRを使う**。lane別fabric FFから4個のIOLOGIC RESET端子へ配線する方式は、Standard V1.9.12.04で480pにも配置依存のrecovery違反を生じたため廃止した。GSRは全fabric FFへ作用するので、解除源にfabric同期器を使うと自己ロックする。現行は`reset_n && pixel_lock && system_lock`をGSRへ直接入力し、PLL安定までchip全体をINITへ保持する。4個のOSER10は`GSREN=true, LSREN=false`、RESET端子は定数0で、720p固有のfalse pathも削除した。
 
-【設計】解除順序は、外部`reset_n`またはいずれかのPLL lock解除で即assertし、pixel clockの4段同期器が解除された後、serializer内でFCLKの2段同期器とlane別FFを通して4個のOSER10へ渡す。`tb_serializer_reset`はFCLKに対する入力resetの位相を変え、非同期assert、解除まで3 FCLK立上り、4 lane同時解除を確認する。この試験はFFまでのデジタルな順序だけが対象であり、Gowin OSER10端子のrecovery/removal、配線遅延、電源投入時のPLL挙動はモデル化しない。除外した物理境界は[実機試験表](p1-07-hardware-test.md)の720p reset反復で評価する。
+【設計】外部`reset_n`のassertまたはいずれかのPLL lock解除でGSRを即assertする。両PLLがlockした後にGSRを解除し、既存のpixel/system domain別4段同期器が通常のreset解除順序を作る。OSER10は専用GSRで4 lane同時に解除される。`tb_serializer_reset`はlocal RESETを使わない接続だけを検査し、GSR配線、primitive内部、PLL lockの実挙動はモデル化しないため、[実機試験表](p1-07-hardware-test.md)のreset反復も行う。
 
 ## CPUバスタイミング案
 
@@ -125,7 +125,7 @@ hdmi/dvi/hdmi720は変化なし（+5.634/+5.634/+0.391ns）。全構成の最小
 | 経路 | 変更 |
 |---|---|
 | packet_assembler（pixel74）counter → BCH parity | `rtl/hdmi/kagura_packet_assembler.sv`に置換。counterで選ぶbit muxをshift registerにし、counterの範囲判定を1cycle先にregisterで作る。`tb_packet_assembler`が原版と毎cycleの出力一致を検査 |
-| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし |
+| audio_synth（system54）state → 乗算 → sum | 音源ごとの積をregisterし、次のcycleで加算。1 sampleは23→24 cycles（PCM有効時29→30）、上限1125に対して影響なし。その後、残った`state`→乗算器入力の選択経路で実機に音源間の漏れが出たため、乗算器入力もregister化した（25/31 cycles、[合成器のチャンネル間漏れ](psram-pcm.md#合成器のチャンネル間漏れ2026-10-27)） |
 | audio_transport（pixel74）tick_acc | 定数加算と比較を直列から並列に（`tick_acc < TICK_NUM`を前提に等価） |
 | hdmi guard/preamble（pixel74）cy → video_guard | cyの行判定をregisterで受ける。cyは行内で一定で、判定はcx≥frame_width−10でだけ使う |
 

@@ -90,11 +90,17 @@ module kagura_line_display #(
     reg [7:0] done_tag_pix;
     reg done_valid;                    // a done for the outstanding request arrived
     reg [8:0] init_addr;
+    reg memory_up;
     (* ASYNC_REG="TRUE" *) reg [1:0] memory_up_sync;
     (* ASYNC_REG="TRUE" *) reg [1:0] scan_quiet_sync;
+    // Isolate the CDC source from memory_ready's large system-domain fanout
+    // and from the ready AND gate.  The extra cycle only delays enable.
+    always @(posedge sys_clk)
+        if(sys_reset) memory_up<=0;
+        else memory_up<=memory_ready && line_init_done;
     always @(posedge pix_clk)
         if(pix_reset) memory_up_sync<=0;
-        else memory_up_sync<={memory_up_sync[0],memory_ready && line_init_done};
+        else memory_up_sync<={memory_up_sync[0],memory_up};
     // A system-only reset must first stop pixel reads before either line
     // bank is cleared. Acknowledge the synchronized pixel-side read gate.
     always @(posedge sys_clk)
@@ -116,7 +122,6 @@ module kagura_line_display #(
     // one clock after done_valid, so a done must arrive at least two pixel
     // clocks before its line starts (earlier ones swap as before; a later one
     // shows the line black as an underrun).
-    wire done_take=done_edge && done_tag==req_line;
     always @(posedge pix_clk) tag_match<=done_tag_pix==next_line;
     wire swap=line_begin && done_valid && tag_match;
     wire display_now=swap ? req_bank : display;
@@ -130,8 +135,11 @@ module kagura_line_display #(
             done_sync<={done_sync[0],done_toggle};
             if(done_edge) begin
                 done_seen<=done_sync[1];
-                // The tag register is stable for a whole line once the toggle is seen.
-                if(done_take) begin done_valid<=1; done_tag_pix<=done_tag; end
+                // The bundled tag has been stable while the toggle crossed two
+                // stages.  Capture it unconditionally so its data path does not
+                // include the equality decode feeding this register's CE.
+                done_tag_pix<=done_tag;
+                done_valid<=done_tag==req_line;
             end
             if(memory_up_sync[1] && cx==0 && ((cy[SHIFT-1:0]==0 && cy<10'(V_ACTIVE-SCALE)) || cy==10'(LINE0_Y))) begin
                 req_toggle<=~req_toggle; req_bank<=~display; done_valid<=0;

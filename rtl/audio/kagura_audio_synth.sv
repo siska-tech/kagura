@@ -31,7 +31,7 @@ module kagura_audio_synth #(
     input wire [15:0] cfg_pcm_gain_l, cfg_pcm_gain_r,
     input wire [1:0] cfg_pcm_enable
 );
-    localparam [3:0] IDLE=0,VOICE=1,WAVE=2,MULT=3,MASTER=4,EMIT=5,PREP=6,SAT=7,ACC=8;
+    localparam [3:0] IDLE=0,VOICE=1,WAVE=2,MULT=3,MASTER=4,EMIT=5,PREP=6,SAT=7,ACC=8,LOAD=9;
     reg [3:0] state;
     reg [2:0] channel;
     reg [10:0] divider;
@@ -48,7 +48,6 @@ module kagura_audio_synth #(
     reg [23:0] phase [0:5];
     reg [14:0] noise_state;
     reg [15:0] noise_count;
-    reg signed [7:0] voice_sample;
     reg signed [19:0] sum_l,sum_r;
     // A voice product is registered in MULT and added on the next cycle
     // (PREP, or ACC after the last voice), keeping the multiplier and the
@@ -81,12 +80,19 @@ module kagura_audio_synth #(
     // into unsigned low17 plus signed high bits (only -2,-1,0,1 possible),
     // using shifts for the high contribution. This shares the same two
     // 18x9 multipliers used for signed8 voice * unsigned8 gain.
-    wire signed [17:0] operand_l=state==MASTER ? {1'b0,sum_l[16:0]} : {{10{voice_sample[7]}},voice_sample};
-    wire signed [17:0] operand_r=state==MASTER ? {1'b0,sum_r[16:0]} : {{10{voice_sample[7]}},voice_sample};
-    wire signed [8:0] factor_l=$signed({1'b0,state==MASTER ? active_master : gain_l});
-    wire signed [8:0] factor_r=$signed({1'b0,state==MASTER ? active_master : gain_r});
+    // Both multiplier inputs are registers loaded the cycle before use (the
+    // voice sample in VOICE/WAVE, its gain in PREP, the sum and master in
+    // LOAD), so no state decode sits in front of the multipliers. With a
+    // decoded operand/factor mux there, hardware let the previous voice's
+    // sample leak into the next product even at gain 0.
+    reg signed [17:0] operand_l,operand_r;
+    wire signed [8:0] factor_l=$signed({1'b0,gain_l});
+    wire signed [8:0] factor_r=$signed({1'b0,gain_r});
     wire signed [26:0] product_l=operand_l*factor_l;
     wire signed [26:0] product_r=operand_r*factor_r;
+    function automatic signed [17:0] widen(input signed [7:0] sample);
+        widen={{10{sample[7]}},sample};
+    endfunction
     function automatic signed [28:0] correction(input signed [19:0] sum,input [7:0] master);
         reg signed [28:0] m;
         begin
@@ -125,7 +131,7 @@ module kagura_audio_synth #(
             pending_len<=8'h55; active_len<=8'h55; pending_master<=32; active_master<=32;
             pending_period<=0; active_period<=0;
             for(i=0;i<6;i=i+1) phase[i]<=0;
-            noise_state<=1; noise_count<=0; voice_sample<=0; sum_l<=0; sum_r<=0;
+            noise_state<=1; noise_count<=0; operand_l<=0; operand_r<=0; sum_l<=0; sum_r<=0;
             voice_product_l<=0; voice_product_r<=0; accumulate<=0;
             step_now<=0; phase_now<=0; gain_l<=0; gain_r<=0; duty_now<=0; voice_on<=0;
             master_product_l<=0; master_product_r<=0; master_correction_l<=0; master_correction_r<=0;
@@ -186,32 +192,48 @@ module kagura_audio_synth #(
                     state<=VOICE;
                 end
                 VOICE: begin
-                    voice_sample<=0;
+                    operand_l<=0; operand_r<=0;
                     if(channel<3) begin
                         if(voice_on) begin
                             phase[channel]<=phase_now+step_now;
-                            if(step_now!=0 && duty_now!=0)
-                                voice_sample<=phase_now[23:16]<duty_now ? 8'sd127 : -8'sd127;
+                            if(step_now!=0 && duty_now!=0) begin
+                                operand_l<=phase_now[23:16]<duty_now ? 18'sd127 : -18'sd127;
+                                operand_r<=phase_now[23:16]<duty_now ? 18'sd127 : -18'sd127;
+                            end
                         end
                     end else if(channel==3) begin
                         if(voice_on) begin
-                            voice_sample<=noise_state[14] ? 8'sd127 : -8'sd127;
+                            operand_l<=noise_state[14] ? 18'sd127 : -18'sd127;
+                            operand_r<=noise_state[14] ? 18'sd127 : -18'sd127;
                             if(noise_count==0) begin
                                 noise_state<={noise_state[13:0],noise_state[14]^noise_state[13]}; noise_count<=active_period;
                             end else noise_count<=noise_count-1'b1;
                         end
                     end else if(channel<6) begin
                         if(voice_on) phase[channel]<=phase_now+step_now;
-                    end else if(voice_on) voice_sample<=channel==6 ? pcm_sample0 : pcm_sample1;
+                    end else if(voice_on) begin
+                        operand_l<=widen(channel==6 ? pcm_sample0 : pcm_sample1);
+                        operand_r<=widen(channel==6 ? pcm_sample0 : pcm_sample1);
+                    end
                     state<=channel==4 || channel==5 ? WAVE : MULT;
                 end
-                WAVE: begin voice_sample<=voice_on && step_now!=0 ? wave_data : 8'sd0; state<=MULT; end
+                WAVE: begin
+                    operand_l<=voice_on && step_now!=0 ? widen(wave_data) : 18'sd0;
+                    operand_r<=voice_on && step_now!=0 ? widen(wave_data) : 18'sd0;
+                    state<=MULT;
+                end
                 MULT: begin
                     voice_product_l<=product_l; voice_product_r<=product_r; accumulate<=1;
                     if(channel==(PCM_ENABLE ? 7 : 5)) state<=ACC;
                     else begin channel<=channel+1'b1; state<=PREP; end
                 end
-                ACC: state<=MASTER;
+                ACC: state<=LOAD;
+                // The last product has been added: load the sum and master.
+                LOAD: begin
+                    operand_l<={1'b0,sum_l[16:0]}; operand_r<={1'b0,sum_r[16:0]};
+                    gain_l<=active_master; gain_r<=active_master;
+                    state<=MASTER;
+                end
                 MASTER: begin
                     master_product_l<=product_l; master_product_r<=product_r;
                     master_correction_l<=correction(sum_l,active_master); master_correction_r<=correction(sum_r,active_master);
