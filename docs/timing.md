@@ -75,4 +75,5 @@ W65C02S版のピンは[ボード資料](../boards/tang-nano-9k/README.md#cpu接�
 - `tools/run-baseline.ps1`は+0.10nsを既定のgateとして全構成をビルドし、構成ごとのmanifestを`reports/<revision>/<tool>/<構成>/`へ保存する。
 - P&Rの既定は`place_option 1`、`route_option 1`。`phase2boot720`はplace option 0、`phase2boot720`・`qspipsram720`・`spipsram`はroute option 2を使う（`tools/build-nano9k.tcl`）。`demo720`はpacket開始判定とVRAM経路の短縮後、place option 1に戻した。
 - reset入力・LED・TMDS出力には外部同期のI/O delayを設定しない（resetは非同期assert、LEDは状態表示、TMDSはOSER10から出力）。SPI/QSPIの入力は同期器の入口までfalse path。
+- boot用Flash MISOは同期器の入口ではなく、SCLK立下りから4 system周期後に取り込む。次の立下りも取込みの4周期後なので、受信2レジスタに限定したsetup=4／hold=7で関係を+4T／−4Tとする。`check-nano9k-timing.ps1`は全経路のSTAに加えて対象2個とエッジ関係を検査する。ボードの分周値4とテストの一致は`check-design.ps1`で確認する。[監査と検証結果](boot-sta-audit.md)も参照。
 - 合成成功とP&Rのsetup/hold収束は別の証拠として扱う。各構成の最新値は[検証状況](validation-status.md#資源とタイミング)。

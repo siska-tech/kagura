@@ -1,6 +1,6 @@
 # Simulation
 
-`tests/`にSystemVerilogの単体・統合試験を置く。参照モデル、busのホストモデル、HDMI decoder、PSRAMのmodelはtestbench内（共有部品は`support/`）に実装している。WSL/Linuxのrootから`bash tools/test-verilator.sh`で全試験（57件）を実行する。手順・環境変数は[ビルド・テスト](../docs/build-and-test.md#シミュレーション)。
+`tests/`にSystemVerilogの単体・統合試験を置く。参照モデル、busのホストモデル、HDMI decoder、PSRAMのmodelはtestbench内（共有部品は`support/`）に実装している。WSL/Linuxのrootから`bash tools/test-verilator.sh`で全試験（58件）を実行する。手順・環境変数は[ビルド・テスト](../docs/build-and-test.md#シミュレーション)。
 
 - 画像はPPM、音声はraw PCMとWAVとして`build/verilator/`へ保存する。期待値はRTLの出力からではなく、独立した参照モデルや仕様の値から作る。
 - 波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する。
@@ -42,7 +42,7 @@
 | | `tb_hyperram_ctrl` | cycle単位のHyperRAM protocol checker（CS high時間、競合、mask、register空間） |
 | | `tb_psram_pcm_chain`、`tb_hyperram_pcm_chain`、`tb_hyperram_pcm_source` | controller（modelまたは実RTL）からPCM出力までの縦通し |
 | | `tb_psram_core` | CAPS b3の`kagura_core`を公開ABIで検査（upload、FILL、COPY、PCMのPREPARE〜DONE、一時停止、STOP、CLEAR） |
-| boot | `tb_flash_reader`、`tb_boot_image_check`、`tb_boot_window`、`tb_boot_controller`、`tb_romless_boot_system` | [ROM-less boot](../docs/romless-boot.md#検証) |
+| boot | `tb_flash_reader`、`tb_flash_reader_timing`、`tb_boot_image_check`、`tb_boot_window`、`tb_boot_controller`、`tb_romless_boot_system` | [ROM-less boot](../docs/romless-boot.md#検証) |
 | | `test_boot_image.py` | boot image生成器（Python） |
 
 `support/kagura_hyperram_pair_model.sv`はCAを独立に復号するbyte-pair境界のPSRAM modelで、Gowin PHYやCKの位相、実機timingは対象外。

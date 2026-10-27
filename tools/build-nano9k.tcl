@@ -96,11 +96,15 @@ foreach path [concat $local rtl/vdp/kagura_bar_pattern.sv rtl/vdp/kagura_video_s
 # Gowin does not share clocks between SDC files, so concatenate them; CST
 # fragments are merged the same way.
 proc merge_into {path names} {
-    global root wide
+    global root wide base
     set out [open $path w]
     foreach name $names {
         set in [open [file join $root boards tang-nano-9k $name] r]
         set text [read $in]
+        # magicprobe instantiates the same reader directly, without boot/.
+        if {$name eq "boot-probe.sdc" && $base eq "magicprobe"} {
+            set text [string map {{boot/reader/} {reader/}} $text]
+        }
         # VIC4 clocks: same PLL/CLKDIV structure, other ratio and names.
         if {$wide} {
             set text [string map {{-multiply_by 14 -divide_by 3} {-multiply_by 55 -divide_by 4} serial126 serial371 pixel25 pixel74} $text]

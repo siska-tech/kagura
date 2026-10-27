@@ -102,6 +102,7 @@ CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.s
     rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv rtl/memory/kagura_hyperram_ctrl.sv)
 run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
 run_test tb_flash_reader rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader.sv
+run_test tb_flash_reader_timing rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader_timing.sv
 run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
 run_test tb_boot_window rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window.sv
 run_test tb_boot_controller rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \

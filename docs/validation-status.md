@@ -6,7 +6,7 @@
 
 | 種類 | 内容 | 再現方法 |
 |---|---|---|
-| simulation | Verilator 5.032で57試験。参照モデルとの全画素・全sample比較、protocol checker | `bash tools/test-verilator.sh`（CIでも実行） |
+| simulation | Verilator 5.032で58試験。参照モデルとの全画素・全sample比較、protocol checker、boot MISO保持窓 | `bash tools/test-verilator.sh`（CIでも実行） |
 | 設計検査 | BSRAM・cycle予算の算術、レジスタ定義と文書・生成物の一致 | `tools/check-design.ps1`、`tools/gen-registers.ps1 -Check` |
 | P&R/STA | Gowin EDAでのbitstream生成とsetup/hold | `tools/run-baseline.ps1`（ローカル。証跡は`reports/`、Git管理外） |
 | 実機 | Tang Nano 9K（シルク3674、chip ID `0x1100481B`）1枚、HDMI sink 2機種、Raspberry Pi Pico | 手順は[実機試験](hardware-test.md)、Picoは[firmware](../software/pico/README.md) |
@@ -51,13 +51,17 @@ Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純�
 
 全16構成でsetup/hold違反0、TNS=0、recovery/removalの負slackなし。すべて開発下限の+0.10nsを満たす。最小はdemo720の+0.190ns（demo sequencerの`count[5]`→`count[8]`）で、目標の+0.20nsには0.010ns届かないが、今回の受入値とする。改善前に下限未達だった5構成はphase2720 +0.020、spi720 +0.035、qspi720 +0.063、demo +0.068、demo720 +0.076nsで、RASTERの追加logicを通らない既存経路だった。
 
+Standard V1.9.12.04では同じRTL/SDCで14構成が合格し、boot系2構成はMISO入力のholdが−3.526nsとなったため、2026-10-27のStandard版Release ZIPから除外した。その後、SPI受信の保持期間に基づきMISO受信2レジスタのhold制約を3→7へ修正した。全経路の最小setup/holdはStandardでphase2boot +0.848/+0.527ns、phase2boot720 +0.834/+0.530ns。Educationも+2.087/+0.562ns、+1.929/+0.558nsで合格した。両版のbootprobe・magicprobeを含む8ビルドで違反0、TNS=0、負のrecovery/removalなし。[boot STA監査と実装検証](boot-sta-audit.md)を参照。Standardの計測用bootprobeではJEDEC ID 0x856016・既存imageのCRC検査を16回連続で確認した。製品用boot構成、外部CPUでの起動、冷間起動と波形実測、Releaseへの追加は未実施。
+
 構造的な対策は次の3点。Verilator 5.032の全57試験が合格し、HDMIのpacket開始位置は480p/720pで毎pixel照合した。
 
 - HDMIの`packet_enable`を1 pixel前に判定してregisterへ入れ、元と同じ開始位置を保ったまま`cx`のdecodeと音声packet制御の経路を分割する。
 - 16×16 spriteのtile番号は4の倍数へ整列済みなので、row/column offsetの加算をbit連結に置き換え、RAM bankのCE手前のcarry chainを除去する。
 - pattern RAMのCEは、grant済みrenderer読出しと排他的なcommandアクセスを直接ORし、重複したgrant muxを除去する。
 
-構造変更後はdemo720のplace optionを0から1へ戻した（0ではOAM RAMアドレスへの経路が−1.401ns）。spipsramはroute option 1でEXT読出しmuxの余裕が+0.064nsとなったため、2へ変更して+2.137nsを確保した。他の構成のP&R optionとSDCは変更していない。証跡は`reports/a5a9ca2-raster-timing/`に保存し、統合STA summaryには構成別の元manifestのpathを記録している。同じRTL・生成HDMI・制約のhashを照合して集計し、optionを変更した2構成は最終build scriptで再測定した。今回のタイミング改善後の実機試験は未実施。
+構造変更後はdemo720のplace optionを0から1へ戻した（0ではOAM RAMアドレスへの経路が−1.401ns）。spipsramはroute option 1でEXT読出しmuxの余裕が+0.064nsとなったため、2へ変更して+2.137nsを確保した。他の構成のP&R optionとSDCは変更していない。証跡は`reports/a5a9ca2-raster-timing/`に保存し、統合STA summaryには構成別の元manifestのpathを記録している。同じRTL・生成HDMI・制約のhashを照合して集計し、optionを変更した2構成は最終build scriptで再測定した。
+
+タイミング改善後のEducation版qspipsram720をB1へSRAM書込みし、既存Pico firmware・QSPI 5MHzで桜吹雪ストレス試験を2026-10-27 07:25–08:25 JSTに実施。3600.0秒、216000 frame、60.00fpsでPASS、sprite overflow・PCM/line underrun・ERROR_CODEは0。証跡は`reports/ee4a0ca-sakura-60m-20261027-072539/`。判定はシリアルtelemetryで、映像・音質の観測は含まない。Pico firmwareはデバイスから読み戻していないため作業ツリーの版とは同定しない。Standard版またはboot構成の実機試験を示す結果ではない。
 
 デバイス総量はLUT4 8640、FF 6480、BSRAM 26、PLL 2で、PSRAM版のLogicは約77〜78%に達する。demo系はart ROMを含めBSRAMを使い切っている。
 

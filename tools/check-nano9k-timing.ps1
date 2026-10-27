@@ -22,12 +22,18 @@ foreach($kind in @('Setup','Hold','Recovery','Removal')) {
     $worst[$kind]=[ordered]@{slack_ns=[double]$table.Groups[2].Value;from=$table.Groups[3].Value;to=$table.Groups[4].Value}
 }
 $negative=@($worst.Keys | Where-Object { $worst[$_] -and $worst[$_].slack_ns -lt 0 })
+$bootMiso=$null
+if($BaseName -match 'boot|magic_probe' -or $plain -match 'set_input_delay .*?\[get_ports \{flash_miso\}\]') {
+    $reader=if($BaseName -match 'magic_probe') { 'reader' } else { 'boot/reader' }
+    $bootMiso=& (Join-Path $PSScriptRoot 'check-boot-miso-timing.ps1') -Report $report -Reader $reader
+}
 $summary=[ordered]@{
     scope='board P&R; I/O and CDC constraints audited; P1-07 hardware compatibility tests pending'
     setup_violated_endpoints=$values.Setup
     hold_violated_endpoints=$values.Hold
     worst=$worst
     negative_analyses=$negative
+    boot_miso=$bootMiso
     release_ready=$false
     report_sha256=(Get-FileHash -LiteralPath $report).Hash.ToLowerInvariant()
 }
