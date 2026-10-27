@@ -152,6 +152,7 @@ FlashのWP/IO2とRESET/IO3はFPGAへ配線されていないので、単線SPI�
 | 試験 | 内容 |
 |---|---|
 | `tb_flash_reader` | JEDEC ID、`03h`の連続読出し、byte境界でのbackpressure、長さ0の拒否 |
+| `tb_flash_reader_timing` | ボードのCLK_DIV=4、MISO応答0/55ns、取込み前後4周期、byte間停止、Low/High/待機中resetからの復帰 |
 | `tb_boot_image_check` | header・範囲・entry・CRCの各拒否理由 |
 | `tb_boot_window` | スタブ、RESET/BRKベクタ、保護されたデータポートとbackpressure |
 | `tb_boot_controller` | JEDEC確認、二重読出し、CRC検査、先読み、ブート窓までの統合 |

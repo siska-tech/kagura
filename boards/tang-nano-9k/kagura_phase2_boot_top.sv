@@ -66,7 +66,8 @@ module kagura_phase2_boot_top #(
         irq_drive,boot_map ? 1'b0 : irq,req_valid,selected_req_ready,req_write,req_addr,req_wdata,
         selected_rsp_valid,rsp_ready,selected_rsp_rdata,selected_rsp_error,late);
 
-    kagura_boot_controller boot(system_clk,sys_reset,flash_cs_n,flash_sclk,flash_mosi,flash_miso,
+    // boot.sdc assumes four system cycles per SCLK half-period.
+    kagura_boot_controller #(.FLASH_CLK_DIV(4)) boot(system_clk,sys_reset,flash_cs_n,flash_sclk,flash_mosi,flash_miso,
         boot_ready,boot_error,boot_error_code,jedec_id,unmap_request,
         req_valid && boot_map,b_req_ready,req_write,req_addr,req_wdata,
         b_rsp_valid,rsp_ready,b_rsp_rdata,b_rsp_error);

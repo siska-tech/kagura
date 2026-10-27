@@ -34,7 +34,7 @@ Icarus Verilogがあれば`tools/test-phase1.ps1`で基礎的なsource/TMDS試�
 ## 設計検査とレジスタ定義の生成
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-design.ps1        # BSRAM・cycle予算の算術、文書の相対link、直接窓の表
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-design.ps1        # BSRAM・cycle予算、文書link、直接窓、boot分周契約
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-dependencies.ps1  # third_partyのhash
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Check
 ```

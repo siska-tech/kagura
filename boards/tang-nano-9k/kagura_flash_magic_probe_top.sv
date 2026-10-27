@@ -27,7 +27,8 @@ module kagura_flash_magic_probe_top (
     wire cmd_valid=state==ID_CMD || state==READ_CMD;
     wire cmd_jedec=state==ID_CMD;
     wire data_ready=state==ID_DATA || state==READ_DATA;
-    kagura_flash_reader reader(system_clk,~system_release[3],
+    // boot-probe.sdc assumes four system cycles per SCLK half-period.
+    kagura_flash_reader #(.CLK_DIV(4)) reader(system_clk,~system_release[3],
         cmd_valid,cmd_ready,cmd_jedec,24'h100000,24'd4,
         data_valid,data_ready,data,reader_done,reader_error,
         flash_cs_n,flash_sclk,flash_mosi,flash_miso);
