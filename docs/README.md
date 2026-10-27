@@ -34,4 +34,5 @@
 | [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
 | [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |
 | [Pico host firmware](../software/pico/README.md) | 配線、コマンド、実機確認の記録 |
+| [MicroPython driver / HDMI REPL](../software/micropython/README.md) | SPI/QSPIドライバ、自動検出、UARTキーボード入力、導入・受入手順 |
 | [出典](sources.md)、[第三者IP](../THIRD_PARTY.md) | 一次資料と外部ソース |

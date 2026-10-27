@@ -3,6 +3,7 @@
 #   rtl/core/kagura_abi_pkg.sv       SystemVerilog package
 #   software/include/kagura_regs.h   C header (SPI/QSPI hosts, W65C02S C)
 #   software/w65c02/kagura_regs.inc  ca65 include
+#   software/micropython/kagura/regs.py  MicroPython constants
 # -Check validates the definition, fails if any output is stale, and compares
 # offsets, names, access, bits and reset values with the document tables
 # (register-map.md, audio-spec.md, memory-map.md). The documents stay the
@@ -110,7 +111,7 @@ for ($i = 0; $i -lt $vram.Count; $i++) {
 # ---- generation ----
 function Remove-AudioPrefix([string]$name) { $name -replace '^AUDIO_', '' }
 function Get-Symbols {
-    # Ordered (section, name, value, width) rows shared by all three outputs.
+    # Ordered (section, name, value, width) rows shared by all outputs.
     $rows = New-Object System.Collections.Generic.List[object]
     function Add([string]$section, [string]$name, [long]$value, [int]$width) { $rows.Add([pscustomobject]@{section = $section; name = $name; value = $value; width = $width}) }
     Add 'ABI and identification' 'ABI_MAJOR' $spec.abi.major 8
@@ -234,10 +235,20 @@ for ($i = 31; $i -ge 0; $i--) { $v = Get $direct[$i] 'reset'; if ($null -eq $v) 
 [void]$sv.AppendLine("    localparam logic [255:0] DIRECT_RESET_VALUES = 256'h$resetBits;")
 [void]$sv.AppendLine('endpackage')
 
+$py = New-Object System.Text.StringBuilder
+[void]$py.AppendLine('# SPDX-License-Identifier: Apache-2.0')
+[void]$py.AppendLine("# $header")
+[void]$py.AppendLine('from micropython import const')
+foreach ($s in (Sections)) {
+    [void]$py.AppendLine(''); [void]$py.AppendLine("# $($s.Name)")
+    foreach ($r in $s.Group) { [void]$py.AppendLine(('{0} = const(0x{1:X})' -f $r.name, $r.value)) }
+}
+
 $outputs = [ordered]@{
     'rtl/core/kagura_abi_pkg.sv' = $sv.ToString()
     'software/include/kagura_regs.h' = $c.ToString()
     'software/w65c02/kagura_regs.inc' = $a.ToString()
+    'software/micropython/kagura/regs.py' = $py.ToString()
 }
 
 # ---- document checks ----
