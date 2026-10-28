@@ -21,6 +21,11 @@ def operation(method):
     return run
 
 
+_LINK_PATTERNS = (b"\x00\xff\x00\xff", b"\xff\x00\xff\x00", b"\x55\xaa\x55\xaa",
+                  b"\xaa\x55\xaa\x55", b"\x0f\xf0\x3c\xc3", b"\x01\x02\x04\x08",
+                  b"\x10\x20\x40\x80", b"\xfe\xfd\xfb\xf7")
+
+
 def _range(value, lo, hi, name):
     if not isinstance(value, int) or not lo <= value <= hi:
         raise ValueError(name)
@@ -40,10 +45,11 @@ class Kagura:
         self.height = 0
         self.abi = None
         self._one = bytearray(1)
+        self._read_pending = False
 
     @operation
     def probe(self, ready_timeout_us=None):
-        self._wait(self.transport.ready, "READY", ready_timeout_us)
+        self._wait(self.transport.idle, "READY", ready_timeout_us)
         ids = bytearray(5)
         self.transport.readinto(R.REG_ID0, ids, True)
         if ids[0] != R.ID0 or ids[1] != R.ID1:
@@ -58,6 +64,25 @@ class Kagura:
         if self.height not in (180, 240):
             raise OSError("unexpected screen height")
         return self
+
+    @operation
+    def check_link(self):
+        """Raise OSError unless repeated reads and writes arrive intact.
+
+        The patterns go to LENGTH_L..FENCE_TAG, which FILL, COPY and FENCE
+        always rewrite first, so no device state changes.
+        """
+        expected = bytes((R.ID0, R.ID1) + self.abi + (self.caps,))
+        ids = bytearray(5)
+        back = bytearray(4)
+        self.clear_errors()
+        for pattern in _LINK_PATTERNS:
+            self.transport.readinto(R.REG_ID0, ids, True)
+            self.transport.write(R.REG_LENGTH_L, pattern, True)
+            self.transport.readinto(R.REG_LENGTH_L, back, True)
+            if ids != expected or back != pattern:
+                raise OSError("KAGURA link check failed")
+        self.check_errors()
 
     def _wait(self, predicate, name, timeout_us=None):
         if timeout_us is None:
@@ -144,12 +169,21 @@ class Kagura:
     @operation
     def read_memory_into(self, address, buffer):
         self._memory_range(address, len(buffer))
+        if self._read_pending:
+            # An interrupted read left its result unread; a new READ_REQUEST
+            # would be rejected as READ_COLLISION and return that stale byte.
+            self.wait_status(R.STATUS_READ_BUSY, 0)
+            if self.read_reg(R.REG_STATUS) & R.STATUS_READ_READY:
+                self.read_reg(R.REG_VRAM_READ_RESULT)
+            self._read_pending = False
         self.transport.write(R.REG_INC_L, b"\x01\x00", True)
         self._address(address)
         for i in range(len(buffer)):
+            self._read_pending = True
             self.write_reg(R.REG_VRAM_READ_REQUEST, 0)
             self.wait_status(R.STATUS_READ_READY, R.STATUS_READ_READY)
             buffer[i] = self.read_reg(R.REG_VRAM_READ_RESULT)
+            self._read_pending = False
         self.write_reg(R.REG_IRQ_STATUS, R.IRQ_STATUS_READ_DONE)
         self.check_errors()
         return len(buffer)
