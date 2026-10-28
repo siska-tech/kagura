@@ -96,6 +96,7 @@ else:
     rp2 = types.ModuleType("rp2")
     rp2.PIO, rp2.StateMachine = pio, StateMachine
     rp2.asm_pio = lambda **kw: lambda f: f
+    rp2.asm_pio_encode = lambda instr, sideset_count, sideset_opt=False: (instr, sideset_count)
     sys.modules["rp2"] = rp2
 
 from kagura import Kagura, DeviceError
@@ -301,7 +302,9 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(result, b"K" * length)
                 if mode == "qspi":
                     self.assertTrue(words[1] & (1 << 30))
-                    self.assertEqual(t._sm.instructions[-1], "set(pindirs, 0)")
+                    self.assertEqual(t._sm.instructions[-1], rp2.asm_pio_encode("set(pindirs, 0)", 1))
+                    # A string makes exec() run the assembler on every transfer.
+                    self.assertFalse(any(isinstance(i, str) for i in t._sm.instructions))
                 else:
                     self.assertEqual(t.last_fifo_status, 32)
                 self.assertEqual(t._cs.value(), 1)

@@ -97,6 +97,10 @@ class PIOTransport:
             pad = 0x4001C004 + 4 * p
             mem32[pad] = (mem32[pad] & ~0x31) | 2
         self._program = _program(self.lanes, busy)
+        # exec() of a string runs the Python assembler (~13ms); encode once.
+        # Both programs use one mandatory side-set bit (SCK).
+        self._pins_out = rp2.asm_pio_encode("set(pindirs, 15)", 1)
+        self._pins_in = rp2.asm_pio_encode("set(pindirs, 0)", 1)
         self._config = dict(freq=baudrate * 12, out_base=self._io[0],
                             set_base=self._io[0],
                             in_base=self._io[0 if self.lanes == 4 else 1],
@@ -137,7 +141,7 @@ class PIOTransport:
             raise OSError("KAGURA is not READY (reset or disconnected)")
         self._active = True
         if self.lanes == 4:
-            self._sm.exec("set(pindirs, 15)")
+            self._sm.exec(self._pins_out)
         sleep_us(1)  # t_DIS and t_CSW >= 200ns
         self._cs(0)
         sleep_us(1)  # t_CSS >= 200ns
@@ -149,7 +153,7 @@ class PIOTransport:
         self._cs(1)
         sleep_us(1)
         if self.lanes == 4:
-            self._sm.exec("set(pindirs, 0)")
+            self._sm.exec(self._pins_in)
         self._active = False
 
     def _abort(self):
