@@ -186,6 +186,9 @@ class RegisterModel:
                 self.pending.append(("write", self._addr(), value))
                 self._advance()
             elif off == R.REG_VRAM_READ_REQUEST:
+                if self.reg[R.REG_STATUS] & R.STATUS_READ_READY:
+                    self.reg[R.REG_ERROR_CODE] |= R.ERROR_CODE_READ_COLLISION
+                    continue
                 self.read_requests += 1
                 self.reg[R.REG_VRAM_READ_RESULT] = self.memory[self._addr()]
                 self._advance()
@@ -248,6 +251,25 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(actual, data)
         self.assertEqual(self.model.read_requests, 2048)
         self.assertFalse(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
+
+    def test_read_after_interrupted_read(self):
+        # Ctrl-C between READ_REQUEST and READ_RESULT left a result unread;
+        # the next READ_REQUEST must not collide with it.
+        self.model.memory[0:8] = b"ABCDEFGH"
+        readinto = self.model.readinto
+        def interrupted(offset, buffer, inc=False):
+            if offset == R.REG_VRAM_READ_RESULT:
+                self.model.readinto = readinto
+                raise KeyboardInterrupt
+            readinto(offset, buffer, inc)
+        self.model.readinto = interrupted
+        with self.assertRaises(KeyboardInterrupt):
+            self.d.read_memory_into(4, bytearray(4))
+        self.assertTrue(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
+        actual = bytearray(4)
+        self.d.read_memory_into(0, actual)
+        self.assertEqual(actual, b"ABCD")
+        self.assertEqual(self.model.reg[R.REG_ERROR_CODE], 0)
 
     def test_fence_wrap_and_nonzero_initial_done(self):
         self.model.reg[R.REG_DONE_TAG] = 255

@@ -40,6 +40,7 @@ class Kagura:
         self.height = 0
         self.abi = None
         self._one = bytearray(1)
+        self._read_pending = False
 
     @operation
     def probe(self, ready_timeout_us=None):
@@ -144,12 +145,21 @@ class Kagura:
     @operation
     def read_memory_into(self, address, buffer):
         self._memory_range(address, len(buffer))
+        if self._read_pending:
+            # An interrupted read left its result unread; a new READ_REQUEST
+            # would be rejected as READ_COLLISION and return that stale byte.
+            self.wait_status(R.STATUS_READ_BUSY, 0)
+            if self.read_reg(R.REG_STATUS) & R.STATUS_READ_READY:
+                self.read_reg(R.REG_VRAM_READ_RESULT)
+            self._read_pending = False
         self.transport.write(R.REG_INC_L, b"\x01\x00", True)
         self._address(address)
         for i in range(len(buffer)):
+            self._read_pending = True
             self.write_reg(R.REG_VRAM_READ_REQUEST, 0)
             self.wait_status(R.STATUS_READ_READY, R.STATUS_READ_READY)
             buffer[i] = self.read_reg(R.REG_VRAM_READ_RESULT)
+            self._read_pending = False
         self.write_reg(R.REG_IRQ_STATUS, R.IRQ_STATUS_READ_DONE)
         self.check_errors()
         return len(buffer)
