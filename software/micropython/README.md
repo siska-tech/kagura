@@ -133,7 +133,7 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。REPL・コンソールの日本語化、日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
 
-**検証範囲（2026-10-28）**: PC上で変換ツール・フォントファイル・描画のモックテスト20件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。実機での字形・配置・速度・メモリ消費は**未検証**。
+**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・描画のモックテスト20件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。480pとSPIでは未確認。
 
 ### 導入
 
@@ -183,6 +183,7 @@ text.flush()
 - 自動追い出しはしない。新しい字形が残りを超える`text()`は、何も書き込まずに`MemoryError`になる（既存の表示は変わらない）。画面を切り替える時に`clear()`で登録を空にする。
 - RAMはmapの写し（`width × height × 2`byte、既定40×30で2400byte）と登録表（最大255項目のdict）を使う。フォント全体は読み込まない。
 - 新しい字形1つにつきファイルを最大13回seek/readする（7171字の二分探索）。既出の字形は読まない。
+- 実機（QSPI 5MHz）で、新しい字形1つにつき約1.8msのファイル検索がかかる。新しい字形255個を含む`text()`＋`flush()`は約0.97秒、登録済みの字形だけなら同じ255セルで約0.14秒（[実機の受入結果](#実機の受入結果)）。字形の多い画面は切替え前に描いておく。
 
 ### コンソールとの切替え
 
@@ -237,6 +238,7 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 | 転送中断 | 読出し・DMA書込み・FILLの実行中にUSBからCtrl-Cを21回送り（QSPI 18回・SPI 3回、5MHz）、毎回CS high・ERROR_CODE=0で次の操作が成功。修正前は、READ_READY待ちでの中断後の最初の読出しがREAD_COLLISION（0x08）になっていた |
 | FPGA reset | HDMIコンソールの表示中にFPGAを再構成すると`last_error`に`TransferTimeout`が入り、USB REPLは継続。`resume()`で復帰 |
 | 未接続・READY・BUSY | FPGA未構成（SRAM Erase）で起動するとUART＋USB REPLへフォールバック（この試験時は`KAGURA ID mismatch`、下記の修正後は2秒で`KAGURA timeout: READY`）。BUSY固定high（未構成時のpull-up）ではqueue対象の書込みが約100msで`TransferTimeout`。READY固定low（未配線GPIOをREADYに指定）では2秒で`KAGURA timeout: READY` |
+| 日本語表示（kagura_ja） | 2026-10-29、QSPI 5MHz・720p（40×22セル）。かな（濁点・半濁点・小書き）、漢字、全角記号、ASCII・半角カナの中央寄せ、未収録文字の`?`、折返し、右端と下端の切捨てをHDMIで目視確認。map 1760byte全体と字形タイル32個の読戻しが一致。`Font()` 3.4ms・RAM 1.2KiB、`glyph()`平均1.8ms、`TextLayer`のRAM 2.0KiB、字形255個の登録で+2.3KiB。`clear()` 186ms、新しい字形255個の`text()`＋`flush()` 0.97秒、登録済み255セルの再描画0.14秒、256個目で`MemoryError`。`ja_menu.run(kagura_console)`はUSBから送った↑↓・Enterで選択でき、戻り値は選んだ項目、終了後にコンソールへ復帰し、呼出し前後の`gc.mem_free()`の差は128byte。開始から最初の描画まで約0.59秒、終了時の`resume()`は約1.1秒 |
 
 #### 電源投入時の検出失敗（修正済み）
 
