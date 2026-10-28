@@ -2,7 +2,7 @@
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-28）**: PC上のABI/端末/通信モック等46テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。CI定義も追加したが、GitHub上での実行は未確認。実機（Pico、QSPI 1MHz、PSRAM付き720p bitstream）ではHDMIコンソールの表示・スクロール・USBからのCtrl-C（約130msで中断）・Ctrl-Dを確認し、100行の出力がHDMIへ描き終わるまで約3.8秒だった。UART入力・SPI・480p・2.5MHz以上・描画/音源APIは実機未検証。C版の5MHz合格実績をこのドライバの実績とは扱わない。
+**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック等47テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
@@ -23,7 +23,7 @@ mpremote connect COM5 reset
 
 `lib`が既にあればmkdirは不要。初期化前のログはUSBにだけ出る。同時に電源を入れる場合を考慮し、起動時はREADYを最大2秒待つ（`start(ready_timeout_us=...)`で変更可能）。KAGURAが未接続・ABI不一致ならHDMIを有効にせず、UART入力＋USB出力でREPLを利用できる。検出は起動時の1回で、ホットプラグ検出は行わない。
 
-他のバージョンや独自ビルドでは、REPLで次を実行してコンソール用APIの有無を確認する。両方`True`ならコンソールを接続できる。ドライバ単体はこれらのAPIに依存しない。通常版への後付け構成も実機では未検証。
+他のバージョンや独自ビルドでは、REPLで次を実行してコンソール用APIの有無を確認する。両方`True`ならコンソールを接続できる。ドライバ単体はこれらのAPIに依存しない。公式v1.26.0（RPI_PICO-20250809-v1.26.0.uf2）では両方`True`で、後付け構成での自動検出・HDMI表示を実機で確認した。
 
 ```python
 import os
@@ -141,5 +141,25 @@ python -I software/micropython/tests/test_driver.py \
 3. UARTで式評価・行編集・複数行入力・例外・長文スクロールを確認。`while True: pass`をCtrl-Cで中断し、Ctrl-Dで再起動後もHDMIへpromptが戻ることを確認。
 4. FPGA未接続、READY固定low、BUSY固定high、転送中Ctrl-C、FPGA resetからUSB REPLへ戻れることを確認。
 5. 描画へ切替→console復帰、480p/720p、PSG/wave/PCMの動作を確認。実際のFPSと転送速度を記録する。
+
+### 実機の受入結果
+
+2026-10-29、Pico（公式MicroPython v1.26.0 UF2＋`/lib/kagura/`、frozenなし）、Tang Nano 9K。bitstreamは`8aee28e`から作った[標準版release](https://github.com/siska-tech/kagura/releases/tag/bitstreams-2026-10-27)の`spi`・`spipsram`・`qspipsram`・`qspipsram720`をSRAMへ書いた。
+
+| 項目 | 結果 |
+|---|---|
+| 自動検出 | 4構成ともboot.pyでHDMIコンソールが起動。ABI 0.5、CAPS 0x53/0x5B/0x5B/0x7B、480pは30行・720pは22行 |
+| 32KiB書込み＋全域読戻し | SPI 5MHz（`spi`・`spipsram`）とQSPI 1/2.5/5MHzで不一致0。32KiB書込み＋FENCEは1MHzで0.5〜0.7秒、5MHzで0.45〜0.49秒。読出しは1byteごとにREAD_REQUESTを使うため約158byte/秒で、SCKによらない |
+| FILL/FENCE・BUSY | 2KiB×16のFILL＋FENCE、FILL 30000byte＋2KiB書込みを200回FENCEなしで連続投入し、内容一致・ERROR_CODE=0（SPI/QSPIの1/2.5/5MHz） |
+| PSRAM・COPY | 4KiBの書込み→COPY→読戻しが一致（`spipsram` 2.5/5MHz、`qspipsram720` 1/2.5/5MHz） |
+| UART入力 | UART0の内部ループバック（UARTCR.LBE）でGP1以降の経路へ打鍵列を入れ、式評価、左移動と挿入、BS、履歴、複数行、例外、30行のスクロール、`while True: pass`のCtrl-C、Ctrl-Dの再起動後のprompt復帰を確認。HDMIのmapもUSBと同じ内容。GP1への実配線は未確認 |
+| 描画⇔コンソール | `pause()`→描画→`resume()`で`spi`・`qspipsram`・`qspipsram720`ともコンソールへ戻り、mapの読戻しで全行を確認。`qspipsram720`では描画とコンソールの切替を目視でも確認 |
+| フレーム更新 | COMMITのみ約60fps、scroll＋COMMIT 58〜59fps、64 spriteのOAM 512byte書込み＋COMMIT 約29fps、`Video.sprite`8回＋COMMIT 約15fps（QSPI/SPIとも1MHz、Pythonの処理で律速） |
+| 音源・PCM | PSG 3ch＋noise＋wave 2chでAUDIO_STATUS=0（`spi`・`spipsram`・`qspipsram720`）。PCM 48000byte（1秒）のuploadはSPI 1.0秒・QSPI 0.74秒、one-shotは約1020msでDONE、loopは2.5秒後もACTIVE（`spipsram`・`qspipsram720`）。`qspipsram720`では聴感でも正常で、最後の書込み以降LED2（`late`）は消灯 |
+| 転送中断 | 読出し・DMA書込み・FILLの実行中にUSBからCtrl-Cを21回送り（QSPI 18回・SPI 3回、5MHz）、毎回CS high・ERROR_CODE=0で次の操作が成功。修正前は、READ_READY待ちでの中断後の最初の読出しがREAD_COLLISION（0x08）になっていた |
+| FPGA reset | HDMIコンソールの表示中にFPGAを再構成すると`last_error`に`TransferTimeout`が入り、USB REPLは継続。`resume()`で復帰 |
+| 未接続・READY・BUSY | FPGA未構成（SRAM Erase）で起動すると`KAGURA ID mismatch`を表示してUART＋USB REPLへフォールバック。BUSY固定high（未構成時のpull-up）ではqueue対象の書込みが約100msで`TransferTimeout`。READY固定low（未配線GPIOをREADYに指定）では2秒で`KAGURA timeout: READY` |
+
+既知の問題: PicoとFPGAに同時に電源が入るとREADYの待ち時間（2秒）に間に合わずコンソールが起動しないことがある（Ctrl-Dで再試行）。この受入試験では電源の再投入を行っていない。
 
 レジスタ定数`kagura/regs.py`は`spec/registers.json`から生成する。手動編集しない。
