@@ -232,3 +232,4 @@ class TextLayer:
     def flush(self):
         """Wait until queued tile and map writes have reached VRAM."""
         self.device.fence()
+# CI filter check
