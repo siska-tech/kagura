@@ -440,6 +440,10 @@ class TransportTests(unittest.TestCase):
             self.assertTrue(all(dma.closed for dma in channels))
 
 
+def text(t, start, end):
+    return "".join(chr(c) for c in t.cells[start:end])
+
+
 class TerminalTests(unittest.TestCase):
     def test_wrap_scroll(self):
         t = Terminal(22)
@@ -450,7 +454,7 @@ class TerminalTests(unittest.TestCase):
         for _ in range(22):
             t.feed(b"\r\nline")
         self.assertEqual(t.y, 21)
-        self.assertEqual(t.cells[-40:-36], b"line")
+        self.assertEqual(text(t, -40, -36), "line")
 
     def test_scroll_moves_dirty_flags(self):
         t = Terminal(22)
@@ -465,24 +469,39 @@ class TerminalTests(unittest.TestCase):
         t = Terminal(30)
         for data in (b">>> abc", b"\x1b[", b"2D", b"X", b"\x1b[K"):
             t.feed(data)
-        self.assertEqual(t.cells[:9], b">>> aX   ")
+        self.assertEqual(text(t, 0, 9), ">>> aX   ")
         self.assertEqual((t.x, t.y), (6, 0))
         t.feed(b"\x1b[2J\x1b[Hnew")
-        self.assertEqual(t.cells[:4], b"new ")
+        self.assertEqual(text(t, 0, 4), "new ")
 
     def test_backspace_crlf_tab(self):
         t = Terminal(22)
         t.feed(b"abc\b \bX\r\n\tY")
-        self.assertEqual(t.cells[:3], b"abX")
-        self.assertEqual(t.cells[40:49], b"        Y")
+        self.assertEqual(text(t, 0, 3), "abX")
+        self.assertEqual(text(t, 40, 49), "        Y")
 
     def test_utf8_and_unbounded_escape(self):
         t = Terminal(22)
         t.feed("あ".encode()[:1])
         t.feed("あ".encode()[1:] + b"!")
-        self.assertEqual(t.cells[:2], b"?!")
+        self.assertEqual(text(t, 0, 2), "あ!")
         t.feed(b"\x1b[" + b"1" * 1000 + b"m")
         self.assertTrue(t.escape is None or len(t.escape) <= 32)
+
+    def test_malformed_utf8_is_one_question_mark_each(self):
+        t = Terminal(22)
+        bad = (b"\xe3\x81A"         # truncated by ASCII
+               b"\x80"              # stray continuation
+               b"\xc0\xaf"          # invalid lead, then stray continuation
+               b"\xe0\x80\xaf"      # overlong 3-byte form
+               b"\xed\xa0\x80"      # surrogate
+               b"\xf0\x9f\x98\x80"  # outside the BMP
+               b"\xc2\x85"          # C1 control
+               b"\xe3\x81\x82")     # valid: あ
+        t.feed(bad)
+        self.assertEqual(text(t, 0, 10), "?A???????あ")
+        t.feed(b"\xe3\x81\x1b[2D\xc2\xa9")  # ESC ends the pending あ as '?'
+        self.assertEqual(text(t, 9, 11), "©?")
 
     def test_malformed_negative_cursor(self):
         t = Terminal(22)
@@ -604,8 +623,9 @@ class UART:
 
 
 class Screen:
-    def __init__(self, device=None):
+    def __init__(self, device=None, font=None):
         self.device = device or types.SimpleNamespace(busy=0, deinit=lambda: None)
+        self.font = font
         self.received = bytearray()
         self.flushes = 0
     def feed(self, data):
