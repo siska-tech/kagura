@@ -57,13 +57,44 @@ class StateMachine:
         return 0 if not self.stalled else 4
     def rx_fifo(self):
         return len(self.rx)
-    def put(self, value):
+    def put(self, value, shift=0):
         if len(self.rx) >= 4:
             raise AssertionError("RX was not drained")
-        self.words.append(value)
+        self.words.append(value << shift)
         self.rx.append(self.replies.pop(0) if self.replies else 0)
     def get(self):
         return self.rx.pop(0)
+
+
+class FakeDMA:
+    """Moves TX words into the fake SM at once; the RX channel then completes."""
+    stall = False
+    def __init__(self):
+        self.busy = False
+        self.closed = False
+        self.count = 0
+        self.source = None
+    def pack_ctrl(self, **fields):
+        return fields
+    def config(self, read=None, write=None, count=None, ctrl=None, trigger=False):
+        self.count = count
+        self.busy = True
+        if isinstance(read, StateMachine):  # RX channel drains into a sink
+            self.source = read
+            FakeDMA.rx = self
+            return
+        if FakeDMA.stall:
+            return
+        for i in range(count):
+            write.words.append(read[2 * i] | read[2 * i + 1] << 16)
+        self.count = self.busy = 0
+        FakeDMA.rx.count = FakeDMA.rx.busy = 0
+    def active(self, value=None):
+        if value is not None:
+            self.busy = bool(value)
+        return self.busy
+    def close(self):
+        self.closed = True
 
 
 machine = types.ModuleType("machine")
@@ -374,6 +405,39 @@ class TransportTests(unittest.TestCase):
                 t.write(7, b"abc")
         self.assertFalse(t._active)
         self.assertEqual(t._cs.value(), 1)
+
+    def test_long_writes_use_dma_with_the_same_words(self):
+        data = bytes(range(0, 250, 3)) * 4  # 336 bytes: several DMA chunks
+        for mode in ("spi", "qspi"):
+            for offset, length in ((7, len(data)), (12, 16), (7, 15)):
+                _owned_sms.clear()
+                plain = PIOTransport(mode=mode)
+                plain.write(offset, data[:length])
+                _owned_sms.clear()
+                with patch.object(rp2, "DMA", FakeDMA, create=True):
+                    t = PIOTransport(mode=mode)
+                    t.write(offset, data[:length])
+                self.assertEqual(t._sm.words, plain._sm.words)
+                self.assertEqual(t._cs.value(), 1)
+                self.assertFalse(t._active)
+
+    def test_dma_stall_times_out_and_aborts(self):
+        with patch.object(rp2, "DMA", FakeDMA, create=True):
+            t = PIOTransport(mode="qspi", timeout_us=20)
+            channels = (t._dma_tx, t._dma_rx)
+            FakeDMA.stall = True
+            try:
+                with self.assertRaises(TransferTimeout):
+                    t.write(7, bytes(64))
+            finally:
+                FakeDMA.stall = False
+            self.assertFalse(any(dma.active() for dma in channels))
+            self.assertEqual(t._cs.value(), 1)
+            self.assertFalse(t._active)
+            self.assertEqual(t._sm.init_count, 2)
+            t.write(7, bytes(64))
+            t.deinit()
+            self.assertTrue(all(dma.closed for dma in channels))
 
 
 class TerminalTests(unittest.TestCase):

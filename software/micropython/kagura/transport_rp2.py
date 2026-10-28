@@ -4,13 +4,19 @@
 No global CPU clock changes. Each byte returns one RX word; both FIFOs are
 pumped together, including write-only transfers. No blocking put/get on a
 full/empty FIFO, so an unplugged device/BUSY stall has a bounded timeout.
+Long writes to one register go through two DMA channels (TX words in, RX
+words discarded) instead of a Python loop per byte.
 """
+from array import array
 from machine import Pin, freq, mem32
 from time import ticks_us, ticks_diff, sleep_us
 import rp2
 from . import regs as R
 
 _owned_sms = set()
+_QUEUED = (R.REG_VRAM_WRITE, R.REG_VRAM_READ_REQUEST, R.REG_COMMAND)
+_DMA_MIN = 16  # shorter transfers are cheaper in Python than DMA setup
+_DMA_CHUNK = 128
 
 
 def _program(lanes, busy):
@@ -109,9 +115,13 @@ class PIOTransport:
         self._closed = False
         self._active = False
         self.last_fifo_status = 0
+        self._dma_tx = self._dma_rx = None
         try:
             self._init_sm()
+            if hasattr(rp2, "DMA"):
+                self._init_dma(sm_id)
         except BaseException:
+            self._close_dma()
             self._sm.active(0)
             self._cs(1)
             for pin in self._io:
@@ -127,6 +137,29 @@ class PIOTransport:
     def _init_sm(self):
         self._sm.init(self._program, **self._config)
         self._sm.active(1)
+
+    def _init_dma(self, sm_id):
+        # TX word = queued<<31 | byte<<shift; its low half is always zero.
+        # Tables of the high half keep every value a small int.
+        shift = (23 if self.lanes == 1 else 22) - 16
+        self._high = (array("H", [v << shift for v in range(256)]),
+                      array("H", [0x8000 | v << shift for v in range(256)]))
+        self._words = array("H", [0] * (2 * _DMA_CHUNK))
+        self._sink = bytearray(4)
+        dreq = (sm_id // 4) * 8 + sm_id % 4  # RP2040 DREQ_PIOx_TXy; RX is +4
+        self._dma_tx = rp2.DMA()
+        self._dma_rx = rp2.DMA()
+        self._tx_ctrl = self._dma_tx.pack_ctrl(size=2, inc_read=True, inc_write=False,
+                                               treq_sel=dreq)
+        self._rx_ctrl = self._dma_rx.pack_ctrl(size=2, inc_read=False, inc_write=False,
+                                               treq_sel=dreq + 4)
+
+    def _close_dma(self):
+        for dma in (self._dma_tx, self._dma_rx):
+            if dma is not None:
+                dma.active(0)
+                dma.close()
+        self._dma_tx = self._dma_rx = None
 
     def ready(self):
         return bool(self._ready.value())
@@ -157,6 +190,9 @@ class PIOTransport:
         self._active = False
 
     def _abort(self):
+        for dma in (self._dma_tx, self._dma_rx):
+            if dma is not None:
+                dma.active(0)
         self._sm.active(0)
         self._cs(1)
         sleep_us(1)
@@ -166,27 +202,63 @@ class PIOTransport:
     def _xfer(self, tx=None, rx=None, count=None, offset=None, inc=False,
               release_last=False):
         n = len(tx) if tx is not None else (len(rx) if rx is not None else count)
+        sm = self._sm
+        put, get, tx_fifo, rx_fifo = sm.put, sm.get, sm.tx_fifo, sm.rx_fifo
+        # put() applies the shift, so each value stays a small int:
+        # queued -> word bit 31, release (QSPI reads) -> bit 30.
+        shift = 23 if self.lanes == 1 else 22
+        queued = 1 << (31 - shift)
+        last = n - 1 if self.lanes == 4 and release_last else -1
+        flag = 0 if inc or offset not in _QUEUED else queued
+        timeout_us = self.timeout_us
         sent = got = 0
         progress = ticks_us()
         while got < n:
-            if sent < n and self._sm.tx_fifo() < 4:
-                target = ((offset + sent) & 31) if inc else offset
-                queued = target in (R.REG_VRAM_WRITE, R.REG_VRAM_READ_REQUEST,
-                                    R.REG_COMMAND)
-                value = tx[sent] if tx is not None else 0
-                word = (int(queued) << 31) | (value << (23 if self.lanes == 1 else 22))
-                if self.lanes == 4 and release_last and sent == n - 1:
-                    word |= 1 << 30
-                self._sm.put(word)
+            if sent < n and tx_fifo() < 4:
+                if inc and ((offset + sent) & 31) in _QUEUED:
+                    flag = queued
+                elif inc:
+                    flag = 0
+                value = flag | (tx[sent] if tx is not None else 0)
+                if sent == last:
+                    value |= queued >> 1
+                put(value, shift)
                 sent += 1
-            if self._sm.rx_fifo():
-                value = self._sm.get() & 255
+            if rx_fifo():
+                value = get() & 255
                 if rx is not None:
                     rx[got] = value
                 got += 1
                 progress = ticks_us()
-            if ticks_diff(ticks_us(), progress) >= self.timeout_us:
+            if ticks_diff(ticks_us(), progress) >= timeout_us:
                 raise TransferTimeout(max(0, got - 1))
+
+    def _xfer_dma(self, data, queued):
+        # FIFOs are empty here: every earlier word of the transfer was received.
+        high, words = self._high[queued], self._words
+        tx, rx = self._dma_tx, self._dma_rx
+        n = len(data)
+        done = 0
+        while done < n:
+            m = min(_DMA_CHUNK, n - done)
+            j = 1
+            for k in range(done, done + m):
+                words[j] = high[data[k]]
+                j += 2
+            rx.config(read=self._sm, write=self._sink, count=m, ctrl=self._rx_ctrl,
+                      trigger=True)
+            tx.config(read=words, write=self._sm, count=m, ctrl=self._tx_ctrl,
+                      trigger=True)
+            left = m
+            progress = ticks_us()
+            while rx.active():
+                count = rx.count
+                if count != left:
+                    left = count
+                    progress = ticks_us()
+                elif ticks_diff(ticks_us(), progress) >= self.timeout_us:
+                    raise TransferTimeout(done + max(0, m - left - 1))
+            done += m
 
     def write(self, offset, data, inc=False):
         if not 0 <= offset <= 31:
@@ -201,7 +273,10 @@ class PIOTransport:
             self._xfer(header, status)
             if self.lanes == 1:
                 self.last_fifo_status = status[0]
-            self._xfer(data, offset=offset, inc=inc)
+            if self._dma_tx is not None and not inc and len(data) >= _DMA_MIN:
+                self._xfer_dma(data, int(offset in _QUEUED))
+            else:
+                self._xfer(data, offset=offset, inc=inc)
             self._end()
         except BaseException:
             self._abort()
@@ -237,5 +312,6 @@ class PIOTransport:
             pin.init(Pin.IN)
         self._active = False
         self._closed = True
+        self._close_dma()
         rp2.PIO(self._sm_id // 4).remove_program(self._program)
         _owned_sms.discard(self._sm_id)
