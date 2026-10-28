@@ -151,10 +151,11 @@ class ConsoleStream(IOBase):
             self.screen.device.deinit()
 
 
-def start(mode="spi", baudrate=1_000_000, uart_id=0, tx=0, rx=1,
+def start(mode="spi", baudrate=None, uart_id=0, tx=0, rx=1,
           uart_baudrate=115200, ready_timeout_us=2_000_000, **transport_config):
     """Auto-detect once at boot. Missing FPGA leaves UART + USB REPL usable.
 
+    baudrate=None picks the fastest working SCK (see kagura.connect).
     Return a ConsoleStream. Inspect .screen/.last_error for detection status.
     UART TX is reserved but output stays on HDMI/USB (RX-only keyboard).
     """
@@ -187,7 +188,10 @@ def start(mode="spi", baudrate=1_000_000, uart_id=0, tx=0, rx=1,
         uart.deinit()
         raise
     if stream.screen is not None:
-        print("KAGURA-9 HDMI console; UART%d RX GP%d %d baud" % (uart_id, rx, uart_baudrate))
+        t = stream.screen.device.transport
+        print("KAGURA-9 HDMI console (%s %gMHz); UART%d RX GP%d %d baud"
+              % ("QSPI" if t.lanes == 4 else "SPI", t.baudrate / 1_000_000,
+                 uart_id, rx, uart_baudrate))
     else:
         print("KAGURA unavailable; UART keyboard + USB REPL active:", stream.last_error)
     return stream

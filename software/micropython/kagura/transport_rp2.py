@@ -89,6 +89,7 @@ class PIOTransport:
         if sm_id in _owned_sms:
             raise RuntimeError("PIO state machine already owned by KAGURA")
         self._sm_id = sm_id
+        self.baudrate = baudrate
         self.lanes = 1 if mode == "spi" else 4
         self.timeout_us = timeout_us
         self._tail_us = (2_000_000 + baudrate - 1) // baudrate
@@ -163,6 +164,12 @@ class PIOTransport:
 
     def ready(self):
         return bool(self._ready.value())
+
+    def idle(self):
+        # An FPGA still loading its bitstream pulls every pin high, READY
+        # included (about 170 ms after power-on). A configured, idle KAGURA
+        # drives BUSY low.
+        return bool(self._ready.value()) and not self._busy.value()
 
     def irq_asserted(self):
         return not self._irq.value()

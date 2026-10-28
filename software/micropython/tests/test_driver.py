@@ -143,6 +143,7 @@ from kagura.transport_rp2 import _owned_sms
 
 class RegisterModel:
     """Minimal queue-aware ABI model. Queue effects happen only at FENCE."""
+    lanes, baudrate = 4, 5_000_000
     def __init__(self):
         self.reg = bytearray(32)
         self.reg[R.REG_ID0:R.REG_CAPS + 1] = bytes((R.ID0, R.ID1, 0, 5, 0x7B))
@@ -156,8 +157,11 @@ class RegisterModel:
         self.read_requests = 0
         self.closed = False
         self.pcm_prepare_status = R.AUDIO_PCM_STATUS_READY
+    busy_pin = False
     def ready(self):
         return True
+    def idle(self):
+        return self.ready() and not self.busy_pin
     def _addr(self):
         return int.from_bytes(self.reg[4:7], "little")
     def _advance(self):
@@ -186,6 +190,9 @@ class RegisterModel:
                 self.pending.append(("write", self._addr(), value))
                 self._advance()
             elif off == R.REG_VRAM_READ_REQUEST:
+                if self.reg[R.REG_STATUS] & R.STATUS_READ_READY:
+                    self.reg[R.REG_ERROR_CODE] |= R.ERROR_CODE_READ_COLLISION
+                    continue
                 self.read_requests += 1
                 self.reg[R.REG_VRAM_READ_RESULT] = self.memory[self._addr()]
                 self._advance()
@@ -238,6 +245,32 @@ class DeviceTests(unittest.TestCase):
             self.d.probe()
         self.assertEqual(self.d.busy, 0)
 
+    def test_probe_waits_while_fpga_loads(self):
+        # Pico reaches boot.py ~70 ms after power-on, the FPGA ~170 ms. While
+        # it loads, pull-ups hold READY and BUSY high and IDs read as garbage.
+        model = RegisterModel()
+        model.busy_pin = True
+        polls = []
+        def idle():
+            polls.append(1)
+            if len(polls) == 3:
+                model.busy_pin = False
+            return RegisterModel.idle(model)
+        model.idle = idle
+        reads = []
+        readinto = model.readinto
+        def record(*args, **kwargs):
+            reads.append(len(polls))
+            readinto(*args, **kwargs)
+        model.readinto = record
+        Kagura(model).probe(ready_timeout_us=1_000_000)
+        self.assertGreaterEqual(min(reads), 3)
+
+    def test_fpga_that_never_finishes_loading_times_out(self):
+        self.model.busy_pin = True
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.d.probe()
+
     def test_vram_write_fence_read(self):
         data = bytes(range(256)) * 8
         self.d.write_memory(0, data)
@@ -248,6 +281,25 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(actual, data)
         self.assertEqual(self.model.read_requests, 2048)
         self.assertFalse(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
+
+    def test_read_after_interrupted_read(self):
+        # Ctrl-C between READ_REQUEST and READ_RESULT left a result unread;
+        # the next READ_REQUEST must not collide with it.
+        self.model.memory[0:8] = b"ABCDEFGH"
+        readinto = self.model.readinto
+        def interrupted(offset, buffer, inc=False):
+            if offset == R.REG_VRAM_READ_RESULT:
+                self.model.readinto = readinto
+                raise KeyboardInterrupt
+            readinto(offset, buffer, inc)
+        self.model.readinto = interrupted
+        with self.assertRaises(KeyboardInterrupt):
+            self.d.read_memory_into(4, bytearray(4))
+        self.assertTrue(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
+        actual = bytearray(4)
+        self.d.read_memory_into(0, actual)
+        self.assertEqual(actual, b"ABCD")
+        self.assertEqual(self.model.reg[R.REG_ERROR_CODE], 0)
 
     def test_fence_wrap_and_nonzero_initial_done(self):
         self.model.reg[R.REG_DONE_TAG] = 255
@@ -438,6 +490,82 @@ class TransportTests(unittest.TestCase):
             t.write(7, bytes(64))
             t.deinit()
             self.assertTrue(all(dma.closed for dma in channels))
+
+
+class LinkModel(RegisterModel):
+    """Transport opened at one SCK; reads flip a bit above max_baudrate."""
+    opened = []
+    def __init__(self, baudrate=1_000_000, max_baudrate=5_000_000, ready=True,
+                 busy=False, **config):
+        super().__init__()
+        self.baudrate, self.max_baudrate, self._ready = baudrate, max_baudrate, ready
+        self.busy_pin = busy
+        LinkModel.opened.append(self)
+    def ready(self):
+        return self._ready
+    def readinto(self, offset, buffer, inc=False):
+        super().readinto(offset, buffer, inc)
+        if self.baudrate > self.max_baudrate and offset == R.REG_LENGTH_L:
+            buffer[0] ^= 0x10
+
+
+class ConnectTests(unittest.TestCase):
+    def setUp(self):
+        LinkModel.opened = []
+
+    def connect(self, *args, **kwargs):
+        import kagura
+        factory = lambda **config: LinkModel(**config, **self.link)
+        with patch("kagura.transport_rp2.PIOTransport", side_effect=factory):
+            return kagura.connect(*args, **kwargs)
+
+    def test_auto_uses_fastest_speed(self):
+        self.link = {}
+        d = self.connect(mode="qspi")
+        self.assertEqual(d.transport.baudrate, 5_000_000)
+        self.assertEqual(len(LinkModel.opened), 1)
+        self.assertEqual(d.transport.reg[R.REG_ERROR_CODE], 0)
+
+    def test_auto_falls_back_past_bad_links(self):
+        # ID/ABI still read correctly at 5 MHz; only the link check sees it.
+        self.link = {"max_baudrate": 2_500_000}
+        d = self.connect(mode="spi")
+        self.assertEqual(d.transport.baudrate, 2_500_000)
+        self.assertEqual([t.closed for t in LinkModel.opened], [True, False])
+
+    def test_explicit_speed_has_no_fallback_or_link_check(self):
+        self.link = {"max_baudrate": 1_000_000}
+        d = self.connect(baudrate=2_500_000)
+        self.assertEqual(d.transport.baudrate, 2_500_000)
+        self.assertEqual(len(LinkModel.opened), 1)
+
+    def test_all_speeds_fail_raises_and_releases(self):
+        self.link = {"max_baudrate": 500_000}
+        with self.assertRaisesRegex(OSError, "link check"):
+            self.connect()
+        self.assertEqual([t.baudrate for t in LinkModel.opened],
+                         [5_000_000, 2_500_000, 1_000_000])
+        self.assertTrue(all(t.closed for t in LinkModel.opened))
+
+    def test_missing_ready_does_not_try_slower_speeds(self):
+        self.link = {"ready": False}
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.connect(ready_timeout_us=10)
+        self.assertEqual(len(LinkModel.opened), 1)
+        self.assertTrue(LinkModel.opened[0].closed)
+
+    def test_unconfigured_fpga_does_not_try_slower_speeds(self):
+        # An erased FPGA pulls READY and BUSY high forever.
+        self.link = {"busy": True}
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.connect(ready_timeout_us=10)
+        self.assertEqual(len(LinkModel.opened), 1)
+
+    def test_slow_system_clock_skips_unreachable_speeds(self):
+        self.link = {}
+        with patch.object(machine, "freq", lambda: 48_000_000):
+            d = self.connect()
+        self.assertEqual(d.transport.baudrate, 2_500_000)
 
 
 class TerminalTests(unittest.TestCase):
@@ -726,8 +854,11 @@ class BootTests(unittest.TestCase):
 
     def test_boot_attaches_detected_display_and_restores_slot(self):
         d = Kagura(RegisterModel()).probe()
-        with patch("kagura.connect", return_value=d), redirect_stdout(io.StringIO()):
+        out = io.StringIO()
+        with patch("kagura.connect", return_value=d) as connect, redirect_stdout(out):
             stream = start()
+        self.assertIsNone(connect.call_args.kwargs["baudrate"])
+        self.assertIn("(QSPI 5MHz)", out.getvalue())
         self.assertIs(self.slot, stream)
         self.assertIs(stream.screen.device, d)
         self.assertFalse(stream._timer.config["hard"])
