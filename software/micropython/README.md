@@ -2,7 +2,7 @@
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-28）**: PC上のABI/端末/通信モック等38テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。CI定義も追加したが、GitHub上での実行は未確認。MicroPython版の実機通信・HDMI・UART入力・Ctrl-C/Ctrl-D・速度は未検証。C版の5MHz合格実績をこのドライバの実績とは扱わない。
+**検証範囲（2026-10-28）**: PC上のABI/端末/通信モック等46テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。CI定義も追加したが、GitHub上での実行は未確認。実機（Pico、QSPI 1MHz、PSRAM付き720p bitstream）ではHDMIコンソールの表示・スクロール・USBからのCtrl-C（約130msで中断）・Ctrl-Dを確認し、100行の出力がHDMIへ描き終わるまで約3.8秒だった。UART入力・SPI・480p・2.5MHz以上・描画/音源APIは実機未検証。C版の5MHz合格実績をこのドライバの実績とは扱わない。
 
 ## 導入（通常のMicroPythonへの追加）
 
@@ -62,7 +62,8 @@ print(dev.abi, dev.caps, dev.height)
 - ASCII 8×8、40桁×30行（480p）/22行（720p）。下端4pxは720pで未使用。
 - 改行・折返し・スクロール・BS/DEL・タブ、CSIのカーソル移動と行/画面消去に対応。ANSI色指定は無視。日本語などASCII外のUTF-8は1文字を`?`で表示。
 - Enter、矢印、Backspace、Ctrl-C、Ctrl-Dの入力byteをMicroPython本来のREPLへ渡す。入力装置は改行にCR、編集キーにはVT100形式を送る。
-- 20msのsoft timerがUARTを通知し、実行中のPythonプログラムにもCtrl-Cを届ける。割込み禁止区間やネイティブ処理中の応答はMicroPythonの制約を受ける。
+- 20msのsoft timerがUARTを通知し、実行中のPythonプログラムにもCtrl-Cを届ける。USBからのCtrl-Cが表示更新やコンソールの処理中に起きた場合も、入力byteとして戻してプログラム側で中断させる。割込み禁止区間やネイティブ処理中の応答はMicroPythonの制約を受ける。
+- 改行はSCROLL_Yのハードウェアスクロールで行い、新しい行だけを書く。カーソルとスクロールは1回のCOMMITでそろえて反映し、フレーム待ちはしない。16byte以上の同じregisterへの書込み（VRAM_WRITEなど）はDMAでPIOへ送る。
 - HDMI出力は8192byteの固定リングバッファ。表示が追いつかない大量出力は超過分を破棄し、`kagura_console.dropped`へ累積する。全ログが必要ならUSBで取得する。
 - 表示中に通信エラーが出た場合はHDMIの更新を止め、`kagura_console.last_error`へ保存する。UART入力通知は継続する。
 
