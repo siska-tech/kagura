@@ -40,6 +40,9 @@ files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
 files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
 files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
+files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
+    software/micropython/examples/shooter.py software/micropython/examples/star_runner_assets/bgm.pcm
+files "STAR RUNNER hardware runner" "" tools/star-runner-device.ps1
 # PR #31 without its workflow edit: Python, font and docs only.
 files "kagura_ja and font" "micropython" software/micropython/kagura_ja/__init__.py \
     software/micropython/fonts/misaki8.kfnt software/micropython/fonts/README.md \

@@ -1,0 +1,70 @@
+STAR_RUNNER audio_errors 0
+STAR_RUNNER audio_reason
+STAR_RUNNER baudrate 5000000
+STAR_RUNNER bgm_gain 224
+STAR_RUNNER bgm_inactive_polls 0
+STAR_RUNNER caps 123
+STAR_RUNNER cleanup_errors []
+STAR_RUNNER commit_successes 100
+STAR_RUNNER dma viper
+STAR_RUNNER dma_payload_bytes 204800
+STAR_RUNNER dropped_audio_events 0
+STAR_RUNNER enabled_sprites 256
+STAR_RUNNER enhanced True
+STAR_RUNNER error_count 7
+STAR_RUNNER error.0 [14, 256, 2048, 2111, 0, 0, 3, 4, 72, 40]
+STAR_RUNNER error.1 [29, 256, 2048, 2138, 0, 0, 2, 3, 76, 40]
+STAR_RUNNER error.2 [44, 256, 2048, 2111, 0, 0, 3, 3, 88, 40]
+STAR_RUNNER error.3 [59, 256, 2048, 2111, 0, 0, 3, 4, 76, 40]
+STAR_RUNNER error.4 [74, 256, 2048, 2111, 0, 0, 3, 4, 84, 40]
+STAR_RUNNER error.5 [89, 256, 2048, 2132, 0, 0, 3, 3, 80, 40]
+STAR_RUNNER error.6 [100, 256, 2048, 38, 0, 0, 3, 3, 88, 40]
+STAR_RUNNER failure None
+STAR_RUNNER frame_max_us 81916
+STAR_RUNNER frame_mean_us 47442.03
+STAR_RUNNER frame_p95_us 73314
+STAR_RUNNER frames 100
+STAR_RUNNER gc_interval 4
+STAR_RUNNER hardware_frame_delta 288
+STAR_RUNNER height 180
+STAR_RUNNER lanes 4
+STAR_RUNNER last_audio_status 0
+STAR_RUNNER last_pcm0_status 3
+STAR_RUNNER last_pcm1_status 3
+STAR_RUNNER load EXTREME
+STAR_RUNNER logic_fps 20.83793
+STAR_RUNNER max_us.audio 35475
+STAR_RUNNER max_us.collision 2583
+STAR_RUNNER max_us.commit 7463
+STAR_RUNNER max_us.gc 9267
+STAR_RUNNER max_us.input 107
+STAR_RUNNER max_us.monitor 27566
+STAR_RUNNER max_us.movement 3674
+STAR_RUNNER max_us.oam_build 4501
+STAR_RUNNER max_us.oam_transfer 13802
+STAR_RUNNER max_us.scroll 12313
+STAR_RUNNER max_us.sleep 41
+STAR_RUNNER mean_us.audio 7601.28
+STAR_RUNNER mean_us.collision 1075.52
+STAR_RUNNER mean_us.commit 6847.06
+STAR_RUNNER mean_us.gc 2303.56
+STAR_RUNNER mean_us.input 66.15
+STAR_RUNNER mean_us.monitor 1633.35
+STAR_RUNNER mean_us.movement 2045.68
+STAR_RUNNER mean_us.oam_build 2436.63
+STAR_RUNNER mean_us.oam_transfer 13223.42
+STAR_RUNNER mean_us.scroll 2226.34
+STAR_RUNNER mean_us.sleep 34.57
+STAR_RUNNER minimum_free_bytes 113888
+STAR_RUNNER mode EXTREME
+STAR_RUNNER oam_records 256
+STAR_RUNNER p95_window_frames 100
+STAR_RUNNER particle_culled 1
+STAR_RUNNER particles 8
+STAR_RUNNER pcm_enabled True
+STAR_RUNNER renderer viper
+STAR_RUNNER sprite_overflows 7
+STAR_RUNNER target_fps 0
+STAR_RUNNER transport_us 2465861
+STAR_RUNNER wave_enabled True
+STAR_RUNNER wire_bytes 208710

@@ -4,6 +4,7 @@ freeze("$(BOARD_DIR)/../..", (
     "kagura/__init__.py",
     "kagura/regs.py",
     "kagura/transport_rp2.py",
+    "kagura/dma_pack.py",
     "kagura/device.py",
     "kagura/video.py",
     "kagura/audio.py",

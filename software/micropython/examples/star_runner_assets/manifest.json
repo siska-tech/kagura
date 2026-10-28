@@ -1,0 +1,59 @@
+{
+  "format": "signed8-mono",
+  "rate": 48000,
+  "version": 3,
+  "music": {
+    "title": "Star Runner - Afterburner",
+    "bpm": 160,
+    "bars": 4,
+    "progression": [
+      "B7",
+      "C",
+      "D",
+      "E"
+    ],
+    "seconds": 6.0
+  },
+  "samples": [
+    {
+      "name": "bgm",
+      "file": "bgm.pcm",
+      "start": 4194304,
+      "end": 4482304,
+      "loop": true,
+      "sha256": "162bf045467f079590e016fed939f4c41a372bcd5b3c12ab818466bce092537d"
+    },
+    {
+      "name": "explosion",
+      "file": "explosion.pcm",
+      "start": 4482304,
+      "end": 4497664,
+      "loop": false,
+      "sha256": "1663b462fce776c57ec81d9f62940926c03e889e94cfea4754c81c3b5dc54726"
+    },
+    {
+      "name": "powerup",
+      "file": "powerup.pcm",
+      "start": 4497664,
+      "end": 4509184,
+      "loop": false,
+      "sha256": "29f16524da7a681f5fb937d51214db356cac4b3d239fdc8823eeccf4b4663a0a"
+    },
+    {
+      "name": "stage",
+      "file": "stage.pcm",
+      "start": 4509184,
+      "end": 4528384,
+      "loop": false,
+      "sha256": "0ee7016e86fe2708d715cd34dfd6178d335ab3752f4388b9e230c7276d7115aa"
+    },
+    {
+      "name": "special",
+      "file": "special.pcm",
+      "start": 4528384,
+      "end": 4545664,
+      "loop": false,
+      "sha256": "fb42ac529223b4694e250e2076f37aca4929135c5f941f7c10ba254ae74cfa33"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+BENCH_BEGIN EXTREME128
+STAR_RUNNER audio_errors 0
+STAR_RUNNER audio_reason
+STAR_RUNNER baudrate 5000000
+STAR_RUNNER bgm_inactive_polls 0
+STAR_RUNNER caps 123
+STAR_RUNNER cleanup_errors []
+STAR_RUNNER commit_successes 400
+STAR_RUNNER dma_payload_bytes 409600
+STAR_RUNNER dropped_audio_events 4
+STAR_RUNNER enabled_sprites 128
+STAR_RUNNER enhanced True
+STAR_RUNNER error_count 27
+STAR_RUNNER error.0 [14, 128, 1024, 1087, 0, 0, 3, 4, 72, 40]
+STAR_RUNNER error.1 [29, 128, 1024, 1114, 0, 0, 3, 3, 44, 44]
+STAR_RUNNER error.2 [44, 128, 1024, 1087, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.3 [59, 128, 1024, 1087, 0, 0, 3, 4, 76, 40]
+STAR_RUNNER error.4 [74, 128, 1024, 1087, 0, 0, 3, 4, 84, 40]
+STAR_RUNNER error.5 [89, 128, 1024, 1087, 0, 0, 3, 3, 80, 40]
+STAR_RUNNER error.6 [104, 128, 1024, 1108, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.7 [119, 128, 1024, 1147, 0, 0, 3, 1, 88, 40]
+STAR_RUNNER error.8 [134, 128, 1024, 1087, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.9 [149, 128, 1024, 1087, 0, 0, 3, 4, 80, 40]
+STAR_RUNNER error.10 [164, 128, 1024, 1108, 0, 0, 3, 3, 80, 40]
+STAR_RUNNER error.11 [179, 128, 1024, 1117, 0, 0, 3, 4, 84, 40]
+STAR_RUNNER error.12 [194, 128, 1024, 1087, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.13 [209, 128, 1024, 1087, 0, 0, 3, 4, 80, 40]
+STAR_RUNNER error.14 [224, 128, 1024, 1108, 0, 0, 3, 4, 92, 40]
+STAR_RUNNER error.15 [239, 128, 1024, 1147, 0, 0, 3, 1, 84, 40]
+STAR_RUNNER error.16 [254, 128, 1024, 1108, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.17 [269, 128, 1024, 1087, 0, 0, 3, 4, 96, 40]
+STAR_RUNNER error.18 [284, 127, 1024, 1087, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.19 [299, 128, 1024, 1087, 0, 0, 3, 4, 92, 40]
+STAR_RUNNER error.20 [314, 128, 1024, 1108, 0, 0, 3, 3, 88, 40]
+STAR_RUNNER error.21 [329, 128, 1024, 1087, 0, 0, 3, 4, 95, 57]
+STAR_RUNNER error.22 [344, 128, 1024, 1108, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.23 [359, 128, 1024, 1147, 0, 0, 3, 1, 84, 40]
+STAR_RUNNER error.24 [374, 128, 1024, 1087, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER error.25 [389, 128, 1024, 1087, 0, 0, 3, 4, 84, 40]
+STAR_RUNNER error.26 [400, 128, 1024, 38, 0, 0, 3, 4, 88, 40]
+STAR_RUNNER failure None
+STAR_RUNNER frame_max_us 145721
+STAR_RUNNER frame_mean_us 83613.34
+STAR_RUNNER frame_p95_us 109675
+STAR_RUNNER frames 400
+STAR_RUNNER gc_interval 4
+STAR_RUNNER hardware_frame_delta 2015
+STAR_RUNNER height 180
+STAR_RUNNER lanes 4
+STAR_RUNNER last_audio_status 0
+STAR_RUNNER last_pcm0_status 3
+STAR_RUNNER last_pcm1_status 4
+STAR_RUNNER load EXTREME
+STAR_RUNNER logic_fps 11.912581
+STAR_RUNNER max_us.audio 40807
+STAR_RUNNER max_us.collision 3158
+STAR_RUNNER max_us.commit 7163
+STAR_RUNNER max_us.gc 8574
+STAR_RUNNER max_us.input 108
+STAR_RUNNER max_us.monitor 26892
+STAR_RUNNER max_us.movement 4175
+STAR_RUNNER max_us.oam_build 40169
+STAR_RUNNER max_us.oam_transfer 23425
+STAR_RUNNER max_us.scroll 12539
+STAR_RUNNER max_us.sleep 41
+STAR_RUNNER mean_us.audio 7374.5976
+STAR_RUNNER mean_us.collision 1288.835
+STAR_RUNNER mean_us.commit 6685.4124
+STAR_RUNNER mean_us.gc 2117.7
+STAR_RUNNER mean_us.input 66.01
+STAR_RUNNER mean_us.monitor 1681.795
+STAR_RUNNER mean_us.movement 2272.7824
+STAR_RUNNER mean_us.oam_build 29180.198
+STAR_RUNNER mean_us.oam_transfer 22838.148
+STAR_RUNNER mean_us.scroll 2080.675
+STAR_RUNNER mean_us.sleep 34.74
+STAR_RUNNER minimum_free_bytes 125120
+STAR_RUNNER mode EXTREME
+STAR_RUNNER oam_records 128
+STAR_RUNNER p95_window_frames 400
+STAR_RUNNER particle_culled 11
+STAR_RUNNER particles 8
+STAR_RUNNER pcm_enabled True
+STAR_RUNNER sprite_overflows 27
+STAR_RUNNER target_fps 0
+STAR_RUNNER transport_us 13537837
+STAR_RUNNER wave_enabled True
+STAR_RUNNER wire_bytes 424895
+BENCH_END EXTREME128

@@ -1,0 +1,66 @@
+FINAL_SOAK_GAIN 224
+BGM_VERSION Konami progression, 160BPM, 6 seconds
+STAR_RUNNER audio_errors 0
+STAR_RUNNER audio_reason
+STAR_RUNNER baudrate 5000000
+STAR_RUNNER bgm_gain 224
+STAR_RUNNER bgm_inactive_polls 0
+STAR_RUNNER caps 123
+STAR_RUNNER cleanup_errors []
+STAR_RUNNER commit_successes 5035
+STAR_RUNNER dma_payload_bytes 2577920
+STAR_RUNNER dropped_audio_events 16
+STAR_RUNNER enabled_sprites 64
+STAR_RUNNER enhanced True
+STAR_RUNNER error_count 0
+STAR_RUNNER failure None
+STAR_RUNNER frame_max_us 124128
+STAR_RUNNER frame_mean_us 59304.796
+STAR_RUNNER frame_p95_us 82916
+STAR_RUNNER frames 5035
+STAR_RUNNER gc_interval 4
+STAR_RUNNER hardware_frame_delta 18002
+STAR_RUNNER height 180
+STAR_RUNNER lanes 4
+STAR_RUNNER last_audio_status 0
+STAR_RUNNER last_pcm0_status 3
+STAR_RUNNER last_pcm1_status 1
+STAR_RUNNER load STRESS
+STAR_RUNNER logic_fps 16.781874
+STAR_RUNNER max_us.audio 40947
+STAR_RUNNER max_us.collision 3632
+STAR_RUNNER max_us.commit 7677
+STAR_RUNNER max_us.gc 8780
+STAR_RUNNER max_us.input 115
+STAR_RUNNER max_us.monitor 19680
+STAR_RUNNER max_us.movement 4958
+STAR_RUNNER max_us.oam_build 18049
+STAR_RUNNER max_us.oam_transfer 15771
+STAR_RUNNER max_us.scroll 12441
+STAR_RUNNER max_us.sleep 504
+STAR_RUNNER mean_us.audio 6777.9688
+STAR_RUNNER mean_us.collision 1173.1514
+STAR_RUNNER mean_us.commit 6695.884
+STAR_RUNNER mean_us.gc 2160.0232
+STAR_RUNNER mean_us.input 67.99722
+STAR_RUNNER mean_us.monitor 1270.5499
+STAR_RUNNER mean_us.movement 2247.991
+STAR_RUNNER mean_us.oam_build 13354.805
+STAR_RUNNER mean_us.oam_transfer 15390.06
+STAR_RUNNER mean_us.scroll 2055.033
+STAR_RUNNER mean_us.sleep 110.71817
+STAR_RUNNER minimum_free_bytes 120256
+STAR_RUNNER mode HEAVY
+STAR_RUNNER oam_records 64
+STAR_RUNNER p95_window_frames 1024
+STAR_RUNNER particle_culled 347
+STAR_RUNNER particles 8
+STAR_RUNNER pcm_enabled True
+STAR_RUNNER sprite_overflows 0
+STAR_RUNNER target_fps 30
+STAR_RUNNER transport_us 128313114
+STAR_RUNNER wave_enabled True
+STAR_RUNNER wire_bytes 2760984
+FINAL_SOAK_END
+FINAL_SOAK_REPL True
+FINAL_SOAK_FPGA_ERROR 0

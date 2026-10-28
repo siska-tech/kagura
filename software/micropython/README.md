@@ -83,6 +83,16 @@ finally:
 
 ## ドライバAPI
 
+映像・音源を同時に試す[STAR RUNNER v2](examples/shooter.md)も用意している。
+既存の横スクロールSTGを基に、固定長オブジェクト管理・DMA対応OAM一括転送・
+PCM BGM／効果音・PSG／wave・64〜256個のOAM負荷・終了後の計測結果出力に対応する。
+ドライバAPIの変更はない。[性能比較と検証状況](benchmarks/README.md)を参照。
+最終BGMはB7→C→D→Eの160BPM・6秒ループ。720p／QSPI 5MHz・Pico 125MHzでは、
+64 OAM＋全音源の5分試験が5,035更新・音声error 0で完走した。
+ゲーム全体は約16.8fpsで、目標30fpsには未達（上記レポートに区間別の内訳を記録）。
+追加の[Viper OAM／DMA展開の調査](benchmarks/acceleration.md)では、同条件のHEAVYで
+通常16.45fps→両方有効23.67fpsを実測した。`renderer='viper', dma='viper'`で選択できる。
+
 ```python
 from kagura import connect
 from kagura.video import Video
