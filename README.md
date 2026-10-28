@@ -53,7 +53,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 
 文書の一覧は[ドキュメント案内](docs/README.md)にあります。
 
-[MicroPythonドライバ](software/micropython/README.md)は、SPI/QSPI制御とUARTキーボード入力・HDMI REPL、アプリ画面向けの8×8日本語表示（美咲ゴシック）を提供します。導入方法と実機検証の残作業はリンク先を参照してください。
+[MicroPythonドライバ](software/micropython/README.md)は、SPI/QSPI制御とUARTキーボード入力・HDMI REPL、REPL出力とアプリ画面の8×8日本語表示（美咲ゴシック）を提供します。導入方法と実機検証の残作業はリンク先を参照してください。
 
 ## リポジトリ
 

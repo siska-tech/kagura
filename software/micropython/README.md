@@ -2,7 +2,7 @@
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等56テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
+**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
@@ -59,8 +59,9 @@ dev = kagura_console.screen.device
 print(dev.abi, dev.caps, dev.height)
 ```
 
-- ASCII 8×8、40桁×30行（480p）/22行（720p）。下端4pxは720pで未使用。
-- 改行・折返し・スクロール・BS/DEL・タブ、CSIのカーソル移動と行/画面消去に対応。ANSI色指定は無視。日本語などASCII外のUTF-8は1文字を`?`で表示。
+- 8×8セル、40桁×30行（480p）/22行（720p）。下端4pxは720pで未使用。
+- 改行・折返し・スクロール・BS/DEL・タブ、CSIのカーソル移動と行/画面消去に対応。ANSI色指定は無視。
+- 出力のUTF-8を文字単位で解釈する。[日本語表示](#replの日本語出力)用のフォントがあれば、かな・漢字などもHDMIへ表示する。フォントがない場合や未収録文字・不正なUTF-8・BMP外の文字は、1文字を`?`で表示。
 - Enter、矢印、Backspace、Ctrl-C、Ctrl-Dの入力byteをMicroPython本来のREPLへ渡す。入力装置は改行にCR、編集キーにはVT100形式を送る。
 - 20msのsoft timerがUARTを通知し、実行中のPythonプログラムにもCtrl-Cを届ける。USBからのCtrl-Cが表示更新やコンソールの処理中に起きた場合も、入力byteとして戻してプログラム側で中断させる。割込み禁止区間やネイティブ処理中の応答はMicroPythonの制約を受ける。
 - 改行はSCROLL_Yのハードウェアスクロールで行い、新しい行だけを書く。カーソルとスクロールは1回のCOMMITでそろえて反映し、フレーム待ちはしない。16byte以上の同じregisterへの書込み（VRAM_WRITEなど）はDMAでPIOへ送る。
@@ -78,7 +79,7 @@ finally:
     kagura_console.resume()
 ```
 
-`resume()`はフォント・背景map・palette 0/1・OAM・scrollをコンソール用に再初期化する。アプリの画面は再構築が必要。`detach()`は以前のdupterm streamへ戻す。`close()`はUART/PIOも解放する。既に別のstreamをdupterm slot 0へ接続している場合、attach中はそれを置き換える。
+`resume()`はフォント・日本語字形の登録・背景map・palette 0/1・OAM・scrollをコンソール用に再初期化する。アプリの画面は再構築が必要。`detach()`は以前のdupterm streamへ戻す。`close()`はUART/PIOも解放する。既に別のstreamをdupterm slot 0へ接続している場合、attach中はそれを置き換える。
 
 ## ドライバAPI
 
@@ -131,9 +132,9 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 ## 日本語表示（kagura_ja）
 
-アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。REPL・コンソールの日本語化、日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
+アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。同じフォントで[REPLの出力](#replの日本語出力)も日本語表示できる。日本語の行編集、本体側の日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
 
-**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・描画のモックテスト20件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。
+**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・アプリ描画・コンソール出力のモックテスト29件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。MicroPython v1.26.0のunix版で、同梱フォントによるアプリ描画とコンソール出力（1byteずつ届くUTF-8、スクロール）を模擬deviceで確認。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。REPLの日本語出力は実機（Pico、QSPI 1MHz、720p）でスクロール・Ctrl-Cを含めて確認し、日本語を含む100行の出力がHDMIへ描き終わるまで約5.4秒（ASCIIのみは約4.8秒）だった。
 
 ### 導入
 
@@ -187,7 +188,7 @@ text.flush()
 
 ### コンソールとの切替え
 
-起動コンソールのタイル0〜127・map全体・palette 0・sprite 0（カーソル）と重なる。`kagura_console.pause()`で止めてから描画し、終わったら`resume()`する。`resume()`がmap全体を初期化するので、日本語画面に戻る時は`clear()`から描き直す。pause中もsprite 0のカーソルは残るため、隠す場合は`Video(dev).sprite(0, enable=False)`の後にCOMMITする。
+起動コンソールはタイル0〜1023（128以降は日本語字形）・map全体・palette 0・sprite 0（カーソル）を使う。`kagura_console.pause()`で止めてから描画し、終わったら`resume()`する。`resume()`がmap全体とコンソールの字形登録を初期化するので、日本語画面に戻る時は`clear()`から描き直す。pause中もsprite 0のカーソルは残るため、隠す場合は`Video(dev).sprite(0, enable=False)`の後にCOMMITする。
 
 `examples/ja_menu.py`は、コンソールを止めてpalette 1で日本語メニューを表示し、↑↓（またはw/s）とEnterで項目を選ぶサンプル。
 
@@ -195,6 +196,22 @@ text.flush()
 import ja_menu
 print(ja_menu.run(kagura_console))
 ```
+
+### REPLの日本語出力
+
+`kagura_ja/`と`/fonts/misaki8.kfnt`を置いておくと、起動コンソールが自動でフォントを開き、`print()`・例外・REPLのエコーに含まれる日本語をHDMIへ表示する。boot.pyの変更は不要。フォントがない場合、起動時に理由をUSBへ表示し（`kagura_console.font_error`にも保存）、従来どおり`?`で表示する。`start(font_path=None)`で無効化、別の場所のフォントは`start(font_path="/path.kfnt")`で指定する。
+
+```python
+>>> print("こんにちは、神楽！")
+こんにちは、神楽！
+```
+
+- 全角・半角とも1文字を1セル（8×8）に表示する。PCの端末とは桁位置が一致しない場合がある。
+- 日本語の字形はタイル128〜1023（最大896枚）に、表示中のセルが使う数を数えて登録する。画面から消えた字形のタイルだけを再利用し、表示中の文字を書き換えることはない。表示中の字形が896種類を超えた分は`?`になり、`kagura_console.screen.glyph_overflow`へ数える。
+- 新しい字形を表示する時は、20msごとの表示更新の中でフォントファイルを読む（1字最大13回seek/read、実機で約2.4ms）。字形の多い大量出力では表示更新に時間がかかる。
+- スクロールで画面外へ出た行の字形タイルは、そのCOMMITの後に解放して再利用する。
+- RAMは480pで約8.5KB（セルの文字コード・表示中のタイル・参照数・登録表）を使う。
+- **入力時の注意**: MicroPython v1.26.0の行編集（`shared/readline`）は印字可能なASCII（32〜126）しか行へ入れず、それ以外のbyteは捨てる。このため通常のpromptと`input()`では、UARTから日本語を送っても文字列から消える。日本語を含むコードはpaste mode（Ctrl-E〜Ctrl-D）で貼り付けるか、`mpremote run`などでファイルとして実行する。上流でも未解決の既知の問題で（micropython#2789、#7585）、修正には本体（C）の変更が要るため、このモジュールの範囲外。行編集を直したMicroPython（[siska-tech/micropython](https://github.com/siska-tech/micropython)の`v1.26.0-readline-utf8`、上流へ提案予定）で`KAGURA_PICO`のUF2をビルドすると、日本語を入力でき、Backspace・左右移動・履歴が1文字単位で動く（実機で確認済み）。全角文字がPC端末で2桁を占めることは考慮しないため、PC側ではカーソル表示がずれることがある。
 
 ## 検証
 
@@ -219,6 +236,7 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 4. FPGA未接続、READY固定low、BUSY固定high、転送中Ctrl-C、FPGA resetからUSB REPLへ戻れることを確認。
 5. 描画へ切替→console復帰、480p/720p、PSG/wave/PCMの動作を確認。実際のFPSと転送速度を記録する。
 6. `ja_menu.run(kagura_console)`で、かな・漢字・半角の字形と中央寄せ、配置、カーソル移動、console復帰を確認。新しい字形を多く含む画面の描画時間と、`gc.mem_free()`の変化を記録する。
+7. フォント配置後に再起動し、`print("こんにちは、神楽！")`、日本語を含む例外、長文スクロールをHDMIで確認。漢字の多い数KBを出力した時の表示更新時間とUART入力の応答を記録する。
 
 ### 実機の受入結果
 

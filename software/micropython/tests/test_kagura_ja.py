@@ -23,6 +23,8 @@ import test_driver as T  # installs the fake machine/rp2 modules
 
 from kagura import Kagura
 from kagura import regs as R
+from kagura import console, terminal
+from kagura.terminal import TileScreen
 from kagura_ja import Font, TextLayer, _tile
 
 spec = importlib.util.spec_from_file_location("gen_font", T.ROOT / "tools/gen-kagura-ja-font.py")
@@ -217,7 +219,8 @@ class FontTests(FontFileMixin, unittest.TestCase):
 CJK = [chr(0x4E00 + i) for i in range(300)]
 
 
-class LayerTests(FontFileMixin, unittest.TestCase):
+class DeviceFontCase(FontFileMixin, unittest.TestCase):
+    """Register model plus a small synthetic font (CJK holds 300 glyphs)."""
     def setUp(self):
         super().setUp()
         glyphs = gen.parse_bdf(bdf())
@@ -236,17 +239,19 @@ class LayerTests(FontFileMixin, unittest.TestCase):
         self.font.close()
         super().tearDown()
 
-    def layer(self, **kw):
-        layer = TextLayer(self.d, self.font, **kw)
-        layer.clear()
-        return layer
-
     def cell(self, col, row):
         address = 0x8000 + (row * 64 + col) * 2
         return int.from_bytes(self.model.memory[address:address + 2], "little")
 
     def tile(self, index):
         return bytes(self.model.memory[index * 32:index * 32 + 32])
+
+
+class LayerTests(DeviceFontCase):
+    def layer(self, **kw):
+        layer = TextLayer(self.d, self.font, **kw)
+        layer.clear()
+        return layer
 
     def test_tile_packing(self):
         self.assertEqual(_tile(b"\x80\x01" + bytes(6))[:8], b"\x10\x00\x00\x00\x00\x00\x00\x01")
@@ -381,6 +386,120 @@ class LayerTests(FontFileMixin, unittest.TestCase):
         layer = self.layer()
         with self.assertRaises(TypeError):
             layer.text(b"A")
+
+
+class ConsoleJapaneseTests(DeviceFontCase):
+    def screen(self, font=True, tiles=None):
+        framebuf = T.types.SimpleNamespace(FrameBuffer=T.FrameBuffer, MONO_HLSB=3)
+        patches = [mock.patch.dict(sys.modules, {"framebuf": framebuf})]
+        if tiles is not None:
+            patches.append(mock.patch.object(terminal, "_GLYPH_TILES", tiles))
+        for p in patches:
+            p.start()
+            self.addCleanup(p.stop)
+        screen = TileScreen(self.d, self.font if font else None)
+        screen.initialize()
+        return screen
+
+    def show(self, screen, data):
+        screen.feed(data.encode())
+        screen.flush()
+        self.d.fence()
+
+    def line(self, screen, col, row):
+        # Terminal row as shown: the screen scrolls the 32-row map in hardware.
+        return self.cell(col, (screen._top + row) % 32)
+
+    def test_output_glyphs_share_tiles(self):
+        s = self.screen()
+        self.show(s, "がア一 A　龠が\n")
+        self.assertEqual([self.cell(c, 0) for c in range(8)],
+                         [128, 129, 130, 32, 65, 32, 63, 128])
+        self.assertEqual(self.tile(128), _tile(self.glyphs[0x304C]))
+        self.assertEqual(self.tile(130), _tile(self.glyphs[0x4E00]))
+        self.assertEqual(list(s._refs[:4]), [2, 1, 1, 0])
+        self.assertEqual(self.d.busy, 0)
+
+    def test_utf8_split_across_writes(self):
+        s = self.screen()
+        data = "一二".encode()
+        for i in range(len(data)):
+            s.feed(data[i:i + 1])
+            s.flush()
+        self.d.fence()
+        self.assertEqual([self.cell(c, 0) for c in range(3)], [128, 129, 32])
+
+    def test_visible_tiles_are_never_reused(self):
+        s = self.screen(tiles=2)
+        self.show(s, "一二\n三")
+        self.assertEqual([self.cell(c, 0) for c in range(2)], [128, 129])
+        self.assertEqual(self.cell(0, 1), 63)  # full: '?' instead of evicting
+        self.assertEqual(s.glyph_overflow, 1)
+        self.assertEqual(self.tile(128), _tile(self.glyphs[0x4E00]))
+        self.assertEqual(self.tile(129), _tile(self.glyphs[0x4E8C]))
+        # Scroll 一 off the top; 二 stays visible on the line below.
+        self.show(s, "\r二" + "\n" * 21)
+        self.assertEqual(self.line(s, 0, 0), 129)  # 二 kept its tile
+        self.show(s, "三")
+        self.assertEqual(self.line(s, 0, 21), 128)  # 一's tile, now free, is reused
+        self.assertEqual(self.tile(128), _tile(self.glyphs[0x4E09]))
+        self.assertEqual(self.tile(129), _tile(self.glyphs[0x4E8C]))
+        self.assertEqual(list(s._refs), [1, 1])
+
+    def test_scroll_keeps_counts(self):
+        s = self.screen()
+        self.show(s, ("一" * 40 + "\n") * 30)
+        self.assertEqual(s._refs[0], 40 * 21)  # 21 rows remain visible (22-row model)
+        self.assertEqual(sum(s._refs), 40 * 21)
+
+    def test_rows_scrolled_out_release_their_tiles(self):
+        s = self.screen()
+        for i in range(70):  # wraps the 32-row map twice, one flush per line
+            self.show(s, "一二"[i % 2] * 40 + "\n")
+        # Only the 21 visible text rows hold references, not the map rows
+        # above the window that still contain old glyphs.
+        self.assertEqual(sum(s._refs), 40 * 21)
+        self.assertEqual(self.line(s, 0, 20), 128 + 69 % 2)
+        self.assertEqual(self.line(s, 0, 0), 128 + 49 % 2)
+        self.assertEqual(self.model.ext[R.EXT_SCROLL_Y], s._top * 8)
+
+    def test_failed_flush_does_not_scroll_twice_or_leak(self):
+        s = self.screen()
+        self.show(s, "一\n" * 21)
+        s.feed("二\n".encode())
+        with mock.patch.object(self.d, "ext_write", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                s.flush()
+        s.flush()
+        self.d.fence()
+        self.assertEqual(self.model.ext[R.EXT_SCROLL_Y], 8)
+        self.assertEqual(list(s._refs[:2]), [20, 1])  # 一 rows 0..19, 二 row 20
+
+    def test_initialize_forgets_application_tiles(self):
+        s = self.screen()
+        self.show(s, "一")
+        self.model.memory[128 * 32:129 * 32] = b"\xff" * 32  # e.g. kagura_ja app
+        s.initialize()
+        self.show(s, "一")
+        self.assertEqual(self.tile(128), _tile(self.glyphs[0x4E00]))
+
+    def test_without_font_non_ascii_is_question(self):
+        s = self.screen(font=False)
+        self.show(s, "一A")
+        self.assertEqual([self.cell(c, 0) for c in range(2)], [63, 65])
+
+    def test_console_font_opening_and_close(self):
+        font, error = console._open_font(str(FONT_FILE))
+        self.assertIsNone(error)
+        self.assertEqual(console._open_font(None), (None, None))
+        missing, error = console._open_font(str(Path(self.tmp.name) / "none.kfnt"))
+        self.assertIsNone(missing)
+        self.assertIsInstance(error, OSError)
+        stream = console.ConsoleStream(T.UART(), T.Screen(T.types.SimpleNamespace(
+            busy=0, deinit=lambda: None), font))
+        stream.close()
+        with self.assertRaisesRegex(ValueError, "closed"):
+            font.glyph(0x41)
 
 
 class MenuExampleTests(unittest.TestCase):

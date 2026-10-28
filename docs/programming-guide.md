@@ -8,7 +8,7 @@
 - ca65: [`software/w65c02/kagura_regs.inc`](../software/w65c02/kagura_regs.inc)。`.include`の前に`KAGURA_IO_BASE`を定義すると窓の位置を変えられる。`KAGURA_IO_*`が絶対address。
 - どちらも`spec/registers.json`から`tools/gen-registers.ps1`が生成する。手で編集しない。
 - Raspberry Pi Pico用のSPI/QSPIドライバ`software/pico/kagura_host.[ch]`（`kh_*`）が、以下の手順の実装例になる。
-- MicroPython: [`software/micropython/`](../software/micropython/README.md)。SPI/QSPI、映像・音源API、UART入力とHDMI REPL、`kagura_ja`による8×8日本語表示。Python定数も同じJSONから生成する。実機での検証範囲はリンク先を参照。
+- MicroPython: [`software/micropython/`](../software/micropython/README.md)。SPI/QSPI、映像・音源API、UART入力とHDMI REPL、`kagura_ja`によるREPL出力・アプリ画面の8×8日本語表示。Python定数も同じJSONから生成する。実機での検証範囲はリンク先を参照。
 
 以下の擬似コードで、`wr(reg, v)`・`rd(reg)`はレジスタ窓の1 byteの書込み・読出し、`ext_wr(i, v)`はEXT_REG_INDEX=i→EXT_REG_DATA=v、`aud_wr(i, v)`はAUDIO_REG_INDEX=i→AUDIO_REG_DATA=vを表す。
 

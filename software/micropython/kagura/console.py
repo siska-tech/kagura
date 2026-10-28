@@ -17,6 +17,7 @@ class ConsoleStream(IOBase):
         self._head = self._tail = 0
         self.dropped = 0
         self.last_error = None
+        self.font_error = None
         self.paused = False
         self._updating = False
         self._timer = None
@@ -148,16 +149,31 @@ class ConsoleStream(IOBase):
         self.detach()
         self.uart.deinit()
         if self.screen is not None:
+            if getattr(self.screen, "font", None) is not None:
+                self.screen.font.close()
             self.screen.device.deinit()
 
 
+def _open_font(path):
+    # Optional: without kagura_ja or the font, non-ASCII stays '?'.
+    if not path:
+        return None, None
+    try:
+        from kagura_ja import Font
+        return Font(path), None
+    except Exception as error:
+        return None, error
+
+
 def start(mode="spi", baudrate=None, uart_id=0, tx=0, rx=1,
-          uart_baudrate=115200, ready_timeout_us=2_000_000, **transport_config):
+          uart_baudrate=115200, ready_timeout_us=2_000_000,
+          font_path="/fonts/misaki8.kfnt", **transport_config):
     """Auto-detect once at boot. Missing FPGA leaves UART + USB REPL usable.
 
     baudrate=None picks the fastest working SCK (see kagura.connect).
     Return a ConsoleStream. Inspect .screen/.last_error for detection status.
     UART TX is reserved but output stays on HDMI/USB (RX-only keyboard).
+    font_path names the kagura_ja font for Japanese output; None disables it.
     """
     import os
     from machine import Pin, UART
@@ -166,7 +182,7 @@ def start(mode="spi", baudrate=None, uart_id=0, tx=0, rx=1,
     uart = UART(uart_id, baudrate=uart_baudrate, bits=8, parity=None, stop=1,
                 tx=Pin(tx), rx=Pin(rx), timeout=0, timeout_char=0, rxbuf=1024)
     stream = ConsoleStream(uart)
-    device = None
+    device = font = None
     try:
         from . import connect
         from .terminal import TileScreen
@@ -174,15 +190,21 @@ def start(mode="spi", baudrate=None, uart_id=0, tx=0, rx=1,
             device = connect(mode=mode, baudrate=baudrate,
                              ready_timeout_us=ready_timeout_us, **transport_config)
             device.clear_errors()
-            stream.screen = TileScreen(device)
+            font, stream.font_error = _open_font(font_path)
+            stream.screen = TileScreen(device, font)
             stream.screen.initialize()
         except Exception as error:
+            if font is not None:
+                font.close()
+                font = None
             if device is not None:
                 device.deinit()
             stream.screen = None
             stream.last_error = error
         stream.attach()
     except BaseException:
+        if font is not None:
+            font.close()
         if device is not None:
             device.deinit()
         uart.deinit()
@@ -192,6 +214,8 @@ def start(mode="spi", baudrate=None, uart_id=0, tx=0, rx=1,
         print("KAGURA-9 HDMI console (%s %gMHz); UART%d RX GP%d %d baud"
               % ("QSPI" if t.lanes == 4 else "SPI", t.baudrate / 1_000_000,
                  uart_id, rx, uart_baudrate))
+        if font is None and font_path:
+            print("Japanese font unavailable; non-ASCII shows '?':", stream.font_error)
     else:
         print("KAGURA unavailable; UART keyboard + USB REPL active:", stream.last_error)
     return stream
