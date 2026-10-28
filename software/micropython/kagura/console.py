@@ -5,6 +5,7 @@ Only the soft timer touches display hardware. UART notification also enables
 Ctrl-C during a running Python program, rather than just while at the prompt.
 """
 from io import IOBase
+import os
 
 
 class ConsoleStream(IOBase):
@@ -21,39 +22,67 @@ class ConsoleStream(IOBase):
         self._timer = None
         self._previous = None
         self._attached = False
+        self._interrupt = False
+
+    # dupterm calls readinto/write/ioctl from C. The VM raises a pending Ctrl-C
+    # at any branch, and an exception here detaches this stream for good.
+    # write() runs for every print, so it has no branch at all and the
+    # interrupt reaches the program. The others catch it and hand Ctrl-C back
+    # as an input byte; dupterm then pends it again.
 
     def readinto(self, buffer):
-        if not self.uart.any():
-            return None  # nonblocking stream: no input, not EOF
-        return self.uart.readinto(buffer)
+        try:
+            if self._interrupt:
+                self._interrupt = False
+                buffer[0] = 3
+                return 1
+            if not self.uart.any():
+                return None  # nonblocking stream: no input, not EOF
+            return self.uart.readinto(buffer)
+        except KeyboardInterrupt:
+            buffer[0] = 3  # dupterm pends it again for the program
+            return 1
 
     def write(self, data):
-        if self.screen is None or self.paused:
-            return len(data)
-        for c in data:
-            next_head = (self._head + 1) % len(self._buffer)
-            if next_head == self._tail:
-                self.dropped += 1
-            else:
-                self._buffer[self._head] = c
-                self._head = next_head
-        return len(data)
+        # Branch-free: without a screen or while paused nothing is stored.
+        n = len(data)
+        buf, head = self._buffer, self._head
+        size = len(buf)
+        on = (self.screen is not None) & (not self.paused)
+        m = min(n, (self._tail - head - 1) % size) * on
+        self.dropped += (n - m) * on
+        first = min(m, size - head)
+        buf[head:head + first] = data[:first]
+        buf[:m - first] = data[first:m]
+        self._head = (head + m) % size
+        return n
 
     def ioctl(self, request, flags):
-        if request == 3:  # MP_STREAM_POLL
-            return ((1 if self.uart.any() else 0) | 4) & flags
-        return 0
+        try:
+            if request == 3:  # MP_STREAM_POLL
+                return ((1 if self._interrupt or self.uart.any() else 0) | 4) & flags
+            return 0
+        except KeyboardInterrupt:
+            self._interrupt = True
+            return 5 & flags
 
     def _tick(self, timer):
-        import os
-        self._flush_display()
+        try:
+            self._flush_display()
+            notify = self._interrupt or self.uart.any()
+        except KeyboardInterrupt:
+            # Ctrl-C (from USB too) pended while this callback ran is raised
+            # here, and the timer would print and drop it. Feed it back as an
+            # input byte so dupterm pends it again for the foreground program.
+            self._interrupt = True
+            notify = True
         # No register access in UART IRQ. Poll at 20ms from a soft timer so
         # RX_IDLE and continuous input both work, including interrupt chars.
         # This MUST be the last call: dupterm_notify may pend KeyboardInterrupt.
         # A subsequent Python branch could raise it inside the protected timer
         # callback (especially on the threaded RP2 build), swallowing Ctrl-C
         # instead of interrupting the foreground program.
-        if self.uart.any():
+        if notify:
             return os.dupterm_notify(self)
 
     def _flush_display(self):
@@ -63,12 +92,12 @@ class ConsoleStream(IOBase):
         self._updating = True
         try:
             # Bound each update; large output cannot monopolise the VM.
-            data = bytearray()
-            for _ in range(256):
-                if self._tail == self._head:
-                    break
-                data.append(self._buffer[self._tail])
-                self._tail = (self._tail + 1) % len(self._buffer)
+            buf, tail = self._buffer, self._tail
+            n = min(256, (self._head - tail) % len(buf))
+            data = buf[tail:tail + n]
+            if len(data) < n:
+                data += buf[:n - len(data)]
+            self._tail = (tail + n) % len(buf)
             if data:
                 self.screen.feed(data)
                 self.screen.flush()

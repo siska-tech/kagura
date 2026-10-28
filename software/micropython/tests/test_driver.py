@@ -644,6 +644,14 @@ class ConsoleTests(unittest.TestCase):
         self.s._tick(None)
         self.assertEqual(self.screen.received, b">>> 1+1\n2\n")
 
+    def test_ring_buffer_wraps(self):
+        self.s.write(b"0123456789")
+        self.s._tick(None)
+        self.s.write(b"abcdefghij")  # wraps the 16-byte buffer
+        self.s._tick(None)
+        self.assertEqual(self.screen.received, b"0123456789abcdefghij")
+        self.assertEqual(self.s.dropped, 0)
+
     def test_buffer_overflow_is_bounded_and_counted(self):
         self.s.write(bytes(40))
         self.assertEqual(self.s.dropped, 25)
@@ -664,6 +672,21 @@ class ConsoleTests(unittest.TestCase):
         self.s.write(b"new")
         self.s._tick(None)
         self.assertEqual(self.screen.received, b"new")
+
+    def test_ctrl_c_raised_in_timer_is_given_back(self):
+        self.s.write(b"text")
+        with patch.object(self.screen, "flush", side_effect=KeyboardInterrupt):
+            self.s._tick(None)
+        self.notify_mock.assert_called_once_with(self.s)
+        self.assertIsNone(self.s.last_error)
+        self.assertEqual(self.s.ioctl(3, 1), 1)
+        buf = bytearray(1)
+        self.assertEqual(self.s.readinto(buf), 1)
+        self.assertEqual(buf, b"\x03")
+        self.assertIsNone(self.s.readinto(buf))
+        self.s.write(b"more")  # the display keeps updating
+        self.s._tick(None)
+        self.assertEqual(self.screen.flushes, 1)
 
     def test_display_error_keeps_stream_alive(self):
         self.s.write(b"text")
