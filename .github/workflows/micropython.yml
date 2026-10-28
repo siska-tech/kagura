@@ -19,12 +19,16 @@ jobs:
         run: ./tools/gen-registers.ps1 -Check
       - name: Driver, terminal and actual PIO assembly/timing tests
         run: python3 -I software/micropython/tests/test_driver.py --rp2 build/micropython-src/ports/rp2/modules/rp2.py
+      - name: Japanese text tests and font regeneration
+        run: |
+          curl -fsSL -o build/misaki_bdf_2021-05-05.zip https://littlelimit.net/arc/misaki/misaki_bdf_2021-05-05.zip
+          MISAKI_ZIP=build/misaki_bdf_2021-05-05.zip python3 -I software/micropython/tests/test_kagura_ja.py
       - name: Check MicroPython bytecode compilation
         run: |
           make -C build/micropython-src/mpy-cross -j4
           mkdir -p build/mpy
-          for file in software/micropython/kagura/*.py software/micropython/examples/*.py; do
-            build/micropython-src/mpy-cross/build/mpy-cross -o "build/mpy/$(basename "$file").mpy" "$file"
+          for file in software/micropython/kagura/*.py software/micropython/kagura_ja/*.py software/micropython/examples/*.py; do
+            build/micropython-src/mpy-cross/build/mpy-cross -o "build/mpy/$(basename "$(dirname "$file")")-$(basename "$file").mpy" "$file"
           done
   firmware:
     runs-on: ubuntu-24.04
@@ -52,4 +56,6 @@ jobs:
           path: |
             build/micropython-src/ports/rp2/build-${{ matrix.board }}/firmware.uf2
             software/micropython/kagura/*.py
+            software/micropython/kagura_ja/*.py
+            software/micropython/fonts/*
             software/micropython/examples/*.py
