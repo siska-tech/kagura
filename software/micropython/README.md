@@ -2,13 +2,13 @@
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック等47テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
+**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択等53テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
 1. FPGAへ`spi`/`spipsram`、または`qspi`/`qspipsram`のABI 0.5 bitstreamを書き込む。720版も対応。
 2. Pico/Pico Wには公式MicroPython **v1.26.0**を使う。標準のRP2ビルドでは`os.dupterm`と`os.dupterm_notify`が有効で、通常のUF2へモジュールを追加してドライバ・UART入力・HDMI REPLを利用できる。専用UF2への書換えは不要。
-3. `kagura/`をPicoの`/lib/kagura/`へコピーする。自動コンソールを使う場合は`examples/boot.py`も`/boot.py`へコピーし、既存のboot.pyがあれば起動処理を組み込む。boot.pyの`mode`をbitstreamと一致させる。SCK既定値は1MHz。ドライバだけを手動で使う場合はboot.pyの変更は不要。
+3. `kagura/`をPicoの`/lib/kagura/`へコピーする。自動コンソールを使う場合は`examples/boot.py`も`/boot.py`へコピーし、既存のboot.pyがあれば起動処理を組み込む。boot.pyの`mode`をbitstreamと一致させる。SCKは自動で選ぶ（[通信速度](#通信速度)）。ドライバだけを手動で使う場合はboot.pyの変更は不要。
 4. UART送信元のTXをPico GP1（物理pin 2）、GNDを共通GNDへ接続する。GP0（pin 1）はUART TXとして予約するが、初期版はUARTへ出力しない。KAGURAの配線・電源は[Pico資料](../pico/README.md#配線)を参照。
 5. リセット後、HDMIに起動メッセージと`>>>`が出る。UARTから`print(1 + 1)`とEnterを送る。入力のローカルエコーはOFFにする。
 
@@ -87,7 +87,7 @@ from kagura import connect
 from kagura.video import Video
 from kagura.audio import Audio
 
-dev = connect(mode="spi", baudrate=1_000_000, sm_id=0)
+dev = connect(mode="spi", sm_id=0)  # SCKは5→2.5→1MHzから自動選択
 dev.write_memory(0, bytes(32))
 dev.fill(0x8000, 4096, 0)
 dev.fence()
@@ -121,6 +121,14 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 1つのdeviceを1つの実行主体が所有する。consoleのsoft timerは`device.busy`を確認する。独自IRQ・別スレッドからの通信は非対応。PIO SMは指定番号を専有するため、他のPIO利用者とも割当てを調整する。実行中に`machine.freq()`を変更するとSCKが変わるので、変更前にdeinitし再接続する。
 
+### 通信速度
+
+`connect()`と`start()`は既定（`baudrate=None`）でSCKを5MHz→2.5MHz→1MHzの順に試し、最初に合格した速度を使う。各速度でprobe（ID・ABI）に続けて`check_link()`を行う。IDブロックの読出しと、LENGTH_L〜FENCE_TAG（FILL・COPY・FENCEが毎回書き直すので状態を変えない）への4byteパターンの書込み・読戻しを8回照合し、最後にERROR_CODE=0を確認する。所要時間は約40ms。READYが来ない場合は速度に関係しないので、低速では再試行せずに失敗する。`machine.freq()`がSCKの12倍に満たない速度は飛ばす。
+
+選ばれた速度は`device.transport.baudrate`で分かり、起動コンソールのメッセージにも`(QSPI 5MHz)`のように出る。`baudrate=`に数値を渡すとその速度だけを使い、照合とfallbackは行わない。照合は接続時の1回だけで、合格した速度で運用中にエラーが出る配線では、低い速度を明示する。
+
+失敗した速度での転送は、ヘッダのbit化けで別のレジスタへの書込みになり得る。各速度の照合の最初にERROR_CODEはclearするが、それ以外のレジスタは起動時の初期化（コンソールは`initialize()`）で設定し直す前提とする。
+
 ## 検証
 
 PCで:
@@ -137,7 +145,7 @@ python -I software/micropython/tests/test_driver.py \
 実機の受入手順:
 
 1. 1MHzでprobe、32KiB全域照合、FILL/FENCE。`examples/diag.py`をPicoへコピーし、コンソールをpauseして`diag.run(dev)`を実行する。パターンRAMを上書きする。
-2. SPI/QSPIの各bitstreamで1→2.5→5MHzを試し、速度・ERROR_CODE・LED2（late）・読戻しを記録。
+2. SPI/QSPIの各bitstreamで`baudrate=`を指定して1→2.5→5MHzを試し、自動選択の結果も確認する。速度・ERROR_CODE・LED2（late）・読戻しを記録。
 3. UARTで式評価・行編集・複数行入力・例外・長文スクロールを確認。`while True: pass`をCtrl-Cで中断し、Ctrl-Dで再起動後もHDMIへpromptが戻ることを確認。
 4. FPGA未接続、READY固定low、BUSY固定high、転送中Ctrl-C、FPGA resetからUSB REPLへ戻れることを確認。
 5. 描画へ切替→console復帰、480p/720p、PSG/wave/PCMの動作を確認。実際のFPSと転送速度を記録する。
@@ -149,6 +157,7 @@ python -I software/micropython/tests/test_driver.py \
 | 項目 | 結果 |
 |---|---|
 | 自動検出 | 4構成ともboot.pyでHDMIコンソールが起動。ABI 0.5、CAPS 0x53/0x5B/0x5B/0x7B、480pは30行・720pは22行 |
+| 速度の自動選択 | `spipsram`・`qspipsram720`とも5MHzを選択し、`connect()`は約110ms（照合約40ms）。SM clockを上げた試験では、照合がSCK 7.5MHzまで10回とも合格し、10MHzで10回とも失敗（bit化けを検出）。HDMIコンソールの100行出力は1MHzで4.15秒、5MHzで4.21秒（Python律速で差なし） |
 | 32KiB書込み＋全域読戻し | SPI 5MHz（`spi`・`spipsram`）とQSPI 1/2.5/5MHzで不一致0。32KiB書込み＋FENCEは1MHzで0.5〜0.7秒、5MHzで0.45〜0.49秒。読出しは1byteごとにREAD_REQUESTを使うため約158byte/秒で、SCKによらない |
 | FILL/FENCE・BUSY | 2KiB×16のFILL＋FENCE、FILL 30000byte＋2KiB書込みを200回FENCEなしで連続投入し、内容一致・ERROR_CODE=0（SPI/QSPIの1/2.5/5MHz） |
 | PSRAM・COPY | 4KiBの書込み→COPY→読戻しが一致（`spipsram` 2.5/5MHz、`qspipsram720` 1/2.5/5MHz） |

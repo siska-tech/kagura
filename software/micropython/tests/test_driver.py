@@ -143,6 +143,7 @@ from kagura.transport_rp2 import _owned_sms
 
 class RegisterModel:
     """Minimal queue-aware ABI model. Queue effects happen only at FENCE."""
+    lanes, baudrate = 4, 5_000_000
     def __init__(self):
         self.reg = bytearray(32)
         self.reg[R.REG_ID0:R.REG_CAPS + 1] = bytes((R.ID0, R.ID1, 0, 5, 0x7B))
@@ -462,6 +463,73 @@ class TransportTests(unittest.TestCase):
             self.assertTrue(all(dma.closed for dma in channels))
 
 
+class LinkModel(RegisterModel):
+    """Transport opened at one SCK; reads flip a bit above max_baudrate."""
+    opened = []
+    def __init__(self, baudrate=1_000_000, max_baudrate=5_000_000, ready=True, **config):
+        super().__init__()
+        self.baudrate, self.max_baudrate, self._ready = baudrate, max_baudrate, ready
+        LinkModel.opened.append(self)
+    def ready(self):
+        return self._ready
+    def readinto(self, offset, buffer, inc=False):
+        super().readinto(offset, buffer, inc)
+        if self.baudrate > self.max_baudrate and offset == R.REG_LENGTH_L:
+            buffer[0] ^= 0x10
+
+
+class ConnectTests(unittest.TestCase):
+    def setUp(self):
+        LinkModel.opened = []
+
+    def connect(self, *args, **kwargs):
+        import kagura
+        factory = lambda **config: LinkModel(**config, **self.link)
+        with patch("kagura.transport_rp2.PIOTransport", side_effect=factory):
+            return kagura.connect(*args, **kwargs)
+
+    def test_auto_uses_fastest_speed(self):
+        self.link = {}
+        d = self.connect(mode="qspi")
+        self.assertEqual(d.transport.baudrate, 5_000_000)
+        self.assertEqual(len(LinkModel.opened), 1)
+        self.assertEqual(d.transport.reg[R.REG_ERROR_CODE], 0)
+
+    def test_auto_falls_back_past_bad_links(self):
+        # ID/ABI still read correctly at 5 MHz; only the link check sees it.
+        self.link = {"max_baudrate": 2_500_000}
+        d = self.connect(mode="spi")
+        self.assertEqual(d.transport.baudrate, 2_500_000)
+        self.assertEqual([t.closed for t in LinkModel.opened], [True, False])
+
+    def test_explicit_speed_has_no_fallback_or_link_check(self):
+        self.link = {"max_baudrate": 1_000_000}
+        d = self.connect(baudrate=2_500_000)
+        self.assertEqual(d.transport.baudrate, 2_500_000)
+        self.assertEqual(len(LinkModel.opened), 1)
+
+    def test_all_speeds_fail_raises_and_releases(self):
+        self.link = {"max_baudrate": 500_000}
+        with self.assertRaisesRegex(OSError, "link check"):
+            self.connect()
+        self.assertEqual([t.baudrate for t in LinkModel.opened],
+                         [5_000_000, 2_500_000, 1_000_000])
+        self.assertTrue(all(t.closed for t in LinkModel.opened))
+
+    def test_missing_ready_does_not_try_slower_speeds(self):
+        self.link = {"ready": False}
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.connect(ready_timeout_us=10)
+        self.assertEqual(len(LinkModel.opened), 1)
+        self.assertTrue(LinkModel.opened[0].closed)
+
+    def test_slow_system_clock_skips_unreachable_speeds(self):
+        self.link = {}
+        with patch.object(machine, "freq", lambda: 48_000_000):
+            d = self.connect()
+        self.assertEqual(d.transport.baudrate, 2_500_000)
+
+
 class TerminalTests(unittest.TestCase):
     def test_wrap_scroll(self):
         t = Terminal(22)
@@ -748,8 +816,11 @@ class BootTests(unittest.TestCase):
 
     def test_boot_attaches_detected_display_and_restores_slot(self):
         d = Kagura(RegisterModel()).probe()
-        with patch("kagura.connect", return_value=d), redirect_stdout(io.StringIO()):
+        out = io.StringIO()
+        with patch("kagura.connect", return_value=d) as connect, redirect_stdout(out):
             stream = start()
+        self.assertIsNone(connect.call_args.kwargs["baudrate"])
+        self.assertIn("(QSPI 5MHz)", out.getvalue())
         self.assertIs(self.slot, stream)
         self.assertIs(stream.screen.device, d)
         self.assertFalse(stream._timer.config["hard"])
