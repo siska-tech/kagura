@@ -13,6 +13,7 @@ class Terminal:
         self.rows, self.columns = rows, columns
         self.cells = bytearray(b" " * (rows * columns))
         self.dirty = bytearray([1] * rows)
+        self.scrolled = 0  # lines scrolled since the screen last caught up
         self.x = self.y = 0
         self.saved = (0, 0)
         self.escape = None
@@ -34,10 +35,14 @@ class Terminal:
         if self.y < self.rows - 1:
             self.y += 1
         else:
+            # Rows move with their dirty flags; the screen scrolls in hardware
+            # and only redraws the new bottom row.
             width = self.columns
             self.cells[:-width] = self.cells[width:]
             self.cells[-width:] = b" " * width
-            self.dirty[:] = b"\x01" * self.rows
+            self.dirty[:-1] = self.dirty[1:]
+            self.dirty[-1] = 1
+            self.scrolled += 1
 
     def _csi(self, sequence, final):
         if sequence.startswith("?"):
@@ -126,6 +131,11 @@ class Terminal:
 
 
 class TileScreen:
+    """Logical row r is map row (top + r) % 32; SCROLL_Y = top * 8.
+
+    A newline scrolls in hardware, so only the new bottom row is written.
+    """
+
     def __init__(self, device):
         from .video import Video
         self.device = device
@@ -133,6 +143,8 @@ class TileScreen:
         self.terminal = Terminal(device.height // 8)
         self._row = bytearray(80)
         self._cursor = None
+        self._top = 0
+        self._scroll = False  # SCROLL_Y not yet committed
 
     def initialize(self):
         import framebuf
@@ -164,6 +176,9 @@ class TileScreen:
                 self.video.tile(code, tile)
             self.video.tile(127, bytes(28) + b"\x11" * 4)
             self.terminal.clear()
+            self.terminal.scrolled = 0
+            self._top = 0
+            self._scroll = False
             self._cursor = None
             self.flush()
             d.write_reg(R.REG_DISPLAY_CTRL, R.DISPLAY_CTRL_DISPLAY_ENABLE
@@ -176,20 +191,35 @@ class TileScreen:
         self.terminal.feed(data)
 
     def flush(self):
+        from . import regs as R
         t = self.terminal
-        self.device.busy += 1
+        d = self.device
+        d.busy += 1
         try:
+            if t.scrolled:
+                # Taken once, so a failed flush cannot scroll twice.
+                self._top = (self._top + t.scrolled) % 32
+                t.scrolled = 0
+                self._scroll = True
+            if self._scroll and d.height % 8:
+                # 720p shows the top 4px of the map row below the last.
+                d.write_memory(0x8000 + (self._top + t.rows) % 32 * 128, bytes(80))
             for row in range(t.rows):
                 if t.dirty[row]:
                     for col in range(t.columns):
                         self._row[col * 2] = t.cells[row * t.columns + col]
                         self._row[col * 2 + 1] = 0
-                    self.device.write_memory(0x8000 + row * 128, self._row)
+                    d.write_memory(0x8000 + (self._top + row) % 32 * 128, self._row)
                     t.dirty[row] = 0
             cursor = (min(t.x, t.columns - 1), t.y)
-            if cursor != self._cursor:
-                self.video.sprite(0, cursor[0] * 8, cursor[1] * 8, tile=127)
-                self.device.commit()
-                self._cursor = cursor
+            if self._scroll:
+                d.ext_write(R.EXT_SCROLL_Y, self._top * 8)
+            if self._scroll or cursor != self._cursor:
+                if cursor != self._cursor:
+                    self.video.sprite(0, cursor[0] * 8, cursor[1] * 8, tile=127)
+                    self._cursor = cursor
+                # Scroll and cursor appear together; no wait for the frame.
+                d.commit(wait=False)
+            self._scroll = False
         finally:
-            self.device.busy -= 1
+            d.busy -= 1

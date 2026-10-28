@@ -194,11 +194,14 @@ class Kagura:
         self.check_errors()
 
     @operation
-    def commit(self):
+    def commit(self, wait=True):
+        # wait=False returns before the next frame applies the shadows; the
+        # next commit still waits first, so shadows are never overwritten early.
         self.wait_status(R.STATUS_COMMIT_BUSY, 0)
         self.write_reg(R.REG_COMMAND, R.CMD_COMMIT)
         self.check_errors()
-        self.wait_status(R.STATUS_COMMIT_BUSY, 0)
+        if wait:
+            self.wait_status(R.STATUS_COMMIT_BUSY, 0)
 
     @operation
     def audio_commit(self):

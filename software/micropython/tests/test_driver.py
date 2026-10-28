@@ -452,6 +452,15 @@ class TerminalTests(unittest.TestCase):
         self.assertEqual(t.y, 21)
         self.assertEqual(t.cells[-40:-36], b"line")
 
+    def test_scroll_moves_dirty_flags(self):
+        t = Terminal(22)
+        t.feed(b"\n" * 21)
+        t.dirty[:] = bytes(22)
+        t.feed(b"x\x1b[Hy\x1b[22;1H\n")
+        self.assertEqual(t.scrolled, 1)
+        # Row 0 moved off the top; the row 21 edit moved up to row 20.
+        self.assertEqual(t.dirty, bytes(20) + b"\x01\x01")
+
     def test_repl_editing_split_sequences(self):
         t = Terminal(30)
         for data in (b">>> abc", b"\x1b[", b"2D", b"X", b"\x1b[K"):
@@ -517,6 +526,67 @@ class TileScreenTests(unittest.TestCase):
         self.assertEqual(model.memory[0x8080], 66)
         self.assertEqual(model.memory[0xA000:0xA004], b"\x08\x00\x08\x04")
         self.assertEqual(d.busy, 0)
+
+    def _screen(self):
+        model = RegisterModel()
+        d = Kagura(model).probe()
+        screen = TileScreen(d)
+        framebuf = types.SimpleNamespace(FrameBuffer=FrameBuffer, MONO_HLSB=3)
+        with patch.dict(sys.modules, {"framebuf": framebuf}):
+            screen.initialize()
+        return model, d, screen
+
+    def _map_text(self, model, map_row, n):
+        start = 0x8000 + map_row * 128
+        return bytes(model.memory[start:start + 2 * n:2])
+
+    def test_newline_scrolls_in_hardware(self):
+        model, d, screen = self._screen()
+        screen.feed(b"\r\n".join(b"L%02d" % i for i in range(22)))
+        screen.flush()
+        d.fence()
+        self.assertEqual(model.ext[R.EXT_SCROLL_Y], 0)
+        stale = 0x8000 + 23 * 128
+        model.memory[stale:stale + 128] = b"A" * 128  # old text below the window
+        model.calls.clear()
+        with patch.object(d, "commit", wraps=d.commit) as commit:
+            screen.feed(b"\r\nNEW")
+            screen.flush()
+        d.fence()
+        self.assertEqual(model.ext[R.EXT_SCROLL_Y], 8)
+        commit.assert_called_once_with(wait=False)
+        # Blank 720p half row and the new bottom row only; the cursor stays
+        # at column 3 of the last row, so the sprite is not rewritten.
+        writes = [c for c in model.calls if c[0] == R.REG_VRAM_WRITE]
+        self.assertEqual([len(c[1]) for c in writes], [80, 80])
+        self.assertEqual(self._map_text(model, 22, 3), b"NEW")
+        self.assertEqual(model.memory[stale:stale + 80], bytes(80))
+        self.assertEqual(self._map_text(model, 1, 3), b"L01")  # untouched
+        self.assertEqual(model.memory[0xA000:0xA004], b"\x18\x00\xa8\x04")
+
+    def test_failed_flush_does_not_scroll_twice(self):
+        model, d, screen = self._screen()
+        screen.feed(b"\n" * 22)  # one line past the bottom
+        with patch.object(d, "ext_write", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                screen.flush()
+        screen.flush()
+        self.assertEqual(model.ext[R.EXT_SCROLL_Y], 8)
+
+    def test_scroll_wraps_the_32_row_map(self):
+        model, d, screen = self._screen()
+        for i in range(60):
+            screen.feed(b"\r\nX%02d" % i)
+            if i % 7 == 0:
+                screen.flush()
+        screen.flush()
+        d.fence()
+        top = (60 - 21) % 32
+        self.assertEqual(model.ext[R.EXT_SCROLL_Y], top * 8)
+        for row in range(22):
+            self.assertEqual(self._map_text(model, (top + row) % 32, 3),
+                             b"X%02d" % (row + 38))
+        self.assertEqual(self._map_text(model, (top + 22) % 32, 3), bytes(3))
 
 
 class UART:
