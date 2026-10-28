@@ -126,3 +126,4 @@ GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-r
 - 手動実行と毎週月曜03:00（JST）の定期実行（`main`）は全jobを実行する。
 - 実行しないjobはskippedになり、各workflowの`Phase 1 result`・`MicroPython result`は常に結果を返す。必須チェックにはこの2つと`design-documents`を指定する。
 - 規則を変えたら`bash tools/test-ci-changes.sh`を実行する。追跡中の全ファイルがいずれかの規則に当たることも確認する。
+
