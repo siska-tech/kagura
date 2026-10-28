@@ -129,6 +129,73 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 失敗した速度での転送は、ヘッダのbit化けで別のレジスタへの書込みになり得る。各速度の照合の最初にERROR_CODEはclearするが、それ以外のレジスタは起動時の初期化（コンソールは`initialize()`）で設定し直す前提とする。
 
+## 日本語表示（kagura_ja）
+
+アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。REPL・コンソールの日本語化、日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
+
+**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・描画のモックテスト20件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。
+
+### 導入
+
+`kagura/`（上記）に加えて、`kagura_ja/`を`/lib/kagura_ja/`、`fonts/misaki8.kfnt`を`/fonts/misaki8.kfnt`へコピーする。フォントはFlash上のファイルとして約70KiBを使う。
+
+```sh
+mpremote connect COM5 fs cp -r kagura_ja :lib/
+mpremote connect COM5 fs mkdir :fonts
+mpremote connect COM5 fs cp fonts/misaki8.kfnt :fonts/misaki8.kfnt
+mpremote connect COM5 fs cp examples/ja_menu.py :ja_menu.py
+```
+
+### 使い方
+
+```python
+from kagura_ja import Font, TextLayer
+
+font = Font("/fonts/misaki8.kfnt")
+text = TextLayer(dev, font, tile_base=128, tile_count=256,
+                 map_x=0, map_y=0, width=40,
+                 height=dev.height // 8, palette=0)
+
+text.clear()
+text.text("こんにちは、神楽！", col=0, row=0)
+text.flush()
+```
+
+| API | 内容 |
+|---|---|
+| `Font(path)` / `Font.close()` | KJ8Fファイルを開く／閉じる。`with`も可。形式不正は`ValueError`、ファイルがなければ`OSError` |
+| `Font.glyph(code)` | 8byteの字形、未収録なら`None`。ファイルを二分探索し、その1字だけ読む |
+| `TextLayer(...)` | 描画先の設定だけで、通信はしない。`height`省略時は`dev.height // 8 - map_y` |
+| `clear()` | 空白タイルを書き、矩形全体を空白にし、FENCE完了後に字形登録をリセットする |
+| `text(s, col=0, row=0)` | `str`を描き、続きの位置`(col, row)`を返す。字形タイルとmapを転送する（完了待ちはしない） |
+| `flush()` | FENCEで転送完了を待つ |
+| `glyphs` | `clear()`以降に登録した字形タイル数 |
+
+- 全文字を8×8の固定セルで扱う。ASCII・半角カナもセル1つを使い、字形はセル内で中央寄せされる。
+- `\n`で次の行の先頭、`\r`で行頭へ戻る。右端を越える文字は次の行へ折り返す。矩形外（負の位置を含む）のセルは描かず、タイルも使わない。
+- 未収録文字・BMP外の文字・その他の制御文字（タブを含む）は`?`で表示する。
+- 画素値1が指定paletteの色1、画素値0は透明でBACKDROPの色が見える（[映像仕様](../../docs/video.md)）。palette RAMの設定とそのCOMMITは呼出し側で行う。表示・BGの有効化もアプリ側の責任。
+- 最初の`text()`の前に`clear()`が必要。転送エラーが起きた後も、`clear()`をやり直すまで`text()`は`RuntimeError`になる。
+
+### 資源制約
+
+- タイル`tile_base`〜`tile_base + tile_count - 1`（既定128〜383）と背景mapの指定矩形はアプリが専有する。先頭1枚は空白用で、残り（既定255）が字形用。同じ文字は登録済みタイルを再利用し、空白（U+0020・U+3000）はタイルを使わない。
+- 自動追い出しはしない。新しい字形が残りを超える`text()`は、何も書き込まずに`MemoryError`になる（既存の表示は変わらない）。画面を切り替える時に`clear()`で登録を空にする。
+- RAMはmapの写し（`width × height × 2`byte、既定40×30で2400byte）と登録表（最大255項目のdict）を使う。フォント全体は読み込まない。
+- 新しい字形1つにつきファイルを最大13回seek/readする（7171字の二分探索）。既出の字形は読まない。
+- 実機（QSPI 5MHz）で、新しい字形1つにつき約1.8msのファイル検索がかかる。新しい字形255個を含む`text()`＋`flush()`は約0.97秒、登録済みの字形だけなら同じ255セルで約0.14秒（[実機の受入結果](#実機の受入結果)）。字形の多い画面は切替え前に描いておく。
+
+### コンソールとの切替え
+
+起動コンソールのタイル0〜127・map全体・palette 0・sprite 0（カーソル）と重なる。`kagura_console.pause()`で止めてから描画し、終わったら`resume()`する。`resume()`がmap全体を初期化するので、日本語画面に戻る時は`clear()`から描き直す。pause中もsprite 0のカーソルは残るため、隠す場合は`Video(dev).sprite(0, enable=False)`の後にCOMMITする。
+
+`examples/ja_menu.py`は、コンソールを止めてpalette 1で日本語メニューを表示し、↑↓（またはw/s）とEnterで項目を選ぶサンプル。
+
+```python
+import ja_menu
+print(ja_menu.run(kagura_console))
+```
+
 ## 検証
 
 PCで:
@@ -138,9 +205,11 @@ powershell -NoProfile -File tools/gen-registers.ps1 -Check
 python -I software/micropython/tests/test_driver.py
 python -I software/micropython/tests/test_driver.py \
   --rp2 path/to/micropython/ports/rp2/modules/rp2.py
+MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
+  python -I software/micropython/tests/test_kagura_ja.py
 ```
 
-2番目は通信/ABI/端末テスト、3番目は公式PIOアセンブラの出力で既存`software/pico/tests/test_pio_timing.py`も実行する。タイミングモデルの10MHz試験合格は実機の10MHz対応を意味しない。ドライバの設定上限は5MHz。
+2番目は通信/ABI/端末テスト、3番目は公式PIOアセンブラの出力で既存`software/pico/tests/test_pio_timing.py`も実行する。4番目は`kagura_ja`と変換ツールのテストで、`MISAKI_ZIP`を省くとフォント再生成の一致検査だけを飛ばす。タイミングモデルの10MHz試験合格は実機の10MHz対応を意味しない。ドライバの設定上限は5MHz。
 
 実機の受入手順:
 
@@ -149,6 +218,7 @@ python -I software/micropython/tests/test_driver.py \
 3. UARTで式評価・行編集・複数行入力・例外・長文スクロールを確認。`while True: pass`をCtrl-Cで中断し、Ctrl-Dで再起動後もHDMIへpromptが戻ることを確認。
 4. FPGA未接続、READY固定low、BUSY固定high、転送中Ctrl-C、FPGA resetからUSB REPLへ戻れることを確認。
 5. 描画へ切替→console復帰、480p/720p、PSG/wave/PCMの動作を確認。実際のFPSと転送速度を記録する。
+6. `ja_menu.run(kagura_console)`で、かな・漢字・半角の字形と中央寄せ、配置、カーソル移動、console復帰を確認。新しい字形を多く含む画面の描画時間と、`gc.mem_free()`の変化を記録する。
 
 ### 実機の受入結果
 
@@ -168,6 +238,7 @@ python -I software/micropython/tests/test_driver.py \
 | 転送中断 | 読出し・DMA書込み・FILLの実行中にUSBからCtrl-Cを21回送り（QSPI 18回・SPI 3回、5MHz）、毎回CS high・ERROR_CODE=0で次の操作が成功。修正前は、READ_READY待ちでの中断後の最初の読出しがREAD_COLLISION（0x08）になっていた |
 | FPGA reset | HDMIコンソールの表示中にFPGAを再構成すると`last_error`に`TransferTimeout`が入り、USB REPLは継続。`resume()`で復帰 |
 | 未接続・READY・BUSY | FPGA未構成（SRAM Erase）で起動するとUART＋USB REPLへフォールバック（この試験時は`KAGURA ID mismatch`、下記の修正後は2秒で`KAGURA timeout: READY`）。BUSY固定high（未構成時のpull-up）ではqueue対象の書込みが約100msで`TransferTimeout`。READY固定low（未配線GPIOをREADYに指定）では2秒で`KAGURA timeout: READY` |
+| 日本語表示（kagura_ja） | 2026-10-29、QSPI 5MHz・720p（40×22セル）。かな（濁点・半濁点・小書き）、漢字、全角記号、ASCII・半角カナの中央寄せ、未収録文字の`?`、折返し、右端と下端の切捨てをHDMIで目視確認。map 1760byte全体と字形タイル32個の読戻しが一致。`Font()` 3.4ms・RAM 1.2KiB、`glyph()`平均1.8ms、`TextLayer`のRAM 2.0KiB、字形255個の登録で+2.3KiB。`clear()` 186ms、新しい字形255個の`text()`＋`flush()` 0.97秒、登録済み255セルの再描画0.14秒、256個目で`MemoryError`。`ja_menu.run(kagura_console)`はUSBから送った↑↓・Enterで選択でき、戻り値は選んだ項目、終了後にコンソールへ復帰し、呼出し前後の`gc.mem_free()`の差は128byte。開始から最初の描画まで約0.59秒、終了時の`resume()`は約1.1秒 |
 
 #### 電源投入時の検出失敗（修正済み）
 

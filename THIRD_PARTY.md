@@ -18,3 +18,5 @@ revisionとURLは[出典](docs/sources.md)。今後の導入時には原著作�
 `rtl/hdmi/kagura_packet_assembler.sv`も同様に、上流`src/packet_assembler.sv`を基にしたローカル置換実装である。counterで選ぶbit muxをshift registerに置き換え、上流と毎cycle同じ出力を生成する（`tb_packet_assembler`で検査）。Apache-2.0を適用し、由来・変更内容をソース先頭に記載する。
 
 `software/pico/pico_sdk_import.cmake`はRaspberry Pi Pico SDK 2.2.0（commit `a1438dff1d38bd9c65dbd693f0e5db4b9ae91779`）の`external/pico_sdk_import.cmake`の無改変の写しで、SDKのBSD-3-Clauseに従う。CIはSDK版の同ファイルと一致することを検査する。Pico SDK本体とArm GNU Toolchainはビルド時に取得し、リポジトリに含めない。
+
+`software/micropython/fonts/misaki8.kfnt`は門真なむ氏の8×8日本語フォント「美咲ゴシック」2021-05-05版（`misaki_bdf_2021-05-05.zip`の`misaki_gothic.bdf`）を`tools/gen-kagura-ja-font.py`でKJ8F形式へ変換したもの。字形は無改変で、半角字形をセル内で中央寄せした。ツールは上流アーカイブとBDFのSHA-256を検証する。Apache-2.0は適用せず、原著作権表示と許諾文（使用・複製・改変・再配布を商用/非商用とも許可、無保証）を[フォント資料](software/micropython/fonts/README.md)に保持する。
