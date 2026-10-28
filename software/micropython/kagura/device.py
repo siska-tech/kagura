@@ -49,7 +49,7 @@ class Kagura:
 
     @operation
     def probe(self, ready_timeout_us=None):
-        self._wait(self.transport.ready, "READY", ready_timeout_us)
+        self._wait(self.transport.idle, "READY", ready_timeout_us)
         ids = bytearray(5)
         self.transport.readinto(R.REG_ID0, ids, True)
         if ids[0] != R.ID0 or ids[1] != R.ID1:

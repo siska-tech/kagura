@@ -26,10 +26,10 @@ def connect(ready_timeout_us=100_000, baudrate=None, **config):
                 device.check_link()
             return device
         except OSError:
-            # READY does not depend on SCK; a slower speed cannot help.
-            ready = transport.ready()
+            # READY/BUSY do not depend on SCK; a slower speed cannot help.
+            idle = transport.idle()
             transport.deinit()
-            if not ready or i == len(speeds) - 1:
+            if not idle or i == len(speeds) - 1:
                 raise
         except BaseException:
             transport.deinit()

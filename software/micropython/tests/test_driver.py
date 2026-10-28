@@ -157,8 +157,11 @@ class RegisterModel:
         self.read_requests = 0
         self.closed = False
         self.pcm_prepare_status = R.AUDIO_PCM_STATUS_READY
+    busy_pin = False
     def ready(self):
         return True
+    def idle(self):
+        return self.ready() and not self.busy_pin
     def _addr(self):
         return int.from_bytes(self.reg[4:7], "little")
     def _advance(self):
@@ -241,6 +244,32 @@ class DeviceTests(unittest.TestCase):
         with self.assertRaisesRegex(OSError, "READY"):
             self.d.probe()
         self.assertEqual(self.d.busy, 0)
+
+    def test_probe_waits_while_fpga_loads(self):
+        # Pico reaches boot.py ~70 ms after power-on, the FPGA ~170 ms. While
+        # it loads, pull-ups hold READY and BUSY high and IDs read as garbage.
+        model = RegisterModel()
+        model.busy_pin = True
+        polls = []
+        def idle():
+            polls.append(1)
+            if len(polls) == 3:
+                model.busy_pin = False
+            return RegisterModel.idle(model)
+        model.idle = idle
+        reads = []
+        readinto = model.readinto
+        def record(*args, **kwargs):
+            reads.append(len(polls))
+            readinto(*args, **kwargs)
+        model.readinto = record
+        Kagura(model).probe(ready_timeout_us=1_000_000)
+        self.assertGreaterEqual(min(reads), 3)
+
+    def test_fpga_that_never_finishes_loading_times_out(self):
+        self.model.busy_pin = True
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.d.probe()
 
     def test_vram_write_fence_read(self):
         data = bytes(range(256)) * 8
@@ -466,9 +495,11 @@ class TransportTests(unittest.TestCase):
 class LinkModel(RegisterModel):
     """Transport opened at one SCK; reads flip a bit above max_baudrate."""
     opened = []
-    def __init__(self, baudrate=1_000_000, max_baudrate=5_000_000, ready=True, **config):
+    def __init__(self, baudrate=1_000_000, max_baudrate=5_000_000, ready=True,
+                 busy=False, **config):
         super().__init__()
         self.baudrate, self.max_baudrate, self._ready = baudrate, max_baudrate, ready
+        self.busy_pin = busy
         LinkModel.opened.append(self)
     def ready(self):
         return self._ready
@@ -522,6 +553,13 @@ class ConnectTests(unittest.TestCase):
             self.connect(ready_timeout_us=10)
         self.assertEqual(len(LinkModel.opened), 1)
         self.assertTrue(LinkModel.opened[0].closed)
+
+    def test_unconfigured_fpga_does_not_try_slower_speeds(self):
+        # An erased FPGA pulls READY and BUSY high forever.
+        self.link = {"busy": True}
+        with self.assertRaisesRegex(OSError, "READY"):
+            self.connect(ready_timeout_us=10)
+        self.assertEqual(len(LinkModel.opened), 1)
 
     def test_slow_system_clock_skips_unreachable_speeds(self):
         self.link = {}

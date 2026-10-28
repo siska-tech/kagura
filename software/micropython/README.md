@@ -2,7 +2,7 @@
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択等53テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
+**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等56テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
@@ -21,7 +21,7 @@ mpremote connect COM5 fs cp examples/boot.py :boot.py
 mpremote connect COM5 reset
 ```
 
-`lib`が既にあればmkdirは不要。初期化前のログはUSBにだけ出る。同時に電源を入れる場合を考慮し、起動時はREADYを最大2秒待つ（`start(ready_timeout_us=...)`で変更可能）。KAGURAが未接続・ABI不一致ならHDMIを有効にせず、UART入力＋USB出力でREPLを利用できる。検出は起動時の1回で、ホットプラグ検出は行わない。
+`lib`が既にあればmkdirは不要。初期化前のログはUSBにだけ出る。FPGAは電源投入から約170msかけて内蔵Flashからbitstreamを読み、その間は全ピンがpull-upでhighになる（READYもhighに見える）。PicoはFPGAより先に（約70msで）boot.pyへ達するので、ドライバはREADY=highかつBUSY=lowになるまで待ってからIDを読む。起動時の待ちは最大2秒（`start(ready_timeout_us=...)`で変更可能）。KAGURAが未接続・ABI不一致ならHDMIを有効にせず、UART入力＋USB出力でREPLを利用できる。検出は起動時の1回で、ホットプラグ検出は行わない。
 
 他のバージョンや独自ビルドでは、REPLで次を実行してコンソール用APIの有無を確認する。両方`True`ならコンソールを接続できる。ドライバ単体はこれらのAPIに依存しない。公式v1.26.0（RPI_PICO-20250809-v1.26.0.uf2）では両方`True`で、後付け構成での自動検出・HDMI表示を実機で確認した。
 
@@ -123,7 +123,7 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 ### 通信速度
 
-`connect()`と`start()`は既定（`baudrate=None`）でSCKを5MHz→2.5MHz→1MHzの順に試し、最初に合格した速度を使う。各速度でprobe（ID・ABI）に続けて`check_link()`を行う。IDブロックの読出しと、LENGTH_L〜FENCE_TAG（FILL・COPY・FENCEが毎回書き直すので状態を変えない）への4byteパターンの書込み・読戻しを8回照合し、最後にERROR_CODE=0を確認する。所要時間は約40ms。READYが来ない場合は速度に関係しないので、低速では再試行せずに失敗する。`machine.freq()`がSCKの12倍に満たない速度は飛ばす。
+`connect()`と`start()`は既定（`baudrate=None`）でSCKを5MHz→2.5MHz→1MHzの順に試し、最初に合格した速度を使う。各速度でprobe（ID・ABI）に続けて`check_link()`を行う。IDブロックの読出しと、LENGTH_L〜FENCE_TAG（FILL・COPY・FENCEが毎回書き直すので状態を変えない）への4byteパターンの書込み・読戻しを8回照合し、最後にERROR_CODE=0を確認する。所要時間は約40ms。READY=high・BUSY=lowにならない場合（未接続、FPGA未構成）は速度に関係しないので、低速では再試行せずに失敗する。`machine.freq()`がSCKの12倍に満たない速度は飛ばす。
 
 選ばれた速度は`device.transport.baudrate`で分かり、起動コンソールのメッセージにも`(QSPI 5MHz)`のように出る。`baudrate=`に数値を渡すとその速度だけを使い、照合とfallbackは行わない。照合は接続時の1回だけで、合格した速度で運用中にエラーが出る配線では、低い速度を明示する。
 
@@ -167,8 +167,15 @@ python -I software/micropython/tests/test_driver.py \
 | 音源・PCM | PSG 3ch＋noise＋wave 2chでAUDIO_STATUS=0（`spi`・`spipsram`・`qspipsram720`）。PCM 48000byte（1秒）のuploadはSPI 1.0秒・QSPI 0.74秒、one-shotは約1020msでDONE、loopは2.5秒後もACTIVE（`spipsram`・`qspipsram720`）。`qspipsram720`では聴感でも正常で、最後の書込み以降LED2（`late`）は消灯 |
 | 転送中断 | 読出し・DMA書込み・FILLの実行中にUSBからCtrl-Cを21回送り（QSPI 18回・SPI 3回、5MHz）、毎回CS high・ERROR_CODE=0で次の操作が成功。修正前は、READ_READY待ちでの中断後の最初の読出しがREAD_COLLISION（0x08）になっていた |
 | FPGA reset | HDMIコンソールの表示中にFPGAを再構成すると`last_error`に`TransferTimeout`が入り、USB REPLは継続。`resume()`で復帰 |
-| 未接続・READY・BUSY | FPGA未構成（SRAM Erase）で起動すると`KAGURA ID mismatch`を表示してUART＋USB REPLへフォールバック。BUSY固定high（未構成時のpull-up）ではqueue対象の書込みが約100msで`TransferTimeout`。READY固定low（未配線GPIOをREADYに指定）では2秒で`KAGURA timeout: READY` |
+| 未接続・READY・BUSY | FPGA未構成（SRAM Erase）で起動するとUART＋USB REPLへフォールバック（この試験時は`KAGURA ID mismatch`、下記の修正後は2秒で`KAGURA timeout: READY`）。BUSY固定high（未構成時のpull-up）ではqueue対象の書込みが約100msで`TransferTimeout`。READY固定low（未配線GPIOをREADYに指定）では2秒で`KAGURA timeout: READY` |
 
-既知の問題: PicoとFPGAに同時に電源が入るとREADYの待ち時間（2秒）に間に合わずコンソールが起動しないことがある（Ctrl-Dで再試行）。この受入試験では電源の再投入を行っていない。
+#### 電源投入時の検出失敗（修正済み）
+
+以前の版では、PicoとFPGAに同時に電源が入るとHDMIコンソールが起動しないことがあった（Ctrl-Dで再試行すると起動）。READYの待ち時間不足ではなく、構成中のFPGAを準備完了と誤認していた。
+
+- boot.pyの先頭で、ピンを駆動せずにREADY/BUSY/IRQを記録した。両基板の電源を同時に入れた3回とも、boot.pyの開始はPicoのリセットから65〜76msで、そのときFPGAは構成中（READY=BUSY=high）だった。真のREADY（READY=high・BUSY=low）はさらに36〜90ms後。Tang Nanoだけを入れ直した場合、電源投入からREADYまで約188ms（うち構成約171ms）。
+- 以前のprobeはREADYだけを見ていたため、構成中にIDを読んで`KAGURA ID mismatch`になり得た。`/lib`の.pyではimportとcompileの時間で間に合う場合が多く（5回とも成功）、以前に起きたfrozen moduleの専用UF2ではimportが速いため起きやすかったと考えられる（専用UF2での再試験は未実施）。
+- PCからFPGAを再構成している間に`connect()`を呼ぶと確実に再現した（修正前2/2回`ID mismatch`、修正後3/3回が構成完了を待って5MHzで接続）。
+- Picoが/CSをhighに駆動したままTang Nanoの電源だけを切ると、信号ピン経由で電源が回り込み、再投入後も構成の失敗と再試行（約172ms周期）が続いてREADYまで約6.5秒かかった。ピンを入力にした場合は1回で構成した。電源はPicoと同時か先にFPGAへ入れ、Pico動作中にFPGAだけを切らない。
 
 レジスタ定数`kagura/regs.py`は`spec/registers.json`から生成する。手動編集しない。

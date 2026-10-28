@@ -165,6 +165,12 @@ class PIOTransport:
     def ready(self):
         return bool(self._ready.value())
 
+    def idle(self):
+        # An FPGA still loading its bitstream pulls every pin high, READY
+        # included (about 170 ms after power-on). A configured, idle KAGURA
+        # drives BUSY low.
+        return bool(self._ready.value()) and not self._busy.value()
+
     def irq_asserted(self):
         return not self._irq.value()
 
