@@ -1,12 +1,42 @@
 name: MicroPython driver and console
+# Pull requests and pushes to main run only the jobs that the changed files
+# need (tools/ci-changes.sh); manual and weekly scheduled runs run them all.
 on:
   push:
+    branches: [main]
   pull_request:
+  schedule:
+    - cron: '0 18 * * 0' # Monday 03:00 JST
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      micropython: ${{ steps.filter.outputs.micropython }}
+      micropython_firmware: ${{ steps.filter.outputs.micropython_firmware }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Check the change filter
+        run: bash tools/test-ci-changes.sh
+      - name: Select jobs for the changed files
+        id: filter
+        env:
+          CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        # Explicit bash adds pipefail, so a filter error fails the step.
+        shell: bash
+        run: bash tools/ci-changes.sh | tee -a "$GITHUB_OUTPUT"
   driver:
+    needs: changes
+    if: needs.changes.outputs.micropython == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +61,8 @@ jobs:
             build/micropython-src/mpy-cross/build/mpy-cross -o "build/mpy/$(basename "$(dirname "$file")")-$(basename "$file").mpy" "$file"
           done
   firmware:
+    needs: changes
+    if: needs.changes.outputs.micropython_firmware == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -59,3 +91,18 @@ jobs:
             software/micropython/kagura_ja/*.py
             software/micropython/fonts/*
             software/micropython/examples/*.py
+  # Always reports, so it can be the required check: skipped jobs pass,
+  # failed or cancelled ones (including the filter) fail it.
+  result:
+    name: MicroPython result
+    if: always()
+    needs: [changes, driver, firmware]
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "changes driver firmware: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in success|skipped) ;; *) exit 1 ;; esac
+          done

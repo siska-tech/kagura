@@ -1,7 +1,12 @@
 name: Phase 1 RTL sources
+# Pull requests and pushes to main run only the jobs that the changed files
+# need (tools/ci-changes.sh); manual and weekly scheduled runs run them all.
 on:
   push:
+    branches: [main]
   pull_request:
+  schedule:
+    - cron: '0 18 * * 0' # Monday 03:00 JST
   workflow_dispatch:
     inputs:
       force_fail:
@@ -14,11 +19,37 @@ on:
         default: ''
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   # Commit of tag v5.032; tools/verilator.version holds the version string.
   VERILATOR_COMMIT: 8ff77e9d47351b0a59114929880687839a51840b
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      verilator: ${{ steps.filter.outputs.verilator }}
+      rtl_sources: ${{ steps.filter.outputs.rtl_sources }}
+      pico: ${{ steps.filter.outputs.pico }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Check the change filter
+        run: bash tools/test-ci-changes.sh
+      - name: Select jobs for the changed files
+        id: filter
+        env:
+          CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        # Explicit bash adds pipefail, so a filter error fails the step.
+        shell: bash
+        run: bash tools/ci-changes.sh | tee -a "$GITHUB_OUTPUT"
   verilator-simulation:
+    needs: changes
+    if: needs.changes.outputs.verilator == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -65,6 +96,8 @@ jobs:
             build/verilator/*.wav
             build/verilator/*.vcd
   source-simulation:
+    needs: changes
+    if: needs.changes.outputs.rtl_sources == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +113,8 @@ jobs:
         shell: pwsh
         run: ./tools/test-phase1.ps1
   pico-firmware:
+    needs: changes
+    if: needs.changes.outputs.pico == 'true'
     runs-on: ubuntu-24.04
     env:
       ARM_TOOLCHAIN: arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi
@@ -117,3 +152,18 @@ jobs:
           path: |
             build/pico/kagura_host.uf2
             build/pico/kagura_host.elf
+  # Always reports, so it can be the required check: skipped jobs pass,
+  # failed or cancelled ones (including the filter) fail it.
+  result:
+    name: Phase 1 result
+    if: always()
+    needs: [changes, verilator-simulation, source-simulation, pico-firmware]
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "changes verilator-simulation source-simulation pico-firmware: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in success|skipped) ;; *) exit 1 ;; esac
+          done

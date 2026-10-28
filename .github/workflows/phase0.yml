@@ -1,7 +1,16 @@
 name: Phase 0 design consistency
-on: [push, pull_request, workflow_dispatch]
+# Runs on every change: the link check reads every Markdown file, and it
+# takes well under a minute.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   design-documents:
     runs-on: windows-latest

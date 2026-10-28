@@ -107,3 +107,22 @@ $prog='C:\Gowin\Gowin_V1.9.11.03_Education_x64\Programmer\bin\programmer_cli.exe
 ## CI
 
 GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-registers.ps1 -Check`・依存hash、Icarus基礎試験、Verilator回帰（5.032を固定commitからビルドしてキャッシュ）、ヘッダ検査、Pico firmwareのビルドを実行する。失敗時もログ・`summary.tsv`・画像・PCM/WAV・指定したVCDを`verilator-results`、UF2を`pico-firmware`のartifactに残す。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。Gowin P&Rと実機試験はCIでは行わない。
+
+実行条件は次のとおり。
+
+- pull requestと`main`へのpushでは、`tools/ci-changes.sh`が変更ファイルから必要なjobを選ぶ。
+
+  | 変更 | 実行するjob |
+  |---|---|
+  | RTL・テストベンチ・`third_party/` | Verilator回帰、Icarus基礎試験・ヘッダ検査・依存hash |
+  | `spec/registers.json`・`tools/gen-registers.ps1`・workflow・`tools/ci-changes.sh` | すべて |
+  | `software/include/` | ヘッダ検査等、Pico firmware |
+  | `software/pico/` | Pico firmware（`software/pico/tests/test_pio_timing.py`はMicroPythonのテストも） |
+  | `software/micropython/kagura/`・`boards/`・`manifest.py` | MicroPythonのテストとUF2ビルド |
+  | 上記以外の`software/micropython/`・`tools/gen-kagura-ja-font.py` | MicroPythonのテスト |
+  | Markdown・`docs/`・制約ファイル・合成用tool | Phase 0のみ |
+
+  どの規則にも当たらないファイルは全jobを実行する。Phase 0（設計検査・link検査）は常に実行する。
+- 手動実行と毎週月曜03:00（JST）の定期実行（`main`）は全jobを実行する。
+- 実行しないjobはskippedになり、各workflowの`Phase 1 result`・`MicroPython result`は常に結果を返す。必須チェックにはこの2つと`design-documents`を指定する。
+- 規則を変えたら`bash tools/test-ci-changes.sh`を実行する。追跡中の全ファイルがいずれかの規則に当たることも確認する。
