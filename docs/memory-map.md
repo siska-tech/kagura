@@ -74,11 +74,11 @@ Tang Nano 9KのGW1NR-9は18Kbit BSRAMを26個持つ。8/16/32bit幅で1個2048 b
 | OAM shadow＋active | 1024×16 | 2 | 4096 B | 0 B | SP。2048 word（shadow 0..1023、active 1024..2047） |
 | Palette shadow＋active | 1024×16 | 1 | 1024 B | 1024 B | SP |
 | Wave shadow＋active | 2048×8 | 1 | 1024 B | 1024 B | SP。音源の読出しを優先 |
-| Line bank ×2 | 1024×16 | 2 | 1280 B | 2816 B | TDP。system書込み／pixel読出し |
-| Command queue | 1024×16 | 1 | 256 B | 1792 B | SP。32 entry×64bit |
+| Line bank ×2（統合） | 1024×16 | 1 | 1280 B | 768 B | TDP。512 wordずつ2面、system書込み／pixel読出し |
+| Command queue | 128×16分散RAM | 0 | 256 B（BSRAM集計外） | — | 32 entry×64bit。同期read |
 | Audio FIFO | 512×32 | 1 | 64 B | 1984 B | SDP。16 stereo sample |
 
-計26ブロック、利用44608 B、モード上の未使用8640 B（`spec/design-budget.json`と`tools/check-design.ps1`の設計モデル）。実装では、合成器が小さいaudio FIFOを分散RAMへ置くことがあり、ホスト・CPU版は25/26、art ROMを持つdemo版は26/26を使う（[検証状況](validation-status.md#資源とタイミング)）。PCMの先読みbuffer（各ch 32 byte）はFF/分散RAMで、BSRAMを増やさない。
+実験第1段階の設計モデルは計24ブロック、BSRAM利用44352 B、モード上の未使用4800 B（`spec/design-budget.json`と`tools/check-design.ps1`）。別途command queueの256 Bを分散RAMに置く。小さいaudio FIFOが分散RAMへ配置された場合は23/26となる。PCM先読みbufferもFF/分散RAMを使う。実測値と対象構成は[実験記録](tile-1200-experiment.md)を参照。
 
 - line wordは`bits11:0 RGB444、bit12 BG_SOLID、bit13 SPR_CLAIMED、15:14予約`。pixel側はRGBだけを読み、2bitはsprite合成の優先判定に使う。
 - OAM・paletteへのbyte書込みは16bit wordの不可分なread-modify-write（最大3 cycle）で、描画の読出しを途中に挟まない。mapは2本のbyte laneで、RMWを使わない。
@@ -88,6 +88,6 @@ Tang Nano 9KのGW1NR-9は18Kbit BSRAMを26個持つ。8/16/32bit幅で1個2048 b
 
 巨大なRAMに非同期resetは使わず、resetの解除後にsystem domainのFSMが通常のwrite portで全RAMを並列に0へ書く（2048 cycle）。pattern全16 bank、mapの両lane、OAMの全2048 word、paletteの全word、waveの全域が対象。queueとFIFOはpointerのresetで空にする。
 
-line bankは、pixel側の読出しが止まったことをsystem側で確認してから両bankを0にする。systemだけがresetされた場合も走査と衝突しない。消去が終わるまでpixel側は黒を出す。
+line bankは、pixel側の読出しが止まったことをsystem側で確認してから統合RAMの全1024 wordを順に0にする。systemだけがresetされた場合も走査と衝突しない。消去が終わるまでpixel側は黒を出す。
 
 結果として、paletteは全色黒、OAMは全sprite disable、mapとpatternは0、音源は全ch無効で起動する。STATUS.INIT_DONE=1まではVRAM操作をNOT_READYで拒否する（[レジスタ仕様](register-map.md#起動)）。

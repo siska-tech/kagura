@@ -1,3 +1,9 @@
+> **1,200タイル対応の実験用リポジトリ**
+>
+> 元リポジトリ `Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` から分岐。
+> 現在はRAMを確保する第1段階で、公開タイル数は1,024枚です。
+> 進捗・再現手順は[実験記録](docs/tile-1200-experiment.md)、設計案は[調査書](docs/tile-1200-feasibility.md)を参照。
+
 # ![KAGURA-9](docs/images/logo.png)
 
 Kinetic Audio & Graphics Unified Rendering Architecture。

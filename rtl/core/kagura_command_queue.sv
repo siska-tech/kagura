@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Ordered command queue: 32 descriptors x 64 bit in one SP 1024x16 BSRAM,
+// Ordered command queue: 32 descriptors x 64 bit in distributed 128x16 RAM,
 // four words per entry (word0 = bits 15:0). A push lands in a staging
 // register and is written over four edges; the write pointer advances only
 // after the fourth word, so a half-written entry is never visible. The
@@ -34,10 +34,16 @@ module kagura_command_queue (
     assign staging=stage_valid;
     wire writing=stage_valid;
     wire fetch=!writing && !head_valid && count!=0 && fetch_issued!=3'd4;
-    wire [9:0] ram_addr=writing ? {3'b000,wptr[4:0],stage_word} : {3'b000,rptr[4:0],fetch_issued[1:0]};
-    wire [15:0] ram_rd;
-    kagura_ram_sp #(.DEPTH(1024),.WIDTH(16)) ram(clk,writing || fetch,writing,ram_addr,
-        stage[16*stage_word +: 16],ram_rd);
+    wire [6:0] ram_addr=writing ? {wptr[4:0],stage_word} : {rptr[4:0],fetch_issued[1:0]};
+    // Retain the existing registered read and four-word staging protocol.
+    // The explicit style is an experiment: verify SSRAM/BSRAM in synthesis.
+    (* syn_ramstyle = "distributed_ram" *) reg [15:0] memory [0:127];
+    reg [15:0] ram_rd;
+    always @(posedge clk)
+        if(writing || fetch) begin
+            if(writing) memory[ram_addr]<=stage[16*stage_word +: 16];
+            ram_rd<=memory[ram_addr];
+        end
     always @(posedge clk)
         if(reset) begin
             wptr<=0; rptr<=0; stage_valid<=0; stage<=0; stage_word<=0;

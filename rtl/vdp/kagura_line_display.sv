@@ -93,7 +93,7 @@ module kagura_line_display #(
     reg done_seen;
     reg [7:0] done_tag_pix;
     reg done_valid;                    // a done for the outstanding request arrived
-    reg [8:0] init_addr;
+    reg [9:0] init_addr;
     reg memory_up;
     (* ASYNC_REG="TRUE" *) reg [1:0] memory_up_sync;
     (* ASYNC_REG="TRUE" *) reg [1:0] scan_quiet_sync;
@@ -114,7 +114,7 @@ module kagura_line_display #(
         if(sys_reset) begin line_init_done<=0; init_addr<=0; frame_ready<=0; end
         else begin
             if(!line_init_done && scan_quiet_sync[1]) begin
-                if(init_addr==9'd511) line_init_done<=1;
+                if(init_addr==10'd1023) line_init_done<=1;
                 else init_addr<=init_addr+1'b1;
             end
             if(render_done && render_line==0) frame_ready<=1;
@@ -158,11 +158,11 @@ module kagura_line_display #(
             if(!memory_up_sync[1]) begin done_valid<=0; blank<=1; started<=0; end
         end
     // Scan-out: read at the lookahead position, colour two edges later.
-    wire [15:0] bank_rd [0:1];
-    reg scan_q, blank_q, sel_q;
-    wire [15:0] word=bank_rd[sel_q];
+    wire [15:0] bank_rd;
+    reg scan_q, blank_q;
+    wire [15:0] word=bank_rd;
     always @(posedge pix_clk) begin
-        scan_q<=scan && memory_up_sync[1]; blank_q<=blank_now; sel_q<=display_now;
+        scan_q<=scan && memory_up_sync[1]; blank_q<=blank_now;
         if(pix_reset) rgb<=0;
         else if(scan_q && !blank_q) rgb<={word[11:8],word[11:8],word[7:4],word[7:4],word[3:0],word[3:0]};
         else rgb<=0;
@@ -201,15 +201,16 @@ module kagura_line_display #(
             if(render_done) begin done_toggle<=~done_toggle; done_tag<=render_line; end
         end
 
-    wire [15:0] system_rd [0:1];
-    assign line_rdata=system_rd[write_bank];
-    genvar i;
-    generate for(i=0;i<2;i=i+1) begin: bank
-        kagura_ram_tdp #(.DEPTH(512),.WIDTH(16)) ram(
-            .clk_a(sys_clk),.enable_a(!sys_reset && ((!line_init_done && scan_quiet_sync[1]) ||
-                (line_init_done && (line_write || line_read) && write_bank==i))),
-            .write_a(!line_init_done || line_write),
-            .addr_a(!line_init_done ? init_addr : line_addr),.wdata_a(!line_init_done ? 16'b0 : line_data),.rdata_a(system_rd[i]),
-            .clk_b(pix_clk),.enable_b(scan && memory_up_sync[1] && display_now==i),.addr_b(scan_addr),.rdata_b(bank_rd[i]));
-    end endgenerate
+    // The two logical banks occupy opposite 512-word halves of one TDP.
+    // Port A belongs to the system domain, port B to the pixel domain.
+    // Handover still guarantees that their active halves never overlap.
+    // Clear all 1024 words serially only after pixel reads have stopped.
+    kagura_ram_tdp #(.DEPTH(1024),.WIDTH(16)) line_ram(
+        .clk_a(sys_clk),.enable_a(!sys_reset && ((!line_init_done && scan_quiet_sync[1]) ||
+            (line_init_done && (line_write || line_read)))),
+        .write_a(!line_init_done || line_write),
+        .addr_a(!line_init_done ? init_addr : {write_bank,line_addr}),
+        .wdata_a(!line_init_done ? 16'b0 : line_data),.rdata_a(line_rdata),
+        .clk_b(pix_clk),.enable_b(scan && memory_up_sync[1]),
+        .addr_b({display_now,scan_addr}),.rdata_b(bank_rd));
 endmodule

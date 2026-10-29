@@ -175,13 +175,13 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         // Poison both physical line banks, proving startup uses write-port
         // clearing rather than simulator/default bitstream RAM contents.
         for(i=0;i<512;i=i+1) begin
-            dut.display.bank[0].ram.memory[i]=16'hffff;
-            dut.display.bank[1].ram.memory[i]=16'hffff;
+            dut.display.line_ram.memory[i]=16'hffff;
+            dut.display.line_ram.memory[512+i]=16'hffff;
         end
         #200; sys_reset=0; pix_reset=0;
         wait(dut.init_done);
         for(i=0;i<512;i=i+1)
-            if(dut.display.bank[0].ram.memory[i]!==0 || dut.display.bank[1].ram.memory[i]!==0)
+            if(dut.display.line_ram.memory[i]!==0 || dut.display.line_ram.memory[512+i]!==0)
                 $fatal(1,"line bank not initialized at %d",i);
         repeat(10) @(posedge sys);
         // ABI 0.2: SCREEN_HEIGHT reports the logical line count.
