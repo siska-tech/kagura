@@ -225,7 +225,11 @@ def run(seconds=60, mode='qspi', sdk='kagura', baudrate=5_000_000, pcm=True, ful
         d.audio_write(R.AUDIO_MASTER_GAIN, 32)
         d.audio_commit()
         if pcm_on:
-            sample = bytes(((i % 128) * 2 - 128) & 255 for i in range(4096))
+            # Build one short period before repeating it. MicroPython's bytes
+            # iterable constructor can otherwise need a second growing 4 KiB
+            # allocation while the first is still live on a fragmented heap.
+            gc.collect()
+            sample = bytes((i * 2 - 128) & 255 for i in range(128)) * 32
             for channel, address in ((0, 0x400000), (1, 0x410000)):
                 d.write_memory(address, sample)
                 d.fence()
