@@ -196,6 +196,10 @@ PCM 2ch稼働中、各10回、flush全体の平均ms：1 tile Python 14.854／Vi
 
 この負荷は毎loop約600 tileが変化し、多数の連続runに分かれるため、更新周期の大半は既存flushの転送とrunごとのFENCE待ちになる。Viperの描画は1 loopの約3%。flush・FENCE・通信は今回の範囲外として変更していない。
 
+### 目視・聴感
+
+ユーザーが480pのHDMI出力を目視し、次の範囲で問題なしと回答した：Scene F／G／H（Python・Viperとも）、ベンチマーク実行中に切り替わる画面、連続負荷中の画面とPCM 2chの音、復帰後のHDMIコンソール画面。観察者はユーザーで、エージェントがHDMI画像や音を取得したという記録ではない。画素の正しさの判定は上記のCRC・VRAM読戻しによる。
+
 ## 5. 実機への導入と復帰
 
 1. 既存consoleを`kagura_console.close()`（dupterm・UART・PIOを解放）。heapの断片化を避けるため、Picoは各段階の前にsoft resetし、boot consoleをcloseしてから実行した。
@@ -211,5 +215,5 @@ PCM 2ch稼働中、各10回、flush全体の平均ms：1 tile Python 14.854／Vi
 - paintは`paint_capacity`を超える極端な形状でFalseを返し得る（部分状態は仕様化済み）。事前見積りはしない。
 - 非整列・透過の大きいblitはnibble処理で、全画面で約0.1～0.2 s。
 - 線形bufferとして描画planeを別解釈したaliasは未サポート。転送元形式は4bppのみ（1bpp・8bppや色変換paletteはない）。
-- 連続試験はViper 5分・Python 1分。1時間試験、別sink・ケーブルでの確認、HDMIの目視確認は今回行っていない（数値照合のみ）。
+- 連続試験はViper 5分・Python 1分。1時間試験、別sink・ケーブルでの確認は今回行っていない。
 - COM7のtimeoutの原因（Windows CDC driverかPico側か）は未調査。

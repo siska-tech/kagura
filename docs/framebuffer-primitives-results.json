@@ -8707,5 +8707,17 @@
     "event": "paired_flush"
    }
   ]
+ },
+ "observations": {
+  "observer": "user",
+  "display": "HDMI 480p",
+  "status": "pass",
+  "items": [
+   "scene F/G/H (Python and Viper)",
+   "screens during compare_primitives",
+   "continuous blit+ellipse+paint load with PCM 2ch audio",
+   "HDMI console after restore"
+  ],
+  "note": "Reported by the user; the agent did not capture HDMI video or audio."
  }
 }
