@@ -2,7 +2,7 @@
 
 2026-10-29開始。元リポジトリ `C:\Users\Shion\Documents\Projects\Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` をローカルcloneし、独立したGitリポジトリ `C:\Users\Shion\Documents\Projects\Kagura-tile1200` を作成した。ブランチは `experiment/tile-1200`。元の履歴を保持し、source remoteは元リポジトリの参照用とする。GitHubへの新規作成・公開は行っていない。
 
-第1段階のRAM確保を完了し、現在は[第2段階の1,200パターン実装](tile-1200-stage2.md)がsimulationとホスト4構成のP&R/STAに合格した。以下の第1段階の数値は1,024枚版の記録。調査とABIの候補は[調査書](tile-1200-feasibility.md)を参照。
+第1段階のRAM確保を完了し、[第2段階の1,200パターン実装](tile-1200-stage2.md)がsimulationとホスト4構成のP&R/STAに合格し、[第3段階](tile-1200-stage3.md)で実Picoによる全量読戻し・1時間連続動作・文字キャッシュを数値検証した。以下の第1段階の数値は1,024枚版の記録。調査とABIの候補は[調査書](tile-1200-feasibility.md)を参照。
 
 ## 第1段階の変更
 
@@ -35,7 +35,7 @@ python3 tools/prepare-hdmi-stream.py
 ./tools/gen-registers.ps1 -Check
 ```
 
-7試験すべて合格。480p/720pそれぞれBGのみ・spriteありの全画素比較、起動時RAM汚染からのクリア、pixelを動かしたままのsystem単独resetを確認した。全58試験の一括回帰は未実施。
+7試験すべて合格。480p/720pそれぞれBGのみ・spriteありの全画素比較、起動時RAM汚染からのクリア、pixelを動かしたままのsystem単独resetを確認した。この段階では全58試験の一括回帰は未実施。第3段階の最終版では追加試験込み61件すべて合格。
 
 4構成すべて `sta_pass`、setup/hold違反0、負のrecovery/removal解析なし。開発下限のsetup +0.10nsを満たした。
 
@@ -56,8 +56,8 @@ python3 tools/prepare-hdmi-stream.py
 
 ## 次の段階
 
-第2段階の1,200枚対応は[実装・検証記録](tile-1200-stage2.md)を参照。次は実機で追加領域の読戻し、BG／sprite表示、PCM併用・長時間動作を確認する。
+第2段階の1,200枚対応は[実装・検証記録](tile-1200-stage2.md)を参照。追加領域の全量読戻し、PCM併用・1時間連続動作、文字キャッシュの数値検証は[第3段階](tile-1200-stage3.md)で完了。残る受入はPicoホストによる画面の目視・音質の聴感とsink／ケーブル互換性。
 
 FPGA standaloneのdemo／demo720はdeprecatedとし、既定のP&R対象から除外した。以降はPicoホストを中心に検証する。ソースと旧試験・過去の証跡は保持する。
 
-実機書込みは未実施。既存の[検証状況](validation-status.md)は元設計の過去の証跡であり、実験版の動作保証とは区別する。
+実機にはSRAMだけを書き換えて数値検証を実施した。FPGA FlashとPico firmwareは変更していない。既存の[検証状況](validation-status.md)は元設計の過去の証跡であり、実験版の動作保証とは区別する。

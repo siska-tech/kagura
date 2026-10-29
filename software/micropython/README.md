@@ -1,14 +1,14 @@
-> この実験リポジトリはABI 0.6・1,200パターン版です。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#実験abi-061200パターン)を参照。
+> この実験リポジトリはABI 0.6・1,200パターン版です。[第3段階](../../docs/tile-1200-stage3.md)でPicoの全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済み。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#実験abi-061200パターン)を参照。
 
 # MicroPython host driver / UART keyboard / HDMI REPL
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
+**拡張前ABI 0.5の過去の検証（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
-1. FPGAへ`spi`/`spipsram`、または`qspi`/`qspipsram`のABI 0.5 bitstreamを書き込む。720版も対応。
+1. FPGAへ`spi`/`spipsram`、または`qspi`/`qspipsram`のABI 0.6 bitstreamを書き込む。720版も対応。
 2. Pico/Pico Wには公式MicroPython **v1.26.0**を使う。標準のRP2ビルドでは`os.dupterm`と`os.dupterm_notify`が有効で、通常のUF2へモジュールを追加してドライバ・UART入力・HDMI REPLを利用できる。専用UF2への書換えは不要。
 3. `kagura/`をPicoの`/lib/kagura/`へコピーする。自動コンソールを使う場合は`examples/boot.py`も`/boot.py`へコピーし、既存のboot.pyがあれば起動処理を組み込む。boot.pyの`mode`をbitstreamと一致させる。SCKは自動で選ぶ（[通信速度](#通信速度)）。ドライバだけを手動で使う場合はboot.pyの変更は不要。
 4. UART送信元のTXをPico GP1（物理pin 2）、GNDを共通GNDへ接続する。GP0（pin 1）はUART TXとして予約するが、初期版はUARTへ出力しない。KAGURAの配線・電源は[Pico資料](../pico/README.md#配線)を参照。
@@ -161,7 +161,7 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。同じフォントで[REPLの出力](#replの日本語出力)も日本語表示できる。日本語の行編集、本体側の日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
 
-**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・アプリ描画・コンソール出力のモックテスト29件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。MicroPython v1.26.0のunix版で、同梱フォントによるアプリ描画とコンソール出力（1byteずつ届くUTF-8、スクロール）を模擬deviceで確認。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。REPLの日本語出力は実機（Pico、QSPI 1MHz、720p）でスクロール・Ctrl-Cを含めて確認し、日本語を含む100行の出力がHDMIへ描き終わるまで約5.4秒（ASCIIのみは約4.8秒）だった。
+**拡張前ABI 0.5の過去の検証（2026-10-29）**: PC上で変換ツール・フォントファイル・アプリ描画・コンソール出力のモックテスト29件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。MicroPython v1.26.0のunix版で、同梱フォントによるアプリ描画とコンソール出力（1byteずつ届くUTF-8、スクロール）を模擬deviceで確認。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。REPLの日本語出力は実機（Pico、QSPI 1MHz、720p）でスクロール・Ctrl-Cを含めて確認し、日本語を含む100行の出力がHDMIへ描き終わるまで約5.4秒（ASCIIのみは約4.8秒）だった。
 
 ### 導入
 
@@ -213,7 +213,7 @@ text.flush()
 - 新しい字形1つにつきファイルを最大13回seek/readする（7171字の二分探索）。既出の字形は読まない。
 - 実機（QSPI 5MHz）で、新しい字形1つにつき約1.8msのファイル検索がかかる。新しい字形255個を含む`text()`＋`flush()`は約0.97秒、登録済みの字形だけなら同じ255セルで約0.14秒（[実機の受入結果](#実機の受入結果)）。字形の多い画面は切替え前に描いておく。
 
-ABI 0.6では`tile_base + tile_count <= 1200`の範囲を使える。1023／1024を跨ぐ字形転送は自動で分割する。mapのpaletteを保ったまま上位bitを更新し、指定矩形外のbitは保持する。端末は所有する5 byte／rowの上位表を記憶し、通常のASCII更新では追加の読戻しや上位表書込みを行わない。
+ABI 0.6では`tile_base + tile_count <= 1200`の範囲を使える。1023／1024を跨ぐ字形転送は自動で分割する。mapのpaletteを保ったまま上位bitを更新し、指定矩形外のbitは保持する。端末の字形検索は固定サイズの16bit配列を使い、多数の字形追加中に大きい辞書の再確保を行わない。端末は所有する5 byte／rowの上位表を記憶し、通常のASCII更新では追加の読戻しや上位表書込みを行わない。
 
 ### コンソールとの切替え
 
@@ -268,6 +268,8 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 7. フォント配置後に再起動し、`print("こんにちは、神楽！")`、日本語を含む例外、長文スクロールをHDMIで確認。漢字の多い数KBを出力した時の表示更新時間とUART入力の応答を記録する。
 
 ### 実機の受入結果
+
+以下は拡張前ABI 0.5の過去の記録。ABI 0.6・1,200枚版は[第3段階の数値検証](../../docs/tile-1200-stage3.md)を参照。
 
 2026-10-29、Pico（公式MicroPython v1.26.0 UF2＋`/lib/kagura/`、frozenなし）、Tang Nano 9K。bitstreamは`8aee28e`から作った[標準版release](https://github.com/siska-tech/kagura/releases/tag/bitstreams-2026-10-27)の`spi`・`spipsram`・`qspipsram`・`qspipsram720`をSRAMへ書いた。
 

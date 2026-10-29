@@ -4,6 +4,8 @@ import ast
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
+sys.dont_write_bytecode = True
 import zlib
 
 ROOT = Path(__file__).resolve().parents[3]
