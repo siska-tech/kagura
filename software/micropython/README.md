@@ -1,4 +1,4 @@
-> この実験リポジトリはABI 0.6・1,200パターン版です。[第3段階](../../docs/tile-1200-stage3.md)でPicoの全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済み。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#実験abi-061200パターン)を参照。
+> SDKはABI 0.6（1,200パターン）に対応します。[第3段階](../../docs/tile-1200-stage3.md)でPicoの全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済み。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#abi-061200パターン)を参照。
 
 # MicroPython host driver / UART keyboard / HDMI REPL
 

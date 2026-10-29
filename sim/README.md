@@ -6,7 +6,7 @@
 - 波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する。
 - 専用のC++ harness、`verilator/`・`reference/`ディレクトリは使っていない（空）。
 
-実験ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象と確認済み結果は[第2段階の記録](../docs/tile-1200-stage2.md)を参照。
+ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象と確認済み結果は[第2段階の記録](../docs/tile-1200-stage2.md)を参照。
 
 ## 試験一覧
 

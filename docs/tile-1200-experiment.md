@@ -1,4 +1,6 @@
-# 1,200タイル対応実験
+# 1,200タイル対応の記録
+
+> 1,200タイル対応（ABI 0.6）は[PR #38](https://github.com/siska-tech/kagura/pull/38)で本流の`main`へマージ済み（`63f2685`）。現在はこのリポジトリの標準構成であり、以下は別リポジトリで実験として進めた当時の経緯と記録。各段階の文書（第1～第3段階・目視・6502ブート）の「実験」「実験用SDK」等の表記も当時のものとして保持する。
 
 2026-10-29開始。元リポジトリ `C:\Users\Shion\Documents\Projects\Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` をローカルcloneし、独立したGitリポジトリ `C:\Users\Shion\Documents\Projects\Kagura-tile1200` を作成した。ブランチは `experiment/tile-1200`。元の履歴を保持し、source remoteは元リポジトリの参照用とする。GitHubへの新規作成・公開は行っていない。
 

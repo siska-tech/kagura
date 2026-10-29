@@ -37,7 +37,7 @@
 | [1,200タイル実機数値検証](tile-1200-stage3.md) | Picoでの全量照合・連続動作・文字キャッシュと確認範囲 |
 | [1,200タイル版の目視・聴感](tile-1200-visual.md) | 720p・Picoホストでの追加領域、境界BG／sprite、反転、PCMのユーザー確認 |
 | [1,200タイル版の6502ブート](tile-1200-boot.md) | 480p／720pのbitstream生成・STAとboot simulation |
-| [1,200タイル実験](tile-1200-experiment.md) | 実験用リポジトリの段階・検証結果・次の作業 |
+| [1,200タイル対応の記録](tile-1200-experiment.md) | 別リポジトリで行った拡張の段階・検証結果と本流への統合 |
 | [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
 | [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |
 | [Pico host firmware](../software/pico/README.md) | 配線、コマンド、実機確認の記録 |

@@ -1,6 +1,6 @@
 # TileFramebuffer blit／ellipse／paint：設計比較・検証・実測
 
-2026-10-30。基準はPR #38のマージ`63f2685`（branch `experiment/tile-1200`の`53572c0`）。[API](framebuffer.md#blitellipsepaint)、[全実測値](framebuffer-primitives-results.json)。
+2026-10-30。基準は`main`の`63f2685`（PR #38のマージ）、branch `feat/framebuffer-primitives`。[API](framebuffer.md#blitellipsepaint)、[全実測値](framebuffer-primitives-results.json)。
 
 RTL・ABI 0.6・レジスタ定義・通信プロトコル・`initialize`／`flush`は変更なし。追加はSDKの`framebuffer.py`／`framebuffer_viper.py`、PC試験、診断・ベンチマークだけ。
 

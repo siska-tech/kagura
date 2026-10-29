@@ -163,9 +163,9 @@ PSRAMに置いたpattern・map・palette等をVRAMへ速く送れる（32KiBで�
 - 拒否された操作は何も変えていないので、原因を取り除けば同じ操作を再送できる。
 - 通常の動作でLINE_UNDERRUN・AUDIO_FIFO_ERRORは起きない。起きた場合はhardwareまたは設定の異常として扱う。
 
-## 実験ABI 0.6：1,200パターン
+## ABI 0.6：1,200パターン
 
-この実験版のPATTERN_COUNTは1200（EXT 07=176、08=4）。タイル番号は0～1199を使用できる。背景は従来の16bit mapと別の上位bit表、spriteはbyte 5 bit6に11bit目を持つ。1200～2047は透明として描画する。公開アドレスとbit配置は[メモリマップ](memory-map.md)を参照。
+ABI 0.6のPATTERN_COUNTは1200（EXT 07=176、08=4）。タイル番号は0～1199を使用できる。背景は従来の16bit mapと別の上位bit表、spriteはbyte 5 bit6に11bit目を持つ。1200～2047は透明として描画する。公開アドレスとbit配置は[メモリマップ](memory-map.md)を参照。
 
 MicroPythonでは `Video.tile()`、`Video.sprite()`、`Video.map_entry()` が1199まで対応する。複数タイルは `Video.tiles(first, packed_pixels)` を使うと1023／1024の公開アドレス境界で転送を分割する。raw `write_memory(tile*32, ...)` は1024以上では使わない。
 
