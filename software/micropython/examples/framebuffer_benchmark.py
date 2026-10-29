@@ -101,3 +101,43 @@ def run(session,seconds=120):
     session.scene('A');report('scene_A_ready_for_user',visual_verified=False)
     session.verify(full=True)
     report('benchmark_pass',visual_verified=False)
+
+# Paired CPU-only measurements. Drawing, transfer and fence timings stay separate.
+def compare_draw(session,repetitions=10):
+    import math
+    def detail(values):
+        result=summary(values)
+        mean=result['mean_us']
+        variance=sum((v-mean)*(v-mean) for v in values)/len(values)
+        result['variance_us2']=variance
+        result['stdev_us']=math.sqrt(variance)
+        result['samples_us']=list(values)
+        return result
+    f=session.fb
+    def pixels():
+        for n in range(1024):f.pixel((n*17)%320,(n*13)%240,1+n%15)
+    workloads=(('pixel_1024',pixels),('hline',lambda:f.hline(0,120,320,9)),
+               ('vline',lambda:f.vline(160,0,240,7)),
+               ('line',lambda:f.line(0,0,319,239,7)),
+               ('fill_rect',lambda:f.fill_rect(16,16,288,208,5)),
+               ('fill',lambda:f.fill(6)),('circle',lambda:f.circle(160,120,80,12)),
+               ('text',lambda:f.text('KAGURA 1200 Viper',16,16,15)))
+    for enabled in (False,True):
+        f.set_viper(enabled)
+        for name,draw in workloads:
+            samples=array('I')
+            for n in range(repetitions):
+                f.fill(0);f.dirty[:]=bytes(1200);gc.collect()
+                start=time.ticks_us();draw();samples.append(time.ticks_diff(time.ticks_us(),start))
+            report('paired_draw',viper_enabled=enabled,name=name,timing=detail(samples),
+                   kernel_counts=f.kernel_counts)
+        f.flush()
+        samples=array('I');scan=array('I')
+        session.counter.reset()
+        for n in range(repetitions):
+            start=time.ticks_us();f.dirty.find(b'\x01');scan.append(time.ticks_diff(time.ticks_us(),start))
+            start=time.ticks_us();stats=f.flush();samples.append(time.ticks_diff(time.ticks_us(),start))
+            assert stats['bytes']==0
+        assert session.counter.writes==0 and session.counter.reads==0
+        report('paired_clean_flush',viper_enabled=enabled,timing=detail(samples),
+               dirty_scan=detail(scan),register_write_calls=0,register_read_calls=0)

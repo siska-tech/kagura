@@ -8,7 +8,7 @@ _viper = None
 if sys.implementation.name == "micropython":
     try:
         from . import framebuffer_viper as _viper
-    except (ImportError, RuntimeError, NotImplementedError, SyntaxError):
+    except (ImportError, RuntimeError, NotImplementedError, SyntaxError, TypeError):
         _viper = None
 from . import regs as R
 from .device import _range

@@ -32,7 +32,7 @@ class Counter:
 
 
 class Session:
-    def __init__(self, sdk='kagura', accelerated=True):
+    def __init__(self, sdk='kagura', accelerated=True, viper=None):
         K = __import__(sdk, None, None, ['connect'])
         self.R = __import__(sdk+'.regs',None,None,['REG_STATUS'])
         FB = __import__(sdk+'.framebuffer',None,None,['TileFramebuffer']).TileFramebuffer
@@ -50,6 +50,7 @@ class Session:
             gc.collect()
             heap_before=gc.mem_free()
             self.fb = FB(self.d)
+            self.fb.set_viper(viper)
             gc.collect()
             self.framebuffer_heap_bytes=heap_before-gc.mem_free()
             for i,c in enumerate(COLORS):self.fb.video.palette(i,c)
@@ -58,6 +59,7 @@ class Session:
             self.fb.initialize()
             self.initialization_us=time.ticks_diff(time.ticks_us(),start)
             report('initialized',initialization_us=self.initialization_us,
+                   viper_enabled=self.fb.viper_enabled,kernel_counts=self.fb.kernel_counts,
                    framebuffer_bytes=len(self.fb.buffer),dirty_bytes=len(self.fb.dirty),
                    framebuffer_heap_bytes=self.framebuffer_heap_bytes,
                    accelerated=accelerated,heap_free=gc.mem_free(),abi=list(self.d.abi),height=self.d.height)
