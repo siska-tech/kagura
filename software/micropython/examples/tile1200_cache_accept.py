@@ -50,7 +50,11 @@ def run(sdk='kagura', japanese='kagura_ja', font_path='/fonts/misaki8.kfnt', mod
         codes = _font_codes(font_path, 1073)
         screen = TileScreen(d, font)
         screen.initialize()
-        screen.feed(''.join(chr(code) for code in codes).encode())
+        # Stream UTF-8 as the real console does; joining 1073 characters
+        # first creates large transient arrays on MicroPython's small heap.
+        for code in codes:
+            screen.feed(chr(code).encode())
+        gc.collect()
         screen.flush()
         d.fence()
         words, upper = _read(d, 0x8000, 4096), _read(d, 0x9000, 256)
