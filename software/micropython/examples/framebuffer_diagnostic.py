@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """480p framebuffer scenes and numerical readback; see framebuffer-benchmark.py."""
+import binascii
 import gc
 import json
 import time
@@ -11,6 +12,73 @@ COLORS = (0x000,0xFFF,0xF33,0x3F3,0x33F,0xFF3,0xF3F,0x3FF,
 def report(event, **values):
     values['event'] = event
     print('TILEFB ' + json.dumps(values))
+
+
+def icons(M):
+    """8x8 TILE4 badge, 16x16 GS4_HMSB opaque gem, 16x16 gem with key 0."""
+    badge=bytearray(32)
+    for y in range(8):
+        for x in range(8):
+            c=1 if x in (0,7) or y in (0,7) else (2+(x+y)%4 if abs(x-3.5)+abs(y-3.5)<4 else 9)
+            badge[y*4+x//2]|=c<<(0 if x&1 else 4)
+    gem=bytearray(128)
+    for y in range(16):
+        for x in range(16):
+            d=abs(2*x-15)+abs(2*y-15)
+            c=0 if d>15 else (1 if d>12 else (5 if y<8 else 13))
+            gem[y*8+x//2]|=c<<(0 if x&1 else 4)
+    return ((bytes(badge),8,8,M.TILE4),(bytes(gem),16,16,M.GS4_HMSB))
+
+
+def draw_scene(f, name, M):
+    """Font-free scenes F (blit), G (ellipse), H (paint); PC computes the same CRC."""
+    if name=='F':
+        badge,gem=icons(M)
+        for x in range(0,320,16):f.fill_rect(x,0,8,240,8)  # stripes reveal the key
+        for n in range(19):f.blit(badge,8+16*n,8)                    # aligned 8x8
+        for n in range(9):f.blit(gem,8+32*n,24,None,None,None)       # opaque 16x16
+        for n in range(14):f.blit(gem,3+22*n,49,None,None,0)         # keyed, odd x
+        for n in range(26):f.blit(badge,5+12*n,75)                   # unaligned 8x8
+        for x,y in ((-6,100),(312,100),(100,-7),(150,233),(-8,-8),(316,236)):
+            f.blit(gem,x,y,None,None,0)                               # clipping
+        for n in range(12):f.blit(gem,40+9*n,104+3*n,None,None,0)    # overlaps
+        f.blit(gem,200,100,10,7,None,3,5)                             # sub-rectangle
+        f.blit(f,170,150,140,80,None,0,0)       # self copy, no overlap
+        f.blit(f,4,160,120,60,None,0,150)       # self copy, overlapping source
+        return {}
+    if name=='G':
+        for k in range(8):f.ellipse(80,80,10+8*k,6+5*k,1+k)
+        f.ellipse(240,40,70,12,9);f.ellipse(240,150,12,70,10)
+        f.ellipse(160,200,50,25,11,True);f.ellipse(160,200,50,25,1)
+        f.ellipse(230,200,25,25,12,True);f.circle(230,200,25,1)
+        f.ellipse(-20,120,60,90,13);f.ellipse(330,250,80,40,14,True)
+        f.ellipse(160,-30,100,50,15)
+        f.ellipse(300,220,0,0,1);f.ellipse(306,220,3,0,1);f.ellipse(300,228,0,3,1)
+        return {}
+    if name=='H':
+        results=[];peaks=[]
+        def paint(x,y,c):
+            results.append(f.paint(x,y,c));peaks.append(f.last_paint['peak'])
+        f.rect(10,10,100,60,1);paint(50,40,2)                    # closed box
+        f.ellipse(200,50,60,35,1);paint(200,50,3)                 # ellipse interior
+        for a,b,c,d in ((20,85,70,170),(70,170,120,85),(120,85,20,140),(20,140,120,140),(120,140,20,85)):
+            f.line(a,b,c,d,1)                                     # star outline
+        paint(70,125,4);paint(70,150,5);paint(40,135,6)
+        f.rect(140,90,170,140,1)                                  # thin corridor maze
+        for y in range(93,228,3):
+            f.hline(141,y,168,1);f.pixel(307 if (y//3)&1 else 142,y,0)
+        paint(150,91,6)
+        for n in range(12):                                       # adjacent cells
+            x,y=10+n%4*30,180+n//4*18
+            f.rect(x,y,31,19,1)
+        for n in range(12):paint(15+n%4*30,185+n//4*18,7+n%8)
+        # Same colour: no-op. CRCs, not a 38400 B copy (one plane only).
+        before=binascii.crc32(f.buffer),binascii.crc32(f.dirty)
+        paint(50,40,2)
+        noop=f.last_paint['pixels']==0 and (binascii.crc32(f.buffer),binascii.crc32(f.dirty))==before
+        paint(0,239,8)                                            # everything outside
+        return dict(paint_results=results,paint_peaks=peaks,same_color_noop=noop)
+    raise ValueError(name)
 
 
 class Counter:
@@ -35,7 +103,8 @@ class Session:
     def __init__(self, sdk='kagura', accelerated=True, viper=None):
         K = __import__(sdk, None, None, ['connect'])
         self.R = __import__(sdk+'.regs',None,None,['REG_STATUS'])
-        FB = __import__(sdk+'.framebuffer',None,None,['TileFramebuffer']).TileFramebuffer
+        self.FBM = __import__(sdk+'.framebuffer',None,None,['TileFramebuffer'])
+        FB = self.FBM.TileFramebuffer
         self.Audio = __import__(sdk+'.audio',None,None,['Audio']).Audio
         self.d = K.connect(mode='qspi',baudrate=5_000_000)
         self.accel = None
@@ -109,10 +178,15 @@ class Session:
             f.rect(311,231,9,9,7);f.text('1199 BR',240,216,1)
             f.fill_rect(312,232,8,8,6)
             f.rect(0,0,320,240,1);f.text('ABI 0.6 TILE BOUNDARY',8,8,1)
-        else:raise ValueError('scene must be A, B or C')
+        elif name in ('F','G','H'):
+            extra=draw_scene(f,name,self.FBM)
+        else:raise ValueError('scene must be A, B, C, F, G or H')
         draw_us=time.ticks_diff(time.ticks_us(),start)
+        crc=binascii.crc32(f.buffer)&0xFFFFFFFF
         stats=f.flush()
-        report('scene',name=name,draw_us=draw_us,flush=stats)
+        if name not in ('F','G','H'):extra={}
+        report('scene',name=name,draw_us=draw_us,flush=stats,buffer_crc32=crc,
+               viper_enabled=f.viper_enabled,**extra)
         return stats
 
     def verify(self, full=True):
