@@ -279,6 +279,17 @@ class ViperDifferentialTests(FramebufferTests):
         # Only fill_rect uses native code in the above cases.
         self.assertEqual(self.fb.kernel_counts[1:4],(0,0,0))
 
+    def test_native_signed_coordinate_and_radius_limits(self):
+        python=TileFramebuffer(self.d);python.set_viper(False)
+        python.dirty[:]=bytes(1200);self.fb.dirty[:]=bytes(1200)
+        for name,args in (('line',(-32767,120,32767,120,6)),
+                          ('circle',(32767,120,32767,2))):
+            getattr(python,name)(*args);getattr(self.fb,name)(*args)
+            self.assertEqual(self.fb.buffer,python.buffer)
+            self.assertEqual(self.fb.dirty,python.dirty)
+        self.assertGreater(self.fb.kernel_counts[2],0)
+        self.assertGreater(self.fb.kernel_counts[3],0)
+
     def test_switching_and_fallback_unavailable(self):
         import kagura.framebuffer as module
         self.assertTrue(self.fb.viper_enabled)
