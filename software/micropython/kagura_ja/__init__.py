@@ -6,6 +6,7 @@ font) and registered as 4bpp tiles. Every character takes one 8x8 cell.
 The application owns the tile range and map rectangle; see README.
 """
 from kagura.device import _range
+from kagura.video import Video
 
 _MAGIC = b"KJ8F"
 _FORMAT = 1
@@ -90,21 +91,23 @@ class TextLayer:
                  map_x=0, map_y=0, width=40, height=None, palette=0):
         if height is None:
             height = device.height // 8 - map_y
-        _range(tile_count, 2, 1024, "tile_count")
-        _range(tile_base, 0, 1024 - tile_count, "tile_base")
+        _range(tile_count, 2, 1200, "tile_count")
+        _range(tile_base, 0, 1200 - tile_count, "tile_base")
         _range(width, 1, 64, "width")
         _range(height, 1, 32, "height")
         _range(map_x, 0, 64 - width, "map_x")
         _range(map_y, 0, 32 - height, "map_y")
         _range(palette, 0, 15, "palette")
         self.device, self.font = device, font
+        self.video = Video(device)
         self.tile_base, self.capacity = tile_base, tile_count - 1
         self.map_x, self.map_y = map_x, map_y
         self.width, self.height = width, height
         self._attr = palette << 10
-        blank = tile_base | self._attr
+        blank = (tile_base & 1023) | self._attr
         self._blank = bytes((blank & 255, blank >> 8))
         self._map = bytearray(self._blank * (width * height))
+        self._high = bytearray([tile_base >> 10] * (width * height))
         self._tiles = None  # code -> tile; None until the first clear()
         self._next = 0
 
@@ -122,12 +125,14 @@ class TextLayer:
         self._tiles = None  # unusable until this clear has completed
         d.busy += 1
         try:
-            d.write_memory(self.tile_base * 32, bytes(32))
+            self.video.tile(self.tile_base, bytes(32))
             self._map[:] = self._blank * (self.width * self.height)
+            self._high[:] = bytes((self.tile_base >> 10,)) * len(self._high)
             row_bytes = self.width * 2
             for row in range(self.height):
-                d.write_memory(self._map_address(row),
-                               memoryview(self._map)[row * row_bytes:(row + 1) * row_bytes])
+                self.video.map_words((self._map_address(row) - 0x8000) // 2,
+                    memoryview(self._map)[row * row_bytes:(row + 1) * row_bytes],
+                    memoryview(self._high)[row * self.width:(row + 1) * self.width])
             d.fence()
         finally:
             d.busy -= 1
@@ -198,15 +203,19 @@ class TextLayer:
                               % (used, self.capacity))
 
         dirty = {}  # row -> (first, last) cell index written in it
+        upper_dirty = set()
         for cell in cells:
             code, i = cell >> 11, cell & 0x7FF
             tile = tiles.get(code)
             if tile is None:
                 tile = new[code]
-            entry = tile | self._attr
+            entry = (tile & 1023) | self._attr
             self._map[i * 2] = entry & 255
             self._map[i * 2 + 1] = entry >> 8
             r = i // width
+            if self._high[i] != tile >> 10:
+                upper_dirty.add(r)
+            self._high[i] = tile >> 10
             span = dirty.get(r)
             dirty[r] = (i, i) if span is None else (min(span[0], i), max(span[1], i))
 
@@ -214,13 +223,18 @@ class TextLayer:
         d.busy += 1
         try:
             if data:
-                d.write_memory(self._next * 32, data)
+                self.video.tiles(self._next, data)
             tiles.update(new)
             self._next = next_tile
             for r in sorted(dirty):
                 first, last = dirty[r]
-                d.write_memory(self._map_address(r) + (first - r * width) * 2,
-                               memoryview(self._map)[first * 2:(last + 1) * 2])
+                address = self._map_address(r) + (first - r * width) * 2
+                words = memoryview(self._map)[first * 2:(last + 1) * 2]
+                if r in upper_dirty:
+                    self.video.map_words((address - 0x8000) // 2, words,
+                                         memoryview(self._high)[first:last + 1])
+                else:
+                    d.write_memory(address, words)
         except BaseException:
             # The RAM map and glyph table may no longer match VRAM.
             self._tiles = None

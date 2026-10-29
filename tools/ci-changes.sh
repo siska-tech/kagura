@@ -24,7 +24,7 @@ classify() {
         rtl/*|sim/*|third_party/*) mark verilator rtl_sources ;;
         boards/*.sv) mark verilator ;;
         boards/*.cst|boards/*.sdc|boards/*.csv) ;;
-        tools/test-verilator.sh|tools/verilator.version|tools/prepare-hdmi-stream.py|\
+        tools/test-verilator.sh|tools/test-tile1200-stage*.sh|tools/verilator.version|tools/prepare-hdmi-stream.py|\
         tools/render-audio-wav.py|tools/make-boot-image.py|tools/gen-demo-art.py) mark verilator ;;
         tools/test-phase1.ps1|tools/check-dependencies.ps1|tools/test-headers.sh|\
         software/tests/*|software/w65c02/*) mark rtl_sources ;;
@@ -39,7 +39,7 @@ classify() {
         # Synthesis and board tools; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
-        tools/run-baseline.ps1|tools/star-runner-device.ps1) ;;
+        tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1) ;;
         *) all ;;
     esac
 }

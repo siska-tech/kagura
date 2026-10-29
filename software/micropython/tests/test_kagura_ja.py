@@ -244,7 +244,13 @@ class DeviceFontCase(FontFileMixin, unittest.TestCase):
         return int.from_bytes(self.model.memory[address:address + 2], "little")
 
     def tile(self, index):
-        return bytes(self.model.memory[index * 32:index * 32 + 32])
+        address = index * 32 if index < 1024 else 0xB000 + (index - 1024) * 32
+        return bytes(self.model.memory[address:address + 32])
+
+    def tile_id(self, col, row):
+        index = row * 64 + col
+        high = (self.model.memory[0x9000 + index // 8] >> (index % 8)) & 1
+        return (self.cell(col, row) & 1023) | high << 10
 
 
 class LayerTests(DeviceFontCase):
@@ -269,6 +275,35 @@ class LayerTests(DeviceFontCase):
         self.assertEqual(self.tile(128), bytes(32))
         self.assertEqual(layer.glyphs, 4)
         self.assertEqual(self.d.busy, 0)
+
+    def test_layer_crosses_1024_and_preserves_palette_and_neighbors(self):
+        self.model.memory[0x9000:0x9002] = bytes((0x40, 0x80))
+        layer = self.layer(tile_base=1022, tile_count=5, palette=15,
+                           map_x=7, width=4, height=1)
+        layer.text("".join(CJK[:3]))
+        layer.flush()
+        self.assertEqual([self.tile_id(c, 0) for c in range(7, 11)],
+                         [1023, 1024, 1025, 1022])
+        self.assertEqual([self.cell(c, 0) >> 10 for c in range(7, 11)], [15] * 4)
+        self.assertEqual(self.model.memory[0x9000:0x9002], bytes((0x40, 0x83)))
+        self.assertEqual(self.tile(1024), _tile(self.glyphs[ord(CJK[1])]))
+        self.assertEqual(self.tile(1025), _tile(self.glyphs[ord(CJK[2])]))
+        self.assertEqual(self.d.busy, 0)
+
+    def test_layer_uses_1199_and_rejects_overflow_before_io(self):
+        layer = self.layer(tile_base=1197, tile_count=3, width=4, height=1)
+        layer.text("".join(CJK[:2]))
+        layer.flush()
+        self.assertEqual([self.tile_id(c, 0) for c in range(4)], [1198, 1199, 1197, 1197])
+        self.assertEqual(self.tile(1199), _tile(self.glyphs[ord(CJK[1])]))
+        before = bytes(self.model.memory)
+        calls = len(self.model.calls)
+        with self.assertRaises(MemoryError):
+            layer.text(CJK[2])
+        self.assertEqual(len(self.model.calls), calls)
+        self.assertEqual(bytes(self.model.memory), before)
+        layer.clear()
+        self.assertEqual([self.tile_id(c, 0) for c in range(4)], [1197] * 4)
 
     def test_missing_and_control_characters_share_question_tile(self):
         layer = self.layer()
@@ -378,7 +413,7 @@ class LayerTests(DeviceFontCase):
 
     def test_validation(self):
         self.assertEqual(TextLayer(self.d, self.font).height, 22)
-        bad = ({"tile_base": 900}, {"tile_count": 1}, {"width": 41, "map_x": 24},
+        bad = ({"tile_base": 1100}, {"tile_count": 1}, {"width": 41, "map_x": 24},
                {"map_y": 10, "height": 23}, {"palette": 16}, {"width": 0})
         for kw in bad:
             with self.subTest(kw), self.assertRaises(ValueError):
@@ -418,6 +453,37 @@ class ConsoleJapaneseTests(DeviceFontCase):
         self.assertEqual(self.tile(128), _tile(self.glyphs[0x304C]))
         self.assertEqual(self.tile(130), _tile(self.glyphs[0x4E00]))
         self.assertEqual(list(s._refs[:4]), [2, 1, 1, 0])
+        self.assertEqual(self.d.busy, 0)
+
+    def test_terminal_high_tile_references_and_upper_bits_clear(self):
+        s = self.screen()
+        s._hand = 896  # next free glyph slot is tile 1024
+        self.show(s, "一一二")
+        self.assertEqual([self.tile_id(c, 0) for c in range(3)], [1024, 1024, 1025])
+        self.assertEqual(list(s._refs[896:898]), [2, 1])
+        self.assertEqual(self.cell(0, 0) >> 10, 0)  # palette stays zero
+        self.show(s, "\rA")
+        self.assertEqual(list(s._refs[896:898]), [1, 1])
+        self.assertEqual(self.tile_id(1, 0), 1024)
+        self.show(s, "\rAAA")
+        self.assertEqual(list(s._refs[896:898]), [0, 0])
+        self.assertEqual(self.model.memory[0x9000] & 7, 0)
+
+    def test_terminal_allocates_all_1072_slots_including_tile_1199(self):
+        class AnyGlyph:
+            @staticmethod
+            def glyph(code):
+                return bytes((1 + code % 254, 0x80)) + bytes(6)
+        self.d.height = 240
+        s = self.screen()
+        s.font = AnyGlyph()
+        self.show(s, "".join(chr(0x4E00 + i) for i in range(1073)))
+        self.assertEqual(len(s._refs), 1072)
+        self.assertEqual(sum(s._refs), 1072)
+        self.assertEqual(s.glyph_overflow, 1)
+        self.assertEqual(self.tile_id(1071 % 40, 1071 // 40), 1199)
+        self.assertEqual(self.tile_id(1072 % 40, 1072 // 40), 63)
+        self.assertEqual(self.tile(1199), _tile(AnyGlyph.glyph(0x4E00 + 1071)))
         self.assertEqual(self.d.busy, 0)
 
     def test_utf8_split_across_writes(self):

@@ -183,6 +183,8 @@ device.fence()
 
 map下位wordと上位表の更新は原子的ではないため、表示停止中か安全なblanking期間に行う。`Video.map_words(index, packed_words, high_bits)` は連続するmap entryを更新し、`high_bits` に1 entryあたり0/1のbyteを渡す。省略すると対応entryの上位bitを0にする。共有byte内の他entryは読戻して保持する。複数のmap writerは直列化する。
 
-raw mapデータをロードする既存アプリは、使う範囲の上位bit表も0へ戻すこと。terminalと `kagura_ja` の文字キャッシュ上限は現在も1024枚内であり、1,200枚のキャッシュ利用は別段階。terminalの初期化は上位表を全消去する。1,200枚の利用はVideo APIから行える。
+raw mapデータをロードする既存アプリは、使う範囲の上位bit表も0へ戻すこと。terminalはASCII用0〜127を除く128〜1199の1,072枚を字形キャッシュに使う。`kagura_ja.TextLayer`も1199までの範囲を指定できる。上位bitとpaletteの分離、1023／1024での転送分割はライブラリが扱う。terminalの初期化は上位表を全消去する。
 
 FILL/COPYの1命令は1つの公開領域内に収める。旧patternと追加patternを跨ぐ一括転送はSDK側で分割する。旧ABIを厳密に確認するPico等のホストは、生成済みABI 0.6定義で再ビルドする。
+
+新しいホストで`probe()`するとき、前ホストが残した未読READ_RESULTがあれば完了を待って消費し、READ_DONEをackする。READ_REQUESTを再送せず、ERROR_CODEなどのsticky faultは消去しない。中断後に再接続したホストはfaultを確認してから必要なclearを行う。

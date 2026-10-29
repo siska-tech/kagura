@@ -15,10 +15,11 @@ $serial.RtsEnable=$true
 $serial.ReadTimeout=100
 $serial.WriteTimeout=5000
 $serial.Encoding=New-Object Text.UTF8Encoding($false)
-$log=[IO.StreamWriter]::new($LogFile,$false,(New-Object Text.UTF8Encoding($false)))
+$logPath=$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LogFile)
+$log=[IO.StreamWriter]::new($logPath,$false,(New-Object Text.UTF8Encoding($false)))
 $log.AutoFlush=$true
 $watch=[Diagnostics.Stopwatch]::StartNew()
-$response='';$line='';$stopped=$false
+$response='';$line='';$stopped=$false;$timedOut=$false;$interruptAt=0
 try {
     $serial.Open()
     $serial.DiscardInBuffer()
@@ -36,9 +37,13 @@ try {
     $serial.Write([string][char]4)
     $response='';$watch.Restart()
     while(!$response.EndsWith(([string][char]4)+'>')) {
-        if($watch.Elapsed.TotalSeconds -gt $TimeoutSeconds) {
+        if(!$timedOut -and $watch.Elapsed.TotalSeconds -gt $TimeoutSeconds) {
             $serial.Write([string][char]3)
-            throw 'raw REPL timeout; interrupt requested, check device before retry'
+            $timedOut=$true;$stopped=$true;$interruptAt=$watch.Elapsed.TotalSeconds
+            Write-Output 'HOST_TIMEOUT_INTERRUPT_REQUESTED'
+        }
+        if($timedOut -and $watch.Elapsed.TotalSeconds - $interruptAt -gt 15) {
+            throw 'raw REPL timeout; interrupt cleanup did not finish, check device before retry'
         }
         if($StopFile -and !$stopped -and (Test-Path -LiteralPath $StopFile)) {
             $serial.Write([string][char]3);$stopped=$true
@@ -57,6 +62,7 @@ try {
         }
         Start-Sleep -Milliseconds 10
     }
+    if($timedOut) { throw 'raw REPL timeout; interrupt cleanup completed' }
     if(!$response.StartsWith('OK')) { throw 'raw REPL acknowledgement missing' }
     $parts=$response.Substring(2).Split([char]4)
     if($parts[1]) { throw $parts[1] }

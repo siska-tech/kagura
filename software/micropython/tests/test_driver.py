@@ -283,6 +283,18 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(self.model.read_requests, 2048)
         self.assertFalse(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
 
+    def test_probe_discards_previous_result_without_replay_or_fault_clear(self):
+        self.model.reg[R.REG_STATUS] |= R.STATUS_READ_READY
+        self.model.reg[R.REG_VRAM_READ_RESULT] = 0xA5
+        self.model.reg[R.REG_IRQ_STATUS] = R.IRQ_STATUS_READ_DONE | R.IRQ_STATUS_VBLANK
+        self.model.reg[R.REG_ERROR_CODE] = R.ERROR_CODE_FIFO_FULL
+        reopened = Kagura(self.model, timeout_us=500).probe()
+        self.assertFalse(self.model.reg[R.REG_STATUS] & R.STATUS_READ_READY)
+        self.assertEqual(self.model.reg[R.REG_IRQ_STATUS], R.IRQ_STATUS_VBLANK)
+        self.assertEqual(self.model.reg[R.REG_ERROR_CODE], R.ERROR_CODE_FIFO_FULL)
+        self.assertEqual(self.model.read_requests, 0)
+        self.assertFalse(reopened._read_pending)
+
     def test_read_after_interrupted_read(self):
         # Ctrl-C between READ_REQUEST and READ_RESULT left a result unread;
         # the next READ_REQUEST must not collide with it.
