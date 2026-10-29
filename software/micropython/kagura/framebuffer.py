@@ -14,10 +14,23 @@ from . import regs as R
 from .device import _range
 from .video import Video
 
+# blit() source formats: framebuf-compatible linear 4bpp and KAGURA 8x8 tiles.
+GS4_HMSB = 2
+TILE4 = 0x40
+
 
 def _ints(*values):
     if any(not isinstance(v, int) for v in values):
         raise TypeError('coordinates must be integers')
+
+
+def _aligned(buffer):
+    # Native word copies need 4-byte aligned sources (Cortex-M0+ faults otherwise).
+    try:
+        from uctypes import addressof
+    except ImportError:
+        return True
+    return addressof(buffer) & 3 == 0
 
 
 class TileFramebuffer:
@@ -36,8 +49,8 @@ class TileFramebuffer:
         self.device, self.video, self.palette = device, Video(device), palette
         self.initialized = False
         self.last_flush = self._stats()
-        self._params = array("i", [0] * 6)
-        self._kernel_counts = bytearray(20)
+        self._params = array("i", [0] * 12)
+        self._kernel_counts = bytearray(32)
         self.set_viper()
 
     def set_viper(self, enabled=None):
@@ -302,6 +315,102 @@ class TileFramebuffer:
                         if bitmap.pixel(xx, yy):
                             self._python_put(x + xx, y + yy, color)
             x += 8
+
+    def blit(self, source, x, y, width=None, height=None, key=None, sx=0, sy=0):
+        """Copy source[sx:sx+width, sy:sy+height] to (x, y); key colour is skipped.
+
+        source is a TileFramebuffer (self included) or a tuple
+        (buffer, width, height, GS4_HMSB[, stride_pixels]) / (buffer, width, height, TILE4).
+        Overlapping self-copies behave as if the source were read first.
+        """
+        _ints(x, y, sx, sy)
+        if key is not None:
+            _ints(key)
+            _range(key, 0, 15, 'key')
+        if isinstance(source, TileFramebuffer):
+            data, sw, sh, fmt, pitch = source.buffer, 320, 240, 1, 40
+        else:
+            data, sw, sh, fmt, pitch = self._source(source)
+        if sx < 0 or sy < 0:
+            raise ValueError('source offset must be >= 0')
+        width = sw - sx if width is None else width
+        height = sh - sy if height is None else height
+        _ints(width, height)
+        width, height = min(width, sw - sx), min(height, sh - sy)
+        right, bottom = min(320, x + width), min(240, y + height)
+        x0, y0 = max(0, x), max(0, y)
+        if width <= 0 or height <= 0 or x0 >= right or y0 >= bottom:
+            return
+        ox, oy = sx - x, sy - y
+        k = -1 if key is None else key
+        if self._kernels is not None:
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4], p[5] = x0, y0, right, bottom, ox, oy
+            p[6], p[7], p[8] = fmt, pitch, k
+            p[9] = int(_aligned(data) and (fmt == 1 or pitch & 3 == 0))
+            self._kernels.blit(self.buffer, self.dirty, p, self._kernel_counts, data)
+            return
+        self._python_blit(data, fmt, pitch, x0, y0, right, bottom, ox, oy, k)
+
+    @staticmethod
+    def _source(source):
+        if not isinstance(source, tuple) or not 4 <= len(source) <= 5:
+            raise TypeError('blit source must be TileFramebuffer or (buffer,w,h,format[,stride])')
+        data, sw, sh, fmt = source[:4]
+        _ints(sw, sh, fmt)
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            raise TypeError('blit buffer must be bytes, bytearray or memoryview')
+        if sw < 0 or sh < 0:
+            raise ValueError('source size must be >= 0')
+        if fmt == GS4_HMSB:
+            stride = source[4] if len(source) == 5 else sw + (sw & 1)
+            _ints(stride)
+            if stride < sw or stride & 1:
+                raise ValueError('GS4_HMSB stride must be even and >= width')
+            need = (stride * (sh - 1) + sw + 1) // 2 if sw and sh else 0
+            fmt, pitch = 0, stride // 2
+        elif fmt == TILE4 and len(source) == 4:
+            if sw & 7 or sh & 7:
+                raise ValueError('TILE4 size must be a multiple of 8')
+            need, fmt, pitch = sw * sh // 2, 1, sw // 8
+        else:
+            raise ValueError('blit format must be GS4_HMSB or TILE4')
+        if len(data) < need:
+            raise ValueError('blit buffer too small')
+        return data, sw, sh, fmt, pitch
+
+    def _python_blit(self, src, fmt, pitch, x0, y0, x1, y1, ox, oy, key):
+        buf, dirty = self.buffer, self.dirty
+        # Reverse traversal when the source lies above/left keeps self-copies exact.
+        if fmt == 1 and key < 0 and not (x0 | y0 | x1 | y1 | ox | oy) & 7:
+            for ty in range(y1 - 8, y0 - 8, -8) if oy < 0 else range(y0, y1, 8):
+                for tx in range(x1 - 8, x0 - 8, -8) if ox < 0 else range(x0, x1, 8):
+                    tile = (ty >> 3) * 40 + (tx >> 3)
+                    s = (((ty + oy) >> 3) * pitch + ((tx + ox) >> 3)) * 32
+                    block = bytes(src[s:s + 32])
+                    if bytes(buf[tile * 32:tile * 32 + 32]) != block:
+                        buf[tile * 32:tile * 32 + 32] = block
+                        dirty[tile] = 1
+            return
+        xs = range(x1 - 1, x0 - 1, -1) if ox < 0 else range(x0, x1)
+        for y in range(y1 - 1, y0 - 1, -1) if oy < 0 else range(y0, y1):
+            v = y + oy
+            row = v * pitch if fmt == 0 else (v >> 3) * pitch * 32 + (v & 7) * 4
+            line = (y >> 3) * 40
+            for x in xs:
+                u = x + ox
+                s = row + (u >> 1) if fmt == 0 else row + (u >> 3) * 32 + ((u & 7) >> 1)
+                color = src[s] & 15 if u & 1 else src[s] >> 4
+                if color == key:
+                    continue
+                tile = line + (x >> 3)
+                offset = tile * 32 + (y & 7) * 4 + ((x & 7) >> 1)
+                shift = 0 if x & 1 else 4
+                old = buf[offset]
+                value = (old & ~(15 << shift)) | color << shift
+                if value != old:
+                    buf[offset] = value
+                    dirty[tile] = 1
 
     def mark_dirty(self, x=0, y=0, width=320, height=240):
         """Required after editing buffer directly; coordinates are pixels."""
