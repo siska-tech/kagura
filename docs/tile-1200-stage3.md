@@ -1,6 +1,6 @@
 # 第3段階：実機数値検証と文字キャッシュ
 
-実験ABI 0.6の残作業。[第2段階](tile-1200-stage2.md)のRTLを変更せず、Picoによる数値受入、文字キャッシュ、未実行だった回帰・依存検査を進める。ユーザー指定により数値検証を先行し、画面の目視と音質の聴感は未確認として区別する。
+実験ABI 0.6の残作業。[第2段階](tile-1200-stage2.md)のRTLを変更せず、Picoによる数値受入、文字キャッシュ、未実行だった回帰・依存検査を進める。ユーザー指定により数値検証を先行し、この数値試験当時は画面の目視と音質の聴感を未確認として区別した。後続の720p目視・聴感は[別記録](tile-1200-visual.md)で合格。
 
 ## 実機の扱い
 
@@ -77,6 +77,6 @@ Windowsのstreaming runner:
 
 Gowin `--run 1`で変更していないFlash内構成を再読込みし、元のABI 0.5・CAPS 0x7B・ERROR_CODE=0を確認。Picoのsoft reset後、既存boot.pyのHDMIコンソール（QSPI 5MHz、UART0 RX GP1 115200 baud）とUSB promptが起動した。実験用fileは隔離名のまま残し、既存packageやfirmwareを上書きしていない。
 
-## 残る目視・聴感
+## 後続の目視・聴感
 
-BG／spriteの表示内容、反転・paletteの見え方、音質・音切れ、複数sink／ケーブル、物理reset・抜挿は数値検証で置き換えない。standalone demoはdeprecatedとし、これらの確認もPicoホストを使う。
+720p・Picoホストでの追加176枚、最終・無効番号、境界BG／sprite、反転・palette、PCM音声は[ユーザーの目視・聴感で合格](tile-1200-visual.md)。この文書とJSONの数値試験時点の未確認flagは過去の証跡として保持する。480pや動きのある画面、複数sink／ケーブル、物理reset・抜挿は引き続き別の確認が必要。standalone demoはdeprecatedとし、これらの確認もPicoホストを使う。

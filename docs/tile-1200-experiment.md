@@ -56,7 +56,7 @@ python3 tools/prepare-hdmi-stream.py
 
 ## 次の段階
 
-第2段階の1,200枚対応は[実装・検証記録](tile-1200-stage2.md)を参照。追加領域の全量読戻し、PCM併用・1時間連続動作、文字キャッシュの数値検証は[第3段階](tile-1200-stage3.md)で完了。残る受入はPicoホストによる画面の目視・音質の聴感とsink／ケーブル互換性。
+第2段階の1,200枚対応は[実装・検証記録](tile-1200-stage2.md)を参照。追加領域の全量読戻し、PCM併用・1時間連続動作、文字キャッシュの数値検証は[第3段階](tile-1200-stage3.md)で完了。その後、720p・Picoホストで追加領域・境界BG／sprite・反転・palette・PCMの[目視・聴感にも合格](tile-1200-visual.md)。480pや動きのある画面、sink／ケーブル互換性等は未確認。
 
 FPGA standaloneのdemo／demo720はdeprecatedとし、既定のP&R対象から除外した。以降はPicoホストを中心に検証する。ソースと旧試験・過去の証跡は保持する。
 
