@@ -166,6 +166,11 @@ class PIOTransport:
     def ready(self):
         return bool(self._ready.value())
 
+    def accelerate(self, chunk=128):
+        """Return a reversible Viper FIFO/DMA session (stock RP2 firmware)."""
+        from .acceleration import Acceleration
+        return Acceleration(self, TransferTimeout, chunk=chunk)
+
     def idle(self):
         # An FPGA still loading its bitstream pulls every pin high, READY
         # included (about 170 ms after power-on). A configured, idle KAGURA

@@ -22,14 +22,31 @@ if sys.implementation.name == 'micropython':
         destination = ptr16(words)
         for j in range(count):
             destination[j * 2 + 1] = table[source[start + j]]
+
+    @micropython.viper
+    def viper_pack32(data, high, words, start: int, count: int):
+        source = ptr8(data)
+        table = ptr16(high)
+        destination = ptr32(words)
+        for j in range(count):
+            destination[j] = uint(table[source[start + j]]) << 16
 else:
     viper_pack = None
+    viper_pack32 = None
 
 def pack(data, high, words, start, count):
     # Transport.write passes a memoryview. Preserve the old element-wise
     # behavior for multi-byte buffers rather than reinterpreting their bytes.
     if viper_pack is not None and getattr(data, 'itemsize', 1) == 1:
         viper_pack(data, high, words, start, count)
+    else:
+        python_pack(data, high, words, start, count)
+
+
+def pack32(data, high, words, start, count):
+    """Full-word variant for zero-low-half DMA workspaces, not arbitrary arrays."""
+    if viper_pack32 is not None and getattr(data, 'itemsize', 1) == 1:
+        viper_pack32(data, high, words, start, count)
     else:
         python_pack(data, high, words, start, count)
 

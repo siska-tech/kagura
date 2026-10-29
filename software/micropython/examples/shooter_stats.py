@@ -4,18 +4,29 @@ from array import array
 from time import ticks_us, ticks_diff
 
 CATEGORIES = ('input', 'movement', 'collision', 'oam_build', 'oam_transfer',
-              'scroll', 'commit', 'audio', 'monitor', 'gc', 'sleep')
+              'scroll', 'commit', 'audio', 'monitor', 'gc', 'sleep',
+              'commit_wait', 'commit_issue', 'logic', 'memory_poll')
 INPUT, MOVE, COLLIDE, BUILD, TRANSFER, SCROLL, COMMIT, AUDIO, MONITOR, GC, SLEEP = range(11)
+COMMIT_WAIT, COMMIT_ISSUE, LOGIC = 11, 12, 13
+MEMORY_POLL = 14
 
 
 class Stats:
-    def __init__(self, samples=1024):
+    def __init__(self, samples=1024, detail=False):
         if not 16 <= samples <= 8192:
             raise ValueError('samples must be 16..8192')
         self.samples = array('I', [0] * samples)
+        self.periods = array('I', [0] * samples)
+        self.period_count = self.period_sum = self.period_max = 0
+        self.last_begin = None
         self.totals = [0] * len(CATEGORIES)
         self.maxima = [0] * len(CATEGORIES)
         self.current = [0] * len(CATEGORIES)
+        self.detail_window = min(samples, 128) if detail else 0
+        # Separate 512-byte columns avoid a large contiguous allocation on a
+        # long-lived REPL heap, even when total free RAM is ample.
+        self.detail = [array('I', [0] * self.detail_window) for _ in CATEGORIES] if detail else []
+        self.commit_completed = self.oam_writes = self.oam_bytes = 0
         self.frames = self.commits = self.elapsed_us = self.frame_sum = self.frame_max = 0
         self.counter_delta = 0
         self.counter_valid = True
@@ -34,7 +45,25 @@ class Stats:
         if self.current[category] > self.maxima[category]:
             self.maxima[category] = self.current[category]
 
-    def finish(self, duration):
+    def period_end(self, stamp):
+        if self.last_begin is not None:
+            period = ticks_diff(stamp, self.last_begin)
+            self.periods[self.period_count % len(self.periods)] = period
+            self.period_count += 1
+            self.period_sum += period
+            self.period_max = max(self.period_max, period)
+        self.last_begin = stamp
+
+    def finish(self, duration, begin=None):
+        if begin is not None:
+            # Consecutive frame starts include the preceding frame's telemetry
+            # bookkeeping and loop condition, which duration alone excludes.
+            self.period_end(begin)
+        self.add(LOGIC, self.current[MOVE] + self.current[COLLIDE])
+        if self.detail_window:
+            offset = self.frames % self.detail_window
+            for i in range(len(CATEGORIES)):
+                self.detail[i][offset] = self.current[i]
         self.samples[self.frames % len(self.samples)] = duration
         self.frames += 1
         self.frame_sum += duration
@@ -63,23 +92,51 @@ class Stats:
     def summary(self):
         count = min(self.frames, len(self.samples))
         ordered = sorted(self.samples[:count])
+        periods = sorted(self.periods[:min(self.period_count,len(self.periods))])
+        pn = len(periods)
         means = {}
         maxima = {}
+        medians = {}
+        p95s = {}
         for i in range(len(CATEGORIES)):
             means[CATEGORIES[i]] = self.totals[i] / max(1, self.frames)
             maxima[CATEGORIES[i]] = self.maxima[i]
+            if self.detail_window:
+                n = min(self.frames, self.detail_window)
+                values = sorted(self.detail[i][:n])
+                medians[CATEGORIES[i]] = (values[(n - 1) // 2] + values[n // 2]) / 2 if n else None
+                p95s[CATEGORIES[i]] = values[(n * 95 + 99) // 100 - 1] if n else None
         incidents = []
         for i in range(self.error_stored):
             offset = ((self.error_count - self.error_stored + i) % 32) * 10
             incidents.append(list(self.errors[offset:offset + 10]))
+        exclusive = (INPUT, MOVE, COLLIDE, BUILD, TRANSFER, SCROLL, COMMIT_WAIT,
+                     COMMIT_ISSUE, AUDIO, MONITOR, GC, SLEEP, MEMORY_POLL)
+        accounted = sum(self.totals[i] for i in exclusive)
         return dict(frames=self.frames,
                     logic_fps=self.frames * 1000000 / max(1, self.elapsed_us),
                     commit_successes=self.commits,
+                    commit_completions_observed=self.commit_completed,
+                    commit_issue_hz=self.commits * 1000000 / max(1, self.elapsed_us),
+                    commit_complete_hz=self.commit_completed * 1000000 / max(1, self.elapsed_us),
+                    actual_pixel_update_hz=None,
+                    loop_wall_mean_us=self.elapsed_us / max(1,self.frames),
+                    loop_frame_mean_us=self.period_sum / self.period_count if self.period_count else None,
+                    loop_frame_median_us=(periods[(pn-1)//2]+periods[pn//2])/2 if pn else None,
+                    loop_frame_p95_us=periods[(pn*95+99)//100-1] if pn else None,
+                    loop_frame_max_us=self.period_max if pn else None,
+                    loop_p95_window_frames=pn,
+                    oam_write_calls=self.oam_writes, oam_payload_bytes=self.oam_bytes,
+                    oam_payload_bytes_per_second=self.oam_bytes * 1000000 / max(1, self.elapsed_us),
                     hardware_frame_delta=self.counter_delta if self.counter_valid else None,
                     frame_mean_us=self.frame_sum / max(1, self.frames),
+                    exclusive_stage_sum_us=accounted / max(1, self.frames),
+                    unclassified_mean_us=(self.frame_sum - accounted) / max(1, self.frames),
                     frame_p95_us=ordered[(count * 95 + 99) // 100 - 1] if count else None,
+                    frame_median_us=(ordered[(count - 1) // 2] + ordered[count // 2]) / 2 if count else None,
                     p95_window_frames=count, frame_max_us=self.frame_max,
-                    mean_us=means, max_us=maxima, audio_errors=self.audio_errors,
+                    mean_us=means, max_us=maxima, median_us=medians, p95_us=p95s,
+                    detail_window_frames=min(self.frames, self.detail_window), audio_errors=self.audio_errors,
                     sprite_overflows=self.sprite_overflows, error_count=self.error_count,
                     errors=incidents, dropped_audio_events=self.dropped_events,
                     particle_culled=self.particle_culled)

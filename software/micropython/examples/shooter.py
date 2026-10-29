@@ -546,9 +546,15 @@ class Game:
         # Never change OAM/palette shadows while a previous COMMIT is in flight.
         if self.pending_commit:
             self.device.wait_status(R.STATUS_COMMIT_BUSY, 0)
-            self.stats.add(T.COMMIT, ticks_diff(ticks_us(), stamp))
+            elapsed = ticks_diff(ticks_us(), stamp)
+            self.stats.add(T.COMMIT, elapsed)
+            self.stats.add(T.COMMIT_WAIT, elapsed)
+            self.stats.commit_completed += 1
+            self.pending_commit = False
         stamp = ticks_us()
         self.device.write_memory(0xA000, data)
+        self.stats.oam_writes += 1
+        self.stats.oam_bytes += len(data)
         self.stats.add(T.TRANSFER, ticks_diff(ticks_us(), stamp))
         stamp = ticks_us()
         # Y stays zero; the high X bit changes only twice per 512px cycle.
@@ -569,7 +575,9 @@ class Game:
         self.device.check_errors()
         self.pending_commit = True
         self.stats.commits += 1
-        self.stats.add(T.COMMIT, ticks_diff(ticks_us(), stamp))
+        elapsed = ticks_diff(ticks_us(), stamp)
+        self.stats.add(T.COMMIT, elapsed)
+        self.stats.add(T.COMMIT_ISSUE, elapsed)
 
     def monitor(self, wire_bytes=0):
         d = self.device
@@ -612,7 +620,8 @@ class Game:
 def run(device=None, console=None, autoplay=True, sound=True, duration=None,
         input_fn=None, music=True, mode='FULL', load='NORMAL', particles=8,
         sprites=128, enhanced=True, assets='star_runner_assets', target_fps=30,
-        samples=1024, report=True, gc_interval=4, frames=None, bgm_gain=224, renderer='python', dma='driver'):
+        samples=1024, report=True, gc_interval=4, frames=None, bgm_gain=224, renderer='python', dma='driver',
+        profile=False, instrument_transport=True, dma_chunk=128):
     """Compatible v1 entry point. Returns bounded benchmark results on exit.
 
     target_fps=0 measures maximum throughput. BASE only silences audio at setup.
@@ -623,15 +632,18 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
         raise ValueError('duration/frames must be nonnegative')
     if not 0 <= target_fps <= 120 or not 1 <= gc_interval <= 60:
         raise ValueError('invalid target_fps/gc_interval')
-    if dma not in ('driver', 'python', 'viper'):
-        raise ValueError('dma must be driver, python or viper')
+    if dma not in ('driver', 'python', 'viper', 'accelerated'):
+        raise ValueError('dma must be driver, python, viper or accelerated')
+    if dma_chunk not in (128, 256, 512):
+        raise ValueError('dma_chunk must be 128, 256 or 512')
     if console is not None:
         if console.screen is None:
             raise RuntimeError('KAGURA console has no display device')
         if device is not None and device is not console.screen.device:
             raise ValueError('device differs from console device')
         device = console.screen.device
-    stats = T.Stats(samples)
+    gc.collect()
+    stats = T.Stats(samples, detail=profile)
     owned = device is None
     if owned:
         from kagura import connect
@@ -649,10 +661,18 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
     free_memory = getattr(gc, 'mem_free', None)
     dma_override = False
     prior_dma_override = None
+    acceleration = None
     try:
         if paused:
             console.pause()
-        if dma != 'driver':
+        if dma == 'accelerated':
+            try:
+                from kagura.acceleration import Acceleration
+            except ImportError:
+                from kagura_acceleration import Acceleration
+            from kagura.transport_rp2 import TransferTimeout
+            acceleration = Acceleration(old_transport, TransferTimeout, chunk=dma_chunk)
+        elif dma != 'driver':
             try:
                 from kagura import dma_pack as dma_helper
             except ImportError:
@@ -674,7 +694,7 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
                     enhanced, assets, stats, bgm_gain, renderer)
         keyboard = input_fn if input_fn is not None else Keyboard()
         game.initialize()
-        device.transport = meter
+        device.transport = meter if instrument_transport else old_transport
         device.clear_errors()
         # The previous EXTREME run (or its console transition) may leave this
         # sticky IRQ set. Initial OAM is already cleared and committed above.
@@ -703,7 +723,12 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
                 stamp = ticks_us()
                 game.monitor(meter.wire_bytes - wire_start)
                 stats.add(T.MONITOR, ticks_diff(ticks_us(), stamp))
-            free = free_memory() if free_memory else None
+            # RP2040 mem_free walks the entire heap (~6.7ms measured). Sample
+            # before scheduled collections, rather than scanning every frame.
+            # Collection cadence is unchanged; a low sample collects at once.
+            stamp = ticks_us()
+            free = free_memory() if free_memory and (stats.frames == 0 or stats.frames % gc_interval == gc_interval - 1) else None
+            stats.add(T.MEMORY_POLL, ticks_diff(ticks_us(), stamp))
             if free is not None:
                 minimum_free = free if minimum_free is None else min(minimum_free, free)
             if stats.frames % gc_interval == gc_interval - 1 or free is not None and free < 24576:
@@ -714,9 +739,13 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
             if target_fps:
                 sleep_ms(max(0, (1000000 // target_fps - ticks_diff(stamp, begin)) // 1000))
             stats.add(T.SLEEP, ticks_diff(ticks_us(), stamp))
-            stats.finish(ticks_diff(ticks_us(), begin))
+            stats.finish(ticks_diff(ticks_us(), begin), begin=begin)
+        if stats.frames:
+            stats.period_end(ticks_us())
         if game.pending_commit:
             device.wait_status(R.STATUS_COMMIT_BUSY, 0)
+            stats.commit_completed += 1
+            game.pending_commit = False
         game.monitor()
     except BaseException as error:
         failure = error
@@ -739,6 +768,11 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
             except BaseException as error:
                 cleanup_errors.append(repr(error))
         device.transport = old_transport
+        if acceleration is not None:
+            try:
+                acceleration.close()
+            except BaseException as error:
+                cleanup_errors.append(repr(error))
         if dma_override:
             if prior_dma_override is None:
                 del old_transport._xfer_dma
@@ -770,9 +804,12 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
                           bgm_gain=bgm_gain,
                           renderer=renderer,
                           dma=dma,
+                          dma_chunk=dma_chunk,
+                          profile=profile, instrument_transport=instrument_transport,
                           minimum_free_bytes=minimum_free,
-                          wire_bytes=meter.wire_bytes, transport_us=meter.io_us,
-                          dma_payload_bytes=meter.dma_payload,
+                          wire_bytes=meter.wire_bytes if instrument_transport else None,
+                          transport_us=meter.io_us if instrument_transport else None,
+                          dma_payload_bytes=meter.dma_payload if instrument_transport else None,
                           failure=repr(failure) if failure else None,
                           cleanup_errors=cleanup_errors)
         if game is not None:
@@ -781,6 +818,7 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
                               last_audio_status=game.sound.audio_status,
                               last_pcm0_status=game.sound.status0, last_pcm1_status=game.sound.status1,
                               oam_records=game.oam_count, enabled_sprites=game.active_sprites,
+                              game_state=(game.frame,game.x,game.y,game.score,game.lives,game.power),
                               particles=game.particle_limit)
         if report:
             # Console output is paused only for the report; USB still receives

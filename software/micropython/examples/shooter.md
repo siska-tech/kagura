@@ -1,8 +1,8 @@
 # KAGURA-9 STAR RUNNER v2
 
-既存STAR RUNNERの地形・敵・敵弾・カプセル・追従機・自動操縦・手動操作を維持し、映像／音声／通信の同時負荷を測るデモです。320×240／320×180を自動判別し、通常の8×8スプライトで動作します。ドライバAPIは変更していません。
+既存STAR RUNNERの地形・敵・敵弾・カプセル・追従機・自動操縦・手動操作を維持し、映像／音声／通信の同時負荷を測るデモです。320×240／320×180を自動判別し、通常の8×8スプライトで動作します。既存ドライバAPIとの互換性を維持しています。
 
-**検証状況（2026-10-29）**: v1／v2の実測、720p QSPIで全モード、480p SPI／QSPIでPCM混合、720p SPIでPSG／waveを確認しました。新編曲BGM・64 OAM＋全音源の5分試験は5,035更新・音声error 0・overflow 0。UART内部ループバックの操作・q・Ctrl-CとREPL復帰も確認済みです。64 OAM＋全音源は約16.8fpsで、約30fps目標は未達です。[性能比較](../benchmarks/README.md)に実測値と制約を記載しています。
+**検証状況（2026-10-29）**: 高速化版は720p QSPI・64 OAM＋全音源の5分試験を10,711更新・35.70fpsで完走し、音声error 0・FPGA error 0・overflow 0でした。[最新の性能比較](../benchmarks/performance-v3.md)を参照してください。初期v2と既存操作・音源の検証記録は[従来レポート](../benchmarks/README.md)に残しています。
 
 ## 配置と起動
 
@@ -29,13 +29,15 @@ shooter.run(console=kagura_console)
 
 自動操縦で開始し、対応capabilityとアセットがあればPCM BGM＋全効果音を使用します。PCMアセットが未配置ならPCMを無効にして続行し、終了結果の`audio_reason`に理由を出します。PSRAM非対応版ではPSG／waveのみです。`pcm_enabled`と`wave_enabled`で実際に有効だった機能を確認してください。FULLを指定しただけで全音源の試験合格にはなりません。
 
-Viper高速版は明示して選択できます。両方有効のHEAVY実測は約23.7fpsで、通常版の約16.4fpsから改善しました。通常版との一致試験と、DMA内訳は[高速化の追加調査](../benchmarks/acceleration.md)を参照してください。
+高速版は明示して選択できます。OAM構築とDMA展開だけの旧Viper版は約23.7fps、FIFO一括処理・512バイトDMAチャンク・空きメモリ照会周期を改善した版は、起動直後のHEAVY・400フレームで35.12fpsでした。詳細計測を有効にした実測です。[追加の性能改善レポート](../benchmarks/performance-v3.md)に条件と制約を記録しています。
 
 ```python
-shooter.run(console=kagura_console, renderer='viper', dma='viper')
+shooter.run(console=kagura_console, renderer='viper', dma='accelerated', dma_chunk=512)
 ```
 
 更新した`kagura/`が必要です。古い凍結driverを持つUF2では、`kagura/dma_pack.py`をPicoの`/kagura_dma_pack.py`にも置けば、アプリ実行中だけの互換差替えを利用できます。driverのCS・abort・timeout処理は維持し、終了後に元へ戻します。native `.mpy`をPCで作る場合はRP2040用の`-march=armv6m`を指定します。
+
+`dma='accelerated'`を古いUF2で使う場合は、`kagura/fifo_xfer.py`と`kagura/acceleration.py`もそれぞれ`/kagura_fifo_xfer.py`・`/kagura_acceleration.py`へ配置します。通常のMicroPythonへの後付けに対応し、Cモジュール入り専用UF2は不要です。従来の`dma='driver'/'python'/'viper'`も維持しています。`profile=True`は各区間の中央値・p95を直近128フレーム分保存します。空きメモリの最小値はGC周期ごとのサンプル値です。
 
 起動コンソールがある場合は必ず`console=kagura_console`を渡してください。同じPIO SMを`connect()`で再取得しないでください。コンソールを使わない接続例:
 

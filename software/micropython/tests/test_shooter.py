@@ -122,6 +122,80 @@ def console_for(device):
 
 
 class ShooterTests(unittest.TestCase):
+    def test_exclusive_statistics_and_detail_ring(self):
+        stats = T.Stats(16, detail=True)
+        for _ in range(33):
+            for category, duration in ((T.MOVE,1),(T.COLLIDE,2),(T.COMMIT_WAIT,3),
+                                       (T.COMMIT_ISSUE,4),(T.COMMIT,7)):
+                stats.add(category,duration)
+            stats.finish(100)
+        result = stats.summary()
+        self.assertEqual(result['mean_us']['logic'],3)
+        self.assertEqual(result['exclusive_stage_sum_us'],10)
+        self.assertEqual(result['unclassified_mean_us'],90)
+        self.assertEqual(result['detail_window_frames'],16)
+        self.assertEqual(result['median_us']['commit_wait'],3)
+        self.assertEqual(result['p95_us']['commit_issue'],4)
+        self.assertEqual(result['frame_median_us'],100)
+        self.assertIsNone(result['actual_pixel_update_hz'])
+        stats = T.Stats(16)
+        stats.finish(100,begin=1000)
+        stats.finish(100,begin=1120)
+        stats.period_end(1260)
+        result = stats.summary()
+        self.assertEqual(result['loop_frame_mean_us'],130)
+        self.assertEqual(result['loop_frame_median_us'],130)
+        self.assertEqual(result['loop_frame_p95_us'],140)
+
+    def test_memory_poll_cadence_and_commit_completions(self):
+        with patch.object(gc,'mem_free',lambda:100000,create=True) as free:
+            result = shooter.run(device=Device(), mode='BASE', frames=20,
+                                 report=False, input_fn=lambda:0, target_fps=0,
+                                 profile=True, instrument_transport=False)
+        self.assertEqual(result['commit_successes'],20)
+        self.assertEqual(result['commit_completions_observed'],20)
+        self.assertEqual(result['minimum_free_bytes'],100000)
+        self.assertIsNone(result['wire_bytes'])
+        self.assertLessEqual(result['exclusive_stage_sum_us'],result['frame_mean_us'])
+
+    def test_acceleration_restores_transport_and_buffer(self):
+        from array import array
+        from kagura import acceleration as A
+        fn = lambda *args,**kwargs:None
+        raw = types.SimpleNamespace(_active=False,_closed=False,_dma_tx=types.SimpleNamespace(active=lambda:False),
+                                    _dma_rx=types.SimpleNamespace(active=lambda:False),
+                                    _words=array('H',[0]*256),_sm_id=0,lanes=4,timeout_us=100000,
+                                    _xfer=fn,write=fn,readinto=fn)
+        before = raw.__dict__.copy()
+        with patch.object(A.dma_pack,'viper_pack',object()),patch.object(A.fifo_xfer,'pump',fn):
+            with self.assertRaises(KeyboardInterrupt):
+                with A.Acceleration(raw,RuntimeError,chunk=512):
+                    self.assertEqual(len(raw._words),1024)
+                    self.assertIsNot(raw.write,fn)
+                    raise KeyboardInterrupt
+        self.assertEqual(raw.__dict__,before)
+
+    def test_native_read_rejects_readonly_and_short_buffers(self):
+        from kagura import fifo_xfer as F
+        calls = []
+        raw = types.SimpleNamespace(_sm_id=0,lanes=4,timeout_us=100000,
+                                    _xfer=lambda *a:calls.append(a),
+                                    write=lambda *a:None,readinto=lambda *a:None)
+        with patch.object(F,'pump',lambda *a:1):
+            pump = F.Pump(raw,RuntimeError)
+            for buffer in (b'x',memoryview(b'x')):
+                with self.assertRaises(TypeError):
+                    pump.readinto(0,buffer)
+            pump.transfer(b'long',bytearray(1))
+        self.assertEqual(len(calls),1)
+        def timeout(tx,rx,settings):
+            settings[9] = 5  # Conservative completed count including prefix.
+            return 0
+        with patch.object(F,'pump',timeout):
+            with self.assertRaises(RuntimeError) as caught:
+                pump._packet(b'xx',bytearray(8),11,2,3,11,release=True)
+        self.assertEqual(caught.exception.args,(2,))
+
     def test_oam_kernel_reference_semantics(self):
         spec = importlib.util.spec_from_file_location('kernel_test', EXAMPLES / 'shooter_oam_viper.py')
         kernel = importlib.util.module_from_spec(spec)
