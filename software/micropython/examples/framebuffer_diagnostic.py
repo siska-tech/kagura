@@ -76,8 +76,15 @@ class Session:
                 f.fill_rect(x+1,y+1,7,7,2+tile%14)
                 for bit in range(11):
                     f.pixel(x+1+bit%6,y+2+bit//6,1 if tile&(1<<bit) else 0)
-            for x,y,label in ((0,0,'TL'),(304,0,'TR'),(0,232,'BL'),(304,232,'BR')):
-                f.fill_rect(x,y,16,8,0);f.text(label,x,y,1)
+            # 3x5 corner glyphs occupy rows 1..5; rows 6..7 remain index code.
+            glyphs={'T':(7,2,2,2,2),'L':(4,4,4,4,7),
+                    'B':(6,5,6,5,6),'R':(6,5,6,5,5)}
+            for x,y,label in ((0,0,'TL'),(312,0,'TR'),(0,232,'BL'),(312,232,'BR')):
+                f.fill_rect(x,y,8,6,0)
+                for n,ch in enumerate(label):
+                    for yy,bits in enumerate(glyphs[ch]):
+                        for xx in range(3):
+                            if bits&(4>>xx):f.pixel(x+n*4+xx,y+1+yy,1)
             # Preserve a complete index code even in tiles covered by corner labels.
             for tile in range(1200):
                 x,y=tile%40*8,tile//40*8

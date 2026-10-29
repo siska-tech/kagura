@@ -205,6 +205,10 @@ class FramebufferTests(TestCase):
             scene.scene('A')
         tiles={bytes(self.fb.buffer[n*32:(n+1)*32]) for n in range(1200)}
         self.assertEqual(len(tiles),1200)
+        # L's bottom stroke must stay intact above the tile index-code rows.
+        for y in (0,232):
+            self.assertEqual([self.fb.pixel(x,y+5) for x in (4,5,6)],[1,1,1])
+        self.assertEqual([self.fb.pixel(x,5) for x in (0,1,2)],[0,1,0])
         for n in range(1200):
             code=sum((self.fb.pixel(n%40*8+bit%6,n//40*8+6+bit//6)==1)<<bit for bit in range(11))
             self.assertEqual(code,n)
