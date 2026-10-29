@@ -2,7 +2,7 @@
 
 W65C02S構成で外付けROMを使わず、Tang Nano 9K基板上のSPI Flash（P25Q32U、U3）に置いたプログラムをCPUのSRAMへ読み込んで起動する。構成`phase2boot`/`phase2boot720`だけが持つ機能で、通常のレジスタABIは変えない。
 
-【状態】RTLはsimulationで縦通し済み。実機ではFPGAからのFlash読出しとimage検査（`bootprobe`）まで確認した。外部decode・RESB保持回路とW65C02S実機での起動は未確認で、実用構成としては扱わない。
+【状態】1,200枚・ABI 0.6版の480p／720pはbitstream生成・P&R／STAとboot／CPUの7試験に合格（[検証記録](tile-1200-boot.md)）。RTLはsimulationで縦通し済み。実機ではFPGAからのFlash読出しとimage検査（`bootprobe`）まで確認した。外部decode・RESB保持回路とW65C02S実機での起動は未確認で、実用構成としては扱わない。
 
 ## 方式（32 byte窓ブート）
 

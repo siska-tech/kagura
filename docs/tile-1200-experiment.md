@@ -61,3 +61,7 @@ python3 tools/prepare-hdmi-stream.py
 FPGA standaloneのdemo／demo720はdeprecatedとし、既定のP&R対象から除外した。以降はPicoホストを中心に検証する。ソースと旧試験・過去の証跡は保持する。
 
 実機にはSRAMだけを書き換えて数値検証を実施した。FPGA FlashとPico firmwareは変更していない。既存の[検証状況](validation-status.md)は元設計の過去の証跡であり、実験版の動作保証とは区別する。
+
+## W65C02Sの将来実装に向けた確認
+
+1,200枚版の`phase2boot`／`phase2boot720`もbitstream生成・P&R／STAとboot／CPU simulationに合格した。[検証記録](tile-1200-boot.md)を参照。W65C02S実機でのbootは未確認。
