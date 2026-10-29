@@ -1,6 +1,6 @@
-# レジスタ仕様 / ABI 0.6（1,200タイル実験）
+# レジスタ仕様 / ABI 0.6（1,200タイル）
 
-KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=6。実験bitstreamが同じ0.6を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
+KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=6。全bitstreamが同じ0.6を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
 
 offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）、Cヘッダ（`software/include/kagura_regs.h`）、ca65 include（`software/w65c02/kagura_regs.inc`）を生成し、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
 
@@ -134,7 +134,7 @@ EXT_REG_INDEXで選び、EXT_REG_DATAで読み書きする。readはshadow値を
 
 ## ABIの履歴
 
-ABI 0.xの間は互換性を保証しない。この実験リポジトリでは1,200パターン対応を0.6とする。従来と同じ下位10bitのデータ形式は保つが、ABIを厳密に検査する旧ソフトは再ビルドが必要。
+ABI 0.xの間は互換性を保証しない。1,200パターン対応を0.6とする。従来と同じ下位10bitのデータ形式は保つが、ABIを厳密に検査する旧ソフトは再ビルドが必要。
 
 | ABI | 変更 |
 |---|---|
@@ -142,7 +142,7 @@ ABI 0.xの間は互換性を保証しない。この実験リポジトリでは1
 | 0.2 | CAPS b5 WIDE、EXT 0A SCREEN_HEIGHT（320×180の16:9版） |
 | 0.3 | CAPS b6 RSCROLL、EXT 0B..11（ラスタスクロール表） |
 | 0.4 | CAPS b3 PSRAM、EXT 12..16、PSRAM領域、PCM 2ch（音源index 60..9F）、COPY |
-| 0.6 | 実験版：1,200パターン、BG上位bit表、sprite byte 5 bit6をtile bit10に使用、追加pattern窓 |
 | 0.5 | 登録sprite 64→256。OAMを009000から00A000へ移し、flagをrecord byte 6からbyte 3へ移動 |
+| 0.6 | 1,200パターン、BG上位bit表、sprite byte 5 bit6をtile bit10に使用、追加pattern窓 |
 
 ソフトはID・ABI_MAJOR/MINOR・CAPSを確認してから使う。手順は[プログラミングガイド](programming-guide.md)。

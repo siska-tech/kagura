@@ -20,7 +20,7 @@ addressは24bit。下表の範囲だけを実装し、上位bitを無視したal
 | 00B000–00C5FF | 追加pattern、番号1024～1199（176個×32 byte） | RW。描画と時分割 |
 | 400000–7FFFFF | PSRAM（4MiB）。CAPS b3版のみ | RW。queue経由。電源投入時の内容は不定で、起動時に消去しない |
 
-009100–0093FFは未実装。009000–0090FFは実験ABI 0.6のmap上位bit表として使用する（ABI 0.4までのOAMとは異なる）。active領域はhostから読めず、COMMIT・AUDIO_COMMITでだけ変わる。
+009100–0093FFは未実装。009000–0090FFはABI 0.6のmap上位bit表として使用する（ABI 0.4までのOAMとは異なる）。active領域はhostから読めず、COMMIT・AUDIO_COMMITでだけ変わる。
 
 ## 画素と背景
 
@@ -82,7 +82,7 @@ Tang Nano 9KのGW1NR-9は18Kbit BSRAMを26個持つ。8/16/32bit幅で1個2048 b
 | Command queue | 32×64分散RAM | 0 | 256 B（BSRAM集計外） | — | 32 entry×64bit。同期read |
 | Audio FIFO | 分散RAM | 0 | 64 B（BSRAM集計外） | — | SDP。16 stereo sample |
 
-実験第2段階の設計モデルは計26ブロック、BSRAM利用50176 B、モード上の未使用3072 B（`spec/design-budget.json`と`tools/check-design.ps1`）。別途command queue 256 B・audio FIFO 64 Bを分散RAMに置く。map上位bit表はpattern bank 18のbyte 1536～1791へ同居させ、BGのmap読出しcycleを共有する。pattern読出しとは同時に行わない。audio FIFOの配置は合成結果で確認する。PCM先読みbufferもFF/分散RAMを使う。実測値と対象構成は[実験記録](tile-1200-experiment.md)を参照。
+1,200タイル版（第2段階）の設計モデルは計26ブロック、BSRAM利用50176 B、モード上の未使用3072 B（`spec/design-budget.json`と`tools/check-design.ps1`）。別途command queue 256 B・audio FIFO 64 Bを分散RAMに置く。map上位bit表はpattern bank 18のbyte 1536～1791へ同居させ、BGのmap読出しcycleを共有する。pattern読出しとは同時に行わない。audio FIFOの配置は合成結果で確認する。PCM先読みbufferもFF/分散RAMを使う。実測値と対象構成は[1,200タイル対応の記録](tile-1200-experiment.md)を参照。
 
 - line wordは`bits11:0 RGB444、bit12 BG_SOLID、bit13 SPR_CLAIMED、15:14予約`。pixel側はRGBだけを読み、2bitはsprite合成の優先判定に使う。
 - OAM・paletteへのbyte書込みは16bit wordの不可分なread-modify-write（最大3 cycle）で、描画の読出しを途中に挟まない。mapは2本のbyte laneで、RMWを使わない。

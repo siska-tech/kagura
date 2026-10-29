@@ -1,6 +1,6 @@
 # 検証状況と既知の制約
 
-> 以下は元の1,024パターン設計の過去の証跡。実験ABI 0.6のP&R/STAは[1,200パターン実装](tile-1200-stage2.md)、実Picoの数値受入は[第3段階](tile-1200-stage3.md)を参照。standalone demoはdeprecated。
+> 以下は元の1,024パターン設計の過去の証跡。ABI 0.6のP&R/STAは[1,200パターン実装](tile-1200-stage2.md)、実Picoの数値受入は[第3段階](tile-1200-stage3.md)を参照。standalone demoはdeprecated。
 
 2026-10-27時点（`a5a9ca2`に下記のタイミング改善を適用）の検証状況。simulation、P&R/STA、実機確認は別の証拠として扱い、片方の合格をもう片方の代わりにしない。
 

@@ -14,10 +14,56 @@ from . import regs as R
 from .device import _range
 from .video import Video
 
+# blit() source formats: framebuf-compatible linear 4bpp and KAGURA 8x8 tiles.
+GS4_HMSB = 2
+TILE4 = 0x40
+PAINT_CAPACITY = 2048
+
 
 def _ints(*values):
     if any(not isinstance(v, int) for v in values):
         raise TypeError('coordinates must be integers')
+
+
+def _aligned(buffer):
+    # Native word copies need 4-byte aligned sources (Cortex-M0+ faults otherwise).
+    try:
+        from uctypes import addressof
+    except ImportError:
+        return True
+    return addressof(buffer) & 3 == 0
+
+
+def _isqrt(n):
+    if n < 2:
+        return n
+    guess, rest = 1, n
+    while rest >= 4:
+        rest >>= 2
+        guess <<= 1
+    guess <<= 1
+    while True:
+        better = (guess + n // guess) >> 1
+        if better >= guess:
+            return guess
+        guess = better
+
+
+def _ellipse_extent(rx, ry, b):
+    """Half-width of row b: row-rounded or column-rounded nearest pixels."""
+    if b > ry:
+        return -1
+    if ry == 0:
+        a = rx
+    else:
+        n, d = rx * rx * (ry * ry - b * b), ry * ry
+        a = _isqrt(n // d)
+        if 4 * n > (2 * a + 1) * (2 * a + 1) * d:
+            a += 1
+    if b == 0:
+        return max(a, rx)
+    n = rx * rx * (4 * ry * ry - (2 * b - 1) * (2 * b - 1))
+    return max(a, _isqrt((n - 1) // (4 * ry * ry)) if n > 0 else -1)
 
 
 class TileFramebuffer:
@@ -36,8 +82,13 @@ class TileFramebuffer:
         self.device, self.video, self.palette = device, Video(device), palette
         self.initialized = False
         self.last_flush = self._stats()
-        self._params = array("i", [0] * 6)
-        self._kernel_counts = bytearray(20)
+        self._params = array("i", [0] * 12)
+        self._kernel_counts = bytearray(32)
+        # paint() work stack: 4 B per span, allocated on first use only.
+        self.paint_capacity = PAINT_CAPACITY
+        self._paint_stack = None
+        self.last_paint = dict(complete=True, peak=0, capacity=0, dropped=0, spans=0,
+                              pixels=0, compactions=0)
         self.set_viper()
 
     def set_viper(self, enabled=None):
@@ -302,6 +353,245 @@ class TileFramebuffer:
                         if bitmap.pixel(xx, yy):
                             self._python_put(x + xx, y + yy, color)
             x += 8
+
+    def blit(self, source, x, y, width=None, height=None, key=None, sx=0, sy=0):
+        """Copy source[sx:sx+width, sy:sy+height] to (x, y); key colour is skipped.
+
+        source is a TileFramebuffer (self included) or a tuple
+        (buffer, width, height, GS4_HMSB[, stride_pixels]) / (buffer, width, height, TILE4).
+        Overlapping self-copies behave as if the source were read first.
+        """
+        _ints(x, y, sx, sy)
+        if key is not None:
+            _ints(key)
+            _range(key, 0, 15, 'key')
+        if isinstance(source, TileFramebuffer):
+            data, sw, sh, fmt, pitch = source.buffer, 320, 240, 1, 40
+        else:
+            data, sw, sh, fmt, pitch = self._source(source)
+        if sx < 0 or sy < 0:
+            raise ValueError('source offset must be >= 0')
+        width = sw - sx if width is None else width
+        height = sh - sy if height is None else height
+        _ints(width, height)
+        width, height = min(width, sw - sx), min(height, sh - sy)
+        right, bottom = min(320, x + width), min(240, y + height)
+        x0, y0 = max(0, x), max(0, y)
+        if width <= 0 or height <= 0 or x0 >= right or y0 >= bottom:
+            return
+        ox, oy = sx - x, sy - y
+        k = -1 if key is None else key
+        if self._kernels is not None:
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4], p[5] = x0, y0, right, bottom, ox, oy
+            p[6], p[7], p[8] = fmt, pitch, k
+            p[9] = int(_aligned(data) and (fmt == 1 or pitch & 3 == 0))
+            self._kernels.blit(self.buffer, self.dirty, p, self._kernel_counts, data)
+            return
+        self._python_blit(data, fmt, pitch, x0, y0, right, bottom, ox, oy, k)
+
+    @staticmethod
+    def _source(source):
+        if not isinstance(source, tuple) or not 4 <= len(source) <= 5:
+            raise TypeError('blit source must be TileFramebuffer or (buffer,w,h,format[,stride])')
+        data, sw, sh, fmt = source[:4]
+        _ints(sw, sh, fmt)
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            raise TypeError('blit buffer must be bytes, bytearray or memoryview')
+        if sw < 0 or sh < 0:
+            raise ValueError('source size must be >= 0')
+        if fmt == GS4_HMSB:
+            stride = source[4] if len(source) == 5 else sw + (sw & 1)
+            _ints(stride)
+            if stride < sw or stride & 1:
+                raise ValueError('GS4_HMSB stride must be even and >= width')
+            need = (stride * (sh - 1) + sw + 1) // 2 if sw and sh else 0
+            fmt, pitch = 0, stride // 2
+        elif fmt == TILE4 and len(source) == 4:
+            if sw & 7 or sh & 7:
+                raise ValueError('TILE4 size must be a multiple of 8')
+            need, fmt, pitch = sw * sh // 2, 1, sw // 8
+        else:
+            raise ValueError('blit format must be GS4_HMSB or TILE4')
+        if len(data) < need:
+            raise ValueError('blit buffer too small')
+        return data, sw, sh, fmt, pitch
+
+    def _python_blit(self, src, fmt, pitch, x0, y0, x1, y1, ox, oy, key):
+        buf, dirty = self.buffer, self.dirty
+        # Reverse traversal when the source lies above/left keeps self-copies exact.
+        if fmt == 1 and key < 0 and not (x0 | y0 | x1 | y1 | ox | oy) & 7:
+            for ty in range(y1 - 8, y0 - 8, -8) if oy < 0 else range(y0, y1, 8):
+                for tx in range(x1 - 8, x0 - 8, -8) if ox < 0 else range(x0, x1, 8):
+                    tile = (ty >> 3) * 40 + (tx >> 3)
+                    s = (((ty + oy) >> 3) * pitch + ((tx + ox) >> 3)) * 32
+                    block = bytes(src[s:s + 32])
+                    if bytes(buf[tile * 32:tile * 32 + 32]) != block:
+                        buf[tile * 32:tile * 32 + 32] = block
+                        dirty[tile] = 1
+            return
+        xs = range(x1 - 1, x0 - 1, -1) if ox < 0 else range(x0, x1)
+        for y in range(y1 - 1, y0 - 1, -1) if oy < 0 else range(y0, y1):
+            v = y + oy
+            row = v * pitch if fmt == 0 else (v >> 3) * pitch * 32 + (v & 7) * 4
+            line = (y >> 3) * 40
+            for x in xs:
+                u = x + ox
+                s = row + (u >> 1) if fmt == 0 else row + (u >> 3) * 32 + ((u & 7) >> 1)
+                color = src[s] & 15 if u & 1 else src[s] >> 4
+                if color == key:
+                    continue
+                tile = line + (x >> 3)
+                offset = tile * 32 + (y & 7) * 4 + ((x & 7) >> 1)
+                shift = 0 if x & 1 else 4
+                old = buf[offset]
+                value = (old & ~(15 << shift)) | color << shift
+                if value != old:
+                    buf[offset] = value
+                    dirty[tile] = 1
+
+    def ellipse(self, x, y, rx, ry, color, fill=False):
+        """Centre (x, y), radii rx/ry; ellipse(x, y, r, r) equals circle(x, y, r)."""
+        _ints(x, y, rx, ry)
+        _range(rx, 0, 0x7FFFFFFF, 'rx')
+        _range(ry, 0, 0x7FFFFFFF, 'ry')
+        _range(color, 0, 15, 'color')
+        if fill not in (False, True):
+            raise TypeError('fill must be bool')
+        if x + rx < 0 or x - rx >= 320 or y + ry < 0 or y - ry >= 240:
+            return
+        # Native error terms stay below this bound; see framebuffer.md.
+        if (self._kernels is not None and -32767 <= x <= 32767 and -32767 <= y <= 32767
+                and 9 * (rx + 1) * (ry + 1) * (rx + ry + 2) < 0x7FFFFFFF):
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4], p[5] = x, y, rx, ry, color, int(fill)
+            self._kernels.ellipse(self.buffer, self.dirty, p, self._kernel_counts)
+            return
+        for yy in range(max(0, y - ry), min(240, y + ry + 1)):
+            b = abs(yy - y)
+            a = _ellipse_extent(rx, ry, b)
+            low = a if fill else min(a, _ellipse_extent(rx, ry, b + 1) + 1)
+            if low == 0 or fill:
+                self._span(x - a, yy, a * 2 + 1, color)
+            else:
+                self._span(x - a, yy, a - low + 1, color)
+                self._span(x + low, yy, a - low + 1, color)
+
+    def paint(self, x, y, color):
+        """4-connected flood fill of the colour at (x, y) using a bounded stack.
+
+        Returns True when complete (or nothing to do). False means the work
+        stack overflowed: only part of the region is painted, every changed
+        pixel belongs to the region and every changed tile is dirty.
+        """
+        _ints(x, y)
+        _range(color, 0, 15, 'color')
+        stats = self.last_paint
+        stats['complete'], stats['peak'], stats['dropped'] = True, 0, 0
+        stats['spans'] = stats['pixels'] = stats['compactions'] = 0
+        old = self.pixel(x, y)
+        if old is None or old == color:
+            return True
+        capacity = self.paint_capacity
+        _ints(capacity)
+        _range(capacity, 2, 0x7FFF, 'paint_capacity')
+        if self._paint_stack is None or len(self._paint_stack) != capacity:
+            self._paint_stack = None
+            # MemoryError here happens before any pixel changes.
+            self._paint_stack = array('I', bytes(4 * capacity))
+        stats['capacity'] = capacity
+        if self._kernels is not None:
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4] = x, y, old, color, capacity
+            self._kernels.paint(self.buffer, self.dirty, p, self._kernel_counts, self._paint_stack)
+            result = p[5], p[6], p[7], p[8], p[9]
+        else:
+            result = self._python_paint(x, y, old, color, capacity)
+        stats['peak'], stats['dropped'], stats['spans'], stats['pixels'], stats['compactions'] = result
+        stats['complete'] = not result[1]
+        return stats['complete']
+
+    def _python_paint(self, x, y, old, color, capacity):
+        # Heckbert seed fill; same push order as the native kernel.
+        buf, stack = self.buffer, self._paint_stack
+        state = [0, 0, 0, 0]  # sp, peak, dropped, compactions
+
+        def same(px, base):
+            value = buf[base + (px >> 3) * 32 + ((px & 7) >> 1)]
+            return (value & 15 if px & 1 else value >> 4) == old
+
+        def live(target, left, right):
+            # Pixels only ever change from old, so a segment without an old
+            # pixel stays a no-op entry forever.
+            base = (target >> 3) * 1280 + (target & 7) * 4
+            while left <= right:
+                if same(left, base):
+                    return True
+                left += 1
+            return False
+
+        def push(row, left, right, dy):
+            if not (0 <= row + dy < 240 and live(row + dy, left, right)):
+                return
+            if state[0] == capacity:
+                # Full: drop stale entries in place, keeping LIFO order.
+                state[3] += 1
+                keep = 0
+                for n in range(capacity):
+                    entry = stack[n]
+                    target = (entry & 255) + (1 if entry & 256 else -1)
+                    if live(target, entry >> 9 & 511, entry >> 18 & 511):
+                        stack[keep] = entry
+                        keep += 1
+                state[0] = keep
+            if state[0] < capacity:
+                stack[state[0]] = row | (256 if dy > 0 else 0) | left << 9 | right << 18
+                state[0] += 1
+                state[1] = max(state[1], state[0])
+            else:
+                state[2] += 1
+
+        push(y, x, x, 1)
+        push(y + 1, x, x, -1)
+        spans = pixels = 0
+        while state[0]:
+            state[0] -= 1
+            entry = stack[state[0]]
+            spans += 1
+            dy = 1 if entry & 256 else -1
+            row, x1, x2 = (entry & 255) + dy, entry >> 9 & 511, entry >> 18 & 511
+            base = (row >> 3) * 1280 + (row & 7) * 4
+            xx = x1
+            while xx >= 0 and same(xx, base):
+                xx -= 1
+            skip = xx >= x1
+            leak = False
+            if not skip:
+                left = xx + 1
+                leak = left < x1
+                xx = x1 + 1
+            while True:
+                if not skip:
+                    while xx < 320 and same(xx, base):
+                        xx += 1
+                    self._span(left, row, xx - left, color)
+                    pixels += xx - left
+                    # Continuation first, leaks last: leaks pop first and
+                    # satisfy pending entries before the walk goes deeper.
+                    push(row, left, xx - 1, dy)
+                    if leak:
+                        push(row, left, x1 - 1, -dy)
+                        leak = False
+                    if xx > x2 + 1:
+                        push(row, x2 + 1, xx - 1, -dy)
+                skip = False
+                xx += 1
+                while xx <= x2 and not same(xx, base):
+                    xx += 1
+                left = xx
+                if xx > x2:
+                    break
+        return state[1], state[2], spans, pixels, state[3]
 
     def mark_dirty(self, x=0, y=0, width=320, height=240):
         """Required after editing buffer directly; coordinates are pixels."""

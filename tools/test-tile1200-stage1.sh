@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Focused regression for the experimental line/queue RAM changes.
+# Focused regression for the stage-1 line/queue RAM changes of the 1,200-tile work.
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
