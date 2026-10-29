@@ -304,7 +304,7 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 
 ## 320×240疑似フレームバッファ
 
-ABI 0.6の480p構成では`from kagura.framebuffer import TileFramebuffer`で、全1200パターンを40×30セルへ固定し、tile-native 4bppの自由描画を行える。RAMは38400 Bの描画buffer＋1200 Bのdirty表等。pixel／fill／hline／vline／line／rect／fill_rect／circle／ASCII textをローカルで描き、明示的な`flush()`が連続dirty runをまとめて転送・FENCEする。表示中の更新は画面全体で原子的にはならない。
+ABI 0.6の480p構成では`from kagura.framebuffer import TileFramebuffer`で、全1200パターンを40×30セルへ固定し、tile-native 4bppの自由描画を行える。RAMは38400 Bの描画buffer＋1200 Bのdirty表等。pixel／fill／hline／vline／line／rect／fill_rect／circle／ASCII text、画像転送`blit()`（GS4_HMSB線形・TILE4・framebuffer自身、透過色、重複copy）、`ellipse()`、固定8 KB stackのflood fill `paint()`をローカルで描き、明示的な`flush()`が連続dirty runをまとめて転送・FENCEする。表示中の更新は画面全体で原子的にはならない。[blit／ellipse／paintの設計比較と実測](../../docs/framebuffer-primitives.md)。
 
 console／TextLayer／sprite用の独立pattern所有者とは同時に使用しない。既存consoleはpauseしてdeviceを再利用し、終了後resumeでconsole画面を再構築する。全map・patternsを上書きする`initialize()`が必要。
 

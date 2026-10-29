@@ -9,6 +9,7 @@
 | [アーキテクチャ](architecture.md) | 仕様の概要、ブロック構成、clock、ビルド構成とCAPS、LED |
 | [Viper描画比較](framebuffer-viper-results.md) | Python／ViperのCPU・flush実測、CRC・native実行・guard検証 |
 | [TileFramebuffer](framebuffer.md) | 320×240・16色の自由描画API、dirty転送、Pico診断・性能測定 |
+| [blit／ellipse／paint](framebuffer-primitives.md) | 画像転送・楕円・flood fillの方式比較、固定stack、PC／Pico差分と実測 |
 | [プログラミングガイド](programming-guide.md) | ホストからの初期化・転送・sprite・COMMIT・音源・PCMの手順 |
 | [レジスタ仕様](register-map.md) | ABI 0.6の直接窓、command、extended register（規範） |
 | [メモリマップ](memory-map.md) | VRAM/PSRAMのaddress、pattern・map・palette・OAM・waveの形式 |
