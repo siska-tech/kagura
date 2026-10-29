@@ -201,7 +201,7 @@ class FramebufferTests(TestCase):
         self.clean()
         scene=diagnostic.Session.__new__(diagnostic.Session)
         scene.fb,scene.d=self.fb,self.d
-        with patch.dict(sys.modules,{'framebuf':T.types.SimpleNamespace(FrameBuffer=T.FrameBuffer,MONO_HLSB=3)}):
+        with patch.dict(sys.modules,{'framebuf':T.types.SimpleNamespace(FrameBuffer=__import__('viper_emulator').MonoFont,MONO_HLSB=3)}):
             scene.scene('A')
         tiles={bytes(self.fb.buffer[n*32:(n+1)*32]) for n in range(1200)}
         self.assertEqual(len(tiles),1200)
@@ -230,6 +230,74 @@ class FramebufferTests(TestCase):
         self.fb.mark_dirty(319,239,8,8)
         self.assertEqual(sum(self.fb.dirty),1)
         self.assertEqual(self.fb.flush()['bytes'],32)
+
+
+class ViperDifferentialTests(FramebufferTests):
+    # Inherit every drawing/flush/failure test with the kernel source executed
+    # through bounded pointers. Native compilation/execution is a Pico test.
+    def setUp(self):
+        import kagura.framebuffer as module
+        from viper_emulator import load
+        self.native_patch=patch.object(module,'_viper',load())
+        self.native_patch.start();self.addCleanup(self.native_patch.stop)
+        super().setUp()
+        self.fb.set_viper(True)
+
+    def test_large_seeded_buffers_and_dirty_identical(self):
+        from framebuffer_viper_cases import cases
+        python=TileFramebuffer(self.d);python.set_viper(False)
+        for name,args in cases(1024):
+            getattr(python,name)(*args);getattr(self.fb,name)(*args)
+            self.assertEqual(self.fb.buffer,python.buffer,(name,args))
+            self.assertEqual(self.fb.dirty,python.dirty,(name,args))
+            python.dirty[:]=bytes(1200);self.fb.dirty[:]=bytes(1200)
+        self.assertGreater(sum(self.fb.kernel_counts),0)
+
+    def test_clipped_text_buffers_dirty_and_repeat_match(self):
+        from viper_emulator import MonoFont
+        python=TileFramebuffer(self.d);python.set_viper(False)
+        framebuf=T.types.SimpleNamespace(FrameBuffer=MonoFont,MONO_HLSB=3)
+        with patch.dict(sys.modules,{'framebuf':framebuf}):
+            for x,y in ((-7,-7),(0,0),(7,7),(305,233),(319,239),(1<<70,0),(-(1<<70),0)):
+                for color in range(16):
+                    for repeat in range(2):
+                        python.text('ABC abc 123',x,y,color);self.fb.text('ABC abc 123',x,y,color)
+                        self.assertEqual(self.fb.buffer,python.buffer)
+                        self.assertEqual(self.fb.dirty,python.dirty)
+                        self.fb.dirty[:]=bytes(1200);python.dirty[:]=bytes(1200)
+
+    def test_large_integer_fallbacks_avoid_native_overflow(self):
+        python=TileFramebuffer(self.d);python.set_viper(False)
+        operations=(('line',(-32768,0,1,0,4)),('circle',(32768,100,32768,3)),
+                    ('line',(1<<90,0,1<<91,239,2)),
+                    ('fill_rect',(-(1<<80),-1,1<<81,3,7)))
+        for name,args in operations:
+            getattr(python,name)(*args);getattr(self.fb,name)(*args)
+            self.assertEqual(self.fb.buffer,python.buffer)
+            self.assertEqual(self.fb.dirty,python.dirty)
+        # Only fill_rect uses native code in the above cases.
+        self.assertEqual(self.fb.kernel_counts[1:4],(0,0,0))
+
+    def test_switching_and_fallback_unavailable(self):
+        import kagura.framebuffer as module
+        self.assertTrue(self.fb.viper_enabled)
+        self.fb.set_viper(False);self.assertFalse(self.fb.viper_enabled)
+        self.fb.pixel(0,0,7)
+        with patch.object(module,'_viper',None):
+            self.fb.set_viper();self.assertFalse(self.fb.viper_enabled)
+            with self.assertRaises(RuntimeError):self.fb.set_viper(True)
+        with self.assertRaises(TypeError):self.fb.set_viper('yes')
+        self.fb.set_viper(True);self.assertEqual(self.fb.pixel(0,0),7)
+
+    def test_kernel_source_bounded_to_guarded_views(self):
+        from framebuffer_viper_cases import run_cases
+        raw=bytearray(b'\xa5'*32+bytes(38400)+b'\x5a'*32)
+        marks=bytearray(b'\xa5'*32+bytes(1200)+b'\x5a'*32)
+        self.fb.buffer=memoryview(raw)[32:-32]
+        self.fb.dirty=memoryview(marks)[32:-32]
+        run_cases(self.fb,128)
+        self.assertEqual(raw[:32],b'\xa5'*32);self.assertEqual(raw[-32:],b'\x5a'*32)
+        self.assertEqual(marks[:32],b'\xa5'*32);self.assertEqual(marks[-32:],b'\x5a'*32)
 
 
 if __name__=='__main__':main(verbosity=2)
