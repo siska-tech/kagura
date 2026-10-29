@@ -62,6 +62,30 @@ stats = fb.flush()
 
 `ellipse()`、`blit()`、`paint()`は初期版では未実装。Flood Fill用の無制限stackや第2framebufferは持たない。
 
+## Viper描画backend
+
+RP2040のMicroPythonでは内部`framebuffer_viper.py`が利用できると自動選択する。PCは従来のPure Python実装。公開描画API・例外・tile-native配置は同じで、既存の呼出しは変更不要。
+
+```python
+fb.set_viper(False)  # Pure Pythonで描画
+fb.set_viper(True)   # Viper必須。利用不可ならRuntimeError
+fb.set_viper()       # 自動選択へ戻す
+print(fb.viper_enabled)
+print(fb.kernel_counts)  # rect系/pixel/line/circle/glyphのnative内counter
+```
+
+切替えは描画・転送が実行されていない時に単一ownerで行う。bufferとdirtyはそのまま保持し、切替え自体はFPGA通信をしない。自動fallbackはmodule読込み時の利用不可に限り、描画途中の例外を隠してPythonで自動再実行することはない。
+
+Viperは内部kernelであり、アプリケーションから直接呼ばない。Python側で型・色を検査してからrectを[0,320]×[0,240]へclipする。完全に覆われたtileはaligned `ptr32`で8 word＝32 Bを比較・更新し、変化があったtileだけdirtyにする。端tileは`ptr8`で2 pixel／byteを処理し、片側nibbleを保つ。水平・垂直線は同じrect kernel。通常の線・円はprimitive全体を1回のnative呼出しで処理し、文字は8 B bitmapを1字形単位で処理する。
+
+lineの端点はBresenhamの位相を変えないため切り詰めない。各座標が±32767以内ならnative、範囲外は従来の任意精度Python演算を使う。nativeのdx/dyは最大65534、twice-error等も32bit内。circleも中心座標±32767・radius<=32767に限定し、大きい入力はPythonに戻す。glyphは見えるものだけx=-7..319、y=-7..239を渡す。巨大座標や負数をそのままpointer indexへ変換しない。
+
+呼出し中のbuffer・dirty・params・counter・文字bitmapはPython側のownerが保持する。RP2040のbytearrayと32 Bのtile offsetはword aligned。アプリケーションがbufferをresize／別のunaligned viewへ置き換えることや、別taskから並行変更することはサポートしない。診断では32 B前後guardを持つaligned viewも検証する。
+
+追加payloadはsigned params24 Bとnative内counter20 B。実測constructor heap差分は従来40272 B→40448 B（+176 B、object等を含む）。native moduleの読込みは別途4832 B。全画面bufferを追加確保しない。`flush()`、FENCE、COMMIT、通信高速化は変更しない。描画Viperを無効にしても、transportのViper FIFO／DMAは独立に利用できる。
+
+[両backendの差分・guard・実機性能](framebuffer-viper-results.md)を参照。
+
 ## 初期化・転送と失敗
 
 constructorは全RAMを確保してからdeviceを保持し、MemoryError時にFPGAを変更しない。`initialize()`は表示停止をCOMMITで適用してから、40×30の各セルへ固有tile番号、固定palette、反転なしを設定する。64×32の余ったセルと上位bit表の余りは0。mapと上位bit表が揃い、全patternのFENCEが完了してから表示を有効化する。

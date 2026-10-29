@@ -307,3 +307,9 @@ ABI 0.6の480p構成では`from kagura.framebuffer import TileFramebuffer`で、
 console／TextLayer／sprite用の独立pattern所有者とは同時に使用しない。既存consoleはpauseしてdeviceを再利用し、終了後resumeでconsole画面を再構築する。全map・patternsを上書きする`initialize()`が必要。
 
 [API・配置と復帰](../../docs/framebuffer.md)、[参照描画・実機診断・性能結果](../../docs/framebuffer-results.md)。診断は`examples/framebuffer_diagnostic.py`、測定は`examples/framebuffer_benchmark.py`。追加試験は`python3 -I software/micropython/tests/test_framebuffer.py`。
+
+### Viper描画backend
+
+RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(False)`でPython、`fb.set_viper(True)`でViper必須、`fb.set_viper()`でautoへ戻す。`fb.viper_enabled`とnative内`fb.kernel_counts`で選択と実行を確認できる。buffer／dirtyと公開描画結果は同じ。通信側のViper FIFO／DMAとは独立で、flush・FENCE・COMMIT・error検査は変更していない。
+
+同条件の大面積fill_rectはPython1239.183 ms／Viper7.672 ms、lineは66.857 ms／1.923 ms（各10回平均）。[全sample・分散・最大・flush・各5分負荷の比較](../../docs/framebuffer-viper-results.md)と[安全範囲・fallback仕様](../../docs/framebuffer.md#viper描画backend)を参照。kernelの個別関数は内部専用。

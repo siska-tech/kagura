@@ -1,5 +1,7 @@
 # TileFramebuffer実装・検証結果
 
+> 以下は基準0929059のPure Python実装の測定記録。後続の[Viper高速化・同条件比較](framebuffer-viper-results.md)を追加し、この表の元の数値は保持している。
+
 2026-10-29、`experiment/tile-1200`。性能測定のsourceは`3d9a916`。その後、診断の四隅ラベルだけを`f99ed46`で修正した。[API・利用手順](framebuffer.md)、[機械可読実測値](framebuffer-results.json)。RTL・FPGAレジスタ仕様・ABI 0.6は変更していない。
 
 ## 実装と変更ファイル
