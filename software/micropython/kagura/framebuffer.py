@@ -86,22 +86,29 @@ class TileFramebuffer:
         finally:
             d.busy -= 1
 
-    def pixel(self, x, y, color=None):
-        _ints(x, y)
-        if color is not None:
-            _range(color, 0, 15, 'color')
+    def _put(self, x, y, color):
+        # Internal primitives validate once, then share this clipped nibble store.
         if not (0 <= x < 320 and 0 <= y < 240):
-            return None
+            return
         tile = (y >> 3) * 40 + (x >> 3)
         offset = tile * 32 + (y & 7) * 4 + ((x & 7) >> 1)
         shift = 0 if x & 1 else 4
         old = self.buffer[offset]
-        if color is None:
-            return (old >> shift) & 15
         value = (old & ~(15 << shift)) | color << shift
         if value != old:
             self.buffer[offset] = value
             self.dirty[tile] = 1
+
+    def pixel(self, x, y, color=None):
+        _ints(x, y)
+        if color is not None:
+            _range(color, 0, 15, 'color')
+            self._put(x, y, color)
+        elif 0 <= x < 320 and 0 <= y < 240:
+            tile = (y >> 3) * 40 + (x >> 3)
+            offset = tile * 32 + (y & 7) * 4 + ((x & 7) >> 1)
+            return (self.buffer[offset] >> (0 if x & 1 else 4)) & 15
+        return None
 
     def fill(self, color):
         _range(color, 0, 15, 'color')
@@ -147,7 +154,7 @@ class TileFramebuffer:
         _range(color, 0, 15, 'color')
         if height > 0 and 0 <= x < 320:
             for yy in range(max(0, y), min(240, y + height)):
-                self.pixel(x, yy, color)
+                self._put(x, yy, color)
 
     def fill_rect(self, x, y, width, height, color):
         _ints(x, y, width, height)
@@ -175,7 +182,7 @@ class TileFramebuffer:
         sx, sy = 1 if x0 < x1 else -1, 1 if y0 < y1 else -1
         error = dx + dy
         while True:
-            self.pixel(x0, y0, color)
+            self._put(x0, y0, color)
             if x0 == x1 and y0 == y1:
                 break
             twice = error * 2
@@ -195,7 +202,7 @@ class TileFramebuffer:
         a, b, decision = radius, 0, 1 - radius
         while b <= a:
             for xx, yy in ((a, b), (b, a), (-b, a), (-a, b), (-a, -b), (-b, -a), (b, -a), (a, -b)):
-                self.pixel(x + xx, y + yy, color)
+                self._put(x + xx, y + yy, color)
             b += 1
             if decision < 0:
                 decision += b * 2 + 1
@@ -217,7 +224,7 @@ class TileFramebuffer:
             for yy in range(8):
                 for xx in range(8):
                     if bitmap.pixel(xx, yy):
-                        self.pixel(x + xx, y + yy, color)
+                        self._put(x + xx, y + yy, color)
             x += 8
 
     def mark_dirty(self, x=0, y=0, width=320, height=240):
@@ -234,7 +241,7 @@ class TileFramebuffer:
     def flush(self):
         """No I/O if clean; failure keeps the entire unconfirmed run dirty.
 
-        Counters count submitted pattern writes/bytes, not individual SPI
+        Counters count requested pattern writes/bytes, not individual SPI
         register transactions. transfer_us includes write_memory error checks;
         wait_us includes FENCE and its checks, not a pure FPGA execution time.
         """
@@ -251,12 +258,12 @@ class TileFramebuffer:
         try:
             tile = 0
             while tile < 1200:
-                if not self.dirty[tile]:
-                    tile += 1
-                    continue
-                first = tile
-                while tile < 1200 and self.dirty[tile]:
-                    tile += 1
+                first = self.dirty.find(b'\x01', tile)
+                if first < 0:
+                    break
+                tile = self.dirty.find(b'\x00', first)
+                if tile < 0:
+                    tile = 1200
                 count = tile - first
                 stats['runs'] += 1
                 stats['bytes'] += count * 32
@@ -274,8 +281,7 @@ class TileFramebuffer:
                 finally:
                     stats['wait_us'] += ticks_diff(ticks_us(), begin)
                 # No callback may draw while busy; only a confirmed run is clean.
-                for index in range(first, tile):
-                    self.dirty[index] = 0
+                self.dirty[first:tile] = bytes(count)
                 stats['tiles'] += count
         finally:
             d.busy -= 1
