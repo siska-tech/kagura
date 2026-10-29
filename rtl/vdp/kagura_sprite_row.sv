@@ -11,7 +11,7 @@ module kagura_sprite_row (
     input wire [3:0] selected_row,
     output wire busy,
     output wire pattern_read,
-    output wire [14:0] pattern_addr,
+    output wire [15:0] pattern_addr,
     input wire [7:0] pattern_data,
     output wire palette_read,
     output wire [9:0] palette_index,
@@ -26,7 +26,7 @@ module kagura_sprite_row (
     localparam [2:0] IDLE=0,FETCH=1,PIX_READ=2,PIX_WAIT=3,PIX_MERGE=4,PIX_WRITE=5,PIX_NEXT=6,FIRST=7;
     reg [2:0] state;
     reg signed [10:0] x;
-    reg [9:0] tile;
+    reg [10:0] tile;
     reg [3:0] palette, row_y, pixel;
     reg size16,hflip,behind;
     reg [3:0] fetch_byte;
@@ -40,7 +40,7 @@ module kagura_sprite_row (
     wire [3:0] byte_count=size16 ? 4'd8 : 4'd4;
     // 16px tiles are aligned to four at capture, so the row/column offset
     // replaces their low bits without a carry chain before the RAM bank CE.
-    wire [9:0] fetch_tile=size16 ? {tile[9:2],row_y[3],fetch_byte[2]} : tile;
+    wire [10:0] fetch_tile=size16 ? {tile[10:2],row_y[3],fetch_byte[2]} : tile;
     assign pattern_read=state==FETCH && render_grant && fetch_byte<byte_count;
     assign pattern_addr={fetch_tile,row_y[2:0],fetch_byte[1:0]};
     // Prepare the next pixel before PIX_READ, keeping the barrel select and
@@ -71,7 +71,7 @@ module kagura_sprite_row (
                 IDLE: if(selected_valid) begin
                     x<={selected_entry[9],selected_entry[9:0]};
                     size16<=selected_entry[27]; hflip<=selected_entry[28]; behind<=selected_entry[30];
-                    tile<=selected_entry[27] ? {selected_entry[41:34],2'b00} : selected_entry[41:32];
+                    tile<=selected_entry[27] ? {selected_entry[46],selected_entry[41:34],2'b00} : {selected_entry[46],selected_entry[41:32]};
                     palette<=selected_entry[45:42];
                     row_y<=selected_entry[29] ? (selected_entry[27] ? 4'd15 : 4'd7)-selected_row : selected_row;
                     fetch_byte<=0; pixel<=0; pixels<=0; cycles<=0; state<=FETCH;

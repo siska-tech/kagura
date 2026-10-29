@@ -11,10 +11,10 @@ module tb_vram_init;
         .command_idle(),.audio_wave_read(1'b0),.audio_wave_swap(1'b0),.audio_wave_addr(9'b0),.audio_wave_data(),
         .write_in(write_req),.word_in(word_req),.addr_in(addr),.wdata_in(wd),.rsp_valid(rsp_valid),.rdata(data),
         .render_hold(hold),.render_grant(grant),.map_read(1'b0),.map_index(11'b0),.map_data(),
-        .pattern_read(1'b0),.pattern_addr(15'b0),.pattern_data(),.palette_read(1'b0),.palette_index(10'b0),.palette_data(),
+        .pattern_read(1'b0),.pattern_addr(16'b0),.pattern_data(),.palette_read(1'b0),.palette_index(10'b0),.palette_data(),
         .oam_read(1'b0),.oam_index(11'b0),.oam_data());
     genvar bank;
-    generate for(bank=0;bank<16;bank=bank+1) begin: poison_patterns
+    generate for(bank=0;bank<19;bank=bank+1) begin: poison_patterns
         always @(posedge poison)
             for(integer n=0;n<2048;n=n+1) dut.pattern[bank].ram.memory[n]=8'ha5;
     end endgenerate
@@ -56,6 +56,8 @@ module tb_vram_init;
     task automatic check_all;
         begin
             for(integer a=0;a<16'h9000;a=a+1) read_zero(0,16'(a));
+            for(integer a=16'h9000;a<16'h9100;a=a+1) read_zero(0,16'(a));
+            for(integer a=16'hb000;a<16'hc600;a=a+1) read_zero(0,16'(a));
             for(integer a=0;a<2048;a=a+1) read_zero(1,16'(a));
             for(integer a=0;a<1024;a=a+1) read_zero(1,16'h8000+16'(a));
             for(integer a=16'h9800;a<16'h9a00;a=a+1) read_zero(0,16'(a));

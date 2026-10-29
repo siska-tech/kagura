@@ -1,7 +1,7 @@
 > **1,200タイル対応の実験用リポジトリ**
 >
 > 元リポジトリ `Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` から分岐。
-> 現在はRAMを確保する第1段階で、公開タイル数は1,024枚です。
+> 現在は第2段階で、公開タイル数を1,200枚へ拡張し、ホスト4構成のP&R/STAとRTL回帰に合格しました。実機受入は未実施です。
 > 進捗・再現手順は[実験記録](docs/tile-1200-experiment.md)、設計案は[調査書](docs/tile-1200-feasibility.md)を参照。
 
 # ![KAGURA-9](docs/images/logo.png)
@@ -24,12 +24,12 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 | 分野 | 内容 |
 |---|---|
 | 画面 | 320×240（640×480p60へ2倍）または320×180（1280×720p60へ4倍）。bitstreamで選択 |
-| 背景 | 1面、64×32 map、8×8 tile、1024 pattern（4bpp）、scroll、ライン別scroll表（8 entry） |
+| 背景 | 1面、64×32 map、8×8 tile、1200 pattern（4bpp）、scroll、ライン別scroll表（8 entry） |
 | sprite | 256個登録、16個/line、8×8・16×16、反転、behind |
 | 色 | RGB444、16色×16 palette |
 | 音源 | pulse 3、noise 1、wavetable 2。PSRAM版はPSRAM上のsigned 8bit PCM 2chを追加 |
 | 音声 | 48kHz・16bitステレオ（HDMI） |
-| メモリ | VRAM約44KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCM・COPYの元に使う |
+| メモリ | VRAM約49KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCM・COPYの元に使う |
 | ホスト | SPI/QSPI（Raspberry Pi Pico等）、またはW65C02S（3.3V、3.375MHz） |
 | レジスタABI | 0.5（[レジスタ仕様](docs/register-map.md)） |
 
@@ -41,10 +41,12 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 詳細と既知の制約は[検証状況](docs/validation-status.md)を参照してください。
 
+FPGA standaloneの`demo`／`demo720`はdeprecatedです。Picoホスト上のデモ・診断を利用してください。旧ソースと過去の検証記録は残しますが、1,200タイル対応の受入対象から外します。
+
 ## はじめかた
 
 1. [アーキテクチャ](docs/architecture.md)で全体とビルド構成を確認する。
-2. [ビルド・テスト](docs/build-and-test.md)の手順でbitstreamを作り、SRAMへ書き込む。ホストなしで動かすなら`demo`（16:9は`demo720`）。
+2. [ビルド・テスト](docs/build-and-test.md)の手順でbitstreamを作り、SRAMへ書き込む。主な動作確認はPicoホストの`qspipsram`／`qspipsram720`構成で行う。
 3. Picoから操作する場合は`qspipsram`（または`spi`/`qspi`）を書き込み、[Pico firmware](software/pico/README.md)の`diag`・`show`・`stress`を実行する。
 4. 自分のホストから使う場合は[プログラミングガイド](docs/programming-guide.md)と[レジスタ仕様](docs/register-map.md)を読む。
 

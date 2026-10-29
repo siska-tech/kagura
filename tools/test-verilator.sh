@@ -112,6 +112,7 @@ run_test tb_romless_boot_system rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_
 for host_test in tb_spi_bus tb_qspi_bus; do
     run_test "$host_test" rtl/bus/kagura_spi_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_host_bus.sv
 done
+run_test tb_command_queue rtl/core/kagura_command_queue.sv sim/tests/tb_command_queue.sv
 run_test tb_vram_core "${CORE_SOURCES[@]}" sim/tests/tb_vram_core.sv
 run_test tb_audio_core "${CORE_SOURCES[@]}" sim/tests/tb_audio_core.sv
 run_test tb_psram_core "${CORE_SOURCES[@]}" sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_psram_core.sv
@@ -121,6 +122,10 @@ run_test tb_vdp_frame "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/
 for vdp_test in tb_vdp_sprites tb_vdp_frame720 tb_vdp_sprites720 tb_raster_scroll tb_raster_scroll720; do
     run_test "$vdp_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
         rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv sim/tests/tb_vdp_sprites.sv
+done
+for tile_test in tb_tile1200_frame tb_tile1200_frame720; do
+    run_test "$tile_test" "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
+        rtl/vdp/kagura_vdp.sv sim/tests/tb_vdp_frame.sv sim/tests/tb_tile1200_frame.sv
 done
 run_test tb_demo_sequencer "${CORE_SOURCES[@]}" rtl/memory/kagura_ram_tdp.sv rtl/vdp/kagura_line_display.sv \
     rtl/vdp/kagura_vdp.sv rtl/core/kagura_demo_art.sv rtl/core/kagura_demo_sequencer.sv sim/tests/tb_demo_sequencer.sv

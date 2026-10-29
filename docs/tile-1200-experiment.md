@@ -2,7 +2,7 @@
 
 2026-10-29開始。元リポジトリ `C:\Users\Shion\Documents\Projects\Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` をローカルcloneし、独立したGitリポジトリ `C:\Users\Shion\Documents\Projects\Kagura-tile1200` を作成した。ブランチは `experiment/tile-1200`。元の履歴を保持し、source remoteは元リポジトリの参照用とする。GitHubへの新規作成・公開は行っていない。
 
-現在の公開仕様は1,024パターン。1,200枚への拡張前に、必要なBSRAMを確保する第1段階を実装した。調査とABIの候補は[調査書](tile-1200-feasibility.md)を参照。
+第1段階のRAM確保を完了し、現在は[第2段階の1,200パターン実装](tile-1200-stage2.md)がsimulationとホスト4構成のP&R/STAに合格した。以下の第1段階の数値は1,024枚版の記録。調査とABIの候補は[調査書](tile-1200-feasibility.md)を参照。
 
 ## 第1段階の変更
 
@@ -56,9 +56,8 @@ python3 tools/prepare-hdmi-stream.py
 
 ## 次の段階
 
-1. 追加3 bankとBG上位bit表を含めた資源計画を確定する。分散RAM化に伴うCLS占有率と配置余裕も確認する。
-2. ABIを確定し、11bitタイル番号・追加公開領域・BG上位bit表・sprite予約bitの利用を実装する。FILL/COPYの範囲検査とSDKの転送分割を含める。
-3. 1023/1024/1199/1200境界、BGとspriteの全画素比較、旧ソフト互換、reset、PCM併用を検証する。
-4. demo構成は追加のRAM削減策を検討し、全構成のP&R/STAと実機試験へ進む。
+第2段階の1,200枚対応は[実装・検証記録](tile-1200-stage2.md)を参照。次は実機で追加領域の読戻し、BG／sprite表示、PCM併用・長時間動作を確認する。
+
+FPGA standaloneのdemo／demo720はdeprecatedとし、既定のP&R対象から除外した。以降はPicoホストを中心に検証する。ソースと旧試験・過去の証跡は保持する。
 
 実機書込みは未実施。既存の[検証状況](validation-status.md)は元設計の過去の証跡であり、実験版の動作保証とは区別する。

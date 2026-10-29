@@ -234,6 +234,7 @@ class TileScreen:
             d.write_reg(R.REG_DISPLAY_CTRL, 0)
             d.commit()
             d.fill(0x8000, 4096)
+            d.fill(0x9000, 256)  # legacy terminal map uses tile bit10=0
             d.fill(0xA000, 2048)
             self.video.scroll(0, 0)
             d.ext_write(R.EXT_BACKDROP, 0)

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# M0 baseline: build every Tang Nano 9K configuration from the current
+# M0 baseline: build maintained Tang Nano 9K configurations from the current
 # checkout, run the STA summary, and store one evidence manifest per
 # configuration under reports/<revision>/<tool-version>/<configuration>/.
 # reports/ is outside Git; only the small summary is meant to be quoted in
@@ -7,7 +7,7 @@
 [CmdletBinding()]
 param(
     [string]$Gowin='C:\Gowin\Gowin_V1.9.11.03_Education_x64\IDE\bin\gw_sh.exe',
-    [string[]]$Configs=@('hdmi','dvi','phase2','demo','spi','qspi','spipsram','qspipsram','hdmi720','phase2720','demo720','spi720','qspi720','qspipsram720','phase2boot','phase2boot720'),
+    [string[]]$Configs=@('hdmi','dvi','phase2','spi','qspi','spipsram','qspipsram','hdmi720','phase2720','spi720','qspi720','qspipsram720','phase2boot','phase2boot720'),
     [string]$Pattern='bars',
     [double]$MinSetupSlack=0.10
 )

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Register ABI 0.5. One owner/task; callbacks must check busy before use."""
+"""Register ABI 0.6. One owner/task; callbacks must check busy before use."""
 from time import ticks_us, ticks_diff
 from . import regs as R
 
@@ -143,8 +143,9 @@ class Kagura:
     def _memory_range(self, address, length):
         _range(address, 0, 0xFFFFFF, "address")
         _range(length, 0, 0x400000, "length")
-        regions = ((0, 0x8000), (0x8000, 0x9000), (0x9400, 0x9600),
-                   (0x9800, 0x9A00), (0xA000, 0xA800), (0x400000, 0x800000))
+        regions = ((0, 0x8000), (0x8000, 0x9000), (0x9000, 0x9100), (0x9400, 0x9600),
+                   (0x9800, 0x9A00), (0xA000, 0xA800), (0xB000, 0xC600),
+                   (0x400000, 0x800000))
         for start, end in regions:
             if start <= address < end and address + length <= end:
                 if start == 0x400000:

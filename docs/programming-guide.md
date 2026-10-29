@@ -162,3 +162,27 @@ PSRAMに置いたpattern・map・palette等をVRAMへ速く送れる（32KiBで�
 - 原因を読んでから、ERROR_CODEとIRQ_STATUS.ERRORをそれぞれW1Cでclearする。
 - 拒否された操作は何も変えていないので、原因を取り除けば同じ操作を再送できる。
 - 通常の動作でLINE_UNDERRUN・AUDIO_FIFO_ERRORは起きない。起きた場合はhardwareまたは設定の異常として扱う。
+
+## 実験ABI 0.6：1,200パターン
+
+この実験版のPATTERN_COUNTは1200（EXT 07=176、08=4）。タイル番号は0～1199を使用できる。背景は従来の16bit mapと別の上位bit表、spriteはbyte 5 bit6に11bit目を持つ。1200～2047は透明として描画する。公開アドレスとbit配置は[メモリマップ](memory-map.md)を参照。
+
+MicroPythonでは `Video.tile()`、`Video.sprite()`、`Video.map_entry()` が1199まで対応する。複数タイルは `Video.tiles(first, packed_pixels)` を使うと1023／1024の公開アドレス境界で転送を分割する。raw `write_memory(tile*32, ...)` は1024以上では使わない。
+
+```python
+from kagura.video import Video
+v = Video(device)  # ABI 0.6でprobe済みのデバイス
+device.write_reg(3, 0)  # 表示停止
+device.commit()
+v.tiles(1023, bytes([0x11]) * 32 + bytes([0x22]) * 32)
+v.tile(1199, bytes([0x33]) * 32)
+v.map_entry(0, 0, 1024, palette=0, hflip=True)
+v.sprite(0, 20, 20, 1199, palette=0)
+device.fence()
+```
+
+map下位wordと上位表の更新は原子的ではないため、表示停止中か安全なblanking期間に行う。`Video.map_words(index, packed_words, high_bits)` は連続するmap entryを更新し、`high_bits` に1 entryあたり0/1のbyteを渡す。省略すると対応entryの上位bitを0にする。共有byte内の他entryは読戻して保持する。複数のmap writerは直列化する。
+
+raw mapデータをロードする既存アプリは、使う範囲の上位bit表も0へ戻すこと。terminalと `kagura_ja` の文字キャッシュ上限は現在も1024枚内であり、1,200枚のキャッシュ利用は別段階。terminalの初期化は上位表を全消去する。1,200枚の利用はVideo APIから行える。
+
+FILL/COPYの1命令は1つの公開領域内に収める。旧patternと追加patternを跨ぐ一括転送はSDK側で分割する。旧ABIを厳密に確認するPico等のホストは、生成済みABI 0.6定義で再ビルドする。

@@ -14,7 +14,7 @@ module tb_sprite_composite;
     wire [11:0] scan_cycles,row_cycles;
     reg [15:0] oam_data,pal_data,line_rd;
     wire pat_read,pal_read,line_read,line_write;
-    wire [14:0] pat_addr;
+    wire [15:0] pat_addr;
     wire [8:0] line_addr;
     wire [15:0] line_wd;
     reg [7:0] pat_data;

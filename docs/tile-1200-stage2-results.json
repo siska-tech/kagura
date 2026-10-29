@@ -1,0 +1,358 @@
+{
+  "date": "2026-10-29",
+  "scope": "1200 patterns, ABI 0.6, host builds; no hardware acceptance",
+  "parent_revision": "7a2f872",
+  "branch": "experiment/tile-1200",
+  "verilator": "5.032",
+  "seed": 1,
+  "simulation_tests": [
+    {
+      "test": "tb_command_queue",
+      "result": "pass"
+    },
+    {
+      "test": "tb_register_abi",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vram_init",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vram_core",
+      "result": "pass"
+    },
+    {
+      "test": "tb_psram_core",
+      "result": "pass"
+    },
+    {
+      "test": "tb_w65c02_bus",
+      "result": "pass"
+    },
+    {
+      "test": "tb_spi_bus",
+      "result": "pass"
+    },
+    {
+      "test": "tb_qspi_bus",
+      "result": "pass"
+    },
+    {
+      "test": "tb_startup_cpu",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_frame",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_sprites",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_frame720",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_sprites720",
+      "result": "pass"
+    },
+    {
+      "test": "tb_tile1200_frame",
+      "result": "pass"
+    },
+    {
+      "test": "tb_tile1200_frame720",
+      "result": "pass"
+    }
+  ],
+  "sdk_tests": [
+    {
+      "suite": "driver",
+      "run": 59,
+      "skipped": 1
+    },
+    {
+      "suite": "fifo_xfer",
+      "run": 4,
+      "skipped": 0
+    },
+    {
+      "suite": "kagura_ja",
+      "run": 29,
+      "skipped": 1
+    },
+    {
+      "suite": "shooter",
+      "run": 22,
+      "skipped": 0
+    }
+  ],
+  "header_check": "C passed; ca65 unavailable (skipped)",
+  "gowin": "Education V1.9.11.03",
+  "minimum_setup_slack_ns": 0.1,
+  "source_sha256": {
+    "rtl/core/kagura_command_queue.sv": "ad473107de99486f8a6dc26c00cb77c5528cc081eea29ba7ea9e588b483b7585",
+    "rtl/core/kagura_core.sv": "e74cf4ec212eb9ee201fd02f05c3c27596ec1c764092a04c795368f1c0cd5088",
+    "rtl/core/kagura_registers.sv": "37129a9fc80e6704b948adae82ac08a44fcb523980d5b12e6d2e979a727f996f",
+    "rtl/vdp/kagura_vram.sv": "a6d18c46c32224c7cac4bb7f05b0047e47bc70083f2ed6d2fb67c24c2f724f09",
+    "rtl/vdp/kagura_bg_renderer.sv": "f4e00db18d6fe8f27c56f5c7df1a65b8a2b0da7e11178bc6496ef5ad4510d505",
+    "rtl/vdp/kagura_sprite_row.sv": "6ce3ad4fea2f8156733bdf6af9e8b7d9ee91a119dc730ad1661dbe6d2c9860a9",
+    "rtl/vdp/kagura_sprite_renderer.sv": "5798711be9661d7d445c237abd7ff495702b9be274f03fe417e819ead1b7f116",
+    "tools/build-nano9k.tcl": "2f6aa74bf1e82e402f57f01c02d353983ff636e32121eccbc9639e81796bc7e8",
+    "tools/test-tile1200-stage2.sh": "efc8bbc0f7c39e779198cdbddb24c4b65cef68ed4c0e426dd149e22ab5e5ab66",
+    "sim/tests/tb_tile1200_frame.sv": "7cb99dd5c7f64d356d3cf5ef6086de308f8d51903f3e3c5852b8e3c9f1a80dca",
+    "sim/tests/tb_vdp_frame.sv": "ba2abf35695479870e3ac1d17c5281ae6be07e7437e6ba9cf25c73f9f2c524d2"
+  },
+  "builds": [
+    {
+      "configuration": "qspi",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 5345,
+        "register": 4197,
+        "ff": 4189,
+        "ram16": 68,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 3826,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.507,
+            "from": "vdp/core/vram/pattern[2].ram/memory_memory_0_0_s/DO[3]",
+            "to": "vdp/core/sprites/composite/pixels_11_s0/D"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "vdp/core/audio_synth/sample_left_10_s0/Q",
+            "to": "link/audio_link/fifo/memory_memory_0_2_s/DI[2]"
+          },
+          "Recovery": {
+            "slack_ns": 16.692,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync2_1_s0/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 0.561,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rb_0_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial126_setup": 0.0,
+          "serial126_hold": 0.0,
+          "pixel25_setup": 0.0,
+          "pixel25_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel25": 64.097,
+          "system54": 55.519
+        }
+      },
+      "hashes": {
+        "bitstream": "37582e4bd64a6f544cdda528b178d2b6630350b7b3b1de3a52df1e897a3dca93",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "266e41bdef4f308aafa89e1edeb3f1b7a5fdd4ae66c91c90718f7fceaeaeb294",
+        "sta_report": "9a10eec0162b14ea8599dfe6be76a4f1349bb0f8b2f4403a366be8b9ceae3f9c",
+        "resource_report": "247d844a85b16146ba0dd5dd5580687a90340bab66b60555d8ef131ea265c3ad"
+      }
+    },
+    {
+      "configuration": "qspipsram",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 7044,
+        "register": 5156,
+        "ff": 5147,
+        "ram16": 80,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 4116,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.106,
+            "from": "vdp/core/vram/rams_idle_s0/Q",
+            "to": "vdp/core/vram/pattern[12].ram/memory_memory_0_0_s/CE"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "vdp/core/audio_synth/sample_right_12_s0/Q",
+            "to": "link/audio_link/fifo/memory_memory_0_7_s/DI[0]"
+          },
+          "Recovery": {
+            "slack_ns": 15.713,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync2_1_s0/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 0.825,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rb_0_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial126_setup": 0.0,
+          "serial126_hold": 0.0,
+          "pixel25_setup": 0.0,
+          "pixel25_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel25": 63.095,
+          "system54": 54.312
+        }
+      },
+      "hashes": {
+        "bitstream": "2d00ee52dcff0edb7ad22c3d7910358ca1fe4221619bc0b2332b774ee8f133d9",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "dc66c79e48aef39848c8e27f5b1b4aea756034e605fbeb2d4789f241c275ecf8",
+        "sta_report": "056a83740faf8cff6742ff040c6367aec66cef6ce918c352ef37f3a2fc308a13",
+        "resource_report": "28d604fcd96d927ad6d233d9f083e5429d0d11c64507428865a744c18dc61abc"
+      }
+    },
+    {
+      "configuration": "qspi720",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 5369,
+        "register": 4198,
+        "ff": 4190,
+        "ram16": 68,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 3843,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.955,
+            "from": "vdp/core/vram/pattern[6].ram/memory_memory_0_0_s/DO[0]",
+            "to": "vdp/core/sprites/composite/pixels_56_s0/D"
+          },
+          "Hold": {
+            "slack_ns": 0.555,
+            "from": "vdp/core/queue/stage_36_s0/Q",
+            "to": "vdp/core/queue/memory_memory_1_9_s/DI[0]"
+          },
+          "Recovery": {
+            "slack_ns": 8.879,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/read_valid_s0/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 0.826,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/wb_0_s2/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial371_setup": 0.0,
+          "serial371_hold": 0.0,
+          "pixel74_setup": 0.0,
+          "pixel74_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel74": 85.36,
+          "system54": 56.937
+        }
+      },
+      "hashes": {
+        "bitstream": "b7aaaf840f28da58914fa56db188ca76cc90c9064067c40273e3b76b947dccd9",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "5141ea809d6ecfa91ac6d4d0c718765f2d526209790fcab2f34b197094c83a75",
+        "sta_report": "c5647af2f9991b85a58398fcec37d869a73955fe8350eb2e28bda95524a65482",
+        "resource_report": "b57aae570cfa1af7dbc771a8b0da789e27f6d1e43818c52b575b5f68021a72a2"
+      }
+    },
+    {
+      "configuration": "qspipsram720",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 7038,
+        "register": 5157,
+        "ff": 5148,
+        "ram16": 80,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 4146,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 1.477,
+            "from": "vdp/core/vram/init_done_s0/Q",
+            "to": "vdp/core/vram/palette_ram/ram/memory_memory_0_0_s/AD[4]"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "vdp/core/audio_synth/sample_right_11_s0/Q",
+            "to": "link/audio_link/fifo/memory_memory_0_6_s/DI[3]"
+          },
+          "Recovery": {
+            "slack_ns": 6.73,
+            "from": "pixel_release_3_s0/Q",
+            "to": "link/audio_link/fifo/rd_reset_0_s0/PRESET"
+          },
+          "Removal": {
+            "slack_ns": 0.563,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_0_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial371_setup": 0.0,
+          "serial371_hold": 0.0,
+          "pixel74_setup": 0.0,
+          "pixel74_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel74": 83.514,
+          "system54": 58.68
+        }
+      },
+      "hashes": {
+        "bitstream": "52c8675c70262002a20452ef0c447af68adff8a47f1ed24cafcbf2592706b00d",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "48beff4ea2289e4e6bb5eb2744190812d221e5eb5193903b531835298d385704",
+        "sta_report": "e61e1441219aa07ab72730b1716f73566b70cfdbcb117a6b5af133ec153ca3ad",
+        "resource_report": "038e6cf52125b87fd73fdfca2dec7e5f4d0acbadba5168377d4a64b0d1d68f8e"
+      }
+    }
+  ]
+}

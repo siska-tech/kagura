@@ -1,3 +1,5 @@
+> この実験リポジトリはABI 0.6・1,200パターン版です。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#実験abi-061200パターン)を参照。
+
 # MicroPython host driver / UART keyboard / HDMI REPL
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// 32-byte register window, ABI 0.5 (docs/register-map.md). Every request is
+// 32-byte register window, ABI 0.6 (docs/register-map.md). Every request is
 // answered two system cycles after acceptance (the ABI allows two).
 // The address check is registered one cycle and the FILL range check two
 // cycles after VRAM_ADDR/LENGTH change (they do not fit in one 54MHz
@@ -119,12 +119,14 @@ module kagura_registers #(
     wire wr=accept && q_write, rd=accept && !q_write;
 
     // Public VRAM regions (docs/memory-map.md); 0 = not public.
-    function automatic [2:0] region(input [24:0] a);
+    function automatic [3:0] region(input [24:0] a);
         if(a[24:15]==0) region=1;                          // pattern 000000-007FFF
         else if(a[24:12]==13'h0008) region=2;              // map 008000-008FFF
         else if(a[24:12]==13'h000a && a[11:0]<12'(SPRITES*8)) region=3; // OAM shadow 00A000-00A7FF
         else if(a[24:9]==16'h004a) region=4;               // palette shadow 009400-0095FF
         else if(a[24:9]==16'h004c) region=5;               // wave shadow 009800-0099FF
+        else if(a>=25'h00b000 && a<25'h00c600) region=7; // extra patterns
+        else if(a[24:8]==17'h00090) region=8;               // map bit10
         else if(PSRAM && a[24:22]==3'b001) region=6;        // PSRAM 400000-7FFFFF
         else region=0;
     endfunction
@@ -135,7 +137,7 @@ module kagura_registers #(
     // is accepted no earlier than the edge fill_ok is updated on; the same
     // holds after a VRAM_WRITE/READ address advance (advance_q).
     reg [24:0] fill_end_q;
-    reg [2:0] start_region_q;
+    reg [3:0] start_region_q;
     reg length_zero_q;
     always @(posedge clk) begin
         addr_ok<=region({1'b0,vram_addr})!=0;
@@ -200,7 +202,7 @@ module kagura_registers #(
             8'h04: begin ext_value=raster_line; ext_writable=1; end
             8'h05: ext_value=8'(SPRITES);
             8'h06: ext_value=8'd16;
-            8'h07: ext_value=8'd0;
+            8'h07: ext_value=8'd176;
             8'h08: ext_value=8'd4;
             8'h09: ext_value=8'd8;
             8'h0a: ext_value=8'(LINES);
@@ -255,7 +257,7 @@ module kagura_registers #(
             ID0: read_value=8'h4b;
             ID1: read_value=8'h39;
             ABI_MAJOR: read_value=8'h00;
-            ABI_MINOR: read_value=8'h05;
+            ABI_MINOR: read_value=8'h06;
             CAPS_REG: read_value=CAPS;
             FRAME_COUNT: read_value=frame_count;
             SPR_OVF_INDEX: read_value=overflow_index;

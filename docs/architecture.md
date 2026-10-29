@@ -7,12 +7,12 @@ KAGURA-9はTang Nano 9K（GW1NR-9C）1枚で動く、外部ホスト制御型の
 | 分野 | 仕様 |
 |---|---|
 | 画面 | 320×240を640×480p60へ2倍、または320×180を1280×720p60へ4倍（bitstreamで選択） |
-| 背景 | 1面、64×32 mapの8×8 tile、1024 pattern（4bpp）、scroll X/Y、ライン別scroll表8 entry |
+| 背景 | 1面、64×32 mapの8×8 tile、1200 pattern（4bpp）、scroll X/Y、ライン別scroll表8 entry |
 | sprite | 256個登録、16個/line、8×8または16×16、反転、behind、小番号優先 |
 | 色 | RGB444、16色×16 palette（256色） |
 | 音源 | pulse 3、noise 1、wavetable 2（各最大256 sample）。PSRAM版はsigned 8bit PCM 2chを追加 |
 | 音声出力 | 48kHz・16bitステレオ、HDMI audio sample packet |
-| メモリ | VRAM 約44KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCMとCOPYの元に使う |
+| メモリ | VRAM 約49KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCMとCOPYの元に使う |
 | ホスト | W65C02S（3.3V、3.375MHz、RDYなし）、またはSPI/QSPI（実測5MHz） |
 | ABI | 0.5（[レジスタ仕様](register-map.md)） |
 
@@ -89,13 +89,15 @@ rsp_valid, rsp_ready, rsp_rdata[7:0], rsp_error
 |---|---|---|---|---|
 | `hdmi` | カラーバー＋左1kHz／右500Hz固定音 | なし | 窓なし | `kagura_phase1` / `kagura_hdmi720` |
 | `dvi` | 音声なしの比較用 | なし | 窓なし | `kagura_phase1_dvi` |
-| `demo` | 内蔵sequencerのシューティングデモ＋6ch演奏 | なし（内蔵） | 0x53 / 0x73 | `kagura_demo` |
+| `demo`（deprecated） | 旧・内蔵sequencerのシューティングデモ＋6ch演奏 | なし（内蔵） | 0x53 / 0x73 | `kagura_demo` |
 | `phase2` | VDP＋音源、W65C02S接続 | W65C02S | 0x53 / 0x73 | `kagura_phase2` |
 | `phase2boot` | `phase2`＋SPI FlashからのROM-less boot | W65C02S | 0x53 / 0x73 | `kagura_phase2boot` |
 | `spi` / `qspi` | VDP＋音源、SPI/QSPI接続 | SPI/QSPI | 0x53 / 0x73 | `kagura_spi` / `kagura_qspi` |
 | `spipsram` / `qspipsram` | 上記＋PSRAM・PCM 2ch・COPY | SPI/QSPI | 0x5B / 0x7B | `kagura_spi_psram` / `kagura_qspi_psram` |
 | `bootprobe` | Flash読出し・boot image検査だけ（LED表示） | なし | 窓なし | `kagura_boot_probe` |
 | `magicprobe` | FlashのJEDEC IDと0x100000の`K9BT`の読出し確認（LED表示） | なし | 窓なし | `kagura_flash_magic_probe` |
+
+`demo`／`demo720`はdeprecated。ソースは保持するが既定のP&R対象から外し、1,200パターン版の資源・動作の受入条件には含めない。ホストからのデモ・診断はPico版を使う。`hdmi`／`dvi`等の信号確認構成は継続する。
 
 CAPSのbit: b0 HDMI_AUDIO、b1 WAVE、b3 PSRAM、b4 SPR16、b5 WIDE、b6 RSCROLL（b2 RDYは常に0）。W65C02S版にPSRAM構成はない。
 

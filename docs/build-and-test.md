@@ -49,24 +49,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 python3 tools/prepare-hdmi-stream.py
 ```
 
-続いてWindows PowerShellで、構成ごとに別のbuildディレクトリから実行する。例は480pのデモ。
+続いてWindows PowerShellで、構成ごとに別のbuildディレクトリから実行する。例はPicoホスト向け480p QSPI＋PSRAM構成。
 
 ```powershell
-New-Item -ItemType Directory -Force build/nano9k-demo | Out-Null
-Push-Location build/nano9k-demo
+New-Item -ItemType Directory -Force build/nano9k-qspipsram | Out-Null
+Push-Location build/nano9k-qspipsram
 try {
-  & 'C:\Gowin\Gowin_V1.9.11.03_Education_x64\IDE\bin\gw_sh.exe' '../../tools/build-nano9k.tcl' demo
+  & 'C:\Gowin\Gowin_V1.9.11.03_Education_x64\IDE\bin\gw_sh.exe' '../../tools/build-nano9k.tcl' qspipsram
   if ($LASTEXITCODE -ne 0) { throw 'Gowin build failed' }
 } finally { Pop-Location }
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-nano9k-timing.ps1 `
-  -BuildDir build/nano9k-demo -BaseName kagura_demo -ReportOnly
+  -BuildDir build/nano9k-qspipsram -BaseName kagura_qspi_psram -ReportOnly
 ```
 
 - 第1引数は構成名（`hdmi`、`dvi`、`demo`、`phase2`、`phase2boot`、`spi`、`qspi`、`spipsram`、`qspipsram`、`bootprobe`、`magicprobe`）。`720`を付けると16:9版（dvi・bootprobe・magicprobeを除く）。
+- `demo`／`demo720`はdeprecated。明示指定のためのソースは残すが、1,200タイル版のビルド成功や動作は保証しない。Picoホストのデモ・診断を利用する。
 - 第2引数`bars`（既定）/`stress`はカラーバー版の映像sourceの選択で、デモ・ホスト版の描画には関係しない。
 - bitstreamは`impl/pnr/<basename>.fs`。CST/SDCの断片とビルド設定package（`kagura_build_config`）はscriptがbuildディレクトリに生成する。
 - `check-nano9k-timing.ps1`は最悪slackと経路・レポートhashを`timing-status.json`へ書く。`-ReportOnly`は結果の出力だけで、合否のgateではない。
-- P&Rの既定は`place_option 1`・`route_option 1`（一部の720p構成は例外。[STA](timing.md#sta)）。比較実験だけ`KAGURA_PLACE_OPTION`・`KAGURA_ROUTE_OPTION`で上書きできる。
+- P&Rの既定は`place_option 1`・`route_option 1`（1,200パターン版のqspi／qspipsram、既存の一部720p・PSRAM構成はroute option 2。[STA](timing.md#sta)）。比較実験だけ`KAGURA_PLACE_OPTION`・`KAGURA_ROUTE_OPTION`で上書きできる。
 - `KAGURA_PSRAM_DEBUG=1`でPSRAM端子の捕捉機能付き、`KAGURA_TIMING_AUDIT=1`でhold経路を多く出すレポート、`KAGURA_SIM_NETLIST=1`で配置配線後のnetlistとSDFを出す。
 - readbackを許可する`bit_security=0`でビルドする。
 
@@ -77,7 +78,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-baseline.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-baseline.ps1 -Configs spipsram,qspipsram720
 ```
 
-全構成（16構成）をビルドし、構成ごとのmanifest（command、source/bitstream hash、CST/SDC、資源、slack、合否）を`reports/<revision>/<tool>/<構成>/`へ保存する。既定のgateはWNS ≥ +0.10ns。未コミットの変更があるときは差分hashを含む別のディレクトリへ保存する。`reports/`はGit管理外。
+保守対象の14構成（deprecatedの`demo`／`demo720`を除く）をビルドし、構成ごとのmanifest（command、source/bitstream hash、CST/SDC、資源、slack、合否）を`reports/<revision>/<tool>/<構成>/`へ保存する。既定のgateはWNS ≥ +0.10ns。未コミットの変更があるときは差分hashを含む別のディレクトリへ保存する。`reports/`はGit管理外。
 
 ## SRAMへの書込み
 
@@ -86,7 +87,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-baseline.ps1 -Conf
 ```powershell
 $prog='C:\Gowin\Gowin_V1.9.11.03_Education_x64\Programmer\bin\programmer_cli.exe'
 & $prog --cable "Gowin USB Cable(FT2CH)" --channel 0 --frequency 2.5MHz --device GW1NR-9C --run 0
-& $prog --cable "Gowin USB Cable(FT2CH)" --channel 0 --frequency 2.5MHz --device GW1NR-9C --run 4 --fsFile "$PWD\build\nano9k-demo\impl\pnr\kagura_demo.fs"
+& $prog --cable "Gowin USB Cable(FT2CH)" --channel 0 --frequency 2.5MHz --device GW1NR-9C --run 4 --fsFile "$PWD\build\nano9k-qspipsram\impl\pnr\kagura_qspi_psram.fs"
 ```
 
 `--run 0`でchip ID `0x1100481B`を確認する。`--run 4`はSRAM Program and Verify、`--run 2`はSRAM Program。内蔵Flashは変わらず、電源断で消える。`PYTHONIOENCODING`が設定されているとprogrammer_cliの初期化に失敗した環境があり、その場合は`$env:PYTHONIOENCODING=$null`にする。

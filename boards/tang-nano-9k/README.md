@@ -20,7 +20,7 @@ KAGURA-9の対象ボード。board top（`kagura_*_top.sv`）、ピン制約（`
 |---|---|---|
 | `kagura_phase1_top` | `hdmi`（カラーバー＋固定テスト音） | `phase1.cst` |
 | `kagura_phase1_dvi_top` | `dvi` | `phase1.cst` |
-| `kagura_demo_top` | `demo` | `phase1.cst` |
+| `kagura_demo_top`（deprecated） | `demo` | `phase1.cst` |
 | `kagura_phase2_top` | `phase2`（W65C02S） | `phase1.cst`＋`phase2-cpu.cst` |
 | `kagura_phase2_boot_top` | `phase2boot` | 上記＋`boot.cst` |
 | `kagura_host_top` | `spi`・`qspi`・`spipsram`・`qspipsram` | `phase1.cst`＋`host.cst` |

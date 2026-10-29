@@ -22,7 +22,7 @@
 ## 背景
 
 - 64×32 entryのmap（512×256画素）を1面持つ。画面左上は(SCROLL_X mod 512, SCROLL_Y mod 256)のmap座標で、端は反対側へwrapする。
-- 各entryは1024 patternのどれか、palette 0..15、左右・上下反転を持つ。
+- 各entryは1200 patternのどれか、palette 0..15、左右・上下反転を持つ。
 - 画素値0は透明で、BACKDROP（palette index 0..255）の色になる。それ以外は`palette*16+画素値`の色。
 - BG_ENABLE=0では全画素がBACKDROP色。DISPLAY_ENABLE=0では背景もspriteも描かず、全画素が黒。
 

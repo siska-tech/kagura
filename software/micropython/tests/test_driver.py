@@ -146,12 +146,12 @@ class RegisterModel:
     lanes, baudrate = 4, 5_000_000
     def __init__(self):
         self.reg = bytearray(32)
-        self.reg[R.REG_ID0:R.REG_CAPS + 1] = bytes((R.ID0, R.ID1, 0, 5, 0x7B))
+        self.reg[R.REG_ID0:R.REG_CAPS + 1] = bytes((R.ID0, R.ID1, R.ABI_MAJOR, R.ABI_MINOR, 0x7B))
         self.reg[R.REG_STATUS] = R.STATUS_INIT_DONE
         self.ext = bytearray(256)
         self.ext[R.EXT_SCREEN_HEIGHT] = 180
         self.audio = bytearray(256)
-        self.memory = bytearray(0xA800)
+        self.memory = bytearray(0xC600)
         self.pending = []
         self.calls = []
         self.read_requests = 0
@@ -193,6 +193,7 @@ class RegisterModel:
                 if self.reg[R.REG_STATUS] & R.STATUS_READ_READY:
                     self.reg[R.REG_ERROR_CODE] |= R.ERROR_CODE_READ_COLLISION
                     continue
+                self._drain()
                 self.read_requests += 1
                 self.reg[R.REG_VRAM_READ_RESULT] = self.memory[self._addr()]
                 self._advance()
@@ -232,7 +233,7 @@ class DeviceTests(unittest.TestCase):
         self.d.probe()
 
     def test_probe(self):
-        self.assertEqual((self.d.abi, self.d.height, self.d.caps), ((0, 5), 180, 0x7B))
+        self.assertEqual((self.d.abi, self.d.height, self.d.caps), ((0, 6), 180, 0x7B))
 
     def test_abi_zero_requires_exact_minor(self):
         self.model.reg[R.REG_ABI_MINOR] = 4
@@ -314,7 +315,7 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(self.model.memory[0x8000:0x9000], b"\x5a" * 4096)
 
     def test_ranges_and_capability(self):
-        for address, length in ((0x7FFF, 2), (0x9600, 1), (0x9000, 1), (0x7FFFFF, 2)):
+        for address, length in ((0x7FFF, 2), (0x9600, 1), (0x9100, 1), (0x7FFFFF, 2)):
             with self.assertRaises(ValueError):
                 self.d.write_memory(address, bytes(length))
         self.d.caps = 0
@@ -336,6 +337,36 @@ class DeviceTests(unittest.TestCase):
         with self.assertRaisesRegex(OSError, "STATUS"):
             self.d.wait_status(R.STATUS_READ_READY, R.STATUS_READ_READY)
         self.assertEqual(self.d.busy, 0)
+
+    def test_extended_tiles_and_split_upload(self):
+        video = Video(self.d)
+        video.tiles(1023, b"a" * 32 + b"b" * 32)
+        video.tile(1199, b"z" * 32)
+        self.d.fence()
+        self.assertEqual(self.model.memory[0x7FE0:0x8000], b"a" * 32)
+        self.assertEqual(self.model.memory[0xB000:0xB020], b"b" * 32)
+        self.assertEqual(self.model.memory[0xC5E0:0xC600], b"z" * 32)
+        self.assertEqual(self.model.memory[0x8000:0x9000], bytes(4096))
+        before = len(self.model.calls)
+        for index, data in ((1200, bytes(32)), (1199, bytes(64)), (0, bytes(31))):
+            with self.assertRaises(ValueError):
+                video.tiles(index, data)
+        self.assertEqual(len(self.model.calls), before)
+
+    def test_extended_map_preserves_neighbors_palette_and_flip(self):
+        video = Video(self.d)
+        video.map_entry(7, 0, 1199, 15, True, True)
+        video.map_entry(8, 0, 1024, 6)
+        self.d.fence()
+        self.assertEqual(self.model.memory[0x9000:0x9002], bytes((128, 1)))
+        word = int.from_bytes(self.model.memory[0x800E:0x8010], "little")
+        self.assertEqual(word, 175 | 15 << 10 | 3 << 14)
+        video.map_entry(7, 0, 1023, 0)
+        self.d.fence()
+        self.assertEqual(self.model.memory[0x9000:0x9002], bytes((0, 1)))
+        video.sprite(0, tile=1199, palette=15)
+        self.d.fence()
+        self.assertEqual(self.model.memory[0xA004:0xA006], bytes((175, 124)))
 
     def test_sprite_signed_and_flags(self):
         Video(self.d).sprite(255, -1, -512, tile=1023, palette=15, size16=True, behind=True)
