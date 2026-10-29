@@ -19,11 +19,21 @@ class Acceleration:
             raise ValueError('DMA chunk must be 128, 256 or 512')
         if transport._active or transport._closed:
             raise RuntimeError('transport closed or already in use')
-        if dma_pack.viper_pack is None or transport._dma_tx is None:
-            raise RuntimeError('RP2040 Viper/DMA unavailable')
         self.transport = transport
         self.closed = False
+        self.enabled = False
+        self.reason = ''
         self.previous = {}
+        self.pump = None
+        if dma_pack.viper_pack is None or dma_pack.viper_pack32 is None:
+            self.reason = 'Viper DMA kernel unavailable'
+            return
+        if fifo and fifo_xfer.pump is None:
+            self.reason = 'Viper FIFO kernel unavailable'
+            return
+        if transport._dma_tx is None:
+            self.reason = 'DMA unavailable'
+            return
         self.words = transport._words
         for name in ('_xfer', 'write', 'readinto', '_xfer_dma'):
             self.previous[name] = transport.__dict__.get(name)
@@ -33,17 +43,25 @@ class Acceleration:
         self.pump = fifo_xfer.Pump(transport, timeout_type) if fifo else None
         if packer is None:
             packer = dma_pack.pack32
-        transport._words = words
-        transport._xfer_dma = lambda data, queued: dma_pack.transfer(
-            transport, data, queued, timeout_type, chunk, packer)
-        if self.pump:
-            transport._xfer = self.pump.transfer
-            transport.write = self.pump.write
-            transport.readinto = self.pump.readinto
+        try:
+            transport._words = words
+            transport._xfer_dma = lambda data, queued: dma_pack.transfer(
+                transport, data, queued, timeout_type, chunk, packer)
+            if self.pump:
+                transport._xfer = self.pump.transfer
+                transport.write = self.pump.write
+                transport.readinto = self.pump.readinto
+            self.enabled = True
+        except BaseException:
+            self.close()  # Also restore a partially installed session.
+            raise
 
     def close(self):
         if self.closed:
             return
+        if not self.previous:
+            self.closed = True
+            return  # Unavailable native kernels never touched the transport.
         raw = self.transport
         if raw._active or (not raw._closed and (raw._dma_tx.active() or raw._dma_rx.active())):
             raise RuntimeError('cannot disable acceleration during a transfer')
@@ -54,6 +72,7 @@ class Acceleration:
             else:
                 setattr(raw, name, previous)
         raw._words = self.words
+        self.enabled = False
         self.closed = True
 
     def __enter__(self):

@@ -4,6 +4,11 @@
 既存ゲーム・承認済みBGM/効果音・全音源・64 OAM・エラー検査を維持した。
 専用Cユーザーモジュールは追加していない。
 
+**35.70fpsは`target_fps=0`でのゲームループ更新頻度であり、実表示の更新fpsではない。**
+入力・ゲームロジック・描画転送・音声処理を1回実行して1更新と数える。
+COMMIT発行/完了確認も35.70Hzだったが、固有の画面反映回数を直接測定してはいない。
+VBlankカウンタやCOMMIT回数から実表示fpsを推定せず、`actual_pixel_update_hz=None`を維持する。
+
 ## 同一条件の比較
 
 QSPI 5MHz、720p、HEAVY、400フレーム、入力なしの自動操縦、GC周期4、
@@ -191,6 +196,18 @@ shooter.run(console=kagura_console, mode='HEAVY', duration=300,
 MicroPython v1.26のmpy-crossへ`-march=armv6m`を指定する。
 古い凍結driverではdma_pack/fifo_xfer/accelerationをrootへ
 `kagura_dma_pack`/`kagura_fifo_xfer`/`kagura_acceleration`名で追加できる。
+native部は`dma_pack_viper.py`と`fifo_xfer_viper.py`に分離している。
+古い凍結driverではこれらも`kagura_dma_pack_viper`/`kagura_fifo_xfer_viper`名で追加する。
+nativeファイル未配置、非対応emitter、互換性のないnative .mpyでは通常driverへ戻る。
+結果の`dma_effective`と`acceleration_reason`、`renderer`と`renderer_reason`で実使用経路を確認できる。
+稼働中の通信例外をフォールバックで隠したり、部分転送を再送する動作は行わない。
+
+追加確認ではカーネル分離後も400更新・35.035fps、音声/FPGAエラー0だった。
+RP2040上でViper DMA関数を無効化すると、全音源64 OAMを通常driverで30更新し、
+`dma_effective='driver'`、音声/FPGAエラー0、元のDMAバッファとメソッドの維持、REPL復帰を確認した。
+これは能力不在の注入試験であり、Viperを省いた別ファームウェアでの実測ではない。
+PIO/DMA停止後の復旧、DMA稼働中Ctrl-C、ゲーム中Ctrl-Cと全音源停止も再試験して成功。
+確認ログは`hardware-performance-20261029/confirm-*.txt`、再現コードは`confirm_fallback.py`。
 
 測定スクリプトは生ログと同じディレクトリの`transfer_matrix.py`、`dma_profile.py`、
 `integration_cases.py`、`instrument_overhead.py`、`dma_interrupt.py`、`fault_injection.py`、`ctrlc.py`。
@@ -203,13 +220,16 @@ SPI/QSPIの切替は対応FPGA bitstreamを設定してから接続し直す。
 
 ## ローカル検証と残る確認
 
-ドライバ57、ゲーム/音声/統計22、FIFO4、日本語29の計112テストが全て成功。
+当初のドライバ57、ゲーム/音声/統計22、FIFO4、日本語29の計112テストが全て成功。
+追加確認でnative import失敗、通常経路への復帰、途中導入の割込み復旧を5件追加し、
+ゲーム試験は27件、全体は117件になった。同じテストをGitHub Actionsでも実行する。
 固定版フォントZIPを取得し、コミット済みフォントの再生成一致も確認した。
 実際のPIO assemblerと既存SPI/QSPIタイミングモデル、定数生成、設計整合性、
 ARMv6-M mpy-crossコンパイルも成功。Pico/Pico Wの凍結UF2は既存WSLビルドでリンク成功。
 そのUF2を実機へは書いていない。実機は既存v1.26系UF2への後付けモジュールで測定した。
 公式配布UF2そのものの再試験は今回未実施。追加Cモジュールや独自C APIへの依存はない。
-GitHub Actionsの設定へFIFOテストを追加したが、未pushのためリモートActionsは未実行。
+GitHub Actionsの設定へFIFOテストを追加した。
+コミットごとの結果は[MicroPython workflow](https://github.com/siska-tech/kagura/actions/workflows/micropython.yml)で確認する。
 
 次の改善余地は、COMMIT/VBlank待機とGC・音声イベント集中による長いフレーム。
 OAM構築は約0.92ms、DMA待機は約0.27msなので、ここだけの追加最適化で

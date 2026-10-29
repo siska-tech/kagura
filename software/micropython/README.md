@@ -107,6 +107,8 @@ with dev.transport.accelerate(chunk=512):
 ```
 
 転送が完了してからスコープを抜けること。元のメソッドとDMAバッファへ復元する。
+nativeカーネルを読み込めない場合は通常driverを維持し、返されたsessionの
+`enabled=False`と`reason`へ記録する。通信開始後の例外は隠さず、既存abort処理を実行する。
 
 ```python
 from kagura import connect

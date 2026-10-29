@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 """Optional RP2 Viper byte-to-PIO-word expansion, preserving the wire format."""
-import micropython
 import sys
 from time import ticks_us, ticks_diff
 
@@ -14,25 +13,18 @@ def python_pack(data, high, words, start, count):
 
 # @micropython.viper is compiler syntax, not a runtime module attribute.
 # CPython host tests deliberately take the reference implementation instead.
+viper_pack = viper_pack32 = None
+native_error = None
 if sys.implementation.name == 'micropython':
-    @micropython.viper
-    def viper_pack(data, high, words, start: int, count: int):
-        source = ptr8(data)
-        table = ptr16(high)
-        destination = ptr16(words)
-        for j in range(count):
-            destination[j * 2 + 1] = table[source[start + j]]
+    try:
+        try:
+            from .dma_pack_viper import viper_pack, viper_pack32
+        except ImportError:
+            from kagura_dma_pack_viper import viper_pack, viper_pack32
+    except (ImportError, SyntaxError, ValueError) as error:
+        # Missing helper, unsupported emitter, or incompatible native .mpy.
+        native_error = repr(error)
 
-    @micropython.viper
-    def viper_pack32(data, high, words, start: int, count: int):
-        source = ptr8(data)
-        table = ptr16(high)
-        destination = ptr32(words)
-        for j in range(count):
-            destination[j] = uint(table[source[start + j]]) << 16
-else:
-    viper_pack = None
-    viper_pack32 = None
 
 def pack(data, high, words, start, count):
     # Transport.write passes a memoryview. Preserve the old element-wise

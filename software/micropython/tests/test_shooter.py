@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Behavioral host tests; hardware performance is never simulated here."""
 import gc
+import builtins
 import importlib.util
 from pathlib import Path
 import sys
@@ -122,6 +123,89 @@ def console_for(device):
 
 
 class ShooterTests(unittest.TestCase):
+    def test_optional_native_import_failures_keep_reference_driver(self):
+        original_import = builtins.__import__
+        for module, native, symbol in (('dma_pack','dma_pack_viper','viper_pack'),
+                                        ('fifo_xfer','fifo_xfer_viper','pump')):
+            path = ROOT / ('software/micropython/kagura/'+module+'.py')
+            for error in (ImportError('missing helper'), SyntaxError('unsupported emitter'),
+                          ValueError('incompatible .mpy file')):
+                def unavailable(name,*args,**kwargs):
+                    if native in name:
+                        raise error
+                    return original_import(name,*args,**kwargs)
+                namespace = {'__name__':'kagura.fallback_test','__package__':'kagura'}
+                with patch.object(sys.implementation,'name','micropython'),patch.object(builtins,'__import__',unavailable):
+                    exec(compile(path.read_text(encoding='utf-8'),str(path),'exec'),namespace)
+                self.assertIsNone(namespace[symbol])
+                self.assertTrue(namespace['native_error'])
+                if module == 'dma_pack':
+                    words = [0]*4
+                    namespace['pack'](b'\x01\x02',list(range(256)),words,0,2)
+                    self.assertEqual(words,[0,1,0,2])
+
+    def test_acceleration_unavailable_never_mutates_transport(self):
+        from kagura import acceleration as A
+        for pack, pack32, fifo, dma in ((None,None,None,True),(1,1,None,True),(1,1,1,None)):
+            raw = types.SimpleNamespace(_active=False,_closed=False,_dma_tx=dma)
+            before = raw.__dict__.copy()
+            with patch.object(A.dma_pack,'viper_pack',pack),patch.object(A.dma_pack,'viper_pack32',pack32),patch.object(A.fifo_xfer,'pump',fifo):
+                with A.Acceleration(raw,RuntimeError) as session:
+                    self.assertFalse(session.enabled)
+                    self.assertTrue(session.reason)
+            self.assertEqual(raw.__dict__,before)
+
+    def test_game_falls_back_when_native_helpers_missing(self):
+        original_import = builtins.__import__
+        def missing(name,*args,**kwargs):
+            if name in ('kagura.acceleration','kagura_acceleration','shooter_oam_viper'):
+                raise ImportError('native helper intentionally absent')
+            return original_import(name,*args,**kwargs)
+        d = Device(caps=0)
+        raw = d.transport
+        with patch.object(builtins,'__import__',missing):
+            result = shooter.run(device=d,mode='BASE',frames=4,report=False,
+                                 input_fn=lambda:0,target_fps=0,renderer='viper',dma='accelerated')
+        self.assertEqual(result['frames'],4)
+        self.assertEqual(result['dma_effective'],'driver')
+        self.assertTrue(result['acceleration_reason'])
+        self.assertEqual(result['renderer'],'python')
+        self.assertTrue(result['renderer_reason'])
+        self.assertIs(d.transport,raw)
+
+    def test_game_falls_back_when_viper_unavailable(self):
+        from kagura import acceleration as A
+        d = Device(caps=0)
+        d.transport._active = d.transport._closed = False
+        raw = d.transport
+        before = raw.__dict__.copy()
+        with patch.object(A.dma_pack,'viper_pack',None):
+            result = shooter.run(device=d,mode='BASE',frames=4,report=False,
+                                 input_fn=lambda:0,target_fps=0,dma='accelerated')
+        self.assertEqual(result['dma_effective'],'driver')
+        self.assertEqual(result['acceleration_reason'],'Viper DMA kernel unavailable')
+        self.assertEqual(raw.__dict__,before)
+
+    def test_partial_acceleration_install_is_rolled_back(self):
+        from kagura import acceleration as A
+        from array import array
+        class Interrupted(types.SimpleNamespace):
+            def __setattr__(self,name,value):
+                if name=='write' and self.__dict__.get('interrupt'):
+                    self.__dict__['interrupt'] = False
+                    raise KeyboardInterrupt
+                super().__setattr__(name,value)
+        fn = lambda *args,**kwargs:None
+        raw = Interrupted(_active=False,_closed=False,_dma_tx=types.SimpleNamespace(active=lambda:False),
+                          _dma_rx=types.SimpleNamespace(active=lambda:False),_words=array('H',[0]*256),
+                          _sm_id=0,lanes=4,timeout_us=100000,_xfer=fn,write=fn,readinto=fn,interrupt=True)
+        before = raw.__dict__.copy()
+        before['interrupt'] = False
+        with patch.object(A.dma_pack,'viper_pack',1),patch.object(A.dma_pack,'viper_pack32',1),patch.object(A.fifo_xfer,'pump',fn):
+            with self.assertRaises(KeyboardInterrupt):
+                A.Acceleration(raw,RuntimeError,chunk=512)
+        self.assertEqual(raw.__dict__,before)
+
     def test_exclusive_statistics_and_detail_ring(self):
         stats = T.Stats(16, detail=True)
         for _ in range(33):
@@ -167,7 +251,7 @@ class ShooterTests(unittest.TestCase):
                                     _words=array('H',[0]*256),_sm_id=0,lanes=4,timeout_us=100000,
                                     _xfer=fn,write=fn,readinto=fn)
         before = raw.__dict__.copy()
-        with patch.object(A.dma_pack,'viper_pack',object()),patch.object(A.fifo_xfer,'pump',fn):
+        with patch.object(A.dma_pack,'viper_pack',object()),patch.object(A.dma_pack,'viper_pack32',object()),patch.object(A.fifo_xfer,'pump',fn):
             with self.assertRaises(KeyboardInterrupt):
                 with A.Acceleration(raw,RuntimeError,chunk=512):
                     self.assertEqual(len(raw._words),1024)

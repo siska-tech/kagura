@@ -120,10 +120,15 @@ class Game:
         if renderer not in ('python', 'viper'):
             raise ValueError('renderer must be python or viper')
         self.renderer = renderer
+        self.renderer_reason = ''
         self._oam_builder = None
         if renderer == 'viper':
-            from shooter_oam_viper import build
-            self._oam_builder = build
+            try:
+                from shooter_oam_viper import build
+                self._oam_builder = build
+            except (ImportError, SyntaxError, ValueError) as error:
+                self.renderer = 'python'
+                self.renderer_reason = repr(error)
         self.device, self.video = device, Video(device)
         self.mode, self.load, self.extreme_sprites = mode, load, sprites
         if mode == 'HEAVY':
@@ -662,16 +667,23 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
     dma_override = False
     prior_dma_override = None
     acceleration = None
+    dma_effective, acceleration_reason = dma, ''
     try:
         if paused:
             console.pause()
         if dma == 'accelerated':
             try:
-                from kagura.acceleration import Acceleration
-            except ImportError:
-                from kagura_acceleration import Acceleration
-            from kagura.transport_rp2 import TransferTimeout
-            acceleration = Acceleration(old_transport, TransferTimeout, chunk=dma_chunk)
+                try:
+                    from kagura.acceleration import Acceleration
+                except ImportError:
+                    from kagura_acceleration import Acceleration
+            except (ImportError, SyntaxError, ValueError) as error:
+                dma_effective, acceleration_reason = 'driver', repr(error)
+            else:
+                from kagura.transport_rp2 import TransferTimeout
+                acceleration = Acceleration(old_transport, TransferTimeout, chunk=dma_chunk)
+                if not acceleration.enabled:
+                    dma_effective, acceleration_reason = 'driver', acceleration.reason
         elif dma != 'driver':
             try:
                 from kagura import dma_pack as dma_helper
@@ -802,8 +814,11 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
                           baudrate=getattr(old_transport, 'baudrate', None),
                           target_fps=target_fps, enhanced=enhanced, gc_interval=gc_interval,
                           bgm_gain=bgm_gain,
-                          renderer=renderer,
+                          renderer_requested=renderer,
+                          renderer=game.renderer if game else renderer,
+                          renderer_reason=game.renderer_reason if game else '',
                           dma=dma,
+                          dma_effective=dma_effective, acceleration_reason=acceleration_reason,
                           dma_chunk=dma_chunk,
                           profile=profile, instrument_transport=instrument_transport,
                           minimum_free_bytes=minimum_free,

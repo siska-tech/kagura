@@ -39,6 +39,8 @@ shooter.run(console=kagura_console, renderer='viper', dma='accelerated', dma_chu
 
 `dma='accelerated'`を古いUF2で使う場合は、`kagura/fifo_xfer.py`と`kagura/acceleration.py`もそれぞれ`/kagura_fifo_xfer.py`・`/kagura_acceleration.py`へ配置します。通常のMicroPythonへの後付けに対応し、Cモジュール入り専用UF2は不要です。従来の`dma='driver'/'python'/'viper'`も維持しています。`profile=True`は各区間の中央値・p95を直近128フレーム分保存します。空きメモリの最小値はGC周期ごとのサンプル値です。
 
+nativeカーネルの`kagura/dma_pack_viper.py`と`kagura/fifo_xfer_viper.py`も必要です。古いUF2では`/kagura_dma_pack_viper.py`・`/kagura_fifo_xfer_viper.py`へ配置してください。Viperが使用不能・nativeファイルが未配置の場合、`dma='accelerated'`は通常driverへ自動で戻り、結果の`dma_effective='driver'`と`acceleration_reason`に記録します。OAMのViper helperが使えない場合もPython構築へ戻り、`renderer_reason`へ記録します。通信中のエラーでは既存どおりabortし、例外を返します。
+
 起動コンソールがある場合は必ず`console=kagura_console`を渡してください。同じPIO SMを`connect()`で再取得しないでください。コンソールを使わない接続例:
 
 ```python

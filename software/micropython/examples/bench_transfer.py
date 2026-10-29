@@ -38,6 +38,8 @@ def run(device, repeats=16, lengths=(64,128,256,512,1024,2048)):
                 if method in ('C','D'):
                     session = Acceleration(raw, TransferTimeout,
                                            fifo=method=='D', chunk=512 if method=='D' else 128)
+                    if not session.enabled:
+                        raise RuntimeError('native benchmark unavailable: '+session.reason)
                 else:
                     packer = dma_pack.python_pack if method=='A' else dma_pack.pack
                     raw._xfer_dma = lambda data, queued: dma_pack.transfer(

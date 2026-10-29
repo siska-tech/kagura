@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 import unittest
 
-SOURCE = Path(__file__).resolve().parents[1] / 'kagura/fifo_xfer.py'
+SOURCE = Path(__file__).resolve().parents[1] / 'kagura/fifo_xfer_viper.py'
 
 
 class Registers:
