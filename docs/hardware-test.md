@@ -24,10 +24,10 @@ HDMIの実機互換性と連続動作の受入試験。受入条件は**2機種�
 | 段階 | 構成（`.fs`） | 映像・音声 | 範囲 |
 |---|---|---|---|
 | A | `hdmi`（`kagura_phase1.fs`）、`hdmi720`（`kagura_hdmi720.fs`） | カラーバー＋白枠、左1kHz・右500Hz | 必須。4組合せ×（起動20・抜挿10・1時間） |
-| B | `demo`（`kagura_demo.fs`）、`demo720`（`kagura_demo720.fs`） | シューティング画面が毎フレーム動き、6ch演奏 | 必須。各sink×1本以上で起動5・抜挿3・1時間。残りの組合せは起動5 |
+| B | `qspipsram`／`qspipsram720`＋Pico `show`またはMicroPython STAR RUNNER | Picoが背景・sprite・音源を更新する | 各sink×1本以上で起動5・抜挿3・1時間。残りの組合せは起動5 |
 | C | `qspipsram`/`qspipsram720`＋Pico `stress 3600` | 256 spriteと多重scroll、PSG＋PCM、毎フレームCOPY | 各sinkで1時間 |
 
-段階B・Cは描画と音源を動かし続ける状態の確認で、段階Aの代わりにはならない。起動回数は内蔵Flash（`--run 6`）から行う。1時間試験はSRAM書込みでもよい（その旨を記録する）。
+FPGA standaloneの`demo`／`demo720`はdeprecated。過去の記録は残すが、新しい受入はPicoホストで行う。段階B・Cは描画と音源を動かし続ける状態の確認で、段階Aの代わりにはならない。起動回数は内蔵Flash（`--run 6`）から行う。1時間試験はSRAM書込みでもよい（その旨を記録する）。
 
 ## 判定基準
 
@@ -125,3 +125,7 @@ source: / SHA256（demo）: / SHA256（demo720）: / 書込み先:
 - カラーバー版の音は固定のtest toneなので、入力停止時の無音挿入と復帰は実機では起こせない。simulationの証拠は`tb_hdmi_stream`。
 - 周波数・jitter・TMDSの電気特性・sinkが受け取ったInfoFrameの内容は計測器がなく未測定。
 - S3（TCL）の無信号は、同じ電源・ケーブル・入力でSipeed公式サンプルとKAGURAを比べ、条件を1つずつ変えて調べる。受入試験とは別に記録する。
+
+## 1,200パターン版の数値試験
+
+ABI 0.6では`software/micropython/examples/tile1200_accept.py`を使い、全パターンの生成・読戻しCRC、FILL/COPY境界、上位bit表・OAM、PCM 2chとPSGを併用した連続動作を検証する。実施範囲と結果は[第3段階](tile-1200-stage3.md)を参照。画面・音質・sink／ケーブルの互換性の目視・聴感判定をこの数値試験で代用しない。

@@ -53,7 +53,12 @@ module tb_fill_timing;
         fill_at(24'h007f00,16'd256,1);   // ends at 007FFF
         fill_at(24'h007f00,16'd257,0);   // crosses into map
         fill_at(24'h008000,16'd4096,1);  // whole map
-        fill_at(24'h009000,16'd1,0);     // unimplemented
+        fill_at(24'h009000,16'd256,1);   // complete BG tile-bit10 table
+        fill_at(24'h0090ff,16'd2,0);     // table into hole
+        fill_at(24'h009100,16'd1,0);     // unimplemented
+        fill_at(24'h00b000,16'd5632,1);  // all 176 extra patterns
+        fill_at(24'h00c5ff,16'd2,0);     // extra patterns into hole
+        fill_at(24'h007fff,16'h3002,0);  // cannot bridge map/table/palette holes
         fill_at(24'h009400,16'd512,1);   // palette shadow
         fill_at(24'h00a7ff,16'd2,0);     // OAM shadow into active OAM
         // VRAM_WRITE advances the address; the FILL right after uses the new one.

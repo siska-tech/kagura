@@ -49,6 +49,10 @@ jobs:
         run: ./tools/gen-registers.ps1 -Check
       - name: Driver, terminal and actual PIO assembly/timing tests
         run: python3 -I software/micropython/tests/test_driver.py --rp2 build/micropython-src/ports/rp2/modules/rp2.py
+      - name: Tile framebuffer raster and failure recovery
+        run: python3 -I software/micropython/tests/test_framebuffer.py
+      - name: Numerical hardware fixture contracts
+        run: python3 -I software/micropython/tests/test_tile1200_accept.py
       - name: STAR RUNNER game, audio, asset and telemetry tests
         run: python3 -I software/micropython/tests/test_shooter.py
       - name: Viper FIFO word and interruption semantics

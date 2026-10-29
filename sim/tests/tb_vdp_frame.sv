@@ -3,7 +3,7 @@
 // COMMIT at VBlank, then every visible pixel of a frame compared with a
 // software reference renderer. Real clock periods: VIC1 640x480 (2x2,
 // 54/25.2MHz) or VIC4 1280x720 (4x4, 180 logical lines, 54/74.25MHz).
-module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, parameter bit RASTER=0);
+module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, parameter bit RASTER=0, parameter bit EXTENDED=0);
     localparam integer H_TOTAL=VIC==4 ? 1650 : 800, V_TOTAL=VIC==4 ? 750 : 525;
     localparam integer H_ACTIVE=VIC==4 ? 1280 : 640, V_ACTIVE=VIC==4 ? 720 : 480;
     localparam integer SCALE=VIC==4 ? 4 : 2, LINES=V_ACTIVE/SCALE, XW=VIC==4 ? 11 : 10;
@@ -52,8 +52,8 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
     task automatic ext(input reg [7:0] i,input reg [7:0] v); begin wr(EXT_INDEX,i); wr(EXT_DATA,v); end endtask
 
     // Reference memory.
-    reg [7:0] pattern [0:2047];        // tiles 0..63
-    reg [15:0] map [0:2047];
+    reg [7:0] pattern [0:38399];       // 1200 tiles, only selected tiles loaded
+    reg [16:0] map [0:2047];
     reg [11:0] palette [0:255];
     reg [8:0] sx; reg [7:0] sy, backdrop; reg bg_on;
     reg spr_on=0;
@@ -64,7 +64,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
     function automatic [23:0] expected(input integer x,input integer y);
         integer lx, ly, px, py, row, col, idx,n,size,eligible,xx,yy,t,cp,sxe,sye;
         reg solid,claimed;
-        reg [15:0] m; reg [7:0] b; reg [3:0] p; reg [11:0] c;
+        reg [16:0] m; reg [7:0] b; reg [3:0] p; reg [11:0] c;
         begin
             lx=x/SCALE; ly=y/SCALE;
             sxe=sx; sye=sy;
@@ -73,7 +73,8 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             m=map[(py/8)*64+px/8];
             row=m[15] ? 7-(py%8) : py%8;
             col=m[14] ? 7-(px%8) : px%8;
-            b=pattern[m[9:0]*32+row*4+col/2];
+            t={m[16],m[9:0]};
+            b=t<1200 ? pattern[t*32+row*4+col/2] : 8'h00;
             p=col%2==0 ? b[7:4] : b[3:0];
             idx=(bg_on && p!=0) ? m[13:10]*16+p : backdrop;
             c=palette[idx];
@@ -87,7 +88,7 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
                         if((sprite_flags[n]&4)!=0) xx=size-1-xx;
                         if((sprite_flags[n]&8)!=0) yy=size-1-yy;
                         t=size==16 ? (sprite_tile[n]/4)*4+2*(yy/8)+xx/8 : sprite_tile[n];
-                        b=pattern[t*32+(yy%8)*4+(xx%8)/2];
+                        b=t<1200 ? pattern[t*32+(yy%8)*4+(xx%8)/2] : 8'h00;
                         cp=xx%2==0 ? b[7:4] : b[3:0];
                         if(cp!=0) begin
                             claimed=1;
@@ -100,6 +101,24 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         end
     endfunction
 
+    // Exercise each bank boundary, the last 16px group, and invalid IDs.
+    function automatic integer chosen_tile(input integer n);
+        case(n%12)
+            0: chosen_tile=1023;
+            1: chosen_tile=1024;
+            2: chosen_tile=1087;
+            3: chosen_tile=1088;
+            4: chosen_tile=1151;
+            5: chosen_tile=1152;
+            6: chosen_tile=1199;
+            7: chosen_tile=1200;
+            8: chosen_tile=2047;
+            default: chosen_tile=n%64;
+        endcase
+    endfunction
+    function automatic [23:0] tile_address(input integer n);
+        tile_address=n<1024 ? 24'(n*32) : 24'h00b000+24'((n-1024)*32);
+    endfunction
     integer i, x, y, errors_seen, max_cycles=0, renders=0;
     reg [7:0] v, frames_before;
     reg [63:0] sprite_record;
@@ -175,13 +194,13 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         // Poison both physical line banks, proving startup uses write-port
         // clearing rather than simulator/default bitstream RAM contents.
         for(i=0;i<512;i=i+1) begin
-            dut.display.bank[0].ram.memory[i]=16'hffff;
-            dut.display.bank[1].ram.memory[i]=16'hffff;
+            dut.display.line_ram.memory[i]=16'hffff;
+            dut.display.line_ram.memory[512+i]=16'hffff;
         end
         #200; sys_reset=0; pix_reset=0;
         wait(dut.init_done);
         for(i=0;i<512;i=i+1)
-            if(dut.display.bank[0].ram.memory[i]!==0 || dut.display.bank[1].ram.memory[i]!==0)
+            if(dut.display.line_ram.memory[i]!==0 || dut.display.line_ram.memory[512+i]!==0)
                 $fatal(1,"line bank not initialized at %d",i);
         repeat(10) @(posedge sys);
         // ABI 0.2: SCREEN_HEIGHT reports the logical line count.
@@ -195,11 +214,31 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         // 64 tiles of random patterns.
         set_addr(24'h000000);
         for(i=0;i<2048;i=i+1) begin pattern[i]=8'($urandom); wr(VRAM_WRITE,pattern[i]); end
-        // Map: random tile 0..63, palette, flips.
+        if(EXTENDED) begin
+            // Include every tile in aligned groups that boundary sprites use.
+            for(integer t=1020;t<1200;t=t+1)
+                if(t<=1027 || (t>=1084 && t<=1091) ||
+                    (t>=1148 && t<=1155) || t>=1196) begin
+                    set_addr(tile_address(t));
+                    for(integer b=0;b<32;b=b+1) begin
+                        pattern[t*32+b]=8'($urandom);
+                        wr(VRAM_WRITE,pattern[t*32+b]);
+                    end
+                end
+        end
+        // Map: randomized palette/flips, with optional 11-bit boundary IDs.
         set_addr(24'h008000);
         for(i=0;i<2048;i=i+1) begin
-            map[i]={2'($urandom),4'($urandom),4'd0,6'($urandom)};
+            map[i]={1'b0,2'($urandom),4'($urandom),4'd0,6'($urandom)};
+            if(EXTENDED) begin map[i][16]=chosen_tile(i)>=1024; map[i][9:0]=10'(chosen_tile(i)); end
             wr(VRAM_WRITE,map[i][7:0]); wr(VRAM_WRITE,map[i][15:8]);
+        end
+        if(EXTENDED) begin
+            set_addr(24'h009000);
+            for(i=0;i<256;i=i+1) begin
+                for(integer k=0;k<8;k=k+1) v[k]=map[i*8+k][16];
+                wr(VRAM_WRITE,v);
+            end
         end
         if(SPRITES) begin
             // All 256 entries: 20 on line 10 (overflow at index 16), then
@@ -209,13 +248,14 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             for(i=0;i<256;i=i+1) begin
                 sprite_x[i]=i<20 ? 100+(i%5)*2 : (i*19)%350-15;
                 sprite_y[i]=i<20 ? 10 : i<240 ? 28+((i-20)*7)%200 : i-250;
-                sprite_tile[i]=i%16*4+3; sprite_pal[i]=i%16;
+                sprite_tile[i]=EXTENDED ? chosen_tile(i) : i%16*4+3; sprite_pal[i]=i%16;
                 sprite_flags[i]=(i>=64 && i%3==0 ? 1 : 3) | ((i%8)*4);
                 if(i>=20 && i%11==0) sprite_flags[i]=sprite_flags[i]&~1;
                 sprite_record=0;
                 sprite_record[9:0]=10'(sprite_x[i]); sprite_record[25:16]=10'(sprite_y[i]);
                 sprite_record[30:26]=5'(sprite_flags[i]);
                 sprite_record[41:32]=10'(sprite_tile[i]); sprite_record[45:42]=4'(sprite_pal[i]);
+                sprite_record[46]=sprite_tile[i]>=1024;
                 for(integer k=0;k<8;k=k+1) wr(VRAM_WRITE,sprite_record[k*8 +: 8]);
             end
         end
@@ -251,9 +291,9 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
             rd(IRQ_STATUS,v); if(v[5]) $fatal(1,"overflow after sprite disable");
         end
         if(RASTER) begin
-            // CAPS b6 and ABI_MINOR 5; RS_MAX reads 8.
+            // CAPS b6 and ABI_MINOR 6; RS_MAX reads 8.
             rd(5'h1c,v); if(v!==8'h41) $fatal(1,"CAPS %02h",v);
-            rd(5'h1b,v); if(v!==8'h05) $fatal(1,"ABI_MINOR %02h",v);
+            rd(5'h1b,v); if(v!==8'h06) $fatal(1,"ABI_MINOR %02h",v);
             wr(EXT_INDEX,8'h11); rd(EXT_DATA,v); if(v!==8) $fatal(1,"RS_MAX %0d",v);
             // R1: eight entries, the last on the final logical line.
             t_line[0]=3; t_line[1]=20; t_line[2]=21; t_line[3]=60; t_line[4]=100; t_line[5]=150; t_line[6]=LINES-2; t_line[7]=LINES-1;
@@ -309,8 +349,8 @@ module tb_vdp_frame #(parameter bit SPRITES=0, parameter integer VIC=1, paramete
         bg_on=0; spr_on=0; backdrop=0;
         check_frame(3);
         if(max_cycles>(SPRITES ? 2585 : 697)) $fatal(1,"line render took %0d cycles",max_cycles);
-        $display("PASS: VDP frames VIC%0d %0dx%0d (%0dx), SPRITES=%0d, 4 frames x %0d pixels vs reference, %0d line renders, max %0d cycles, VBLANK/RASTER/COMMIT_DONE, poisoned banks and system-only reset",
-            VIC,H_ACTIVE,V_ACTIVE,SCALE,SPRITES,H_ACTIVE*V_ACTIVE,renders,max_cycles);
+        $display("PASS: VDP frames VIC%0d %0dx%0d (%0dx), SPRITES=%0d, EXTENDED=%0d, 4 frames x %0d pixels vs reference, %0d line renders, max %0d cycles, VBLANK/RASTER/COMMIT_DONE, poisoned banks and system-only reset",
+            VIC,H_ACTIVE,V_ACTIVE,SCALE,SPRITES,EXTENDED,H_ACTIVE*V_ACTIVE,renders,max_cycles);
         $finish;
     end
     initial begin #700000000; $fatal(1,"vdp frame timeout"); end

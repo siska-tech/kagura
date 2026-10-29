@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-29",
+  "configuration": "qspipsram720",
+  "mode": "qspi",
+  "baudrate": 5000000,
+  "bitstream_sha256": "52c8675c70262002a20452ef0c447af68adff8a47f1ed24cafcbf2592706b00d",
+  "fixture": "software/micropython/examples/tile1200_visual.py",
+  "fixture_sha256": "3e52d45a00c77b2139ab2323bad4a672a85f5eb4368349bd8efc07fe5a7dddf1",
+  "observer": "user",
+  "page0": {
+    "extra_176_atlas": "pass",
+    "tile_1199_arrow": "pass",
+    "invalid_1200_2047_black": "pass",
+    "pcm_left_375_right_750": "pass",
+    "audible_dropout_or_noise_reported": false,
+    "user_reply": "1.2.3 OKです"
+  },
+  "page1": {
+    "status": "pass",
+    "bg_sprite_boundary_pairs": [
+      1023,
+      1024,
+      1087,
+      1088,
+      1151,
+      1152,
+      1199
+    ],
+    "bg_sprite_match": "pass",
+    "tile_1199_flips": [
+      "normal",
+      "horizontal",
+      "vertical",
+      "both"
+    ],
+    "palette_colors": [
+      "white",
+      "red",
+      "green",
+      "blue"
+    ],
+    "flip_and_palette": "pass",
+    "visible_flicker_or_corruption_reported": false,
+    "audible_dropout_or_noise_reported": false,
+    "error_code": 0,
+    "pcm_active": [
+      true,
+      true
+    ],
+    "user_reply": "123 問題ありません"
+  },
+  "scope": "User observation of two static scenes on the currently connected 720p sink; QSPI 5MHz, Pico host, PCM stereo tones",
+  "visual_verified": true,
+  "audio_quality_verified": true,
+  "not_verified": [
+    "480p visual acceptance",
+    "all 1200 tile pixels individually",
+    "moving sprites or scrolling visual acceptance",
+    "other sinks or cables",
+    "physical reset and power-cycle visual acceptance",
+    "one-hour subjective listening"
+  ],
+  "logs": {
+    "visual-start.log": "d6ae95ae22d1cd842cf0af2b667d55f41a975fe90464f0e89902b43c1894c6d5",
+    "visual-page1.log": "a50a4ab746e4733a41a7fdfa0c3f4fa096707f90587ac002ed1cd9fe7fbe1256"
+  }
+}

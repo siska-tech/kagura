@@ -1,10 +1,12 @@
 # Simulation
 
-`tests/`にSystemVerilogの単体・統合試験を置く。参照モデル、busのホストモデル、HDMI decoder、PSRAMのmodelはtestbench内（共有部品は`support/`）に実装している。WSL/Linuxのrootから`bash tools/test-verilator.sh`で全試験（58件）を実行する。手順・環境変数は[ビルド・テスト](../docs/build-and-test.md#シミュレーション)。
+`tests/`にSystemVerilogの単体・統合試験を置く。参照モデル、busのホストモデル、HDMI decoder、PSRAMのmodelはtestbench内（共有部品は`support/`）に実装している。WSL/Linuxのrootから`bash tools/test-verilator.sh`で全回帰試験を実行する。手順・環境変数は[ビルド・テスト](../docs/build-and-test.md#シミュレーション)。
 
 - 画像はPPM、音声はraw PCMとWAVとして`build/verilator/`へ保存する。期待値はRTLの出力からではなく、独立した参照モデルや仕様の値から作る。
 - 波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する。
 - 専用のC++ harness、`verilator/`・`reference/`ディレクトリは使っていない（空）。
+
+実験ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象と確認済み結果は[第2段階の記録](../docs/tile-1200-stage2.md)を参照。
 
 ## 試験一覧
 
@@ -23,10 +25,12 @@
 | | `tb_spi_bus`、`tb_qspi_bus` | 10MHzのホストモデル、BUSY、中断、競合（`tb_host_bus.sv`） |
 | | `tb_startup_cpu` | VDPの初期化とline 0の準備からCPU adapterのreset解除まで |
 | register・queue | `tb_vram_core` | 公開registerの検査、領域境界、拒否時の副作用、FILL/FENCE、満杯、順序 |
+| | `tb_command_queue` | 32件の満杯・staging、256個の64bit descriptor順序、8回wrap、reset |
 | | `tb_register_abi` | 生成ABI packageとregister RTLのreset値・access可否 |
 | | `tb_fill_timing` | 最大速度の連続要求でFILLの範囲検査が間に合うこと |
 | | `tb_sprite_irq` | SPR_OVERFLOWの捕捉とclearの規則 |
 | 映像 | `tb_vdp_frame`、`tb_vdp_frame720` | 背景の4フレーム全画素比較、IRQ、RASTERの発生位置（先頭・中間・最終ライン・無効値）、systemだけのreset、描画cycle上限 |
+| | `tb_tile1200_frame`、`tb_tile1200_frame720` | 11bit BG／sprite、bank境界・1199・無効番号の透明描画、全画素比較 |
 | | `tb_vdp_sprites`、`tb_vdp_sprites720` | spriteを含む全画素比較、優先順位、behind、16個/line超過 |
 | | `tb_raster_scroll`、`tb_raster_scroll720` | ラスタスクロール表の全画素比較 |
 | | `tb_sprite_selector`、`tb_sprite_composite` | sprite選択と合成の単体 |

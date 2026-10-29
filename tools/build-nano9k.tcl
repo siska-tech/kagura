@@ -133,12 +133,12 @@ set_option -output_base_name $name
 # explicit and reproducible; measured margins are in docs/validation-status.md.
 set_option -place_option 1
 set_option -route_option 1
-# phase2boot720 retains its placement exception. After shortening packet-start
-# and VRAM paths, demo720 meets the development margin with default option 1.
+# phase2boot720 retains its placement exception.
 if {$mode eq "phase2boot720"} { set_option -place_option 0 }
-# Route option 2 keeps qspipsram720's pixel paths and spipsram's EXT read mux
-# within the development margin. PSRAM CK-enable CDC is handled in the PHY.
-if {$mode in {phase2boot720 qspipsram720 spipsram}} { set_option -route_option 2 }
+# The 1200-pattern qspi/qspipsram builds use route option 2 to retain
+# at least 0.10ns setup margin. Existing 720p/PSRAM exceptions remain.
+# PSRAM CK-enable CDC is handled in the PHY.
+if {$mode in {phase2boot720 qspi qspipsram qspipsram720 spipsram}} { set_option -route_option 2 }
 # Optional P&R overrides for controlled exploration.
 if {[info exists ::env(KAGURA_PLACE_OPTION)]} { set_option -place_option $::env(KAGURA_PLACE_OPTION) }
 if {[info exists ::env(KAGURA_ROUTE_OPTION)]} { set_option -route_option $::env(KAGURA_ROUTE_OPTION) }

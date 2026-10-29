@@ -1,0 +1,597 @@
+{
+  "date": "2026-10-29",
+  "scope": "Pico numeric acceptance; visual/audio quality unverified",
+  "branch": "experiment/tile-1200",
+  "hardware": {
+    "fpga": "Tang Nano 9K GW1NR-9C",
+    "chip_id": "0x1100481B",
+    "host": "RP2040 Raspberry Pi Pico",
+    "port": "COM7",
+    "cpu_hz": 125000000,
+    "mode": "qspi",
+    "sck_hz": 5000000,
+    "firmware": "MicroPython v1.26.0-1.g3069c562f KAGURA_PICO, GNU 14.2.1 MinSizeRel",
+    "programming": "SRAM Program and Verify only; FPGA Flash and Pico firmware not written"
+  },
+  "primary": {
+    "log": "reports/tile1200-hardware/soak-qspipsram720.log",
+    "sha256": "235fdb040f213fdcd535a05b26903f1a44ae2328aea3ca133e508e8b66779e34",
+    "raw_repl_complete": true,
+    "result": {
+      "elapsed_ms": 3600308,
+      "copies": 9058,
+      "caps": 123,
+      "pcm": true,
+      "pattern_bytes_verified": 38400,
+      "audio_quality_verified": false,
+      "min_heap": 464,
+      "fps": 59.999588,
+      "table_crc32": 1865178252,
+      "visual_verified": false,
+      "frames": 216017,
+      "initial_checked_bytes": 48384,
+      "full_readback": true,
+      "pattern_crc32": 2221330119,
+      "mode": "qspi",
+      "live_read_bytes": 298914,
+      "cold_clear_verified": true,
+      "event": "pass",
+      "loops": 9058,
+      "height": 180,
+      "map_crc32": 1016374357,
+      "passed": true
+    },
+    "config": "qspipsram720",
+    "rtl_revision": "a85f657",
+    "sdk_revision": "a85f657",
+    "fixture_revision": "cb987b7",
+    "runner_revision": "cb987b7",
+    "telemetry": {
+      "reports": 348,
+      "error_code": 0,
+      "audio_fifo_status": 0,
+      "heap_after_gc_min": 105888,
+      "heap_after_gc_max": 105920,
+      "pcm_status_values": [
+        2,
+        3
+      ]
+    }
+  },
+  "boundary_matrix": [
+    {
+      "log": "reports/tile1200-hardware/boundary-qspi.log",
+      "sha256": "372ada3866586e20ff5b2c8cd0d21b698e3efed8e06278754a9639c5c68491ce",
+      "raw_repl_complete": true,
+      "result": {
+        "elapsed_ms": 60034,
+        "copies": 0,
+        "caps": 83,
+        "pcm": false,
+        "pattern_bytes_verified": 320,
+        "audio_quality_verified": false,
+        "min_heap": 1488,
+        "fps": 59.982676,
+        "table_crc32": 1865178252,
+        "visual_verified": false,
+        "frames": 3601,
+        "initial_checked_bytes": 1376,
+        "full_readback": false,
+        "pattern_crc32": 4270710017,
+        "mode": "qspi",
+        "live_read_bytes": 5214,
+        "cold_clear_verified": true,
+        "event": "pass",
+        "loops": 158,
+        "height": 240,
+        "map_crc32": 1746354414,
+        "passed": true
+      },
+      "config": "qspi",
+      "bitstream_sha256": "37582e4bd64a6f544cdda528b178d2b6630350b7b3b1de3a52df1e897a3dca93",
+      "rtl_revision": "a85f657",
+      "sdk_revision": "a85f657",
+      "fixture_revision": "cb987b7"
+    },
+    {
+      "log": "reports/tile1200-hardware/boundary-qspi720.log",
+      "sha256": "b584b87645a7163bb4d7bd5e0f83880241bb3bbc35d1d2719b271cc7f2ac8de0",
+      "raw_repl_complete": true,
+      "result": {
+        "elapsed_ms": 60097,
+        "copies": 0,
+        "caps": 115,
+        "pcm": false,
+        "pattern_bytes_verified": 320,
+        "audio_quality_verified": false,
+        "min_heap": 2064,
+        "fps": 59.986356,
+        "table_crc32": 1865178252,
+        "visual_verified": false,
+        "frames": 3605,
+        "initial_checked_bytes": 1376,
+        "full_readback": false,
+        "pattern_crc32": 4270710017,
+        "mode": "qspi",
+        "live_read_bytes": 5214,
+        "cold_clear_verified": true,
+        "event": "pass",
+        "loops": 158,
+        "height": 180,
+        "map_crc32": 1746354414,
+        "passed": true
+      },
+      "config": "qspi720",
+      "bitstream_sha256": "b7aaaf840f28da58914fa56db188ca76cc90c9064067c40273e3b76b947dccd9",
+      "rtl_revision": "a85f657",
+      "sdk_revision": "a85f657",
+      "fixture_revision": "cb987b7"
+    },
+    {
+      "log": "reports/tile1200-hardware/boundary-qspipsram.log",
+      "sha256": "726b3a4a8f628118195e6bc443754511dec722fe223f12d274a88ed8def5fd0c",
+      "raw_repl_complete": true,
+      "result": {
+        "elapsed_ms": 60312,
+        "copies": 152,
+        "caps": 91,
+        "pcm": true,
+        "pattern_bytes_verified": 320,
+        "audio_quality_verified": false,
+        "min_heap": 5296,
+        "fps": 59.988064,
+        "table_crc32": 1865178252,
+        "visual_verified": false,
+        "frames": 3618,
+        "initial_checked_bytes": 1376,
+        "full_readback": false,
+        "pattern_crc32": 4270710017,
+        "mode": "qspi",
+        "live_read_bytes": 5016,
+        "cold_clear_verified": true,
+        "event": "pass",
+        "loops": 152,
+        "height": 240,
+        "map_crc32": 1746354414,
+        "passed": true
+      },
+      "config": "qspipsram",
+      "bitstream_sha256": "2d00ee52dcff0edb7ad22c3d7910358ca1fe4221619bc0b2332b774ee8f133d9",
+      "rtl_revision": "a85f657",
+      "sdk_revision": "a85f657",
+      "fixture_revision": "23bd23f"
+    }
+  ],
+  "cache_and_reconnect": {
+    "log": "reports/tile1200-hardware/cache-qspipsram.log",
+    "sha256": "e628c2efcd0b8f566ddfd04decb120c6b73e47b6e45ff2bfced61971e50bafc3",
+    "raw_repl_complete": true,
+    "result": {
+      "visual_verified": false,
+      "last_tile": 1199,
+      "reconnect": true,
+      "palette_preserved": true,
+      "sticky_fault_preserved": true,
+      "height": 240,
+      "slots": 1072,
+      "overflow_io": 0,
+      "event": "pass",
+      "passed": true,
+      "neighbors_preserved": true
+    },
+    "config": "qspipsram",
+    "sdk_revision": "298341a",
+    "fixture_revision": "0d0af8a",
+    "deployed_files": [
+      {
+        "source": "software/micropython/kagura/device.py",
+        "remote": "/lib/kagura1200/device.py",
+        "sha256": "787b3d3c180cf9d0ab7803d8ba376c1c71230381c288ff942f8921ddde80fddd",
+        "namespace_replace": null
+      },
+      {
+        "source": "software/micropython/kagura/terminal.py",
+        "remote": "/lib/kagura1200/terminal.py",
+        "sha256": "73f13812cf2473d503f147e678fd765db51218795b9c66301fd4ab1546ce9907",
+        "namespace_replace": [
+          "from kagura_ja import",
+          "from kagura_ja1200 import"
+        ]
+      },
+      {
+        "source": "software/micropython/kagura_ja/__init__.py",
+        "remote": "/lib/kagura_ja1200.py",
+        "sha256": "23fe00570dd0765dd1b31e64813bcfdf5a409097d59abb2d0c46cb068a147be0",
+        "namespace_replace": [
+          "from kagura.",
+          "from kagura1200."
+        ]
+      },
+      {
+        "source": "software/micropython/examples/tile1200_cache_accept.py",
+        "remote": "/tile1200_cache_accept.py",
+        "sha256": "2984599320e68dad17f2edd7e88000b1bf58be88f68b7b750b68505466bc51f1",
+        "namespace_replace": null
+      },
+      {
+        "source": "software/micropython/fonts/misaki8.kfnt",
+        "remote": "/tile1200_misaki.kfnt",
+        "sha256": "cbfb1071801f7ed3b6637bb6763219e59d86c13bd149169bbbab5bca753d9238",
+        "namespace_replace": null
+      }
+    ]
+  },
+  "rtl_regression": {
+    "verilator": "5.032",
+    "seed": 1,
+    "passed": 61,
+    "failed": 0,
+    "summary_sha256": "653b24eb6dc54c579c61a1ab7bc261a507b762841a7535d3fa33b4242e833fed",
+    "tests": [
+      {
+        "test": "tb_phase1_sources",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_tmds_channel",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_tmds_pipeline",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_packet_assembler",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_serializer_reset",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_async_fifo",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_audio_packets",
+        "result": "pass",
+        "seconds": "3"
+      },
+      {
+        "test": "tb_hdmi_stream",
+        "result": "pass",
+        "seconds": "6"
+      },
+      {
+        "test": "tb_hdmi_stream720",
+        "result": "pass",
+        "seconds": "10"
+      },
+      {
+        "test": "tb_bsram_wrappers",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_w65c02_bus",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_flash_reader",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_flash_reader_timing",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_boot_image_check",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_boot_window",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_boot_controller",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_romless_boot_system",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_spi_bus",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_qspi_bus",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_command_queue",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_vram_core",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_audio_core",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_psram_core",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_vdp_frame",
+        "result": "pass",
+        "seconds": "16"
+      },
+      {
+        "test": "tb_vdp_sprites",
+        "result": "pass",
+        "seconds": "16"
+      },
+      {
+        "test": "tb_vdp_frame720",
+        "result": "pass",
+        "seconds": "23"
+      },
+      {
+        "test": "tb_vdp_sprites720",
+        "result": "pass",
+        "seconds": "24"
+      },
+      {
+        "test": "tb_raster_scroll",
+        "result": "pass",
+        "seconds": "25"
+      },
+      {
+        "test": "tb_raster_scroll720",
+        "result": "pass",
+        "seconds": "35"
+      },
+      {
+        "test": "tb_tile1200_frame",
+        "result": "pass",
+        "seconds": "18"
+      },
+      {
+        "test": "tb_tile1200_frame720",
+        "result": "pass",
+        "seconds": "24"
+      },
+      {
+        "test": "tb_demo_sequencer",
+        "result": "pass",
+        "seconds": "5"
+      },
+      {
+        "test": "tb_demo_sprites",
+        "result": "pass",
+        "seconds": "4"
+      },
+      {
+        "test": "tb_demo_raster",
+        "result": "pass",
+        "seconds": "4"
+      },
+      {
+        "test": "tb_demo_audio",
+        "result": "pass",
+        "seconds": "6"
+      },
+      {
+        "test": "tb_demo_music",
+        "result": "pass",
+        "seconds": "23"
+      },
+      {
+        "test": "tb_demo_shooter",
+        "result": "pass",
+        "seconds": "39"
+      },
+      {
+        "test": "tb_demo_wall",
+        "result": "pass",
+        "seconds": "6"
+      },
+      {
+        "test": "tb_demo_flicker",
+        "result": "pass",
+        "seconds": "5"
+      },
+      {
+        "test": "tb_demo_shooter720",
+        "result": "pass",
+        "seconds": "57"
+      },
+      {
+        "test": "tb_demo_shooter_raster",
+        "result": "pass",
+        "seconds": "39"
+      },
+      {
+        "test": "tb_demo_shooter_raster720",
+        "result": "pass",
+        "seconds": "58"
+      },
+      {
+        "test": "tb_sprite_selector",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_sprite_composite",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_sprite_irq",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_fill_timing",
+        "result": "pass",
+        "seconds": "6"
+      },
+      {
+        "test": "tb_register_abi",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_vram_init",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_startup_cpu",
+        "result": "pass",
+        "seconds": "2"
+      },
+      {
+        "test": "tb_audio_synth",
+        "result": "pass",
+        "seconds": "34"
+      },
+      {
+        "test": "tb_audio_pcm_mix",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_pcm_prefetch",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_pcm_timeout",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_pcm_audio_path",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_psram_byte_bridge",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_psram_read_cdc",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_hyperram_ctrl",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_psram_arbiter",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_hyperram_pcm_source",
+        "result": "pass",
+        "seconds": "1"
+      },
+      {
+        "test": "tb_hyperram_pcm_chain",
+        "result": "pass",
+        "seconds": "0"
+      },
+      {
+        "test": "tb_psram_pcm_chain",
+        "result": "pass",
+        "seconds": "1"
+      }
+    ]
+  },
+  "sdk_tests": {
+    "driver": 60,
+    "fifo": 4,
+    "japanese": 34,
+    "shooter": 22,
+    "fixture": 2,
+    "total": 122,
+    "skipped": 0,
+    "pio_assembler": "upstream MicroPython v1.26.0 rp2.py",
+    "font_source": "misaki_bdf_2021-05-05.zip",
+    "bytecode": "all SDK and examples, armv6m mpy-cross"
+  },
+  "headers": {
+    "c": "pass",
+    "ca65": "pass",
+    "ca65_version": "Ubuntu cc65 2.19-2build1, local extraction"
+  },
+  "pico_c_build": "pass; no firmware deployment",
+  "preflight_recovery": {
+    "log": "reports/tile1200-hardware/boundary-qspipsram-first.log",
+    "cause": "Pico fixture temporary allocation while constructing 4096-byte PCM sample",
+    "fix_revision": "23bd23f",
+    "fix": "128-byte period repeated 32 times; explicit collection; release finished fixture before upload",
+    "fpga_error_observed": false
+  },
+  "source_sha256": {
+    "software/micropython/kagura/device.py": "787b3d3c180cf9d0ab7803d8ba376c1c71230381c288ff942f8921ddde80fddd",
+    "software/micropython/kagura/terminal.py": "d83d02aaadecb51873174fdf4c07adab0dea0e5275b1a6e684d43d4ee390127a",
+    "software/micropython/kagura_ja/__init__.py": "6ed1b09bca825d3220e025543815e1f4736a22cdb45b750a7d69d3dd0389cd47",
+    "software/micropython/examples/tile1200_accept.py": "51fd68f7deea13a4fd3b9b961bea82cd74c0f432da99b848e04beafa88850bac",
+    "software/micropython/examples/tile1200_cache_accept.py": "2984599320e68dad17f2edd7e88000b1bf58be88f68b7b750b68505466bc51f1",
+    "tools/tile1200-device.ps1": "5ae5834974d23f328960652367d0aff4dc335a1a00e4338607442a83d2b3dd60",
+    "sim/tests/tb_fill_timing.sv": "989cc025d66dbb43aeb4917982c8f61b51252c5ded454cd37b94538edbdadb12"
+  },
+  "visual_verified": false,
+  "audio_quality_verified": false,
+  "restoration": {
+    "fpga_action": "Gowin --run 1 reload unchanged Flash",
+    "abi": [
+      0,
+      5
+    ],
+    "caps": 123,
+    "error": 0,
+    "pico_action": "soft reset existing firmware/boot.py",
+    "console": "KAGURA-9 HDMI console (QSPI 5MHz); UART0 RX GP1 115200 baud",
+    "restore_log_sha256": "ef5a7236feffafe9e9fc626e2e0405a529f2ccb450f13056c6756ff636870ab5",
+    "boot_log_sha256": "3adb52ef5c7e1ab67395238e27e5f3fa133651fc7b12dc86ef61efa12df6408b",
+    "isolated_experimental_files_retained": true
+  },
+  "glyph_cache_recovery": {
+    "initial_fixture_issue": "bulk UTF-8 join temporary allocation",
+    "streaming_fixture_revision": "0d0af8a",
+    "sdk_issue": "growing glyph lookup dict could not allocate 7352 contiguous bytes on Pico",
+    "fix_revision": "298341a",
+    "fix": "fixed 16-bit bucket/link arrays, 4192 bytes, byte buffer initialization",
+    "regression": "hash collisions, middle-slot reuse, reset",
+    "final_hardware_result": "pass"
+  }
+}

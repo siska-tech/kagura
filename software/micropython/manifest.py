@@ -11,6 +11,8 @@ freeze("$(BOARD_DIR)/../..", (
     "kagura/acceleration.py",
     "kagura/device.py",
     "kagura/video.py",
+    "kagura/framebuffer.py",
+    "kagura/framebuffer_viper.py",
     "kagura/audio.py",
     "kagura/terminal.py",
     "kagura/console.py",

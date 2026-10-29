@@ -7,8 +7,10 @@
 | 文書 | 内容 |
 |---|---|
 | [アーキテクチャ](architecture.md) | 仕様の概要、ブロック構成、clock、ビルド構成とCAPS、LED |
+| [Viper描画比較](framebuffer-viper-results.md) | Python／ViperのCPU・flush実測、CRC・native実行・guard検証 |
+| [TileFramebuffer](framebuffer.md) | 320×240・16色の自由描画API、dirty転送、Pico診断・性能測定 |
 | [プログラミングガイド](programming-guide.md) | ホストからの初期化・転送・sprite・COMMIT・音源・PCMの手順 |
-| [レジスタ仕様](register-map.md) | ABI 0.5の直接窓、command、extended register（規範） |
+| [レジスタ仕様](register-map.md) | ABI 0.6の直接窓、command、extended register（規範） |
 | [メモリマップ](memory-map.md) | VRAM/PSRAMのaddress、pattern・map・palette・OAM・waveの形式 |
 | [映像仕様](video.md) | 表示モード、背景・sprite、優先順位、COMMIT、ラスタIRQ・ラスタスクロール |
 | [音源仕様](audio-spec.md) | 6ch音源、PCM 2ch、AUDIO_COMMIT、mixer |
@@ -31,6 +33,10 @@
 | 文書 | 内容 |
 |---|---|
 | [ビルド・テスト・書込み](build-and-test.md) | simulation、生成、Gowinビルド、SRAM/Flash書込み、CI |
+| [1,200タイル実機数値検証](tile-1200-stage3.md) | Picoでの全量照合・連続動作・文字キャッシュと確認範囲 |
+| [1,200タイル版の目視・聴感](tile-1200-visual.md) | 720p・Picoホストでの追加領域、境界BG／sprite、反転、PCMのユーザー確認 |
+| [1,200タイル版の6502ブート](tile-1200-boot.md) | 480p／720pのbitstream生成・STAとboot simulation |
+| [1,200タイル実験](tile-1200-experiment.md) | 実験用リポジトリの段階・検証結果・次の作業 |
 | [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
 | [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |
 | [Pico host firmware](../software/pico/README.md) | 配線、コマンド、実機確認の記録 |

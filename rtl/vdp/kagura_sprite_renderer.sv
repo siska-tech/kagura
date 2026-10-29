@@ -12,7 +12,7 @@ module kagura_sprite_renderer #(
     output wire [$clog2(SPRITES)+2:0] oam_index,
     input wire [15:0] oam_data,
     output wire pattern_read,
-    output wire [14:0] pattern_addr,
+    output wire [15:0] pattern_addr,
     input wire [7:0] pattern_data,
     output wire palette_read,
     output wire [9:0] palette_index,

@@ -1,0 +1,1539 @@
+{
+  "date": "2026-10-29",
+  "baseline_revision": "0929059",
+  "driver_and_initial_benchmark_revision": "a84d50b",
+  "native_limit_test_revision": "f97c949",
+  "paired_flush_revision": "5317295",
+  "abi": [
+    0,
+    6
+  ],
+  "rtl_abi_transport_changed": false,
+  "hardware": {
+    "host": "RP2040 Pico",
+    "cpu_hz": 125000000,
+    "micropython": "v1.26.0-1.g3069c562f KAGURA_PICO",
+    "sck_hz": 5000000,
+    "mode": "qspi",
+    "config": "qspipsram",
+    "logical_screen": [
+      320,
+      240
+    ],
+    "bitstream_sha256": "2d00ee52dcff0edb7ad22c3d7910358ca1fe4221619bc0b2332b774ee8f133d9",
+    "transport_acceleration": "existing Viper FIFO/DMA chunk 128 for both renderers"
+  },
+  "memory": {
+    "native_module_heap_bytes": 4832,
+    "framebuffer_constructor_heap_bytes": 40448,
+    "baseline_constructor_heap_bytes": 40272,
+    "buffer_bytes": 38400,
+    "params_payload_bytes": 24,
+    "counter_payload_bytes": 20
+  },
+  "differential": {
+    "guards_intact": true,
+    "kernel_counts": [
+      678,
+      88,
+      122,
+      102,
+      202
+    ],
+    "event": "differential_pass",
+    "result": {
+      "rolling_crc32": 3474596942,
+      "buffer_crc32": 569902760,
+      "dirty_crc32": 206457449,
+      "operations": 1074
+    },
+    "passed": true,
+    "pc_reference_match": true,
+    "text_crc32": 3371118220
+  },
+  "pc_reference": {
+    "operations": 1074,
+    "rolling_crc32": 3474596942,
+    "buffer_crc32": 569902760,
+    "dirty_crc32": 206457449
+  },
+  "cpu_comparison": [
+    {
+      "name": "pixel_1024",
+      "python": {
+        "p95_us": 359213,
+        "max_us": 359213,
+        "samples_us": [
+          358818,
+          358918,
+          359204,
+          359213,
+          358852,
+          358882,
+          359116,
+          359027,
+          358852,
+          358588
+        ],
+        "mean_us": 358947.0,
+        "variance_us2": 34040.4,
+        "stdev_us": 184.5004,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 343666,
+        "max_us": 343666,
+        "samples_us": [
+          343666,
+          343093,
+          343354,
+          343253,
+          343197,
+          343503,
+          343506,
+          343274,
+          343249,
+          342809
+        ],
+        "mean_us": 343290.4,
+        "variance_us2": 51962.044,
+        "stdev_us": 227.95184,
+        "count": 10
+      },
+      "speedup": 1.0456074507181092
+    },
+    {
+      "name": "hline",
+      "python": {
+        "p95_us": 7293,
+        "max_us": 7293,
+        "samples_us": [
+          7293,
+          7146,
+          7106,
+          7111,
+          7119,
+          7131,
+          7110,
+          7123,
+          7120,
+          7115
+        ],
+        "mean_us": 7137.4,
+        "variance_us2": 2811.0398,
+        "stdev_us": 53.01924,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 1391,
+        "max_us": 1391,
+        "samples_us": [
+          1391,
+          1275,
+          1249,
+          1258,
+          1262,
+          1255,
+          1256,
+          1247,
+          1250,
+          1264
+        ],
+        "mean_us": 1270.7,
+        "variance_us2": 1669.61,
+        "stdev_us": 40.860864,
+        "count": 10
+      },
+      "speedup": 5.616904068623593
+    },
+    {
+      "name": "vline",
+      "python": {
+        "p95_us": 45139,
+        "max_us": 45139,
+        "samples_us": [
+          45139,
+          44879,
+          44913,
+          44907,
+          44917,
+          44919,
+          44944,
+          44870,
+          44938,
+          45038
+        ],
+        "mean_us": 44946.4,
+        "variance_us2": 6022.4416,
+        "stdev_us": 77.60439,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 1705,
+        "max_us": 1705,
+        "samples_us": [
+          1705,
+          1531,
+          1527,
+          1516,
+          1499,
+          1525,
+          1515,
+          1520,
+          1524,
+          1524
+        ],
+        "mean_us": 1538.6,
+        "variance_us2": 3147.4402,
+        "stdev_us": 56.10205,
+        "count": 10
+      },
+      "speedup": 29.212530872221503
+    },
+    {
+      "name": "line",
+      "python": {
+        "p95_us": 66979,
+        "max_us": 66979,
+        "samples_us": [
+          66979,
+          66897,
+          66775,
+          66848,
+          66808,
+          66866,
+          66760,
+          66878,
+          66854,
+          66908
+        ],
+        "mean_us": 66857.3,
+        "variance_us2": 3823.0104,
+        "stdev_us": 61.830496,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 2222,
+        "max_us": 2222,
+        "samples_us": [
+          2222,
+          1913,
+          1884,
+          1877,
+          1901,
+          1880,
+          1888,
+          1881,
+          1884,
+          1896
+        ],
+        "mean_us": 1922.6,
+        "variance_us2": 10070.841,
+        "stdev_us": 100.35358,
+        "count": 10
+      },
+      "speedup": 34.77442005617394
+    },
+    {
+      "name": "fill_rect",
+      "python": {
+        "p95_us": 1239288,
+        "max_us": 1239288,
+        "samples_us": [
+          1239288,
+          1239265,
+          1239170,
+          1239210,
+          1239056,
+          1239247,
+          1239110,
+          1239115,
+          1239165,
+          1239207
+        ],
+        "mean_us": 1239183.2,
+        "variance_us2": 4972.4124,
+        "stdev_us": 70.515336,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 7858,
+        "max_us": 7858,
+        "samples_us": [
+          7858,
+          7686,
+          7658,
+          7638,
+          7644,
+          7655,
+          7635,
+          7642,
+          7650,
+          7653
+        ],
+        "mean_us": 7671.9,
+        "variance_us2": 4033.08984,
+        "stdev_us": 63.50661,
+        "count": 10
+      },
+      "speedup": 161.52233475410264
+    },
+    {
+      "name": "fill",
+      "python": {
+        "p95_us": 519970,
+        "max_us": 519970,
+        "samples_us": [
+          519970,
+          519899,
+          519896,
+          519900,
+          519903,
+          519895,
+          519894,
+          519899,
+          519900,
+          519893
+        ],
+        "mean_us": 519904.9,
+        "variance_us2": 479.69004,
+        "stdev_us": 21.901826,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 9217,
+        "max_us": 9217,
+        "samples_us": [
+          9217,
+          9166,
+          9161,
+          9163,
+          9160,
+          9169,
+          9165,
+          9174,
+          9167,
+          9164
+        ],
+        "mean_us": 9170.6,
+        "variance_us2": 253.8401,
+        "stdev_us": 15.93236,
+        "count": 10
+      },
+      "speedup": 56.69257191459665
+    },
+    {
+      "name": "circle",
+      "python": {
+        "p95_us": 57696,
+        "max_us": 57696,
+        "samples_us": [
+          57696,
+          57280,
+          57223,
+          57175,
+          57255,
+          57280,
+          57298,
+          57265,
+          57248,
+          57367
+        ],
+        "mean_us": 57308.7,
+        "variance_us2": 18886.01,
+        "stdev_us": 137.42638,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 2250,
+        "max_us": 2250,
+        "samples_us": [
+          2250,
+          2056,
+          2048,
+          2031,
+          2024,
+          2025,
+          2020,
+          2021,
+          2030,
+          2016
+        ],
+        "mean_us": 2052.1,
+        "variance_us2": 4495.4908,
+        "stdev_us": 67.04842,
+        "count": 10
+      },
+      "speedup": 27.92685541640271
+    },
+    {
+      "name": "text",
+      "python": {
+        "p95_us": 76771,
+        "max_us": 76771,
+        "samples_us": [
+          76771,
+          76421,
+          76458,
+          76438,
+          76491,
+          76312,
+          76437,
+          76370,
+          76377,
+          76605
+        ],
+        "mean_us": 76468.0,
+        "variance_us2": 15749.8,
+        "stdev_us": 125.49821,
+        "count": 10
+      },
+      "viper": {
+        "p95_us": 6799,
+        "max_us": 6799,
+        "samples_us": [
+          6799,
+          6470,
+          6473,
+          6460,
+          6500,
+          6503,
+          6468,
+          6443,
+          6490,
+          6450
+        ],
+        "mean_us": 6505.6,
+        "variance_us2": 9919.838,
+        "stdev_us": 99.59838,
+        "count": 10
+      },
+      "speedup": 11.754181013280865
+    }
+  ],
+  "clean_flush": [
+    {
+      "register_write_calls": 0,
+      "dirty_scan": {
+        "p95_us": 493,
+        "max_us": 493,
+        "samples_us": [
+          493,
+          486,
+          482,
+          483,
+          482,
+          482,
+          483,
+          480,
+          480,
+          485
+        ],
+        "mean_us": 483.6,
+        "variance_us2": 13.039999,
+        "stdev_us": 3.611094,
+        "count": 10
+      },
+      "viper_enabled": false,
+      "register_read_calls": 0,
+      "event": "paired_clean_flush",
+      "timing": {
+        "p95_us": 1212,
+        "max_us": 1212,
+        "samples_us": [
+          1182,
+          1023,
+          858,
+          820,
+          850,
+          837,
+          824,
+          824,
+          1207,
+          1212
+        ],
+        "mean_us": 963.7,
+        "variance_us2": 27185.41,
+        "stdev_us": 164.87999,
+        "count": 10
+      }
+    },
+    {
+      "register_write_calls": 0,
+      "dirty_scan": {
+        "p95_us": 501,
+        "max_us": 501,
+        "samples_us": [
+          501,
+          483,
+          482,
+          481,
+          481,
+          480,
+          483,
+          486,
+          482,
+          483
+        ],
+        "mean_us": 484.2,
+        "variance_us2": 33.760004,
+        "stdev_us": 5.8103356,
+        "count": 10
+      },
+      "viper_enabled": true,
+      "register_read_calls": 0,
+      "event": "paired_clean_flush",
+      "timing": {
+        "p95_us": 1227,
+        "max_us": 1227,
+        "samples_us": [
+          1168,
+          1048,
+          862,
+          816,
+          807,
+          812,
+          815,
+          812,
+          1214,
+          1227
+        ],
+        "mean_us": 958.1,
+        "variance_us2": 30535.89,
+        "stdev_us": 174.745216,
+        "count": 10
+      }
+    }
+  ],
+  "flush_comparison": [
+    {
+      "tiles": 1,
+      "python": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 157,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": false,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 7928,
+          "max_us": 7928,
+          "samples_us": [
+            7653,
+            7866,
+            7928,
+            7919,
+            7891,
+            7795,
+            7923,
+            7896,
+            7900,
+            7860
+          ],
+          "mean_us": 7863.1,
+          "variance_us2": 6294.49,
+          "stdev_us": 79.33782,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 5480,
+          "wait_us": 7860,
+          "tiles": 1,
+          "writes": 1,
+          "bytes": 32,
+          "fences": 1,
+          "total_us": 14260,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 5480,
+          "max_us": 5480,
+          "samples_us": [
+            5391,
+            5384,
+            5334,
+            5331,
+            5399,
+            5418,
+            5357,
+            5337,
+            5378,
+            5480
+          ],
+          "mean_us": 5380.9,
+          "variance_us2": 1883.2898,
+          "stdev_us": 43.39689,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 1,
+        "flush": {
+          "p95_us": 14260,
+          "max_us": 14260,
+          "samples_us": [
+            13972,
+            14167,
+            14177,
+            14164,
+            14204,
+            14141,
+            14191,
+            14147,
+            14200,
+            14260
+          ],
+          "mean_us": 14162.3,
+          "variance_us2": 5067.211,
+          "stdev_us": 71.18434,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "viper": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 188,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": true,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 7980,
+          "max_us": 7980,
+          "samples_us": [
+            7635,
+            7972,
+            7889,
+            7885,
+            7932,
+            7862,
+            7945,
+            7911,
+            7980,
+            7934
+          ],
+          "mean_us": 7894.5,
+          "variance_us2": 8762.25,
+          "stdev_us": 93.60689,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 5432,
+          "wait_us": 7934,
+          "tiles": 1,
+          "writes": 1,
+          "bytes": 32,
+          "fences": 1,
+          "total_us": 14294,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 5472,
+          "max_us": 5472,
+          "samples_us": [
+            5396,
+            5471,
+            5390,
+            5445,
+            5418,
+            5470,
+            5464,
+            5433,
+            5472,
+            5432
+          ],
+          "mean_us": 5439.1,
+          "variance_us2": 851.09,
+          "stdev_us": 29.173446,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 1,
+        "flush": {
+          "p95_us": 14389,
+          "max_us": 14389,
+          "samples_us": [
+            13959,
+            14389,
+            14201,
+            14254,
+            14267,
+            14253,
+            14332,
+            14263,
+            14380,
+            14294
+          ],
+          "mean_us": 14259.2,
+          "variance_us2": 13159.961,
+          "stdev_us": 114.71687,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "mean_difference_pct": 0.6842108979473682
+    },
+    {
+      "tiles": 10,
+      "python": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 221,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": false,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 8029,
+          "max_us": 8029,
+          "samples_us": [
+            7638,
+            8029,
+            7925,
+            7928,
+            7925,
+            7886,
+            7903,
+            7923,
+            7932,
+            7942
+          ],
+          "mean_us": 7903.1,
+          "variance_us2": 9074.49,
+          "stdev_us": 95.26012,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 6132,
+          "wait_us": 7942,
+          "tiles": 10,
+          "writes": 1,
+          "bytes": 320,
+          "fences": 1,
+          "total_us": 14983,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 6179,
+          "max_us": 6179,
+          "samples_us": [
+            6042,
+            6179,
+            6053,
+            6131,
+            6094,
+            6161,
+            6099,
+            6125,
+            6119,
+            6132
+          ],
+          "mean_us": 6113.5,
+          "variance_us2": 1672.05,
+          "stdev_us": 40.89071,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 10,
+        "flush": {
+          "p95_us": 15126,
+          "max_us": 15126,
+          "samples_us": [
+            14604,
+            15126,
+            14898,
+            14981,
+            14933,
+            14975,
+            14927,
+            14979,
+            14979,
+            14983
+          ],
+          "mean_us": 14938.5,
+          "variance_us2": 15724.85,
+          "stdev_us": 125.398768,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "viper": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 254,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": true,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 8014,
+          "max_us": 8014,
+          "samples_us": [
+            7669,
+            8014,
+            7938,
+            7925,
+            7912,
+            7857,
+            7933,
+            7841,
+            7982,
+            7905
+          ],
+          "mean_us": 7897.6,
+          "variance_us2": 8168.04,
+          "stdev_us": 90.37721,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 6158,
+          "wait_us": 7905,
+          "tiles": 10,
+          "writes": 1,
+          "bytes": 320,
+          "fences": 1,
+          "total_us": 14996,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 6210,
+          "max_us": 6210,
+          "samples_us": [
+            6059,
+            6210,
+            6111,
+            6075,
+            6128,
+            6096,
+            6107,
+            6111,
+            6092,
+            6158
+          ],
+          "mean_us": 6114.7,
+          "variance_us2": 1676.4099,
+          "stdev_us": 40.943984,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 10,
+        "flush": {
+          "p95_us": 15142,
+          "max_us": 15142,
+          "samples_us": [
+            14649,
+            15142,
+            14973,
+            14926,
+            14974,
+            14884,
+            14965,
+            14898,
+            14997,
+            14996
+          ],
+          "mean_us": 14940.4,
+          "variance_us2": 13983.44,
+          "stdev_us": 118.251592,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "mean_difference_pct": 0.012718813803247464
+    },
+    {
+      "tiles": 100,
+      "python": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 59,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": false,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 8046,
+          "max_us": 8046,
+          "samples_us": [
+            7667,
+            7891,
+            7973,
+            7971,
+            7870,
+            7958,
+            7878,
+            7915,
+            7953,
+            8046
+          ],
+          "mean_us": 7912.2,
+          "variance_us2": 9234.961,
+          "stdev_us": 96.0987,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 13124,
+          "wait_us": 8046,
+          "tiles": 100,
+          "writes": 1,
+          "bytes": 3200,
+          "fences": 1,
+          "total_us": 22060,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 13205,
+          "max_us": 13205,
+          "samples_us": [
+            12993,
+            13118,
+            13205,
+            13198,
+            13184,
+            13124,
+            13159,
+            13123,
+            13162,
+            13124
+          ],
+          "mean_us": 13139.0,
+          "variance_us2": 3325.4,
+          "stdev_us": 57.66628,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 100,
+        "flush": {
+          "p95_us": 22136,
+          "max_us": 22136,
+          "samples_us": [
+            21556,
+            21963,
+            22136,
+            22122,
+            21944,
+            22036,
+            21993,
+            21993,
+            22070,
+            22060
+          ],
+          "mean_us": 21987.3,
+          "variance_us2": 24330.208,
+          "stdev_us": 155.98143,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "viper": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 118,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": true,
+        "register_write_calls": 5,
+        "fence_host_wait": {
+          "p95_us": 8032,
+          "max_us": 8032,
+          "samples_us": [
+            7644,
+            7988,
+            7928,
+            8006,
+            7808,
+            7909,
+            7970,
+            7911,
+            7844,
+            8032
+          ],
+          "mean_us": 7904.0,
+          "variance_us2": 11926.6,
+          "stdev_us": 109.20897,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 13050,
+          "wait_us": 8032,
+          "tiles": 100,
+          "writes": 1,
+          "bytes": 3200,
+          "fences": 1,
+          "total_us": 22033,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 13173,
+          "max_us": 13173,
+          "samples_us": [
+            13090,
+            13173,
+            13159,
+            13141,
+            13144,
+            13144,
+            13168,
+            13104,
+            13107,
+            13050
+          ],
+          "mean_us": 13128.0,
+          "variance_us2": 1381.2,
+          "stdev_us": 37.164496,
+          "count": 10
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 100,
+        "flush": {
+          "p95_us": 22131,
+          "max_us": 22131,
+          "samples_us": [
+            21617,
+            22131,
+            22036,
+            22109,
+            21860,
+            22006,
+            22094,
+            21980,
+            21852,
+            22033
+          ],
+          "mean_us": 21971.8,
+          "variance_us2": 22093.964,
+          "stdev_us": 148.64038,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "mean_difference_pct": -0.07049524043425404
+    },
+    {
+      "tiles": 1200,
+      "python": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 3,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": false,
+        "register_write_calls": 8,
+        "fence_host_wait": {
+          "p95_us": 8529,
+          "max_us": 8529,
+          "samples_us": [
+            8180,
+            8446,
+            8446,
+            8496,
+            8488,
+            8488,
+            8529,
+            8484,
+            8504,
+            8521
+          ],
+          "mean_us": 8458.2,
+          "variance_us2": 9261.761,
+          "stdev_us": 96.238048,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 105510,
+          "wait_us": 8521,
+          "tiles": 1200,
+          "writes": 2,
+          "bytes": 38400,
+          "fences": 1,
+          "total_us": 115259,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 105632,
+          "max_us": 105632,
+          "samples_us": [
+            104766,
+            105632,
+            105084,
+            105358,
+            105378,
+            104903,
+            105154,
+            104858,
+            105134,
+            105510
+          ],
+          "mean_us": 105177.7,
+          "variance_us2": 74785.6,
+          "stdev_us": 273.46956,
+          "count": 10
+        },
+        "register_read_calls": 7,
+        "dirty_tiles": 1200,
+        "flush": {
+          "p95_us": 115296,
+          "max_us": 115296,
+          "samples_us": [
+            114155,
+            115296,
+            114761,
+            115071,
+            115081,
+            114617,
+            114904,
+            114568,
+            114859,
+            115259
+          ],
+          "mean_us": 114857.1,
+          "variance_us2": 109565.084,
+          "stdev_us": 331.00616,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "viper": {
+        "pcm": [
+          3,
+          3
+        ],
+        "frame": 137,
+        "error": 0,
+        "fifo": 0,
+        "viper_enabled": true,
+        "register_write_calls": 8,
+        "fence_host_wait": {
+          "p95_us": 8543,
+          "max_us": 8543,
+          "samples_us": [
+            8229,
+            8436,
+            8474,
+            8500,
+            8543,
+            8481,
+            8526,
+            8516,
+            8518,
+            8420
+          ],
+          "mean_us": 8464.3,
+          "variance_us2": 7533.411,
+          "stdev_us": 86.79523,
+          "count": 10
+        },
+        "last_flush": {
+          "transfer_us": 105145,
+          "wait_us": 8420,
+          "tiles": 1200,
+          "writes": 2,
+          "bytes": 38400,
+          "fences": 1,
+          "total_us": 114784,
+          "runs": 1
+        },
+        "transfer": {
+          "p95_us": 105192,
+          "max_us": 105192,
+          "samples_us": [
+            104938,
+            105192,
+            105113,
+            104898,
+            105029,
+            104929,
+            105002,
+            105149,
+            104837,
+            105145
+          ],
+          "mean_us": 105023.2,
+          "variance_us2": 13417.961,
+          "stdev_us": 115.83592,
+          "count": 10
+        },
+        "register_read_calls": 7,
+        "dirty_tiles": 1200,
+        "flush": {
+          "p95_us": 114893,
+          "max_us": 114893,
+          "samples_us": [
+            114413,
+            114859,
+            114810,
+            114622,
+            114805,
+            114631,
+            114738,
+            114893,
+            114578,
+            114784
+          ],
+          "mean_us": 114713.3,
+          "variance_us2": 20048.412,
+          "stdev_us": 141.59242,
+          "count": 10
+        },
+        "event": "paired_flush"
+      },
+      "mean_difference_pct": -0.12519905169119383
+    }
+  ],
+  "continuous": {
+    "python": {
+      "iteration": {
+        "count": 1253,
+        "mean_us": 239156.36,
+        "recent_count": 256,
+        "max_us": 329032,
+        "p95_recent_us": 258133
+      },
+      "elapsed_ms": 300156,
+      "bytes_sent": 2224032,
+      "fifo": 0,
+      "draw": {
+        "count": 1253,
+        "mean_us": 127593.336,
+        "recent_count": 256,
+        "max_us": 145944,
+        "p95_recent_us": 128921
+      },
+      "gc": {
+        "count": 40,
+        "mean_us": 11646.1,
+        "recent_count": 40,
+        "max_us": 11703,
+        "p95_recent_us": 11686
+      },
+      "fence_host_wait": {
+        "count": 1253,
+        "mean_us": 54706.408,
+        "recent_count": 256,
+        "max_us": 97341,
+        "p95_recent_us": 64786
+      },
+      "heap_after_gc_min": 104272,
+      "hdmi_counter_hz": 60.002132,
+      "transfer": {
+        "count": 1253,
+        "mean_us": 42711.652,
+        "recent_count": 256,
+        "max_us": 90359,
+        "p95_recent_us": 53401
+      },
+      "frame": 1,
+      "pcm": [
+        3,
+        3
+      ],
+      "pattern_writes": 9285,
+      "heap_after_gc_max": 104384,
+      "error": 0,
+      "hdmi_counter_frames": 18010,
+      "physically_presented_updates_hz": null,
+      "loops": 1253,
+      "event": "continuous_pass",
+      "application_hz": 4.1744956
+    },
+    "viper": {
+      "iteration": {
+        "count": 2523,
+        "mean_us": 118642.02,
+        "recent_count": 256,
+        "max_us": 209984,
+        "p95_recent_us": 137637
+      },
+      "elapsed_ms": 300058,
+      "bytes_sent": 4480320,
+      "fifo": 0,
+      "draw": {
+        "count": 2523,
+        "mean_us": 6982.9732,
+        "recent_count": 256,
+        "max_us": 18614,
+        "p95_recent_us": 8035
+      },
+      "gc": {
+        "count": 79,
+        "mean_us": 11603.696,
+        "recent_count": 79,
+        "max_us": 11664,
+        "p95_recent_us": 11643
+      },
+      "fence_host_wait": {
+        "count": 2523,
+        "mean_us": 54710.376,
+        "recent_count": 256,
+        "max_us": 109701,
+        "p95_recent_us": 71572
+      },
+      "heap_after_gc_min": 105520,
+      "hdmi_counter_hz": 59.9984,
+      "transfer": {
+        "count": 2523,
+        "mean_us": 42556.55,
+        "recent_count": 256,
+        "max_us": 91362,
+        "p95_recent_us": 46344
+      },
+      "frame": 54,
+      "pcm": [
+        3,
+        3
+      ],
+      "pattern_writes": 18699,
+      "heap_after_gc_max": 105632,
+      "error": 0,
+      "hdmi_counter_frames": 18003,
+      "physically_presented_updates_hz": null,
+      "loops": 2523,
+      "event": "continuous_pass",
+      "application_hz": 8.408375
+    },
+    "application_speedup": 2.014225383301398,
+    "physically_presented_updates_hz": null
+  },
+  "native_execution": {
+    "python_phase_native_counter_delta": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "viper_phase_native_counter_begin": [
+      177,
+      10240,
+      12,
+      15,
+      170
+    ],
+    "viper_phase_native_counter_end": [
+      21685,
+      43263,
+      25,
+      20,
+      233
+    ],
+    "viper_phase_native_counter_delta": [
+      21508,
+      33023,
+      13,
+      5,
+      63
+    ]
+  },
+  "readbacks": {
+    "python": [
+      {
+        "upper_bytes": 256,
+        "pattern_bytes": 512,
+        "event": "readback_pass",
+        "full": false,
+        "map_bytes": 4096
+      },
+      {
+        "upper_bytes": 256,
+        "pattern_bytes": 38400,
+        "event": "readback_pass",
+        "full": true,
+        "map_bytes": 4096
+      }
+    ],
+    "viper": [
+      {
+        "upper_bytes": 256,
+        "pattern_bytes": 512,
+        "event": "readback_pass",
+        "full": false,
+        "map_bytes": 4096
+      },
+      {
+        "upper_bytes": 256,
+        "pattern_bytes": 38400,
+        "event": "readback_pass",
+        "full": true,
+        "map_bytes": 4096
+      }
+    ]
+  },
+  "tests": {
+    "sdk": 156,
+    "framebuffer": 34,
+    "rtl": 61,
+    "skipped": 0,
+    "pointer_emulator": "same kernel source with checked byte/word pointers; not native execution",
+    "native_execution": "Pico CRC/guards/kernel counters",
+    "bytecode": "all SDK/examples armv6m"
+  },
+  "unchanged_contracts": {
+    "baseline": "0929059",
+    "identical_ast_methods": [
+      "initialize",
+      "mark_dirty",
+      "flush",
+      "_flush"
+    ],
+    "rtl_abi_board_build_unchanged": true
+  },
+  "measurement_deployed_files": [
+    {
+      "source": "software/micropython/kagura/__init__.py",
+      "remote": "/lib/kaguravip/__init__.py",
+      "sha256": "e6893051d4a23de6726c58cbc238865e88df4ad5b1da8e1b882e06357f10f9be"
+    },
+    {
+      "source": "software/micropython/kagura/regs.py",
+      "remote": "/lib/kaguravip/regs.py",
+      "sha256": "8d587b4f00c8ef182bec2d790c127ad78300e6a02bc63906564fe39a6169fc59"
+    },
+    {
+      "source": "software/micropython/kagura/device.py",
+      "remote": "/lib/kaguravip/device.py",
+      "sha256": "787b3d3c180cf9d0ab7803d8ba376c1c71230381c288ff942f8921ddde80fddd"
+    },
+    {
+      "source": "software/micropython/kagura/video.py",
+      "remote": "/lib/kaguravip/video.py",
+      "sha256": "4c7315b431ed12945b5e2acc69a2b42485982e53e24721d384fb9c8d99f0fc78"
+    },
+    {
+      "source": "software/micropython/kagura/audio.py",
+      "remote": "/lib/kaguravip/audio.py",
+      "sha256": "553227ebef8ea9b56deb35c6520706e5ba3e6adb380e9c520398be3e6b105de9"
+    },
+    {
+      "source": "software/micropython/kagura/transport_rp2.py",
+      "remote": "/lib/kaguravip/transport_rp2.py",
+      "sha256": "3f88087006b489a0c483c99e2df0fd2aef5fd8f52d88883983eef9990deee32e"
+    },
+    {
+      "source": "software/micropython/kagura/dma_pack.py",
+      "remote": "/lib/kaguravip/dma_pack.py",
+      "sha256": "0cb676f30c6fb7b17e63b7652df906993acc11ce4ffd05a88bf1e3a59bfbe902"
+    },
+    {
+      "source": "software/micropython/kagura/fifo_xfer.py",
+      "remote": "/lib/kaguravip/fifo_xfer.py",
+      "sha256": "120126d9916487a6cfdc032d4a8737d4c0aea1d288d1a5f5ce27634e7566c4e9"
+    },
+    {
+      "source": "software/micropython/kagura/acceleration.py",
+      "remote": "/lib/kaguravip/acceleration.py",
+      "sha256": "4848d733bf1e545155d0310737181e6f4ffb9c786d01fd4efbf087116180f2bc"
+    },
+    {
+      "source": "software/micropython/kagura/framebuffer.py",
+      "remote": "/lib/kaguravip/framebuffer.py",
+      "sha256": "3cf2d41e30c9c90bfff6e084265e55632b60d95737d8865ce661878a97330a2f"
+    },
+    {
+      "source": "software/micropython/kagura/framebuffer_viper.py",
+      "remote": "/lib/kaguravip/framebuffer_viper.py",
+      "sha256": "3e19972585801ab09cb87798f310bc54a49745c07c1f226bbba19e7b74a6a9ee"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_diagnostic.py",
+      "remote": "/framebuffer_diagnostic.py",
+      "sha256": "187c88f9b0c364648f5c56e667ae3829ba42ddcc887dae56e8de05e564e92e94"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_benchmark.py",
+      "remote": "/framebuffer_benchmark.py",
+      "sha256": "25cf4abd619deabc14e75dd93a7fde990e5f01b563220fc1e7853b0d5dc98c70"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_viper_cases.py",
+      "remote": "/framebuffer_viper_cases.py",
+      "sha256": "557d287e834753c206ad957bd295a7f7dfb2998456d2fada3efb6bab8216da84"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_viper_validation.py",
+      "remote": "/framebuffer_viper_validation.py",
+      "sha256": "7b501d0ad2a34530b4bae7193635696b6f9748f900d76eead85a91d22e64254d"
+    }
+  ],
+  "additional_flush_script": {
+    "source": "software/micropython/examples/framebuffer_benchmark.py",
+    "sha256": "87fdc9198320562f7006f305f36b8e1bca8ba0ef2ec570899bd12a3f6b61ffea",
+    "revision": "5317295"
+  },
+  "log_sha256": {
+    "python_and_paired": "1ad8b39fe1cbab85e4d2df0aa5407ac70273b14e58d9726cb14428e5a25d3e75",
+    "viper": "529eabbd5e4be22c3f752e6d04a5ce76709c89defcc3d459bf8a310912870ff6",
+    "paired_flush": "95510f59fdfd19d71ea09ce1ac46c92a56977c1a84b986b4320664a8ff7e5222",
+    "restore": "a9dce5b6378d8885b710edd2662ea1f460937cc6f3ab31ef80b0363378e82f8b"
+  },
+  "observations": {
+    "date": "2026-10-29",
+    "config": "qspipsram",
+    "python_scene_B": {
+      "status": "pass",
+      "reply": "図形・色・音とも問題なし"
+    },
+    "viper_scene_B": {
+      "status": "pass",
+      "reply": "Python版と同じ表示で音も正常",
+      "same_geometry_colors_clipping_as_python": true
+    },
+    "viper_scene_A_C": {
+      "A": {
+        "status": "pass",
+        "reply": "全タイル・四隅・右下・音とも正常"
+      },
+      "C": {
+        "status": "pass",
+        "reply": "境界・1199・音とも正常"
+      }
+    }
+  },
+  "restoration": {
+    "abi": [
+      0,
+      5
+    ],
+    "caps": 123,
+    "error": 0,
+    "console_active": true,
+    "fpga_flash_written": false,
+    "pico_firmware_written": false,
+    "canonical_sdk_overwritten": false,
+    "pico_usb_reconnect_required": true,
+    "detail": "Soft reboot banner appeared; Windows COM7 timed out. User replugged Pico USB, then existing console ABI/error check passed."
+  },
+  "performance_goals": {
+    "fill_rect_under_100ms": true,
+    "line_under_10ms": true,
+    "fill_rect_under_20ms": true,
+    "line_under_5ms": true
+  },
+  "completion": {
+    "public_api_and_raster_preserved": true,
+    "python_viper_all_pixels_match": true,
+    "dirty_matches": true,
+    "bounds_and_guard_checks_pass": true,
+    "pc_tests_pass": true,
+    "pico_native_execution_proven": true,
+    "performance_measured": true,
+    "flush_comparison_pass": true,
+    "existing_regressions_pass": true,
+    "documented": true,
+    "original_console_restored": true
+  }
+}

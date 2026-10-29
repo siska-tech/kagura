@@ -59,10 +59,10 @@ module tb_vram_core;
     task automatic wait_idle; reg [7:0] v; begin v=8'h80; while(v[7]) rd(STATUS,0,v); end endtask
 
     // Byte model of the public regions (indexed by VRAM address).
-    reg [7:0] mem [0:16'ha7ff];
-    reg known [0:16'ha7ff];
+    reg [7:0] mem [0:16'hc5ff];
+    reg known [0:16'hc5ff];
     function automatic bit public(input [23:0] a);
-        public=a<24'h009000 || (a>=24'h00a000 && a<24'h00a800) || (a>=24'h009400 && a<24'h009600)
+        public=a<24'h009100 || (a>=24'h00b000 && a<24'h00c600) || (a>=24'h00a000 && a<24'h00a800) || (a>=24'h009400 && a<24'h009600)
             || (a>=24'h009800 && a<24'h009a00);
     endfunction
     function automatic [7:0] stored(input [23:0] a,input [7:0] d);
@@ -71,7 +71,7 @@ module tb_vram_core;
             if(a>=24'h00a000 && a<24'h00a800) case(a%8)
                 1: stored=d & 8'h03;
                 3: stored=d & 8'h7f;
-                5: stored=d & 8'h3f;
+                5: stored=d & 8'h7f;
                 6,7: stored=0;
                 default: ;
             endcase
@@ -119,7 +119,7 @@ module tb_vram_core;
     reg [7:0] v;
     reg [23:0] a;
     initial begin
-        for(i=0;i<=16'ha7ff;i=i+1) known[i]=0;
+        for(i=0;i<=16'hc5ff;i=i+1) known[i]=0;
         #100; reset=0; repeat(4) @(posedge clk);
         expect_reg(STATUS,8'h00);
         wr(VRAM_WRITE,8'hff,1); expect_reg(ERROR_CODE,8'h10); expect_reg(ADDR_L,0);
@@ -141,7 +141,7 @@ module tb_vram_core;
         cur_inc=1; set_inc(1);
         cur_addr=24'h00a800; set_addr(cur_addr); model_write(8'h11); expect_reg(ERROR_CODE,8'h02);
         expect_reg(ADDR_L,8'h00); expect_reg(ADDR_M,8'ha8); clear_errors();
-        cur_addr=24'h009000; set_addr(cur_addr); model_write(8'h12); expect_reg(ERROR_CODE,8'h02); clear_errors();
+        cur_addr=24'h009100; set_addr(cur_addr); model_write(8'h12); expect_reg(ERROR_CODE,8'h02); clear_errors();
         cur_addr=24'h010000; set_addr(cur_addr); wr(READ_REQUEST,8'h00,1); clear_errors();
         // FILL range checks: crossing a region end is refused without partial effect.
         do_fill(24'h008ffe,16'd3,8'haa,1); clear_errors();
@@ -224,6 +224,43 @@ module tb_vram_core;
                 default: begin cur_addr=24'($urandom_range(0,16'h7fff)); set_addr(cur_addr); model_read(); end
             endcase
         end
+        cur_addr=24'h000000; set_addr(cur_addr); model_write(8'h52);
+        cur_addr=24'h007fff; set_addr(cur_addr); model_write(8'ha1);
+        cur_addr=24'h008000; set_addr(cur_addr); model_write(8'h23);
+        cur_addr=24'h008fff; set_addr(cur_addr); model_write(8'h84);
+        // Extended table and all extra banks: endpoints, bank changes and
+        // non-aliasing with the original pattern/map windows.
+        for(i=0;i<256;i=i+1) begin
+            cur_addr=24'h009000+24'(i); set_addr(cur_addr); model_write(8'(i^8'ha5));
+        end
+        for(i=0;i<5632;i=i+1) begin
+            cur_addr=24'h00b000+24'(i); set_addr(cur_addr); model_write(8'(i^(i>>8)));
+        end
+        for(i=0;i<5632;i=i+1) begin
+            cur_addr=24'h00b000+24'(i); set_addr(cur_addr); model_read();
+        end
+        for(i=0;i<256;i=i+1) begin
+            cur_addr=24'h009000+24'(i); set_addr(cur_addr); model_read();
+        end
+        do_fill(24'h00b000,16'd5632,8'h6d,0); wait_idle();
+        cur_addr=24'h00b000; set_addr(cur_addr); model_read();
+        cur_addr=24'h00c5ff; set_addr(cur_addr); model_read();
+        do_fill(24'h009000,16'd256,8'h3c,0); wait_idle();
+        cur_addr=24'h0090ff; set_addr(cur_addr); model_read();
+        do_fill(24'h00c5ff,16'd2,8'h55,1); clear_errors();
+        do_fill(24'h0090ff,16'd2,8'h55,1); clear_errors();
+        // Starting/ending in separated public regions must not bridge holes.
+        do_fill(24'h007fff,16'h3002,8'h55,1); clear_errors();
+        do_fill(24'h008fff,16'd2,8'h55,1); clear_errors();
+        cur_addr=24'h00c600; set_addr(cur_addr); model_write(8'h12); clear_errors();
+        cur_addr=24'h00c5ff; set_addr(cur_addr); model_read();
+        cur_addr=24'h0090ff; set_addr(cur_addr); model_read();
+        cur_addr=24'h000000; set_addr(cur_addr); model_read();
+        cur_addr=24'h007fff; set_addr(cur_addr); model_read();
+        cur_addr=24'h008000; set_addr(cur_addr); model_read();
+        cur_addr=24'h008fff; set_addr(cur_addr); model_read();
+        set_addr(24'h00c600); wr(READ_REQUEST,0,1); clear_errors();
+        expect_reg(ADDR_L,0); expect_reg(ADDR_M,8'hc6);
         expect_reg(ERROR_CODE,8'h00);
         $display("PASS: VRAM core, %0d model-checked reads, regions/palette mask, FILL/FENCE/INC, FIFO full (%0d accepted), errors and EXT registers",checked_reads,n);
         $finish;

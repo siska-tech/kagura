@@ -99,7 +99,7 @@ module tb_psram_core;
     always @(posedge clk) if(!reset && |dut.psram.pf_underrun) underruns++;
     initial begin
         #100; @(negedge clk); reset=0; wait(init_done);
-        access(0,27,0); if(value!=5) $fatal(1,"ABI_MINOR %0d",value);
+        access(0,27,0); if(value!=6) $fatal(1,"ABI_MINOR %0d",value);
         access(0,28,0); if(value!=8'h5B) $fatal(1,"CAPS %02h",value);
         access(1,R_EXT_I,8'h12); access(0,R_EXT_D,0); if(value!=22) $fatal(1,"PSRAM_SIZE_LOG2 %0d",value);
         access(1,R_EXT_I,8'h13); access(0,R_EXT_D,0); if(value!=2) $fatal(1,"PCM_CHANNELS %0d",value);
@@ -224,6 +224,21 @@ module tb_psram_core;
         set_addr(24'h007ffe); qcmd(5,1); expect_error(8'h02);
         access(1,R_LEN_L,0); qcmd(5); fence(8); expect_error(8'h00);
         access(0,R_ADDR_L,0); if(value!==8'hfe) $fatal(1,"COPY moved VRAM_ADDR");
+        // New destinations stay independent of old pattern/map regions.
+        copy_src(24'h500003); set_addr(24'h00b000);
+        access(1,R_LEN_L,8'd32); access(1,R_LEN_H,0); qcmd(5); fence(8'h71);
+        for(i=0;i<32;i++) begin
+            read_byte(24'h00b000+24'(i),v);
+            if(v!==8'(i*11+5)) $fatal(1,"extra pattern COPY byte %0d",i);
+        end
+        set_addr(24'h00c5e0); qcmd(5); fence(8'h72);
+        read_byte(24'h00c5ff,v); if(v!==8'(31*11+5)) $fatal(1,"last pattern COPY");
+        set_addr(24'h009000); qcmd(5); fence(8'h73);
+        read_byte(24'h00901f,v); if(v!==8'(31*11+5)) $fatal(1,"map extension COPY");
+        set_addr(24'h00c5ff); qcmd(5,1); expect_error(8'h02);
+        set_addr(24'h0090ff); qcmd(5,1); expect_error(8'h02);
+        set_addr(24'h007fff); access(1,R_LEN_L,8'h02); access(1,R_LEN_H,8'h30);
+        qcmd(5,1); expect_error(8'h02);
         if(underruns!=0) $fatal(1,"%0d PCM underruns",underruns);
         $display("PASS: tb_psram_core (PSRAM upload/readback/FILL/range, byte masks, PCM one-shot, loop at region top, host traffic, pause/resume, STOP, CONFIG_ERROR/CLEAR, replay, COPY with ranges and cache coherence)");
         $finish;

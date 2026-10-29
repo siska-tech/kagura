@@ -1,12 +1,14 @@
+> この実験リポジトリはABI 0.6・1,200パターン版です。[第3段階](../../docs/tile-1200-stage3.md)でPicoの全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済み。`Video.tiles()` は1023／1024境界を分割し、BGとspriteの番号は1199まで対応します。更新手順とキャッシュの範囲は[プログラミングガイド](../../docs/programming-guide.md#実験abi-061200パターン)を参照。
+
 # MicroPython host driver / UART keyboard / HDMI REPL
 
 KAGURA-9 ABI **0.5**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-**検証範囲（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
+**拡張前ABI 0.5の過去の検証（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 
 ## 導入（通常のMicroPythonへの追加）
 
-1. FPGAへ`spi`/`spipsram`、または`qspi`/`qspipsram`のABI 0.5 bitstreamを書き込む。720版も対応。
+1. FPGAへ`spi`/`spipsram`、または`qspi`/`qspipsram`のABI 0.6 bitstreamを書き込む。720版も対応。
 2. Pico/Pico Wには公式MicroPython **v1.26.0**を使う。標準のRP2ビルドでは`os.dupterm`と`os.dupterm_notify`が有効で、通常のUF2へモジュールを追加してドライバ・UART入力・HDMI REPLを利用できる。専用UF2への書換えは不要。
 3. `kagura/`をPicoの`/lib/kagura/`へコピーする。自動コンソールを使う場合は`examples/boot.py`も`/boot.py`へコピーし、既存のboot.pyがあれば起動処理を組み込む。boot.pyの`mode`をbitstreamと一致させる。SCKは自動で選ぶ（[通信速度](#通信速度)）。ドライバだけを手動で使う場合はboot.pyの変更は不要。
 4. UART送信元のTXをPico GP1（物理pin 2）、GNDを共通GNDへ接続する。GP0（pin 1）はUART TXとして予約するが、初期版はUARTへ出力しない。KAGURAの配線・電源は[Pico資料](../pico/README.md#配線)を参照。
@@ -161,7 +163,7 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 
 アプリ画面の背景mapへ、[美咲ゴシック](fonts/README.md)で8×8ドットの日本語を描く独立モジュール。同じフォントで[REPLの出力](#replの日本語出力)も日本語表示できる。日本語の行編集、本体側の日本語入力、漢字変換は含まない。通常のMicroPythonへファイルを追加するだけで使え、SDや専用UF2は不要。
 
-**検証範囲（2026-10-29）**: PC上で変換ツール・フォントファイル・アプリ描画・コンソール出力のモックテスト29件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。MicroPython v1.26.0のunix版で、同梱フォントによるアプリ描画とコンソール出力（1byteずつ届くUTF-8、スクロール）を模擬deviceで確認。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。REPLの日本語出力は実機（Pico、QSPI 1MHz、720p）でスクロール・Ctrl-Cを含めて確認し、日本語を含む100行の出力がHDMIへ描き終わるまで約5.4秒（ASCIIのみは約4.8秒）だった。
+**拡張前ABI 0.5の過去の検証（2026-10-29）**: PC上で変換ツール・フォントファイル・アプリ描画・コンソール出力のモックテスト29件（`MISAKI_ZIP`指定時の再生成一致を含む）とmpy-crossのbytecodeコンパイルに合格。MicroPython v1.26.0のunix版で、同梱フォントによるアプリ描画とコンソール出力（1byteずつ届くUTF-8、スクロール）を模擬deviceで確認。実機（公式v1.26.0 UF2、QSPI 5MHz、720p）で字形・配置・速度・メモリ消費とメニュー例を確認した（[実機の受入結果](#実機の受入結果)）。REPLの日本語出力は実機（Pico、QSPI 1MHz、720p）でスクロール・Ctrl-Cを含めて確認し、日本語を含む100行の出力がHDMIへ描き終わるまで約5.4秒（ASCIIのみは約4.8秒）だった。
 
 ### 導入
 
@@ -207,15 +209,17 @@ text.flush()
 
 ### 資源制約
 
-- タイル`tile_base`〜`tile_base + tile_count - 1`（既定128〜383）と背景mapの指定矩形はアプリが専有する。先頭1枚は空白用で、残り（既定255）が字形用。同じ文字は登録済みタイルを再利用し、空白（U+0020・U+3000）はタイルを使わない。
+- タイル`tile_base`〜`tile_base + tile_count - 1`（既定128〜383、最大1199まで）と背景mapの指定矩形と対応する上位bitはアプリが専有する。先頭1枚は空白用で、残り（既定255）が字形用。同じ文字は登録済みタイルを再利用し、空白（U+0020・U+3000）はタイルを使わない。
 - 自動追い出しはしない。新しい字形が残りを超える`text()`は、何も書き込まずに`MemoryError`になる（既存の表示は変わらない）。画面を切り替える時に`clear()`で登録を空にする。
-- RAMはmapの写し（`width × height × 2`byte、既定40×30で2400byte）と登録表（最大255項目のdict）を使う。フォント全体は読み込まない。
+- RAMはmap下位wordと上位bitの写し（`width × height × 3`byte、40×30なら3600byte）と登録表（既定は最大255項目のdict）を使う。フォント全体は読み込まない。
 - 新しい字形1つにつきファイルを最大13回seek/readする（7171字の二分探索）。既出の字形は読まない。
 - 実機（QSPI 5MHz）で、新しい字形1つにつき約1.8msのファイル検索がかかる。新しい字形255個を含む`text()`＋`flush()`は約0.97秒、登録済みの字形だけなら同じ255セルで約0.14秒（[実機の受入結果](#実機の受入結果)）。字形の多い画面は切替え前に描いておく。
 
+ABI 0.6では`tile_base + tile_count <= 1200`の範囲を使える。1023／1024を跨ぐ字形転送は自動で分割する。mapのpaletteを保ったまま上位bitを更新し、指定矩形外のbitは保持する。端末の字形検索は固定サイズの16bit配列を使い、多数の字形追加中に大きい辞書の再確保を行わない。端末は所有する5 byte／rowの上位表を記憶し、通常のASCII更新では追加の読戻しや上位表書込みを行わない。
+
 ### コンソールとの切替え
 
-起動コンソールはタイル0〜1023（128以降は日本語字形）・map全体・palette 0・sprite 0（カーソル）を使う。`kagura_console.pause()`で止めてから描画し、終わったら`resume()`する。`resume()`がmap全体とコンソールの字形登録を初期化するので、日本語画面に戻る時は`clear()`から描き直す。pause中もsprite 0のカーソルは残るため、隠す場合は`Video(dev).sprite(0, enable=False)`の後にCOMMITする。
+起動コンソールはタイル0〜1199（128以降は日本語字形）・map全体・palette 0・sprite 0（カーソル）を使う。`kagura_console.pause()`で止めてから描画し、終わったら`resume()`する。`resume()`がmap全体とコンソールの字形登録を初期化するので、日本語画面に戻る時は`clear()`から描き直す。pause中もsprite 0のカーソルは残るため、隠す場合は`Video(dev).sprite(0, enable=False)`の後にCOMMITする。
 
 `examples/ja_menu.py`は、コンソールを止めてpalette 1で日本語メニューを表示し、↑↓（またはw/s）とEnterで項目を選ぶサンプル。
 
@@ -234,7 +238,7 @@ print(ja_menu.run(kagura_console))
 ```
 
 - 全角・半角とも1文字を1セル（8×8）に表示する。PCの端末とは桁位置が一致しない場合がある。
-- 日本語の字形はタイル128〜1023（最大896枚）に、表示中のセルが使う数を数えて登録する。画面から消えた字形のタイルだけを再利用し、表示中の文字を書き換えることはない。表示中の字形が896種類を超えた分は`?`になり、`kagura_console.screen.glyph_overflow`へ数える。
+- 日本語の字形はタイル128〜1199（最大1072枚）に、表示中のセルが使う数を数えて登録する。画面から消えた字形のタイルだけを再利用し、表示中の文字を書き換えることはない。表示中の字形が1072種類を超えた分は`?`になり、`kagura_console.screen.glyph_overflow`へ数える。
 - 新しい字形を表示する時は、20msごとの表示更新の中でフォントファイルを読む（1字最大13回seek/read、実機で約2.4ms）。字形の多い大量出力では表示更新に時間がかかる。
 - スクロールで画面外へ出た行の字形タイルは、そのCOMMITの後に解放して再利用する。
 - RAMは480pで約8.5KB（セルの文字コード・表示中のタイル・参照数・登録表）を使う。
@@ -267,6 +271,8 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 
 ### 実機の受入結果
 
+以下は拡張前ABI 0.5の過去の記録。ABI 0.6・1,200枚版は[第3段階の数値検証](../../docs/tile-1200-stage3.md)を参照。
+
 2026-10-29、Pico（公式MicroPython v1.26.0 UF2＋`/lib/kagura/`、frozenなし）、Tang Nano 9K。bitstreamは`8aee28e`から作った[標準版release](https://github.com/siska-tech/kagura/releases/tag/bitstreams-2026-10-27)の`spi`・`spipsram`・`qspipsram`・`qspipsram720`をSRAMへ書いた。
 
 | 項目 | 結果 |
@@ -295,3 +301,17 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 - Picoが/CSをhighに駆動したままTang Nanoの電源だけを切ると、信号ピン経由で電源が回り込み、再投入後も構成の失敗と再試行（約172ms周期）が続いてREADYまで約6.5秒かかった。ピンを入力にした場合は1回で構成した。電源はPicoと同時か先にFPGAへ入れ、Pico動作中にFPGAだけを切らない。
 
 レジスタ定数`kagura/regs.py`は`spec/registers.json`から生成する。手動編集しない。
+
+## 320×240疑似フレームバッファ
+
+ABI 0.6の480p構成では`from kagura.framebuffer import TileFramebuffer`で、全1200パターンを40×30セルへ固定し、tile-native 4bppの自由描画を行える。RAMは38400 Bの描画buffer＋1200 Bのdirty表等。pixel／fill／hline／vline／line／rect／fill_rect／circle／ASCII textをローカルで描き、明示的な`flush()`が連続dirty runをまとめて転送・FENCEする。表示中の更新は画面全体で原子的にはならない。
+
+console／TextLayer／sprite用の独立pattern所有者とは同時に使用しない。既存consoleはpauseしてdeviceを再利用し、終了後resumeでconsole画面を再構築する。全map・patternsを上書きする`initialize()`が必要。
+
+[API・配置と復帰](../../docs/framebuffer.md)、[参照描画・実機診断・性能結果](../../docs/framebuffer-results.md)。診断は`examples/framebuffer_diagnostic.py`、測定は`examples/framebuffer_benchmark.py`。追加試験は`python3 -I software/micropython/tests/test_framebuffer.py`。
+
+### Viper描画backend
+
+RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(False)`でPython、`fb.set_viper(True)`でViper必須、`fb.set_viper()`でautoへ戻す。`fb.viper_enabled`とnative内`fb.kernel_counts`で選択と実行を確認できる。buffer／dirtyと公開描画結果は同じ。通信側のViper FIFO／DMAとは独立で、flush・FENCE・COMMIT・error検査は変更していない。
+
+同条件の大面積fill_rectはPython1239.183 ms／Viper7.672 ms、lineは66.857 ms／1.923 ms（各10回平均）。[全sample・分散・最大・flush・各5分負荷の比較](../../docs/framebuffer-viper-results.md)と[安全範囲・fallback仕様](../../docs/framebuffer.md#viper描画backend)を参照。kernelの個別関数は内部専用。

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // VRAM (docs/memory-map.md) with a command-side port and renderer ports.
-//   0000-7FFF pattern  16x SP 2048x8 (bank = addr[14:11])
+//   0000-7FFF / B000-C5FF pattern 19x SP 2048x8, 1200 public patterns
+//   9000-90FF map tile bit10, packed in spare bytes of pattern bank 18
 //   8000-8FFF map      2x 2048x8 byte lanes (word = addr[11:1])
 //   A000-A7FF OAM      SPRITES*8 x16 RMW RAM (2048 for 256), shadow words
 //                      0..SPRITES*4-1, active half above
@@ -39,9 +40,9 @@ module kagura_vram #(
     output wire render_grant,
     input wire map_read,
     input wire [10:0] map_index,
-    output wire [15:0] map_data,
+    output wire [16:0] map_data,
     input wire pattern_read,
-    input wire [14:0] pattern_addr,
+    input wire [15:0] pattern_addr,
     output wire [7:0] pattern_data,
     input wire palette_read,
     input wire [9:0] palette_index,
@@ -78,29 +79,49 @@ module kagura_vram #(
         if(reset) begin pending<=0; write<=0; word<=0; addr<=0; wdata<=0; end
         else if(valid && ready) begin pending<=1; write<=write_in; word<=word_in; addr<=addr_in; wdata<=wdata_in; end
         else if(go) pending<=0;
-    wire is_pattern=!word && !addr[15];
+    wire is_extra_pattern=!word && addr>=16'hb000 && addr<16'hc600;
+    wire is_pattern=!word && (!addr[15] || is_extra_pattern);
+    wire is_map_ext=!word && addr[15:8]==8'h90;
     wire is_map=!word && addr[15:12]==4'h8;
     wire is_oam=word ? !addr[15] : addr[15:12]==4'ha;          // A000-A7FF
     wire is_palette=word ? addr[15] : addr[15:9]==7'b1001_010;  // 9400-95FF
     wire is_wave=!word && addr[15:9]==7'b1001_100;               // 9800-99FF
 
     // Pattern banks: renderer address when granted, else the command port.
-    wire [7:0] pattern_rd [0:15];
-    wire [14:0] pat_a=clearing ? {4'b0,init_index} : render_grant ? pattern_addr : addr[14:0];
+    wire [7:0] pattern_rd [0:18];
+    // B000/B800/C000 map to physical banks 16/17/18. Avoid a subtractor
+    // in the RAM CE path; both windows share the same low eleven bits.
+    wire [4:0] cpu_pat_bank=addr[15] ? {3'b100,~addr[12],addr[11]} : {1'b0,addr[14:11]};
+    wire [15:0] pat_a=clearing ? {5'b0,init_index} : render_grant ? pattern_addr : {cpu_pat_bank,addr[10:0]};
     // Renderer reads already include render_grant (checked below), while
     // go_graphics requires !render_hold. OR the disjoint clients directly:
     // another grant mux here would feed the RAM-idle/renderer control chain
     // back into every pattern-bank CE.
     genvar i;
-    generate for(i=0;i<16;i=i+1) begin: pattern
+    // Bank 18 uses bytes 0..1535 for tiles 1152..1199. Its unused
+    // bytes 1536..1791 hold the 256-byte map extension table. The BG
+    // fetch stage reads map at step 0 and patterns at steps 2..5, never
+    // together; sprites only read patterns. Thus no extra port or cycle.
+    wire table_render=render_grant && map_read;
+    wire table_cpu=go_graphics && is_map_ext;
+    wire [10:0] tail_addr=clearing ? init_index : table_render ? {3'b110,map_index[10:3]} :
+        is_map_ext && !render_grant ? {3'b110,addr[7:0]} : pat_a[10:0];
+    generate for(i=0;i<19;i=i+1) begin: pattern
+        wire table_enable=(i==18) && (table_render || table_cpu);
         kagura_ram_sp #(.DEPTH(2048),.WIDTH(8)) ram(clk,
-            clear_write || (pattern_read && pattern_addr[14:11]==i) ||
-                (go_graphics && is_pattern && addr[14:11]==i),
-            clearing || (!render_grant && write),pat_a[10:0],clearing ? 8'b0 : wdata[7:0],pattern_rd[i]);
+            clear_write || (pattern_read && pattern_addr[15:11]==i) ||
+                (go_graphics && is_pattern && cpu_pat_bank==i) || table_enable,
+            clearing || (!render_grant && write),i==18 ? tail_addr : pat_a[10:0],
+            clearing ? 8'b0 : wdata[7:0],pattern_rd[i]);
     end endgenerate
-    reg [3:0] pat_bank_q;
-    always @(posedge clk) if(render_grant && pattern_read) pat_bank_q<=pattern_addr[14:11];
-    assign pattern_data=pattern_rd[pat_bank_q];
+    reg [4:0] pat_bank_q;
+    reg pat_valid_q;
+    always @(posedge clk) if(render_grant && pattern_read) begin
+        pat_bank_q<=pattern_addr[15:11];
+        pat_valid_q<=pattern_addr<16'd38400;
+    end
+    // Invalid IDs 1200..2047 are transparent, never aliases of old tiles.
+    assign pattern_data=pat_valid_q ? pattern_rd[pat_bank_q] : 8'b0;
     wire [7:0] wave_rd;
     reg active_wave_bank;
     always @(posedge clk)
@@ -124,7 +145,12 @@ module kagura_vram #(
     kagura_ram_sp #(.DEPTH(2048),.WIDTH(8)) map_hi(clk,
         clear_write || (render_grant ? map_read : map_cpu && (!write || addr[0])),
         clearing || (!render_grant && write),map_addr,clearing ? 8'b0 : wdata[7:0],map_high);
-    assign map_data={map_high,map_low};
+    // Bank 18 returns the extension byte alongside the two map lanes.
+    wire [7:0] map_ext_rd=pattern_rd[18];
+    reg [2:0] map_bit_q;
+    always @(posedge clk)
+        if(render_grant && map_read) map_bit_q<=map_index[2:0];
+    assign map_data={map_ext_rd[map_bit_q],map_high,map_low};
     assign word_ready[1:0]=2'b11;
     assign word_ready_next[1:0]=2'b11;
 
@@ -132,8 +158,8 @@ module kagura_vram #(
     wire [3:0] word_sel={is_palette,is_oam,2'b00};
     wire [3:0] word_rsp;
     wire [15:0] word_rd [0:3];
-    assign word_rd[0]=map_data;
-    assign word_rd[1]=map_data;
+    assign word_rd[0]=map_data[15:0];
+    assign word_rd[1]=map_data[15:0];
     // OAM: SPRITES*8 words, shadow in the lower half. Palette: 1024 words.
     localparam integer OAW=$clog2(SPRITES)+3;
     wire [OAW-1:0] oam_addr=word ? addr[OAW-1:0] : {1'b0,addr[OAW-1:1]};
@@ -144,7 +170,7 @@ module kagura_vram #(
         if(is_oam) case(addr[2:0])
             3'd1: byte_data={6'b0,wdata[1:0]};
             3'd3: byte_data={1'b0,wdata[6:0]};
-            3'd5: byte_data={2'b0,wdata[5:0]};
+            3'd5: byte_data={1'b0,wdata[6:0]};
             3'd6,3'd7: byte_data=0;
             default: ;
         endcase
@@ -161,8 +187,8 @@ module kagura_vram #(
     assign palette_data=word_rd[3];
 
     // Command-port read return: select one edge after the read, register it.
-    reg [3:0] src_bank;
-    reg [2:0] src_kind; // 0 pattern, 1 wave, 2..5 word RAM 0..3
+    reg [4:0] src_bank;
+    reg [2:0] src_kind; // 0 pattern, 1 wave, 2..5 word RAM, 6 map extension
     reg src_high, src_word, read_q;
     reg [15:0] rdata_mux;
     always @(posedge clk)
@@ -172,8 +198,8 @@ module kagura_vram #(
             rsp_valid<=read_q;
             if(read_q) rdata<=rdata_mux;
             if(go && !write) begin
-                src_bank<=addr[14:11]; src_high<=addr[0]; src_word<=word;
-                src_kind<=is_pattern ? 3'd0 : is_wave ? 3'd1 : is_palette ? 3'd5 : is_oam ? 3'd4 : addr[11] ? 3'd3 : 3'd2;
+                src_bank<=cpu_pat_bank; src_high<=addr[0]; src_word<=word;
+                src_kind<=is_pattern ? 3'd0 : is_map_ext ? 3'd6 : is_wave ? 3'd1 : is_palette ? 3'd5 : is_oam ? 3'd4 : addr[11] ? 3'd3 : 3'd2;
             end
         end
     wire [1:0] word_index=src_kind[1:0]-2'd2; // kinds 2..5 -> RAM 0..3
@@ -182,9 +208,13 @@ module kagura_vram #(
         case(src_kind)
             3'd0: rdata_mux={8'h00,pattern_rd[src_bank]};
             3'd1: rdata_mux={8'h00,wave_rd};
+            3'd6: rdata_mux={8'h00,map_ext_rd};
             default: rdata_mux=src_word ? src : {8'h00,src_high ? src[15:8] : src[7:0]};
         endcase
 // synthesis translate_off
+    always @(posedge clk)
+        if(!reset && map_read && pattern_read)
+            $fatal(1,"map/pattern overlap on shared extension bank");
     always @(posedge clk)
         if(!reset && (map_read || pattern_read || palette_read || oam_read) && !render_grant)
             $fatal(1,"renderer read without grant");

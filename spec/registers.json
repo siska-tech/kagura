@@ -1,6 +1,6 @@
 {
   "$comment": "Machine-readable register ABI. Normative prose: docs/register-map.md, docs/audio-spec.md, docs/memory-map.md. Generate constants with tools/gen-registers.ps1; -Check verifies outputs and the document tables.",
-  "abi": { "major": 0, "minor": 5 },
+  "abi": { "major": 0, "minor": 6 },
   "io_base": { "w65c02": 40704 },
   "direct": [
     { "offset": 0, "name": "STATUS", "access": "RO", "reset": 0,
@@ -35,7 +35,7 @@
     { "offset": 24, "name": "ID0", "access": "RO", "reset": 75 },
     { "offset": 25, "name": "ID1", "access": "RO", "reset": 57 },
     { "offset": 26, "name": "ABI_MAJOR", "access": "RO", "reset": 0 },
-    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 5 },
+    { "offset": 27, "name": "ABI_MINOR", "access": "RO", "reset": 6 },
     { "offset": 28, "name": "CAPS", "access": "RO", "reset": null,
       "bits": { "HDMI_AUDIO": 0, "WAVE": 1, "RDY": 2, "PSRAM": 3, "SPR16": 4, "WIDE": 5, "RSCROLL": 6 },
       "variants": { "full": 83, "wide": 115, "full_psram": 91, "wide_psram": 123 } },
@@ -58,7 +58,7 @@
     { "index": 4, "name": "RASTER_LINE", "doc_label": "RASTER_LINE", "access": "RW shadow", "reset": 255 },
     { "index": 5, "name": "MAX_SPRITES", "doc_label": "MAX_SPRITES", "access": "RO", "reset": 0 },
     { "index": 6, "name": "MAX_LINE_SPRITES", "doc_label": "MAX_LINE_SPRITES", "access": "RO", "reset": 16 },
-    { "index": 7, "name": "PATTERN_COUNT_L", "doc_label": "PATTERN_COUNT_L", "access": "RO", "reset": 0 },
+    { "index": 7, "name": "PATTERN_COUNT_L", "doc_label": "PATTERN_COUNT_L", "access": "RO", "reset": 176 },
     { "index": 8, "name": "PATTERN_COUNT_H", "doc_label": "PATTERN_COUNT_H", "access": "RO", "reset": 4 },
     { "index": 9, "name": "WAVE_LENGTH_MAX", "doc_label": "WAVE_LENGTH_MAX", "access": "RO", "reset": 8 },
     { "index": 10, "name": "SCREEN_HEIGHT", "doc_label": "SCREEN_HEIGHT", "access": "RO", "reset": 240, "variants": { "full": 240, "wide": 180 } },
@@ -127,12 +127,14 @@
   "vram": [
     { "name": "PATTERN", "start": 0, "end": 32767, "access": "RW" },
     { "name": "MAP", "start": 32768, "end": 36863, "access": "RW" },
+    { "name": "MAP_EXT", "start": 36864, "end": 37119, "access": "RW" },
     { "name": "PALETTE", "start": 37888, "end": 38399, "access": "RW" },
     { "name": "PALETTE_ACTIVE", "start": 38400, "end": 38911, "access": "none" },
     { "name": "WAVE", "start": 38912, "end": 39423, "access": "RW" },
     { "name": "WAVE_ACTIVE", "start": 39424, "end": 39935, "access": "none" },
     { "name": "OAM", "start": 40960, "end": 43007, "access": "RW" },
     { "name": "OAM_ACTIVE", "start": 43008, "end": 45055, "access": "none" },
+    { "name": "PATTERN_EXT", "start": 45056, "end": 50687, "access": "RW" },
     { "name": "PSRAM", "start": 4194304, "end": 8388607, "access": "RW", "caps": "PSRAM" }
   ]
 }

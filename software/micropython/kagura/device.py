@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Register ABI 0.5. One owner/task; callbacks must check busy before use."""
+"""Register ABI 0.6. One owner/task; callbacks must check busy before use."""
 from time import ticks_us, ticks_diff
 from . import regs as R
 
@@ -63,6 +63,14 @@ class Kagura:
         self.height = self.ext_read(R.EXT_SCREEN_HEIGHT)
         if self.height not in (180, 240):
             raise OSError("unexpected screen height")
+        # A previous host can disconnect after READ_REQUEST, leaving its
+        # result unread. Discard that result when attaching a fresh session;
+        # never replay the request or clear the sticky fault information.
+        self.wait_status(R.STATUS_READ_BUSY, 0)
+        if self.read_reg(R.REG_STATUS) & R.STATUS_READ_READY:
+            self.read_reg(R.REG_VRAM_READ_RESULT)
+            self.write_reg(R.REG_IRQ_STATUS, R.IRQ_STATUS_READ_DONE)
+        self._read_pending = False
         return self
 
     @operation
@@ -143,8 +151,9 @@ class Kagura:
     def _memory_range(self, address, length):
         _range(address, 0, 0xFFFFFF, "address")
         _range(length, 0, 0x400000, "length")
-        regions = ((0, 0x8000), (0x8000, 0x9000), (0x9400, 0x9600),
-                   (0x9800, 0x9A00), (0xA000, 0xA800), (0x400000, 0x800000))
+        regions = ((0, 0x8000), (0x8000, 0x9000), (0x9000, 0x9100), (0x9400, 0x9600),
+                   (0x9800, 0x9A00), (0xA000, 0xA800), (0xB000, 0xC600),
+                   (0x400000, 0x800000))
         for start, end in regions:
             if start <= address < end and address + length <= end:
                 if start == 0x400000:

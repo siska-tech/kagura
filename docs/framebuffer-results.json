@@ -1,0 +1,717 @@
+{
+  "date": "2026-10-29",
+  "scope": "480p tile framebuffer SDK and Pico numerical acceptance",
+  "revision": "3d9a916",
+  "rtl_abi_changed": false,
+  "abi": [
+    0,
+    6
+  ],
+  "hardware": {
+    "fpga": "Tang Nano 9K GW1NR-9C",
+    "host": "RP2040 Raspberry Pi Pico",
+    "cpu_hz": 125000000,
+    "mode": "qspi",
+    "baudrate": 5000000,
+    "config": "qspipsram",
+    "bitstream_sha256": "2d00ee52dcff0edb7ad22c3d7910358ca1fe4221619bc0b2332b774ee8f133d9",
+    "acceleration": "existing Viper FIFO/DMA, chunk 128",
+    "programming": "SRAM only; existing /lib/kagura and firmware unchanged"
+  },
+  "benchmark_log_sha256": "5c72a1ed332646acca22c422e2d7685fd10383773ba5a644ff0c7e411d8858f7",
+  "initialization": {
+    "height": 240,
+    "dirty_bytes": 1200,
+    "framebuffer_heap_bytes": 40272,
+    "abi": [
+      0,
+      6
+    ],
+    "heap_free": 90736,
+    "initialization_us": 372285,
+    "framebuffer_bytes": 38400,
+    "event": "initialized",
+    "accelerated": true
+  },
+  "transfer_benchmarks": [
+    {
+      "register_write_calls": 5,
+      "flush": {
+        "p95_us": 14306,
+        "max_us": 14306,
+        "count": 5,
+        "mean_us": 13718.2
+      },
+      "transfer": {
+        "p95_us": 5770,
+        "max_us": 5770,
+        "count": 5,
+        "mean_us": 5378.2
+      },
+      "register_read_calls": 6,
+      "dirty_tiles": 1,
+      "fence_host_wait": {
+        "p95_us": 7611,
+        "max_us": 7611,
+        "count": 5,
+        "mean_us": 7426.2
+      },
+      "event": "transfer_benchmark",
+      "last_flush": {
+        "transfer_us": 5260,
+        "wait_us": 7436,
+        "tiles": 1,
+        "writes": 1,
+        "bytes": 32,
+        "fences": 1,
+        "total_us": 13591,
+        "runs": 1
+      },
+      "register_tx_payload_bytes": 39,
+      "register_rx_payload_bytes": 6,
+      "draw": {
+        "p95_us": 562,
+        "max_us": 562,
+        "count": 5,
+        "mean_us": 522.6
+      }
+    },
+    {
+      "register_write_calls": 5,
+      "flush": {
+        "p95_us": 14378,
+        "max_us": 14378,
+        "count": 5,
+        "mean_us": 14278.4
+      },
+      "transfer": {
+        "p95_us": 6018,
+        "max_us": 6018,
+        "count": 5,
+        "mean_us": 5961.0
+      },
+      "register_read_calls": 6,
+      "dirty_tiles": 10,
+      "fence_host_wait": {
+        "p95_us": 7437,
+        "max_us": 7437,
+        "count": 5,
+        "mean_us": 7399.6
+      },
+      "event": "transfer_benchmark",
+      "last_flush": {
+        "transfer_us": 5960,
+        "wait_us": 7382,
+        "tiles": 10,
+        "writes": 1,
+        "bytes": 320,
+        "fences": 1,
+        "total_us": 14238,
+        "runs": 1
+      },
+      "register_tx_payload_bytes": 327,
+      "register_rx_payload_bytes": 6,
+      "draw": {
+        "p95_us": 3810,
+        "max_us": 3810,
+        "count": 5,
+        "mean_us": 3765.0
+      }
+    },
+    {
+      "register_write_calls": 5,
+      "flush": {
+        "p95_us": 21344,
+        "max_us": 21344,
+        "count": 5,
+        "mean_us": 21317.6
+      },
+      "transfer": {
+        "p95_us": 13055,
+        "max_us": 13055,
+        "count": 5,
+        "mean_us": 13026.4
+      },
+      "register_read_calls": 6,
+      "dirty_tiles": 100,
+      "fence_host_wait": {
+        "p95_us": 7469,
+        "max_us": 7469,
+        "count": 5,
+        "mean_us": 7428.2
+      },
+      "event": "transfer_benchmark",
+      "last_flush": {
+        "transfer_us": 13025,
+        "wait_us": 7441,
+        "tiles": 100,
+        "writes": 1,
+        "bytes": 3200,
+        "fences": 1,
+        "total_us": 21330,
+        "runs": 1
+      },
+      "register_tx_payload_bytes": 3207,
+      "register_rx_payload_bytes": 6,
+      "draw": {
+        "p95_us": 34921,
+        "max_us": 34921,
+        "count": 5,
+        "mean_us": 34874.2
+      }
+    },
+    {
+      "register_write_calls": 8,
+      "flush": {
+        "p95_us": 113144,
+        "max_us": 113144,
+        "count": 5,
+        "mean_us": 113030.2
+      },
+      "transfer": {
+        "p95_us": 104726,
+        "max_us": 104726,
+        "count": 5,
+        "mean_us": 104606.2
+      },
+      "register_read_calls": 7,
+      "dirty_tiles": 1200,
+      "fence_host_wait": {
+        "p95_us": 7500,
+        "max_us": 7500,
+        "count": 5,
+        "mean_us": 7436.2
+      },
+      "event": "transfer_benchmark",
+      "last_flush": {
+        "transfer_us": 104533,
+        "wait_us": 7451,
+        "tiles": 1200,
+        "writes": 2,
+        "bytes": 38400,
+        "fences": 1,
+        "total_us": 112973,
+        "runs": 1
+      },
+      "register_tx_payload_bytes": 38412,
+      "register_rx_payload_bytes": 7,
+      "draw": {
+        "p95_us": 419805,
+        "max_us": 419805,
+        "count": 5,
+        "mean_us": 418908.2
+      }
+    }
+  ],
+  "draw_benchmarks": [
+    {
+      "timing": {
+        "p95_us": 66704,
+        "max_us": 66704,
+        "count": 10,
+        "mean_us": 66026.9
+      },
+      "name": "line",
+      "event": "draw_benchmark"
+    },
+    {
+      "timing": {
+        "p95_us": 1237305,
+        "max_us": 1237305,
+        "count": 10,
+        "mean_us": 1236910.0
+      },
+      "name": "fill_rect",
+      "event": "draw_benchmark"
+    }
+  ],
+  "continuous": {
+    "iteration": {
+      "count": 1253,
+      "mean_us": 239090.2,
+      "recent_count": 256,
+      "max_us": 325699,
+      "p95_recent_us": 257124
+    },
+    "elapsed_ms": 300062,
+    "bytes_sent": 2224032,
+    "fifo": 0,
+    "draw": {
+      "count": 1253,
+      "mean_us": 127604.47,
+      "recent_count": 256,
+      "max_us": 146378,
+      "p95_recent_us": 134745
+    },
+    "gc": {
+      "count": 40,
+      "mean_us": 10984.25,
+      "recent_count": 40,
+      "max_us": 11041,
+      "p95_recent_us": 11016
+    },
+    "fence_host_wait": {
+      "count": 1253,
+      "mean_us": 54675.78,
+      "recent_count": 256,
+      "max_us": 108216,
+      "p95_recent_us": 59941
+    },
+    "heap_after_gc_min": 114640,
+    "hdmi_counter_hz": 60.000936,
+    "transfer": {
+      "count": 1253,
+      "mean_us": 42829.83,
+      "recent_count": 256,
+      "max_us": 85611,
+      "p95_recent_us": 56984
+    },
+    "frame": 17,
+    "pcm": [
+      3,
+      3
+    ],
+    "pattern_writes": 9285,
+    "heap_after_gc_max": 114752,
+    "error": 0,
+    "hdmi_counter_frames": 18004,
+    "physically_presented_updates_hz": null,
+    "loops": 1253,
+    "event": "continuous_pass",
+    "application_hz": 4.1758036
+  },
+  "readbacks": [
+    {
+      "upper_bytes": 256,
+      "pattern_bytes": 512,
+      "event": "readback_pass",
+      "full": false,
+      "map_bytes": 4096
+    },
+    {
+      "upper_bytes": 256,
+      "pattern_bytes": 38400,
+      "event": "readback_pass",
+      "full": true,
+      "map_bytes": 4096
+    }
+  ],
+  "baseline": {
+    "driver_revision": "8280d97",
+    "log_sha256": "d1ab2ac49317f55c70ce5cbd4350b9afe65f8d87ba47d0ed5729613095ae8d39",
+    "transfer_benchmarks": [
+      {
+        "register_write_calls": 5,
+        "flush": {
+          "p95_us": 24777,
+          "max_us": 24777,
+          "count": 5,
+          "mean_us": 23278.0
+        },
+        "transfer": {
+          "p95_us": 6731,
+          "max_us": 6731,
+          "count": 5,
+          "mean_us": 5681.8
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 1,
+        "fence_host_wait": {
+          "p95_us": 8085,
+          "max_us": 8085,
+          "count": 5,
+          "mean_us": 7632.6
+        },
+        "event": "transfer_benchmark",
+        "last_flush": {
+          "transfer_us": 5418,
+          "wait_us": 7492,
+          "tiles": 1,
+          "writes": 1,
+          "bytes": 32,
+          "fences": 1,
+          "total_us": 22880,
+          "runs": 1
+        },
+        "register_tx_payload_bytes": 39,
+        "register_rx_payload_bytes": 6,
+        "draw": {
+          "p95_us": 483,
+          "max_us": 483,
+          "count": 5,
+          "mean_us": 450.4
+        }
+      },
+      {
+        "register_write_calls": 5,
+        "flush": {
+          "p95_us": 23802,
+          "max_us": 23802,
+          "count": 5,
+          "mean_us": 23648.0
+        },
+        "transfer": {
+          "p95_us": 6252,
+          "max_us": 6252,
+          "count": 5,
+          "mean_us": 6194.8
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 10,
+        "fence_host_wait": {
+          "p95_us": 7532,
+          "max_us": 7532,
+          "count": 5,
+          "mean_us": 7433.8
+        },
+        "event": "transfer_benchmark",
+        "last_flush": {
+          "transfer_us": 6176,
+          "wait_us": 7414,
+          "tiles": 10,
+          "writes": 1,
+          "bytes": 320,
+          "fences": 1,
+          "total_us": 23606,
+          "runs": 1
+        },
+        "register_tx_payload_bytes": 327,
+        "register_rx_payload_bytes": 6,
+        "draw": {
+          "p95_us": 3405,
+          "max_us": 3405,
+          "count": 5,
+          "mean_us": 3374.2
+        }
+      },
+      {
+        "register_write_calls": 5,
+        "flush": {
+          "p95_us": 31113,
+          "max_us": 31113,
+          "count": 5,
+          "mean_us": 31012.8
+        },
+        "transfer": {
+          "p95_us": 13121,
+          "max_us": 13121,
+          "count": 5,
+          "mean_us": 13011.6
+        },
+        "register_read_calls": 6,
+        "dirty_tiles": 100,
+        "fence_host_wait": {
+          "p95_us": 7374,
+          "max_us": 7374,
+          "count": 5,
+          "mean_us": 7357.4
+        },
+        "event": "transfer_benchmark",
+        "last_flush": {
+          "transfer_us": 12968,
+          "wait_us": 7374,
+          "tiles": 100,
+          "writes": 1,
+          "bytes": 3200,
+          "fences": 1,
+          "total_us": 30979,
+          "runs": 1
+        },
+        "register_tx_payload_bytes": 3207,
+        "register_rx_payload_bytes": 6,
+        "draw": {
+          "p95_us": 36425,
+          "max_us": 36425,
+          "count": 5,
+          "mean_us": 36325.2
+        }
+      },
+      {
+        "register_write_calls": 8,
+        "flush": {
+          "p95_us": 130439,
+          "max_us": 130439,
+          "count": 5,
+          "mean_us": 130304.2
+        },
+        "transfer": {
+          "p95_us": 104851,
+          "max_us": 104851,
+          "count": 5,
+          "mean_us": 104693.0
+        },
+        "register_read_calls": 7,
+        "dirty_tiles": 1200,
+        "fence_host_wait": {
+          "p95_us": 7427,
+          "max_us": 7427,
+          "count": 5,
+          "mean_us": 7397.8
+        },
+        "event": "transfer_benchmark",
+        "last_flush": {
+          "transfer_us": 104718,
+          "wait_us": 7427,
+          "tiles": 1200,
+          "writes": 2,
+          "bytes": 38400,
+          "fences": 1,
+          "total_us": 130356,
+          "runs": 1
+        },
+        "register_tx_payload_bytes": 38412,
+        "register_rx_payload_bytes": 7,
+        "draw": {
+          "p95_us": 790766,
+          "max_us": 790766,
+          "count": 5,
+          "mean_us": 789158.0
+        }
+      }
+    ],
+    "draw_benchmarks": [
+      {
+        "timing": {
+          "p95_us": 138472,
+          "max_us": 138472,
+          "count": 10,
+          "mean_us": 137913.5
+        },
+        "name": "line",
+        "event": "draw_benchmark"
+      },
+      {
+        "timing": {
+          "p95_us": 1237472,
+          "max_us": 1237472,
+          "count": 10,
+          "mean_us": 1236368.2
+        },
+        "name": "fill_rect",
+        "event": "draw_benchmark"
+      }
+    ],
+    "continuous": {
+      "iteration": {
+        "count": 1140,
+        "mean_us": 262882.1,
+        "recent_count": 256,
+        "max_us": 348378,
+        "p95_recent_us": 280986
+      },
+      "elapsed_ms": 300136,
+      "bytes_sent": 2023648,
+      "fifo": 0,
+      "draw": {
+        "count": 1140,
+        "mean_us": 143123.39,
+        "recent_count": 256,
+        "max_us": 156508,
+        "p95_recent_us": 154230
+      },
+      "frame": 174,
+      "hdmi_counter_hz": 59.999466,
+      "fence_host_wait": {
+        "count": 1140,
+        "mean_us": 55017.45,
+        "recent_count": 256,
+        "max_us": 109904,
+        "p95_recent_us": 64096
+      },
+      "transfer": {
+        "count": 1140,
+        "mean_us": 42428.55,
+        "recent_count": 256,
+        "max_us": 78281,
+        "p95_recent_us": 51664
+      },
+      "gc": {
+        "count": 36,
+        "mean_us": 11158.223,
+        "recent_count": 36,
+        "max_us": 11217,
+        "p95_recent_us": 11207
+      },
+      "heap_after_gc_min": 90880,
+      "pattern_writes": 8454,
+      "pcm": [
+        3,
+        3
+      ],
+      "error": 0,
+      "hdmi_counter_frames": 18008,
+      "physically_presented_updates_hz": null,
+      "loops": 1140,
+      "event": "continuous_pass",
+      "application_hz": 3.798278
+    },
+    "note": "baseline progress heap_after_gc label was sampled between GC passes; only final optimized GC extrema are used"
+  },
+  "tests": {
+    "sdk": 136,
+    "framebuffer": 14,
+    "rtl": 61,
+    "skipped": 0,
+    "reference": "independent linear raster, seed 1200, 100 shapes, all 76800 pixels compared",
+    "bytecode": "all SDK/examples armv6m compile"
+  },
+  "preparation_issue": "Final deployment preparation script duplicated a diagnostic metadata keyword; corrected before final measurement; no FPGA fault",
+  "visual_observation": {
+    "date": "2026-10-29",
+    "config": "qspipsram",
+    "mode": "qspi",
+    "sck_hz": 5000000,
+    "observer": "user",
+    "partial_motion_pcm": {
+      "status": "pass",
+      "scene": "PARTIAL UPDATES + PCM",
+      "moving_rectangle": true,
+      "window_frame": true,
+      "cursor_blink": true,
+      "no_visible_corruption": true,
+      "no_audible_dropout_or_noise": true,
+      "user_reply": "表示・動き・音とも問題なし"
+    },
+    "scene_A": {
+      "status": "pass",
+      "full_40_by_30_grid": true,
+      "corner_labels": true,
+      "bottom_right_tile1199_visible": true,
+      "initial_reply": "四隅・右下まで問題なく表示",
+      "initial_position_code_overlap": "User noticed label bottom rows overlapped index code; diagnostic changed to 3x5 labels above code rows",
+      "fixed_reply": "表示ばっちりで問題ないですね",
+      "diagnostic_revision": "f99ed46",
+      "corner_vram_readback": "pass"
+    },
+    "scene_B": {
+      "status": "pass",
+      "color_bars_16": true,
+      "horizontal_vertical_diagonal_lines": true,
+      "rectangles": true,
+      "circles": true,
+      "edge_clipping": true,
+      "tile_seams": "no abnormal break",
+      "user_reply": "図形・色・つながりとも問題なし"
+    },
+    "scene_C": {
+      "status": "pass",
+      "tiles_1023_1024_crossing": true,
+      "tile1199_bottom_right": true,
+      "outer_border": true,
+      "pcm_continued": true,
+      "user_reply": "境界・右下・音とも問題なし"
+    }
+  },
+  "measurement_deployed_files": [
+    {
+      "source": "software/micropython/kagura/__init__.py",
+      "remote": "/lib/kagurafb/__init__.py",
+      "sha256": "e6893051d4a23de6726c58cbc238865e88df4ad5b1da8e1b882e06357f10f9be"
+    },
+    {
+      "source": "software/micropython/kagura/regs.py",
+      "remote": "/lib/kagurafb/regs.py",
+      "sha256": "8d587b4f00c8ef182bec2d790c127ad78300e6a02bc63906564fe39a6169fc59"
+    },
+    {
+      "source": "software/micropython/kagura/device.py",
+      "remote": "/lib/kagurafb/device.py",
+      "sha256": "787b3d3c180cf9d0ab7803d8ba376c1c71230381c288ff942f8921ddde80fddd"
+    },
+    {
+      "source": "software/micropython/kagura/video.py",
+      "remote": "/lib/kagurafb/video.py",
+      "sha256": "4c7315b431ed12945b5e2acc69a2b42485982e53e24721d384fb9c8d99f0fc78"
+    },
+    {
+      "source": "software/micropython/kagura/audio.py",
+      "remote": "/lib/kagurafb/audio.py",
+      "sha256": "553227ebef8ea9b56deb35c6520706e5ba3e6adb380e9c520398be3e6b105de9"
+    },
+    {
+      "source": "software/micropython/kagura/transport_rp2.py",
+      "remote": "/lib/kagurafb/transport_rp2.py",
+      "sha256": "3f88087006b489a0c483c99e2df0fd2aef5fd8f52d88883983eef9990deee32e"
+    },
+    {
+      "source": "software/micropython/kagura/dma_pack.py",
+      "remote": "/lib/kagurafb/dma_pack.py",
+      "sha256": "0cb676f30c6fb7b17e63b7652df906993acc11ce4ffd05a88bf1e3a59bfbe902"
+    },
+    {
+      "source": "software/micropython/kagura/fifo_xfer.py",
+      "remote": "/lib/kagurafb/fifo_xfer.py",
+      "sha256": "120126d9916487a6cfdc032d4a8737d4c0aea1d288d1a5f5ce27634e7566c4e9"
+    },
+    {
+      "source": "software/micropython/kagura/acceleration.py",
+      "remote": "/lib/kagurafb/acceleration.py",
+      "sha256": "4848d733bf1e545155d0310737181e6f4ffb9c786d01fd4efbf087116180f2bc"
+    },
+    {
+      "source": "software/micropython/kagura/framebuffer.py",
+      "remote": "/lib/kagurafb/framebuffer.py",
+      "sha256": "3011f8b26250ed471559fd835e360adf0667d54b0599c1d32b3ecdfbeaf57f1e"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_diagnostic.py",
+      "remote": "/framebuffer_diagnostic.py",
+      "sha256": "5b5eed4e0e8a43ffafda2d0f76653c40918dc923fa897ff42a0f6cb81af83d04"
+    },
+    {
+      "source": "software/micropython/examples/framebuffer_benchmark.py",
+      "remote": "/framebuffer_benchmark.py",
+      "sha256": "e7a7e10005ef31aaff7549c3f5d11dcb54a013e74dc0a94c4fcd6eb8b59b5f0d"
+    }
+  ],
+  "diagnostic_corner_fix": {
+    "revision": "f99ed46",
+    "source_sha256": "44383df254c633594e01d189ef599bea37db260c1b555a887944f05dcd845fb8",
+    "reason": "3x5 corner labels occupy rows 1..5; index bits occupy rows 6..7",
+    "readback_tiles": [
+      0,
+      39,
+      1160,
+      1199
+    ],
+    "readback_result": "pass",
+    "log_sha256": "25affe51030b918f83bfe767c101abd089179471d2587ec0dd42891bc286d61e"
+  },
+  "restoration": {
+    "fpga": "reload unchanged Flash using Gowin --run 1",
+    "pico": "soft reset existing firmware and boot.py",
+    "abi": [
+      0,
+      5
+    ],
+    "caps": 123,
+    "error": 0,
+    "console_active": true,
+    "fpga_flash_written": false,
+    "pico_firmware_written": false,
+    "canonical_sdk_overwritten": false,
+    "experimental_package_retained": "/lib/kagurafb",
+    "log_sha256": "a9dce5b6378d8885b710edd2662ea1f460937cc6f3ab31ef80b0363378e82f8b",
+    "boot_log_sha256": "3adb52ef5c7e1ab67395238e27e5f3fa133651fc7b12dc86ef61efa12df6408b"
+  },
+  "scope_logs": {
+    "corner-ready.log": "a787e153743e97258039c91b4724c5c80d7ab4400fa34fed0f809a1e34338b32",
+    "scene-b.log": "25affe51030b918f83bfe767c101abd089179471d2587ec0dd42891bc286d61e",
+    "scene-c.log": "4b7198daa442270f2014fadb5ad1afab1aa9b6d9cc6ab5f9c202d1c0ed421e6e",
+    "close.log": "727bd696d39f51bf974d8e3dda798865742258158248487a09010f1bc7684863"
+  },
+  "completion": {
+    "buffer_320x240_4bpp": true,
+    "all_1200_patterns": true,
+    "split_1023_1024": true,
+    "basic_graphics": true,
+    "dirty_flush": true,
+    "full_partial_benchmarks": true,
+    "independent_reference_matches": true,
+    "existing_regressions": true,
+    "hardware_diagnostic": true,
+    "hardware_readback": true,
+    "user_visual_observation": true,
+    "documented": true
+  }
+}

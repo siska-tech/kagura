@@ -1,6 +1,6 @@
-# レジスタ仕様 / ABI 0.5
+# レジスタ仕様 / ABI 0.6（1,200タイル実験）
 
-KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=5。全bitstreamが同じ0.5を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
+KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=6。実験bitstreamが同じ0.6を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
 
 offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）、Cヘッダ（`software/include/kagura_regs.h`）、ca65 include（`software/w65c02/kagura_regs.inc`）を生成し、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
 
@@ -44,7 +44,7 @@ offset・名前・access・bit・reset値の機械可読定義は`spec/registers
 | 18 | ID0 | RO | reset/read 0x4B ('K') |
 | 19 | ID1 | RO | 0x39 ('9') |
 | 1A | ABI_MAJOR | RO | 0 |
-| 1B | ABI_MINOR | RO | 5 |
+| 1B | ABI_MINOR | RO | 6 |
 | 1C | CAPS | RO | b0 HDMI_AUDIO=1,b1 WAVE=1,b2 RDY=0,b3 PSRAM（PSRAM領域・PCM 2ch・COPY）,b4 SPR16=1,b5 WIDE（320×180）,b6 RSCROLL（ラスタスクロール）、b7は0。全体版は0x53、16:9版は0x73、PSRAM版はそれぞれ0x5B、0x7B |
 | 1D | FRAME_COUNT_L | RO | VBlankごとに+1する8bit counter（wrap） |
 | 1E | SPR_OVERFLOW_INDEX | RO | 最初にline上限を超えたsprite番号0..255。IRQ b5のclearで0 |
@@ -108,8 +108,8 @@ EXT_REG_INDEXで選び、EXT_REG_DATAで読み書きする。readはshadow値を
 | 04 | RASTER_LINE 0..LINES−1、LINES..255は無効 | RW shadow /255 |
 | 05 | MAX_SPRITES（登録数。0は256） | RO/0（256） |
 | 06 | MAX_LINE_SPRITES | RO/16 |
-| 07 | PATTERN_COUNT_L | RO/0 |
-| 08 | PATTERN_COUNT_H | RO/4（1024 patterns） |
+| 07 | PATTERN_COUNT_L | RO/176 |
+| 08 | PATTERN_COUNT_H | RO/4（1200 patterns、合計0x04B0） |
 | 09 | WAVE_LENGTH_MAX（log2） | RO/8（256 sample） |
 | 0A | SCREEN_HEIGHT（論理ライン数LINES） | RO/240、16:9版180 |
 | 0B | RS_COUNT（有効entry数0..8。9以上のwriteはBAD_ACCESS） | RW shadow /0 |
@@ -134,7 +134,7 @@ EXT_REG_INDEXで選び、EXT_REG_DATAで読み書きする。readはshadow値を
 
 ## ABIの履歴
 
-ABI 0.xの間は互換性を保証しない。利用中のソフトがない段階で0.5へ変更した。
+ABI 0.xの間は互換性を保証しない。この実験リポジトリでは1,200パターン対応を0.6とする。従来と同じ下位10bitのデータ形式は保つが、ABIを厳密に検査する旧ソフトは再ビルドが必要。
 
 | ABI | 変更 |
 |---|---|
@@ -142,6 +142,7 @@ ABI 0.xの間は互換性を保証しない。利用中のソフトがない段�
 | 0.2 | CAPS b5 WIDE、EXT 0A SCREEN_HEIGHT（320×180の16:9版） |
 | 0.3 | CAPS b6 RSCROLL、EXT 0B..11（ラスタスクロール表） |
 | 0.4 | CAPS b3 PSRAM、EXT 12..16、PSRAM領域、PCM 2ch（音源index 60..9F）、COPY |
+| 0.6 | 実験版：1,200パターン、BG上位bit表、sprite byte 5 bit6をtile bit10に使用、追加pattern窓 |
 | 0.5 | 登録sprite 64→256。OAMを009000から00A000へ移し、flagをrecord byte 6からbyte 3へ移動 |
 
 ソフトはID・ABI_MAJOR/MINOR・CAPSを確認してから使う。手順は[プログラミングガイド](programming-guide.md)。

@@ -2,7 +2,7 @@
 // Background renderer: one logical line (320 pixels) per `start`, written to
 // a line bank as {2'b00, SPR_CLAIMED=0, BG_SOLID, RGB444}
 // (docs/architecture.md, docs/memory-access-schedule.md).
-// Map 64x32 words: bits 9:0 tile, 13:10 palette, 14 H flip, 15 V flip.
+// Map: bit16 is tile bit10; bits9:0 tile, 13:10 palette, 14 H flip, 15 V flip.
 // Pattern: 32 bytes per tile, 4 bytes per row, left pixel in bits 7:4.
 // Scroll: X modulo 512, Y modulo 256. Pixel 0 shows BACKDROP and is not solid.
 // Active palette words are 256..511 of the palette RAM.
@@ -20,9 +20,9 @@ module kagura_bg_renderer (
     input wire render_grant,
     output wire map_read,
     output wire [10:0] map_index,
-    input wire [15:0] map_data,
+    input wire [16:0] map_data,
     output wire pattern_read,
-    output wire [14:0] pattern_addr,
+    output wire [15:0] pattern_addr,
     input wire [7:0] pattern_data,
     output wire palette_read,
     output wire [9:0] palette_index,
@@ -43,7 +43,7 @@ module kagura_bg_renderer (
     // Fetch stage.
     reg [5:0] fetch_tile;              // 0..41
     reg [2:0] fetch_step;              // 0 map, 1 latch, 2..5 pat0..3, 6 collect
-    reg [9:0] tile;
+    reg [10:0] tile;
     reg [3:0] pal;
     reg hflip;
     reg [31:0] row;
@@ -99,7 +99,7 @@ module kagura_bg_renderer (
                 cycles<=cycles+1'b1;
                 if(fetch_advance) begin
                     case(fetch_step)
-                        3'd1: begin tile<=map_data[9:0]; pal<=map_data[13:10]; hflip<=map_data[14]; row_q<=row_sel; end
+                        3'd1: begin tile<={map_data[16],map_data[9:0]}; pal<=map_data[13:10]; hflip<=map_data[14]; row_q<=row_sel; end
                         3'd3: row[31:24]<=pattern_data;
                         3'd4: row[23:16]<=pattern_data;
                         3'd5: row[15:8]<=pattern_data;

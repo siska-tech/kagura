@@ -322,7 +322,7 @@ module kagura_core #(
     assign render_hold=rendering;
     assign render_done=(bg_done && !use_sprites) || sp_done;
     wire bg_pr,bg_pal,sp_pr,sp_pal,bg_lw,sp_lw;
-    wire [14:0] bg_pa,sp_pa;
+    wire [15:0] bg_pa,sp_pa;
     wire [9:0] bg_pi,sp_pi;
     wire [8:0] bg_la,sp_la;
     wire [15:0] bg_ld,sp_ld;
@@ -336,9 +336,10 @@ module kagura_core #(
     assign line_addr=sp_hold ? sp_la : bg_la;
     assign line_data=sp_hold ? sp_ld : bg_ld;
     wire [10:0] map_index;
-    wire [14:0] pattern_addr;
+    wire [15:0] pattern_addr;
     wire [9:0] palette_index;
-    wire [15:0] map_data, palette_data, oam_data;
+    wire [16:0] map_data;
+    wire [15:0] palette_data, oam_data;
     wire [7:0] pattern_data;
     kagura_vram #(.SPRITES(SPRITES)) vram(.clk(clk),.reset(reset),.init_done(init_done),.valid(vram_valid),.ready(vram_ready),.write_in(vram_write),
         .command_idle(vram_idle),.audio_wave_read(wave_read),.audio_wave_addr(wave_addr),.audio_wave_swap(wave_swap),.audio_wave_data(wave_data),

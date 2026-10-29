@@ -1,0 +1,294 @@
+{
+  "date": "2026-10-29",
+  "scope": "tile1200 stage 1; 1024 public patterns; no hardware test",
+  "base_revision": "e909cacd87c207383924b8c15313147940fc14bc",
+  "branch": "experiment/tile-1200",
+  "verilator": "5.032",
+  "seed": 1,
+  "simulation_tests": [
+    {
+      "test": "tb_vram_core",
+      "result": "pass"
+    },
+    {
+      "test": "tb_psram_core",
+      "result": "pass"
+    },
+    {
+      "test": "tb_startup_cpu",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_frame",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_sprites",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_frame720",
+      "result": "pass"
+    },
+    {
+      "test": "tb_vdp_sprites720",
+      "result": "pass"
+    }
+  ],
+  "gowin": "Education V1.9.11.03",
+  "minimum_setup_slack_ns": 0.1,
+  "modified_rtl_sha256": {
+    "rtl/core/kagura_command_queue.sv": "35b49d204b394b6400a91b338458a20be9716b5d291267208b7fb99953fb4901",
+    "rtl/vdp/kagura_line_display.sv": "2a2298ba8d5ef934156e2e206daf48dfafc9509b010fd7b2cadc11fbe3b04b56"
+  },
+  "builds": [
+    {
+      "configuration": "qspi",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 5330,
+        "register": 4216,
+        "ff": 4208,
+        "ram16": 72,
+        "bsram": 23,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 3842,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 1.689,
+            "from": "vdp/core/registers/ext_index_7_s0/Q",
+            "to": "vdp/core/registers/rs_table_160_s0/CE"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "vdp/core/audio_synth/sample_right_11_s0/Q",
+            "to": "link/audio_link/fifo/memory_memory_0_6_s/DI[3]"
+          },
+          "Recovery": {
+            "slack_ns": 17.184,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/wg_1_s0/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 0.569,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync2_2_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial126_setup": 0.0,
+          "serial126_hold": 0.0,
+          "pixel25_setup": 0.0,
+          "pixel25_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel25": 76.389,
+          "system54": 59.417
+        }
+      },
+      "hashes": {
+        "bitstream": "0a17920cbe2f322b891ae98de9dfb5d580b00cd3b30b657326b63a1e033a6e7c",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "266e41bdef4f308aafa89e1edeb3f1b7a5fdd4ae66c91c90718f7fceaeaeb294",
+        "sta_report": "1b65d9165803185920e67c254f5abf5fc32601757e5789f10ac1edb9696486ca",
+        "resource_report": "b28f3e8198587618c42bb6b78c4ca020992e23ef70b1714edbcd646ce0eb5bf6"
+      }
+    },
+    {
+      "configuration": "qspipsram",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 6911,
+        "register": 5167,
+        "ff": 5158,
+        "ram16": 80,
+        "bsram": 23,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 4136,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.156,
+            "from": "vdp/core/registers/ext_index_6_s0/Q",
+            "to": "vdp/core/registers/rs_table_18_s0/CE"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "psram.phy/rwds_f_q_s0/Q",
+            "to": "psram.phy/rwds_ddr/D1"
+          },
+          "Recovery": {
+            "slack_ns": 15.398,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync2_1_s0/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 1.104,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync1_2_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial126_setup": 0.0,
+          "serial126_hold": 0.0,
+          "pixel25_setup": 0.0,
+          "pixel25_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel25": 58.148,
+          "system54": 54.458
+        }
+      },
+      "hashes": {
+        "bitstream": "da0df196b0786f89967052cf5012a77a83d3313dd03239564392bf91c65292cb",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "dc66c79e48aef39848c8e27f5b1b4aea756034e605fbeb2d4789f241c275ecf8",
+        "sta_report": "ebee963495cc13201174a8fa1075aebe1f48a328a9bcad102b501f06c9a781bb",
+        "resource_report": "87b9320430ec5b04833324465774d1dd85d27a7c4ab6f9caea865382da3a4448"
+      }
+    },
+    {
+      "configuration": "qspi720",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 5364,
+        "register": 4217,
+        "ff": 4209,
+        "ram16": 72,
+        "bsram": 23,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 3870,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.383,
+            "from": "link/protocol/tmds_gen[1].tmds_channel/n1q2_1_s0/Q",
+            "to": "link/protocol/tmds_gen[1].tmds_channel/tmds_3_s1/D"
+          },
+          "Hold": {
+            "slack_ns": 0.552,
+            "from": "link/protocol/tmds_gen[0].tmds_channel/tmds_1_s1/Q",
+            "to": "link/protocol/serializer/lane[0].tx/D1"
+          },
+          "Recovery": {
+            "slack_ns": 9.272,
+            "from": "pixel_release_3_s0/Q",
+            "to": "link/audio_link/fifo/rd_reset_0_s0/PRESET"
+          },
+          "Removal": {
+            "slack_ns": 0.558,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/read_valid_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial371_setup": 0.0,
+          "serial371_hold": 0.0,
+          "pixel74_setup": 0.0,
+          "pixel74_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel74": 76.425,
+          "system54": 58.12
+        }
+      },
+      "hashes": {
+        "bitstream": "87544b8ff21d3875171e22eeaf30626cce316992ed63c8940503398206f63cb6",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "5141ea809d6ecfa91ac6d4d0c718765f2d526209790fcab2f34b197094c83a75",
+        "sta_report": "d9b4196dcddeabfe19dae5c0673f85b293a946fdf9ed6a196f9eb4bec53f8529",
+        "resource_report": "8c40d183c5aa6312ee758206bf87356864e1560c363d22e79db5478cb479d195"
+      }
+    },
+    {
+      "configuration": "qspipsram720",
+      "result": "sta_pass",
+      "resources": {
+        "logic": 6978,
+        "register": 5168,
+        "ff": 5159,
+        "ram16": 80,
+        "bsram": 23,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4
+      },
+      "cls": 4128,
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.536,
+            "from": "link/protocol/cy_9_s0/Q",
+            "to": "link/protocol/true_hdmi_output.guard_line_s1/D"
+          },
+          "Hold": {
+            "slack_ns": 0.555,
+            "from": "vdp/core/psram.path/cdc/sys_rsp_data_6_s0/Q",
+            "to": "vdp/core/psram.prefetch/buffer0_buffer0_1_1_s/DI[2]"
+          },
+          "Recovery": {
+            "slack_ns": 4.995,
+            "from": "pixel_release_3_s0/Q",
+            "to": "link/audio_link/fifo/rd_reset_0_s0/PRESET"
+          },
+          "Removal": {
+            "slack_ns": 0.893,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/wg_sync2_2_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial371_setup": 0.0,
+          "serial371_hold": 0.0,
+          "pixel74_setup": 0.0,
+          "pixel74_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel74": 77.327,
+          "system54": 55.688
+        }
+      },
+      "hashes": {
+        "bitstream": "99569741eb46acf600f95110e28c6543a0196f4c46bbf223daaab81a0ffd9f95",
+        "cst": "77ef83cf7170946c84d752b990b50c7091a8afa258cc4cdfa4051f57c5d5d077",
+        "sdc": "48beff4ea2289e4e6bb5eb2744190812d221e5eb5193903b531835298d385704",
+        "sta_report": "6818e482bef64f285b2fcf906ba8a0ad32ef78f89c8934c7b4d468315dfc4db9",
+        "resource_report": "9a82d7ec67a72316ebbcef4be9cc1d9b0a40e397fa663b5ae90c473db70024e1"
+      }
+    }
+  ]
+}

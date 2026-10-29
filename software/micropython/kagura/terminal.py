@@ -10,8 +10,10 @@ from array import array
 
 _QUESTION = 63
 _GLYPH_BASE = 128  # tiles 0..127: ASCII and the cursor
-_GLYPH_TILES = 1024 - _GLYPH_BASE
+_GLYPH_TILES = 1200 - _GLYPH_BASE
 _ALIAS_LIMIT = 64
+_GLYPH_BUCKETS = 1024
+_NO_SLOT = 0xFFFF
 
 
 class Terminal:
@@ -155,7 +157,7 @@ class TileScreen:
     """Logical row r is map row (top + r) % 32; SCROLL_Y = top * 8.
 
     A newline scrolls in hardware, so only the new bottom row is written.
-    Non-ASCII glyphs share tiles 128..1023. A glyph tile is reused only when
+    Non-ASCII glyphs share tiles 128..1199. A glyph tile is reused only when
     no map cell shows it (reference count zero), so the in-order VRAM queue
     never redraws a visible character.
     """
@@ -167,6 +169,11 @@ class TileScreen:
         self.video = Video(device)
         self.terminal = Terminal(device.height // 8)
         self._row = bytearray(80)
+        self._row_high = bytearray(self.terminal.columns)
+        self._row_bits = bytearray(self.terminal.columns // 8)
+        # The console owns 40 aligned cells (five complete upper-bit bytes)
+        # per map row. Cache those bytes to avoid reads/extra writes for ASCII.
+        self._map_bits = bytearray(32 * len(self._row_bits))
         self._cursor = None
         self._top = 0
         self._scroll = False  # SCROLL_Y not yet committed
@@ -175,7 +182,8 @@ class TileScreen:
         self._shown = array("H", [0] * n)  # tile in each map cell, by map row
         self._refs = array("H", [0] * _GLYPH_TILES)
         self._owner = array("H", [0] * _GLYPH_TILES)  # code held by a tile
-        self._slots = {}  # code -> glyph tile offset
+        self._buckets = array("H", b"\xff" * (2 * _GLYPH_BUCKETS))
+        self._next = array("H", b"\xff" * (2 * _GLYPH_TILES))  # code -> glyph tile offset
         self._alias = {}  # code -> '?' or blank tile, for codes without a glyph
         self._hand = 0
         self.glyph_overflow = 0  # characters shown as '?' for lack of tiles
@@ -185,15 +193,39 @@ class TileScreen:
             self._refs[i] = 0
         for i in range(len(self._shown)):
             self._shown[i] = 0  # initialize() fills the map with tile 0
-        self._slots = {}
+        self._map_bits[:] = bytes(len(self._map_bits))
+        for i in range(_GLYPH_BUCKETS):
+            self._buckets[i] = _NO_SLOT
+        for i in range(_GLYPH_TILES):
+            self._next[i] = _NO_SLOT
         self._alias = {}
         self._hand = 0
+
+    def _find_slot(self, code):
+        slot = self._buckets[code & (_GLYPH_BUCKETS - 1)]
+        while slot != _NO_SLOT:
+            if self._owner[slot] == code:
+                return slot
+            slot = self._next[slot]
+        return _NO_SLOT
+
+    def _unlink_slot(self, slot):
+        bucket = self._owner[slot] & (_GLYPH_BUCKETS - 1)
+        current, previous = self._buckets[bucket], _NO_SLOT
+        while current != _NO_SLOT:
+            if current == slot:
+                if previous == _NO_SLOT:
+                    self._buckets[bucket] = self._next[current]
+                else:
+                    self._next[previous] = self._next[current]
+                return
+            previous, current = current, self._next[current]
 
     def _acquire(self, code):
         if code < 128:
             return code
-        slot = self._slots.get(code)
-        if slot is not None:
+        slot = self._find_slot(code)
+        if slot != _NO_SLOT:
             self._refs[slot] += 1
             return _GLYPH_BASE + slot
         tile = self._alias.get(code)
@@ -214,12 +246,14 @@ class TileScreen:
         else:
             self.glyph_overflow += 1
             return _QUESTION
-        old = self._owner[slot]
-        if self._slots.get(old) == slot:
-            del self._slots[old]
         from kagura_ja import _tile
         self.video.tile(_GLYPH_BASE + slot, _tile(rows))
-        self._slots[code] = slot
+        # Fixed 16-bit bucket/chain arrays avoid growing a dict on the Pico
+        # heap while uploading many distinct glyphs. Unlink only after upload.
+        self._unlink_slot(slot)
+        bucket = code & (_GLYPH_BUCKETS - 1)
+        self._next[slot] = self._buckets[bucket]
+        self._buckets[bucket] = slot
         self._owner[slot] = code
         self._refs[slot] = 1
         return _GLYPH_BASE + slot
@@ -234,6 +268,7 @@ class TileScreen:
             d.write_reg(R.REG_DISPLAY_CTRL, 0)
             d.commit()
             d.fill(0x8000, 4096)
+            d.fill(0x9000, 256)  # row writes set tile bit10 when needed
             d.fill(0xA000, 2048)
             self.video.scroll(0, 0)
             d.ext_write(R.EXT_BACKDROP, 0)
@@ -271,31 +306,39 @@ class TileScreen:
         self.terminal.feed(data)
 
     def _write_row(self, map_row, base):
-        # Acquire the new row's tiles before releasing the old ones, so a
-        # glyph that stays on this row is not reused. base None = blank row.
+        # Acquire before releasing: a glyph that stays visible cannot be reused.
         cells, columns, out = self.terminal.cells, self.terminal.columns, self._row
+        high, bits = self._row_high, self._row_bits
+        bits[:] = bytes(len(bits))
         acquired = 0
+        bit_offset = map_row * len(bits)
         try:
             for col in range(columns):
                 code = 0 if base is None else cells[base + col]
                 tile = code if code < 128 else self._acquire(code)
                 out[col * 2] = tile & 255
-                out[col * 2 + 1] = tile >> 8
+                out[col * 2 + 1] = (tile >> 8) & 3
+                high[col] = tile >> 10
+                if high[col]:
+                    bits[col // 8] |= 1 << (col % 8)
                 acquired = col + 1
             self.device.write_memory(0x8000 + map_row * 128, out)
+            if bits != self._map_bits[bit_offset:bit_offset + len(bits)]:
+                # No RMW needed: all bits of these five bytes belong to us.
+                self.device.write_memory(0x9000 + map_row * 8, bits)
         except BaseException:
-            # The row stays dirty and is redrawn; do not leak references.
             for col in range(acquired):
-                tile = out[col * 2] | out[col * 2 + 1] << 8
+                tile = out[col * 2] | out[col * 2 + 1] << 8 | high[col] << 10
                 if tile >= _GLYPH_BASE:
                     self._refs[tile - _GLYPH_BASE] -= 1
             raise
+        self._map_bits[bit_offset:bit_offset + len(bits)] = bits
         shown = map_row * columns
         for col in range(columns):
             old = self._shown[shown + col]
             if old >= _GLYPH_BASE:
                 self._refs[old - _GLYPH_BASE] -= 1
-            self._shown[shown + col] = out[col * 2] | out[col * 2 + 1] << 8
+            self._shown[shown + col] = out[col * 2] | out[col * 2 + 1] << 8 | high[col] << 10
 
     def _release_row(self, map_row):
         # A row scrolled out of the window is never seen again before it is

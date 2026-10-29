@@ -1,0 +1,251 @@
+{
+  "revision": "7aacc850bf88647ce43d3106193d8fac2c1ead16",
+  "tree": "fa511c2b025276ee40272b0d0df08e393983ab56",
+  "tracked_changes": [],
+  "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "run_id": "7aacc85",
+  "minimum_setup_slack_ns": 0.1,
+  "tool": "Gowin_V1.9.11.03_Education_x64",
+  "results": [
+    {
+      "configuration": "phase2boot",
+      "base_name": "kagura_phase2boot",
+      "command": "gw_sh tools/build-nano9k.tcl phase2boot bars",
+      "exit_code": 0,
+      "runtime_s": 61.1,
+      "result": "sta_pass",
+      "resources": {
+        "logic": 6278,
+        "register": 4540,
+        "ff": 4523,
+        "ram16": 68,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4,
+        "cls": 3972
+      },
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.271,
+            "from": "vdp/core/registers/ext_index_3_s0/Q",
+            "to": "vdp/core/registers/scroll_x_8_s0/CE"
+          },
+          "Hold": {
+            "slack_ns": 0.405,
+            "from": "vdp/display/scan_addr_2_s0/Q",
+            "to": "vdp/display/line_ram/memory_memory_0_0_s/ADB[6]"
+          },
+          "Recovery": {
+            "slack_ns": 16.836,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/wg_0_s1/CLEAR"
+          },
+          "Removal": {
+            "slack_ns": 0.562,
+            "from": "link/audio_link/fifo/wr_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/rg_sync2_1_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial126_setup": 0.0,
+          "serial126_hold": 0.0,
+          "pixel25_setup": 0.0,
+          "pixel25_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel25": 75.551,
+          "system54": 54.802
+        }
+      },
+      "hashes": {
+        "bitstream": "e95329905f5c7201318c3c5b4c04b3a0868995fb9a05d3419f718223bf01ffee",
+        "cst": "c5124444e8581c206f723d39584342b64634cfa83a82e4ee17bf03de2bf1deb4",
+        "sdc": "ab6c47adf73f3e3933579bdfca010d1e88ba3483af6ef3dfddddd61c80bda12a",
+        "sta_report": "3cfbc247d269111f264c067a36132a22093e8c64e446888e0f490bbb1c072d7d",
+        "resource_report": "ebacf8f5644500fec4a18368e900d8166705f1d5467708e73c6714764e9d677f"
+      }
+    },
+    {
+      "configuration": "phase2boot720",
+      "base_name": "kagura_phase2boot720",
+      "command": "gw_sh tools/build-nano9k.tcl phase2boot720 bars",
+      "exit_code": 0,
+      "runtime_s": 70.0,
+      "result": "sta_pass",
+      "resources": {
+        "logic": 6214,
+        "register": 4541,
+        "ff": 4524,
+        "ram16": 68,
+        "bsram": 26,
+        "dsp": 1,
+        "rpll": 2,
+        "oser10": 4,
+        "cls": 3983
+      },
+      "timing": {
+        "setup_violated_endpoints": 0,
+        "hold_violated_endpoints": 0,
+        "worst": {
+          "Setup": {
+            "slack_ns": 0.132,
+            "from": "vdp/core/vram/pattern[17].ram/memory_memory_0_0_s/DO[6]",
+            "to": "vdp/core/sprites/composite/pixels_30_s0/D"
+          },
+          "Hold": {
+            "slack_ns": 0.555,
+            "from": "vdp/core/queue/stage_43_s0/Q",
+            "to": "vdp/core/queue/memory_memory_1_10_s/DI[3]"
+          },
+          "Recovery": {
+            "slack_ns": 4.641,
+            "from": "pixel_release_3_s0/Q",
+            "to": "link/audio_link/fifo/rd_reset_0_s0/PRESET"
+          },
+          "Removal": {
+            "slack_ns": 0.855,
+            "from": "link/audio_link/fifo/rd_reset_1_s0/Q",
+            "to": "link/audio_link/fifo/wg_sync2_0_s0/CLEAR"
+          }
+        },
+        "tns_ns": {
+          "clk27_setup": 0.0,
+          "clk27_hold": 0.0,
+          "serial371_setup": 0.0,
+          "serial371_hold": 0.0,
+          "pixel74_setup": 0.0,
+          "pixel74_hold": 0.0,
+          "system54_setup": 0.0,
+          "system54_hold": 0.0
+        },
+        "fmax_mhz": {
+          "pixel74": 76.72,
+          "system54": 54.389
+        }
+      },
+      "hashes": {
+        "bitstream": "859ca7a4e1f8033365f6d6c2926cbafa5237c6af97b366e43f37dc4651dacd37",
+        "cst": "c5124444e8581c206f723d39584342b64634cfa83a82e4ee17bf03de2bf1deb4",
+        "sdc": "e064fbd5f057676c76b0229da74258018d9cfc15b8e211efbd908cae932563ef",
+        "sta_report": "68e3734ba3d990d844c530ba323b92078f3efc3ce94a492ff71ffedb63bdfefc",
+        "resource_report": "510830da9b593fa3f614be0314f8743ddea86222f8aa36f7cdd5cb5db6b0353c"
+      }
+    }
+  ],
+  "date": "2026-10-29",
+  "scope": "1200-tile W65C02S ROM-less boot build, P&R/STA and RTL simulation; no hardware boot",
+  "hardware_verified": false,
+  "rtl_changes_required": false,
+  "simulation": [
+    {
+      "test": "tb_w65c02_bus",
+      "result": "pass",
+      "details": "PASS: W65C02S bus model, 198 selected cycles (one request each), read setup/hold, no contention, IRQ phase, W1C, reset release after 8 PHI2 cycles"
+    },
+    {
+      "test": "tb_flash_reader",
+      "result": "pass",
+      "details": "PASS: SPI flash reader commands and backpressure"
+    },
+    {
+      "test": "tb_flash_reader_timing",
+      "result": "pass",
+      "details": "PASS: MISO 0 ns response, setup/hold windows, byte pauses and reset recovery"
+    },
+    {
+      "test": "tb_boot_image_check",
+      "result": "pass",
+      "details": "PASS: boot image header, range, entry and payload CRC checks"
+    },
+    {
+      "test": "tb_boot_window",
+      "result": "pass",
+      "details": "PASS: boot stub, vectors, guarded data port and backpressure"
+    },
+    {
+      "test": "tb_boot_controller",
+      "result": "pass",
+      "details": "PASS: JEDEC, two-pass validation, prefetch and boot-window integration"
+    },
+    {
+      "test": "tb_romless_boot_system",
+      "result": "pass",
+      "details": "PASS: CPU stub copied 256 bytes, reached entry, and decode stayed exclusive"
+    }
+  ],
+  "image_generator": "pass",
+  "configuration_details": {
+    "phase2boot": {
+      "boot_miso": {
+        "setup": [
+          {
+            "to": "boot/reader/rx_shift_0_s0",
+            "slack_ns": 14.046,
+            "relationship_ns": 74.074
+          },
+          {
+            "to": "boot/reader/data_0_s0",
+            "slack_ns": 16.604,
+            "relationship_ns": 74.074
+          }
+        ],
+        "hold": [
+          {
+            "to": "boot/reader/data_0_s0",
+            "slack_ns": 75.281,
+            "relationship_ns": -74.074
+          },
+          {
+            "to": "boot/reader/rx_shift_0_s0",
+            "slack_ns": 76.832,
+            "relationship_ns": -74.074
+          }
+        ]
+      },
+      "release_ready": false,
+      "place_option": 1,
+      "route_option": 1,
+      "bitstream": "build/baseline/phase2boot/impl/pnr/kagura_phase2boot.fs"
+    },
+    "phase2boot720": {
+      "boot_miso": {
+        "setup": [
+          {
+            "to": "boot/reader/rx_shift_0_s0",
+            "slack_ns": 13.509,
+            "relationship_ns": 74.074
+          },
+          {
+            "to": "boot/reader/data_0_s0",
+            "slack_ns": 16.604,
+            "relationship_ns": 74.074
+          }
+        ],
+        "hold": [
+          {
+            "to": "boot/reader/data_0_s0",
+            "slack_ns": 75.281,
+            "relationship_ns": -74.074
+          },
+          {
+            "to": "boot/reader/rx_shift_0_s0",
+            "slack_ns": 76.932,
+            "relationship_ns": -74.074
+          }
+        ]
+      },
+      "release_ready": false,
+      "place_option": 0,
+      "route_option": 2,
+      "bitstream": "build/baseline/phase2boot720/impl/pnr/kagura_phase2boot720.fs"
+    }
+  }
+}
