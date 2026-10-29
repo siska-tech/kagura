@@ -297,3 +297,151 @@ def ellipse(buffer, dirty, params, counters):
                     x+=1
         ext=following;b=nb
 
+
+@micropython.viper
+def paint(buffer, dirty, params, counters, stack):
+    dst=ptr8(buffer);words=ptr32(buffer);marks=ptr8(dirty);p=ptr32(params);calls=ptr32(counters)
+    st=ptr32(stack)
+    calls[7]+=1
+    sx=int(p[0]);sy=int(p[1]);old=int(p[2]);c=int(p[3]);cap=int(p[4])
+    oldpair=old*17;newpair=c*17
+    ones=uint(0x11111111);highs=ones<<3;allones=uint(0)-uint(1)
+    oldword=uint(old)*ones;newword=uint(c)*ones
+    sp=0;peak=0;dropped=0;spans=0;pixels=0;compactions=0
+    # Entry: parent row | down<<8 | left<<9 | right<<18. Mirrors _python_paint:
+    # a push is skipped unless its target segment still holds an old pixel.
+    for k in range(2):
+        pr=sy;pd=1
+        if k==1:
+            pr=sy+1;pd=-1
+        t=pr+pd
+        if t<0 or t>239:continue
+        address=(t>>3)*1280+(t&7)*4+((sx>>3)<<5)+((sx&7)>>1)
+        value=int(dst[address])>>4
+        if sx&1:value=int(dst[address])&15
+        if value==old:
+            st[sp]=pr|((pd+1)<<7)|(sx<<9)|(sx<<18);sp+=1
+    peak=sp
+    while sp>0:
+        sp-=1
+        entry=int(st[sp])
+        spans+=1
+        dy=-1
+        if entry&256:dy=1
+        y=(entry&255)+dy;x1=(entry>>9)&511;x2=(entry>>18)&511
+        rowbase=(y>>3)*1280+(y&7)*4;trow=(y>>3)*40
+        x=x1
+        while x>=0:
+            address=rowbase+((x>>3)<<5)+((x&7)>>1)
+            if (x&7)==7 and uint(words[(address-3)>>2])==oldword:
+                x-=8
+            elif (x&1)==1 and int(dst[address])==oldpair:
+                x-=2
+            else:
+                value=int(dst[address])>>4
+                if x&1:value=int(dst[address])&15
+                if value!=old:break
+                x-=1
+        skip=1;leak=0;left=0
+        if x<x1:
+            skip=0
+            left=x+1
+            if left<x1:leak=1
+            x=x1+1
+        while True:
+            if skip==0:
+                while x<=319:
+                    address=rowbase+((x>>3)<<5)+((x&7)>>1)
+                    if (x&7)==0 and uint(words[address>>2])==oldword:
+                        x+=8
+                    elif (x&1)==0 and int(dst[address])==oldpair:
+                        x+=2
+                    else:
+                        value=int(dst[address])>>4
+                        if x&1:value=int(dst[address])&15
+                        if value!=old:break
+                        x+=1
+                # Every pixel in [left,x) was old and becomes c: all tiles change.
+                pixels+=x-left
+                z=left
+                while z<x:
+                    tile=trow+(z>>3);address=rowbase+((z>>3)<<5)+((z&7)>>1)
+                    marks[tile]=1
+                    if (z&7)==0 and z+8<=x:
+                        words[address>>2]=newword;z+=8
+                    elif (z&1)==0 and z+2<=x:
+                        dst[address]=newpair;z+=2
+                    else:
+                        if z&1:dst[address]=(int(dst[address])&240)|c
+                        else:dst[address]=(int(dst[address])&15)|(c<<4)
+                        z+=1
+                # Single push site: continuation, then left/right leaks.
+                for k in range(3):
+                    pl=left;ph=x-1;pd=dy
+                    if k==1:
+                        if leak==0:continue
+                        ph=x1-1;pd=0-dy;leak=0
+                    elif k==2:
+                        if x<=x2+1:continue
+                        pl=x2+1;pd=0-dy
+                    t=y+pd
+                    if t<0 or t>239:continue
+                    live=0;rb=(t>>3)*1280+(t&7)*4;q=pl
+                    while q<=ph:
+                        address=rb+((q>>3)<<5)+((q&7)>>1)
+                        if (q&7)==0 and q+7<=ph:
+                            # Nibble-wise zero test of word^old: any old pixel.
+                            v=uint(words[address>>2])^oldword
+                            if ((v-ones)&(v^allones)&highs)!=uint(0):
+                                live=1;break
+                            q+=8
+                        else:
+                            value=int(dst[address])>>4
+                            if q&1:value=int(dst[address])&15
+                            if value==old:
+                                live=1;break
+                            q+=1
+                    if live==0:continue
+                    if sp==cap:
+                        # Full: drop stale entries in place, keeping LIFO order.
+                        compactions+=1;keep=0
+                        for n in range(cap):
+                            e=int(st[n])
+                            et=(e&255)-1
+                            if e&256:et=(e&255)+1
+                            ez=(e>>18)&511;eq=(e>>9)&511
+                            rb=(et>>3)*1280+(et&7)*4;live=0
+                            while eq<=ez:
+                                address=rb+((eq>>3)<<5)+((eq&7)>>1)
+                                if (eq&7)==0 and eq+7<=ez:
+                                    v=uint(words[address>>2])^oldword
+                                    if ((v-ones)&(v^allones)&highs)!=uint(0):
+                                        live=1;break
+                                    eq+=8
+                                else:
+                                    value=int(dst[address])>>4
+                                    if eq&1:value=int(dst[address])&15
+                                    if value==old:
+                                        live=1;break
+                                    eq+=1
+                            if live:
+                                st[keep]=e;keep+=1
+                        sp=keep
+                    if sp<cap:
+                        st[sp]=y|((pd+1)<<7)|(pl<<9)|(ph<<18);sp+=1
+                        if sp>peak:peak=sp
+                    else:dropped+=1
+            skip=0
+            x+=1
+            while x<=x2:
+                address=rowbase+((x>>3)<<5)+((x&7)>>1)
+                if (x&7)==0 and x+7<=x2 and uint(words[address>>2])==newword:
+                    x+=8
+                else:
+                    value=int(dst[address])>>4
+                    if x&1:value=int(dst[address])&15
+                    if value==old:break
+                    x+=1
+            left=x
+            if x>x2:break
+    p[5]=peak;p[6]=dropped;p[7]=spans;p[8]=pixels;p[9]=compactions

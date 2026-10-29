@@ -17,6 +17,7 @@ from .video import Video
 # blit() source formats: framebuf-compatible linear 4bpp and KAGURA 8x8 tiles.
 GS4_HMSB = 2
 TILE4 = 0x40
+PAINT_CAPACITY = 2048
 
 
 def _ints(*values):
@@ -83,6 +84,11 @@ class TileFramebuffer:
         self.last_flush = self._stats()
         self._params = array("i", [0] * 12)
         self._kernel_counts = bytearray(32)
+        # paint() work stack: 4 B per span, allocated on first use only.
+        self.paint_capacity = PAINT_CAPACITY
+        self._paint_stack = None
+        self.last_paint = dict(complete=True, peak=0, capacity=0, dropped=0, spans=0,
+                              pixels=0, compactions=0)
         self.set_viper()
 
     def set_viper(self, enabled=None):
@@ -470,6 +476,122 @@ class TileFramebuffer:
             else:
                 self._span(x - a, yy, a - low + 1, color)
                 self._span(x + low, yy, a - low + 1, color)
+
+    def paint(self, x, y, color):
+        """4-connected flood fill of the colour at (x, y) using a bounded stack.
+
+        Returns True when complete (or nothing to do). False means the work
+        stack overflowed: only part of the region is painted, every changed
+        pixel belongs to the region and every changed tile is dirty.
+        """
+        _ints(x, y)
+        _range(color, 0, 15, 'color')
+        stats = self.last_paint
+        stats['complete'], stats['peak'], stats['dropped'] = True, 0, 0
+        stats['spans'] = stats['pixels'] = stats['compactions'] = 0
+        old = self.pixel(x, y)
+        if old is None or old == color:
+            return True
+        capacity = self.paint_capacity
+        _ints(capacity)
+        _range(capacity, 2, 0x7FFF, 'paint_capacity')
+        if self._paint_stack is None or len(self._paint_stack) != capacity:
+            self._paint_stack = None
+            # MemoryError here happens before any pixel changes.
+            self._paint_stack = array('I', bytes(4 * capacity))
+        stats['capacity'] = capacity
+        if self._kernels is not None:
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4] = x, y, old, color, capacity
+            self._kernels.paint(self.buffer, self.dirty, p, self._kernel_counts, self._paint_stack)
+            result = p[5], p[6], p[7], p[8], p[9]
+        else:
+            result = self._python_paint(x, y, old, color, capacity)
+        stats['peak'], stats['dropped'], stats['spans'], stats['pixels'], stats['compactions'] = result
+        stats['complete'] = not result[1]
+        return stats['complete']
+
+    def _python_paint(self, x, y, old, color, capacity):
+        # Heckbert seed fill; same push order as the native kernel.
+        buf, stack = self.buffer, self._paint_stack
+        state = [0, 0, 0, 0]  # sp, peak, dropped, compactions
+
+        def same(px, base):
+            value = buf[base + (px >> 3) * 32 + ((px & 7) >> 1)]
+            return (value & 15 if px & 1 else value >> 4) == old
+
+        def live(target, left, right):
+            # Pixels only ever change from old, so a segment without an old
+            # pixel stays a no-op entry forever.
+            base = (target >> 3) * 1280 + (target & 7) * 4
+            while left <= right:
+                if same(left, base):
+                    return True
+                left += 1
+            return False
+
+        def push(row, left, right, dy):
+            if not (0 <= row + dy < 240 and live(row + dy, left, right)):
+                return
+            if state[0] == capacity:
+                # Full: drop stale entries in place, keeping LIFO order.
+                state[3] += 1
+                keep = 0
+                for n in range(capacity):
+                    entry = stack[n]
+                    target = (entry & 255) + (1 if entry & 256 else -1)
+                    if live(target, entry >> 9 & 511, entry >> 18 & 511):
+                        stack[keep] = entry
+                        keep += 1
+                state[0] = keep
+            if state[0] < capacity:
+                stack[state[0]] = row | (256 if dy > 0 else 0) | left << 9 | right << 18
+                state[0] += 1
+                state[1] = max(state[1], state[0])
+            else:
+                state[2] += 1
+
+        push(y, x, x, 1)
+        push(y + 1, x, x, -1)
+        spans = pixels = 0
+        while state[0]:
+            state[0] -= 1
+            entry = stack[state[0]]
+            spans += 1
+            dy = 1 if entry & 256 else -1
+            row, x1, x2 = (entry & 255) + dy, entry >> 9 & 511, entry >> 18 & 511
+            base = (row >> 3) * 1280 + (row & 7) * 4
+            xx = x1
+            while xx >= 0 and same(xx, base):
+                xx -= 1
+            skip = xx >= x1
+            leak = False
+            if not skip:
+                left = xx + 1
+                leak = left < x1
+                xx = x1 + 1
+            while True:
+                if not skip:
+                    while xx < 320 and same(xx, base):
+                        xx += 1
+                    self._span(left, row, xx - left, color)
+                    pixels += xx - left
+                    # Continuation first, leaks last: leaks pop first and
+                    # satisfy pending entries before the walk goes deeper.
+                    push(row, left, xx - 1, dy)
+                    if leak:
+                        push(row, left, x1 - 1, -dy)
+                        leak = False
+                    if xx > x2 + 1:
+                        push(row, x2 + 1, xx - 1, -dy)
+                skip = False
+                xx += 1
+                while xx <= x2 and not same(xx, base):
+                    xx += 1
+                left = xx
+                if xx > x2:
+                    break
+        return state[1], state[2], spans, pixels, state[3]
 
     def mark_dirty(self, x=0, y=0, width=320, height=240):
         """Required after editing buffer directly; coordinates are pixels."""
