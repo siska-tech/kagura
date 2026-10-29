@@ -12,6 +12,8 @@ _QUESTION = 63
 _GLYPH_BASE = 128  # tiles 0..127: ASCII and the cursor
 _GLYPH_TILES = 1200 - _GLYPH_BASE
 _ALIAS_LIMIT = 64
+_GLYPH_BUCKETS = 1024
+_NO_SLOT = 0xFFFF
 
 
 class Terminal:
@@ -180,7 +182,8 @@ class TileScreen:
         self._shown = array("H", [0] * n)  # tile in each map cell, by map row
         self._refs = array("H", [0] * _GLYPH_TILES)
         self._owner = array("H", [0] * _GLYPH_TILES)  # code held by a tile
-        self._slots = {}  # code -> glyph tile offset
+        self._buckets = array("H", [_NO_SLOT]) * _GLYPH_BUCKETS
+        self._next = array("H", [_NO_SLOT]) * _GLYPH_TILES  # code -> glyph tile offset
         self._alias = {}  # code -> '?' or blank tile, for codes without a glyph
         self._hand = 0
         self.glyph_overflow = 0  # characters shown as '?' for lack of tiles
@@ -191,15 +194,38 @@ class TileScreen:
         for i in range(len(self._shown)):
             self._shown[i] = 0  # initialize() fills the map with tile 0
         self._map_bits[:] = bytes(len(self._map_bits))
-        self._slots = {}
+        for i in range(_GLYPH_BUCKETS):
+            self._buckets[i] = _NO_SLOT
+        for i in range(_GLYPH_TILES):
+            self._next[i] = _NO_SLOT
         self._alias = {}
         self._hand = 0
+
+    def _find_slot(self, code):
+        slot = self._buckets[code & (_GLYPH_BUCKETS - 1)]
+        while slot != _NO_SLOT:
+            if self._owner[slot] == code:
+                return slot
+            slot = self._next[slot]
+        return _NO_SLOT
+
+    def _unlink_slot(self, slot):
+        bucket = self._owner[slot] & (_GLYPH_BUCKETS - 1)
+        current, previous = self._buckets[bucket], _NO_SLOT
+        while current != _NO_SLOT:
+            if current == slot:
+                if previous == _NO_SLOT:
+                    self._buckets[bucket] = self._next[current]
+                else:
+                    self._next[previous] = self._next[current]
+                return
+            previous, current = current, self._next[current]
 
     def _acquire(self, code):
         if code < 128:
             return code
-        slot = self._slots.get(code)
-        if slot is not None:
+        slot = self._find_slot(code)
+        if slot != _NO_SLOT:
             self._refs[slot] += 1
             return _GLYPH_BASE + slot
         tile = self._alias.get(code)
@@ -220,12 +246,14 @@ class TileScreen:
         else:
             self.glyph_overflow += 1
             return _QUESTION
-        old = self._owner[slot]
-        if self._slots.get(old) == slot:
-            del self._slots[old]
         from kagura_ja import _tile
         self.video.tile(_GLYPH_BASE + slot, _tile(rows))
-        self._slots[code] = slot
+        # Fixed 16-bit bucket/chain arrays avoid growing a dict on the Pico
+        # heap while uploading many distinct glyphs. Unlink only after upload.
+        self._unlink_slot(slot)
+        bucket = code & (_GLYPH_BUCKETS - 1)
+        self._next[slot] = self._buckets[bucket]
+        self._buckets[bucket] = slot
         self._owner[slot] = code
         self._refs[slot] = 1
         return _GLYPH_BASE + slot

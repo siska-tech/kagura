@@ -486,6 +486,25 @@ class ConsoleJapaneseTests(DeviceFontCase):
         self.assertEqual(self.tile(1199), _tile(AnyGlyph.glyph(0x4E00 + 1071)))
         self.assertEqual(self.d.busy, 0)
 
+    def test_terminal_hash_collisions_survive_middle_reuse_and_reset(self):
+        class AnyGlyph:
+            @staticmethod
+            def glyph(code):
+                return bytes((1 + code % 254, 0x80)) + bytes(6)
+        s = self.screen(tiles=3)
+        s.font = AnyGlyph()
+        codes = (0x400, 0x800, 0xC00)  # one lookup bucket
+        self.show(s, "".join(chr(code) for code in codes))
+        self.show(s, "\rAAA")  # release all references
+        s._hand = 1  # reuse the middle member of the collision chain
+        self.show(s, "\r" + chr(0x1000) + chr(0x400) + chr(0xC00))
+        self.assertEqual([self.tile_id(c, 0) for c in range(3)], [129, 128, 130])
+        self.assertEqual(s._find_slot(0x800), terminal._NO_SLOT)
+        self.assertEqual(sum(s._refs), 3)
+        self.assertEqual(self.tile(129), _tile(AnyGlyph.glyph(0x1000)))
+        s.initialize()
+        self.assertEqual(s._find_slot(0x1000), terminal._NO_SLOT)
+
     def test_utf8_split_across_writes(self):
         s = self.screen()
         data = "一二".encode()
