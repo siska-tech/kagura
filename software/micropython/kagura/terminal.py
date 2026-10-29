@@ -182,8 +182,8 @@ class TileScreen:
         self._shown = array("H", [0] * n)  # tile in each map cell, by map row
         self._refs = array("H", [0] * _GLYPH_TILES)
         self._owner = array("H", [0] * _GLYPH_TILES)  # code held by a tile
-        self._buckets = array("H", [_NO_SLOT]) * _GLYPH_BUCKETS
-        self._next = array("H", [_NO_SLOT]) * _GLYPH_TILES  # code -> glyph tile offset
+        self._buckets = array("H", b"\xff" * (2 * _GLYPH_BUCKETS))
+        self._next = array("H", b"\xff" * (2 * _GLYPH_TILES))  # code -> glyph tile offset
         self._alias = {}  # code -> '?' or blank tile, for codes without a glyph
         self._hand = 0
         self.glyph_overflow = 0  # characters shown as '?' for lack of tiles
