@@ -1,7 +1,7 @@
 > **1,200タイル対応の実験用リポジトリ**
 >
 > 元リポジトリ `Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` から分岐。
-> 公開タイル数を1,200枚へ拡張し、ホスト4構成のP&R/STA、RTL 61試験、SDK 122試験に合格しました。Picoで全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済みです。720p・Picoホストの追加領域・境界BG／sprite・反転・palette・左右PCMもユーザーの目視・聴感確認に合格しました。
+> 公開タイル数を1,200枚へ拡張し、ホスト4構成のP&R/STA、RTL 61試験、SDK 136試験に合格しました。Picoで全量読戻し・PCM併用1時間連続動作・文字キャッシュ1072枠を数値検証済みです。720p・Picoホストの追加領域・境界BG／sprite・反転・palette・左右PCMもユーザーの目視・聴感確認に合格しました。
 > 実機の結果は[数値検証](docs/tile-1200-stage3.md)。進捗・再現手順は[実験記録](docs/tile-1200-experiment.md)、設計案は[調査書](docs/tile-1200-feasibility.md)を参照。
 
 # ![KAGURA-9](docs/images/logo.png)
@@ -35,10 +35,11 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## 現在の状態
 
+- **TileFramebuffer**: [320×240・16色の疑似フレームバッファ](docs/framebuffer.md)をMicroPython SDKで提供。全1200セルを独立したpatternへ割り当て、ローカル描画とdirty転送を行う。[実機結果](docs/framebuffer-results.md)は全量読戻し・PCM併用5分負荷・480pのユーザー目視に合格。
 - **実験ABI 0.6の数値検証**: ホスト4構成のSRAM起動・境界検査、全1200枚の読戻し、PCM併用1時間連続動作、文字キャッシュ1072枠。詳細は[第3段階](docs/tile-1200-stage3.md)。[720pの目視・聴感](docs/tile-1200-visual.md)も確認済み。
 - **拡張前ABI 0.5の過去の実機記録**: 480p/720pの映像・音声（PCモニターとテレビの2機種）、内蔵sequencerのシューティングデモ、Raspberry Pi PicoからのSPI/QSPI制御（5MHz）、PSRAMへのupload・COPY・PCM 2chの連続再生。
 - **simulationのみ**: W65C02Sバス接続、SPI FlashからのROM-less boot（Flash読出しとimage検査は実機確認済み）。
-- **未実施**: 480pや動きのある画面の目視、複数sink×ケーブルでの反復・長時間の互換性試験、実W65C02Sとの接続、SPI/QSPIの10MHz動作。
+- **未実施**: 複数sink×ケーブルでの反復・長時間の互換性試験、実W65C02Sとの接続、SPI/QSPIの10MHz動作。
 
 詳細と既知の制約は[検証状況](docs/validation-status.md)を参照してください。
 

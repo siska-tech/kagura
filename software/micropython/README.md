@@ -299,3 +299,11 @@ MISAKI_ZIP=path/to/misaki_bdf_2021-05-05.zip \
 - Picoが/CSをhighに駆動したままTang Nanoの電源だけを切ると、信号ピン経由で電源が回り込み、再投入後も構成の失敗と再試行（約172ms周期）が続いてREADYまで約6.5秒かかった。ピンを入力にした場合は1回で構成した。電源はPicoと同時か先にFPGAへ入れ、Pico動作中にFPGAだけを切らない。
 
 レジスタ定数`kagura/regs.py`は`spec/registers.json`から生成する。手動編集しない。
+
+## 320×240疑似フレームバッファ
+
+ABI 0.6の480p構成では`from kagura.framebuffer import TileFramebuffer`で、全1200パターンを40×30セルへ固定し、tile-native 4bppの自由描画を行える。RAMは38400 Bの描画buffer＋1200 Bのdirty表等。pixel／fill／hline／vline／line／rect／fill_rect／circle／ASCII textをローカルで描き、明示的な`flush()`が連続dirty runをまとめて転送・FENCEする。表示中の更新は画面全体で原子的にはならない。
+
+console／TextLayer／sprite用の独立pattern所有者とは同時に使用しない。既存consoleはpauseしてdeviceを再利用し、終了後resumeでconsole画面を再構築する。全map・patternsを上書きする`initialize()`が必要。
+
+[API・配置と復帰](../../docs/framebuffer.md)、[参照描画・実機診断・性能結果](../../docs/framebuffer-results.md)。診断は`examples/framebuffer_diagnostic.py`、測定は`examples/framebuffer_benchmark.py`。追加試験は`python3 -I software/micropython/tests/test_framebuffer.py`。
