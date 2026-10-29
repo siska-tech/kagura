@@ -1,0 +1,171 @@
+# SPDX-License-Identifier: Apache-2.0
+"""480p framebuffer scenes and numerical readback; see framebuffer-benchmark.py."""
+import gc
+import json
+import time
+
+COLORS = (0x000,0xFFF,0xF33,0x3F3,0x33F,0xFF3,0xF3F,0x3FF,
+          0x888,0xF93,0x93F,0x3F9,0x39F,0xF39,0x9F3,0xDDD)
+
+
+def report(event, **values):
+    values['event'] = event
+    print('TILEFB ' + json.dumps(values))
+
+
+class Counter:
+    def __init__(self, raw):
+        self.raw = raw
+        self.reset()
+    def reset(self):
+        self.writes = self.reads = self.tx_bytes = self.rx_bytes = 0
+    def write(self, offset, data, inc=False):
+        self.writes += 1
+        self.tx_bytes += len(data)
+        return self.raw.write(offset, data, inc)
+    def readinto(self, offset, data, inc=False):
+        self.reads += 1
+        self.rx_bytes += len(data)
+        return self.raw.readinto(offset, data, inc)
+    def __getattr__(self, name):
+        return getattr(self.raw, name)
+
+
+class Session:
+    def __init__(self, sdk='kagura', accelerated=True):
+        K = __import__(sdk, None, None, ['connect'])
+        self.R = __import__(sdk+'.regs',None,None,['REG_STATUS'])
+        FB = __import__(sdk+'.framebuffer',None,None,['TileFramebuffer']).TileFramebuffer
+        self.Audio = __import__(sdk+'.audio',None,None,['Audio']).Audio
+        self.d = K.connect(mode='qspi',baudrate=5_000_000)
+        self.accel = None
+        self.raw = self.d.transport
+        self.pcm = False
+        self.fb = None
+        try:
+            if accelerated:
+                self.accel = self.raw.accelerate()
+            self.counter = Counter(self.raw)
+            self.d.transport = self.counter
+            gc.collect()
+            heap_before=gc.mem_free()
+            self.fb = FB(self.d)
+            gc.collect()
+            self.framebuffer_heap_bytes=heap_before-gc.mem_free()
+            for i,c in enumerate(COLORS):self.fb.video.palette(i,c)
+            gc.collect()
+            start=time.ticks_us()
+            self.fb.initialize()
+            self.initialization_us=time.ticks_diff(time.ticks_us(),start)
+            report('initialized',initialization_us=self.initialization_us,
+                   framebuffer_bytes=len(self.fb.buffer),dirty_bytes=len(self.fb.dirty),
+                   framebuffer_heap_bytes=self.framebuffer_heap_bytes,
+                   accelerated=accelerated,heap_free=gc.mem_free(),abi=list(self.d.abi),height=self.d.height)
+        except BaseException:
+            self.close()
+            raise
+
+    def scene(self, name):
+        f=self.fb
+        start=time.ticks_us()
+        f.fill(0)
+        if name=='A':
+            # Encodes all 11 index bits without a second framebuffer.
+            for tile in range(1200):
+                x,y=tile%40*8,tile//40*8
+                f.fill_rect(x+1,y+1,7,7,2+tile%14)
+                for bit in range(11):
+                    f.pixel(x+1+bit%6,y+2+bit//6,1 if tile&(1<<bit) else 0)
+            for x,y,label in ((0,0,'TL'),(304,0,'TR'),(0,232,'BL'),(304,232,'BR')):
+                f.fill_rect(x,y,16,8,0);f.text(label,x,y,1)
+            # Preserve a complete index code even in tiles covered by corner labels.
+            for tile in range(1200):
+                x,y=tile%40*8,tile//40*8
+                for bit in range(11):
+                    f.pixel(x+bit%6,y+6+bit//6,1 if tile&(1<<bit) else 0)
+        elif name=='B':
+            for c in range(16):f.fill_rect(c*20,0,20,32,c)
+            for c in range(16):
+                f.hline(0,40+c*2,320,c)
+                f.vline(8+c*20,80,80,c)
+            f.line(-20,70,340,220,1);f.line(319,70,0,239,7)
+            f.rect(-10,90,80,80,5);f.fill_rect(250,170,90,100,9)
+            for radius in (8,16,24,32,48):f.circle(160,155,radius,1+radius%15)
+            f.rect(0,0,320,240,1)
+        elif name=='C':
+            # Tiles 1023=(23,25), 1024=(24,25), 1199=(39,29).
+            f.text('1023 / 1024 ->',40,184,1)
+            f.fill_rect(184,200,8,8,2);f.fill_rect(192,200,8,8,3)
+            f.line(180,204,212,204,1)
+            f.rect(311,231,9,9,7);f.text('1199 BR',240,216,1)
+            f.fill_rect(312,232,8,8,6)
+            f.rect(0,0,320,240,1);f.text('ABI 0.6 TILE BOUNDARY',8,8,1)
+        else:raise ValueError('scene must be A, B or C')
+        draw_us=time.ticks_diff(time.ticks_us(),start)
+        stats=f.flush()
+        report('scene',name=name,draw_us=draw_us,flush=stats)
+        return stats
+
+    def verify(self, full=True):
+        # Also verify unused map entries, attributes and every upper-table byte.
+        d,f=self.d,self.fb
+        row=bytearray(128)
+        for y in range(32):
+            d.read_memory_into(0x8000+y*128,row)
+            for x in range(64):
+                expected=((y*40+x)&1023) if y<30 and x<40 else 0
+                word=row[x*2]|row[x*2+1]<<8
+                if word!=expected:raise AssertionError('map word %d,%d'%(x,y))
+        upper=bytearray(256);d.read_memory_into(0x9000,upper)
+        if upper!=f._map_high:raise AssertionError('map tile-bit10 table')
+        data=bytearray(128)
+        tiles=range(0,1200,4) if full else (0,1020,1024,1196)
+        verified=0
+        for tile in tiles:
+            address=tile*32 if tile<1024 else 0xB000+(tile-1024)*32
+            d.read_memory_into(address,data)
+            if data!=f._view[tile*32:(tile+4)*32]:raise AssertionError('VRAM tile %d'%tile)
+            verified+=128
+            if tile%128==0:
+                gc.collect();report('readback_progress',first_tile=tile,verified_bytes=verified)
+        d.check_errors()
+        report('readback_pass',full=full,pattern_bytes=verified,map_bytes=4096,upper_bytes=256)
+
+    def pcm_start(self):
+        R,d=self.R,self.d
+        if not d.caps&R.CAPS_PSRAM:raise NotImplementedError('PSRAM build required')
+        a=self.Audio(d)
+        for c in range(6):a.stop(c)
+        d.audio_write(R.AUDIO_MASTER_GAIN,64);d.audio_commit()
+        self.pcm=True
+        self.audio=a
+        for channel,address,period in ((0,0x400000,128),(1,0x410000,64)):
+            half=period//2
+            cycle=bytes((((i if i<half else period-1-i)*(256//half))-128)&255 for i in range(period))
+            d.write_memory(address,cycle*(4096//period));d.fence()
+            a.prepare_pcm(channel,address,address+4096,loop=address)
+            a.play_pcm(channel,left=12 if channel==0 else 0,right=12 if channel==1 else 0)
+        self.pcm=True
+        self.audio=a
+
+    def telemetry(self):
+        d,R=self.d,self.R
+        error=d.read_reg(R.REG_ERROR_CODE)
+        fifo=d.audio_read(R.AUDIO_STATUS)
+        pcm=[self.audio.pcm_status(c) for c in (0,1)] if self.pcm else []
+        if error or fifo&6 or any(s&0x78 or not s&R.AUDIO_PCM_STATUS_ACTIVE for s in pcm):
+            raise AssertionError('telemetry fault %r'%((error,fifo,pcm),))
+        return dict(error=error,fifo=fifo,pcm=pcm,frame=d.read_reg(R.REG_FRAME_COUNT_L))
+
+    def close(self):
+        try:
+            if self.pcm:
+                for c in (0,1):
+                    base=self.R.AUDIO_PCM_BASE+c*self.R.AUDIO_PCM_STRIDE
+                    self.d.audio_write(base+self.R.AUDIO_PCM_CONTROL,0)
+                    self.d.audio_write(base+self.R.AUDIO_PCM_CMD,self.R.AUDIO_PCM_CMD_STOP)
+                self.d.audio_commit()
+        finally:
+            self.d.transport=self.raw
+            if self.accel is not None:self.accel.close()
+            self.d.deinit()

@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.dont_write_bytecode = True
 import test_driver as T
 from unittest import TestCase, main
 from unittest.mock import patch
@@ -194,6 +195,32 @@ class FramebufferTests(TestCase):
             with self.assertRaises(MemoryError):self.fb.flush()
         self.assertEqual(self.fb.dirty[0],1)
         self.assertEqual(self.d.busy,0)
+    def test_diagnostic_scene_a_all_indices_unique_even_corners(self):
+        sys.path.insert(0,str(T.ROOT/'software/micropython/examples'))
+        import framebuffer_diagnostic as diagnostic
+        self.clean()
+        scene=diagnostic.Session.__new__(diagnostic.Session)
+        scene.fb,scene.d=self.fb,self.d
+        with patch.dict(sys.modules,{'framebuf':T.types.SimpleNamespace(FrameBuffer=T.FrameBuffer,MONO_HLSB=3)}):
+            scene.scene('A')
+        tiles={bytes(self.fb.buffer[n*32:(n+1)*32]) for n in range(1200)}
+        self.assertEqual(len(tiles),1200)
+        for n in range(1200):
+            code=sum((self.fb.pixel(n%40*8+bit%6,n//40*8+6+bit//6)==1)<<bit for bit in range(11))
+            self.assertEqual(code,n)
+
+    def test_benchmark_samples_bounded_and_percentile_explicit(self):
+        sys.path.insert(0,str(T.ROOT/'software/micropython/examples'))
+        from framebuffer_benchmark import Samples
+        values=Samples()
+        for n in range(10000):values.append(n)
+        stats=values.stats()
+        self.assertEqual(len(values.values),256)
+        self.assertEqual(stats['count'],10000)
+        self.assertEqual(stats['mean_us'],4999.5)
+        self.assertEqual(stats['max_us'],9999)
+        self.assertEqual(stats['p95_recent_us'],9987)
+
     def test_mark_dirty_clips_direct_edits(self):
         self.clean();self.fb.buffer[-1]=0xAF
         self.fb.mark_dirty(319,239,8,8)
