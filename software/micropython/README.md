@@ -83,6 +83,33 @@ finally:
 
 ## ドライバAPI
 
+映像・音源を同時に試す[STAR RUNNER v2](examples/shooter.md)も用意している。
+既存の横スクロールSTGを基に、固定長オブジェクト管理・DMA対応OAM一括転送・
+PCM BGM／効果音・PSG／wave・64〜256個のOAM負荷・終了後の計測結果出力に対応する。
+既存ドライバAPIと互換。[初期実装の性能比較](benchmarks/README.md)も参照。
+最終BGMはB7→C→D→Eの160BPM・6秒ループ。720p／QSPI 5MHz・Pico 125MHzでは、
+高速化版の64 OAM＋全音源の5分試験が10,711更新・35.70fps・音声error 0で完走した。
+初期v2の約16.8fpsから改善し、30fps目標を達成した。
+追加の[Viper OAM／DMA展開の調査](benchmarks/acceleration.md)では、同条件のHEAVYで
+通常16.45fps→両方有効23.67fpsを実測した。`renderer='viper', dma='viper'`で選択できる。
+さらに[FIFO・DMA・計測負荷の改善](benchmarks/performance-v3.md)では、起動直後の
+64 OAM＋全音源・400フレームで35.12fpsを測定した（統計処理を含むフレーム間隔も記録）。
+`renderer='viper', dma='accelerated', dma_chunk=512`で選択する。
+
+汎用アプリでは、コンソールをpauseした上で次の範囲だけ高速化できる。
+既存PIOプログラム・32bit DMAワード形式・READY/BUSY/FENCE/エラー検査は変わらない。
+通常MicroPythonへPythonモジュールまたはARMv6-M `.mpy`を追加する構成で、専用Cファームウェアは不要。
+
+```python
+with dev.transport.accelerate(chunk=512):
+    dev.write_memory(0xA000, oam_buffer)
+    dev.commit()
+```
+
+転送が完了してからスコープを抜けること。元のメソッドとDMAバッファへ復元する。
+nativeカーネルを読み込めない場合は通常driverを維持し、返されたsessionの
+`enabled=False`と`reason`へ記録する。通信開始後の例外は隠さず、既存abort処理を実行する。
+
 ```python
 from kagura import connect
 from kagura.video import Video

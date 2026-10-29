@@ -12,6 +12,7 @@ from machine import Pin, freq, mem32
 from time import ticks_us, ticks_diff, sleep_us
 import rp2
 from . import regs as R
+from . import dma_pack
 
 _owned_sms = set()
 _QUEUED = (R.REG_VRAM_WRITE, R.REG_VRAM_READ_REQUEST, R.REG_COMMAND)
@@ -165,6 +166,11 @@ class PIOTransport:
     def ready(self):
         return bool(self._ready.value())
 
+    def accelerate(self, chunk=128):
+        """Return a reversible Viper FIFO/DMA session (stock RP2 firmware)."""
+        from .acceleration import Acceleration
+        return Acceleration(self, TransferTimeout, chunk=chunk)
+
     def idle(self):
         # An FPGA still loading its bitstream pulls every pin high, READY
         # included (about 170 ms after power-on). A configured, idle KAGURA
@@ -242,30 +248,7 @@ class PIOTransport:
 
     def _xfer_dma(self, data, queued):
         # FIFOs are empty here: every earlier word of the transfer was received.
-        high, words = self._high[queued], self._words
-        tx, rx = self._dma_tx, self._dma_rx
-        n = len(data)
-        done = 0
-        while done < n:
-            m = min(_DMA_CHUNK, n - done)
-            j = 1
-            for k in range(done, done + m):
-                words[j] = high[data[k]]
-                j += 2
-            rx.config(read=self._sm, write=self._sink, count=m, ctrl=self._rx_ctrl,
-                      trigger=True)
-            tx.config(read=words, write=self._sm, count=m, ctrl=self._tx_ctrl,
-                      trigger=True)
-            left = m
-            progress = ticks_us()
-            while rx.active():
-                count = rx.count
-                if count != left:
-                    left = count
-                    progress = ticks_us()
-                elif ticks_diff(ticks_us(), progress) >= self.timeout_us:
-                    raise TransferTimeout(done + max(0, m - left - 1))
-            done += m
+        dma_pack.transfer(self, data, queued, TransferTimeout, _DMA_CHUNK)
 
     def write(self, offset, data, inc=False):
         if not 0 <= offset <= 31:

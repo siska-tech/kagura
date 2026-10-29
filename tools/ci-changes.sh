@@ -35,11 +35,11 @@ classify() {
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
         software/micropython/boards/*) mark micropython micropython_firmware ;;
-        software/micropython/*|tools/gen-kagura-ja-font.py) mark micropython ;;
+        software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py) mark micropython ;;
         # Synthesis and board tools; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
-        tools/run-baseline.ps1) ;;
+        tools/run-baseline.ps1|tools/star-runner-device.ps1) ;;
         *) all ;;
     esac
 }
