@@ -33,6 +33,38 @@ def _aligned(buffer):
     return addressof(buffer) & 3 == 0
 
 
+def _isqrt(n):
+    if n < 2:
+        return n
+    guess, rest = 1, n
+    while rest >= 4:
+        rest >>= 2
+        guess <<= 1
+    guess <<= 1
+    while True:
+        better = (guess + n // guess) >> 1
+        if better >= guess:
+            return guess
+        guess = better
+
+
+def _ellipse_extent(rx, ry, b):
+    """Half-width of row b: row-rounded or column-rounded nearest pixels."""
+    if b > ry:
+        return -1
+    if ry == 0:
+        a = rx
+    else:
+        n, d = rx * rx * (ry * ry - b * b), ry * ry
+        a = _isqrt(n // d)
+        if 4 * n > (2 * a + 1) * (2 * a + 1) * d:
+            a += 1
+    if b == 0:
+        return max(a, rx)
+    n = rx * rx * (4 * ry * ry - (2 * b - 1) * (2 * b - 1))
+    return max(a, _isqrt((n - 1) // (4 * ry * ry)) if n > 0 else -1)
+
+
 class TileFramebuffer:
     width, height, columns, rows, tile_count = 320, 240, 40, 30, 1200
 
@@ -411,6 +443,33 @@ class TileFramebuffer:
                 if value != old:
                     buf[offset] = value
                     dirty[tile] = 1
+
+    def ellipse(self, x, y, rx, ry, color, fill=False):
+        """Centre (x, y), radii rx/ry; ellipse(x, y, r, r) equals circle(x, y, r)."""
+        _ints(x, y, rx, ry)
+        _range(rx, 0, 0x7FFFFFFF, 'rx')
+        _range(ry, 0, 0x7FFFFFFF, 'ry')
+        _range(color, 0, 15, 'color')
+        if fill not in (False, True):
+            raise TypeError('fill must be bool')
+        if x + rx < 0 or x - rx >= 320 or y + ry < 0 or y - ry >= 240:
+            return
+        # Native error terms stay below this bound; see framebuffer.md.
+        if (self._kernels is not None and -32767 <= x <= 32767 and -32767 <= y <= 32767
+                and 9 * (rx + 1) * (ry + 1) * (rx + ry + 2) < 0x7FFFFFFF):
+            p = self._params
+            p[0], p[1], p[2], p[3], p[4], p[5] = x, y, rx, ry, color, int(fill)
+            self._kernels.ellipse(self.buffer, self.dirty, p, self._kernel_counts)
+            return
+        for yy in range(max(0, y - ry), min(240, y + ry + 1)):
+            b = abs(yy - y)
+            a = _ellipse_extent(rx, ry, b)
+            low = a if fill else min(a, _ellipse_extent(rx, ry, b + 1) + 1)
+            if low == 0 or fill:
+                self._span(x - a, yy, a * 2 + 1, color)
+            else:
+                self._span(x - a, yy, a - low + 1, color)
+                self._span(x + low, yy, a - low + 1, color)
 
     def mark_dirty(self, x=0, y=0, width=320, height=240):
         """Required after editing buffer directly; coordinates are pixels."""

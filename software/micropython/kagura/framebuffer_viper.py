@@ -232,3 +232,68 @@ def blit(buffer, dirty, params, counters, source):
                             changed=1
             if changed:marks[tile]=1
 
+
+@micropython.viper
+def ellipse(buffer, dirty, params, counters):
+    dst=ptr8(buffer);words=ptr32(buffer);marks=ptr8(dirty);p=ptr32(params);calls=ptr32(counters)
+    calls[6]+=1
+    cx=int(p[0]);cy=int(p[1]);rx=int(p[2]);ry=int(p[3]);c=int(p[4]);solid=int(p[5])
+    pair=c*17
+    word=uint(c)*uint(0x11111111)
+    rx2=rx*rx;ry2=ry*ry
+    # a: row-rounded half width, U1(a,b)=4rx^2(ry^2-b^2)-(2a-1)^2ry^2 (>0 inside).
+    # col: column-rounded, U2(col,b)=4ry^2(rx^2-col^2)-(2b-1)^2rx^2 (>0 inside).
+    a=rx;u1=ry2*(4*rx-1);col=rx;u2=0
+    ext=rx;b=0
+    while b<=ry:
+        if cy-b<0 and cy+b>239:break
+        nb=b+1
+        following=-1
+        if nb<=ry:
+            u1-=4*rx2*(2*nb-1)
+            while a>0 and u1<=0:
+                a-=1
+                u1+=8*a*ry2
+            if nb==1:u2=0-rx2
+            else:u2-=8*(nb-1)*rx2
+            while col>=0 and u2<=0:
+                col-=1
+                if col>=0:u2+=4*ry2*(2*col+1)
+            following=a
+            if col>following:following=col
+        low=following+1
+        if low>ext:low=ext
+        for k in range(4):
+            y=cy-b
+            if k&1:
+                if b==0:continue
+                y=cy+b
+            if y<0 or y>239:continue
+            xa=cx-ext;xb=cx+ext
+            if solid==0 and low>0:
+                if k&2:xb=cx-low
+                else:xa=cx+low
+            elif k&2:continue
+            if xa<0:xa=0
+            if xb>319:xb=319
+            rowbase=(y>>3)*1280+(y&7)*4;trow=(y>>3)*40
+            x=xa
+            while x<=xb:
+                tile=trow+(x>>3);address=rowbase+((x>>3)<<5)+((x&7)>>1)
+                if (x&7)==0 and x+7<=xb:
+                    if uint(words[address>>2])!=word:
+                        words[address>>2]=word;marks[tile]=1
+                    x+=8
+                elif (x&1)==0 and x+1<=xb:
+                    if int(dst[address])!=pair:
+                        dst[address]=pair;marks[tile]=1
+                    x+=2
+                else:
+                    shift=4
+                    if x&1:shift=0
+                    old=int(dst[address]);value=(old&(255^(15<<shift)))|(c<<shift)
+                    if old!=value:
+                        dst[address]=value;marks[tile]=1
+                    x+=1
+        ext=following;b=nb
+
