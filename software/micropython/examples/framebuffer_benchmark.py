@@ -141,3 +141,31 @@ def compare_draw(session,repetitions=10):
         assert session.counter.writes==0 and session.counter.reads==0
         report('paired_clean_flush',viper_enabled=enabled,timing=detail(samples),
                dirty_scan=detail(scan),register_write_calls=0,register_read_calls=0)
+
+
+def compare_flush(session,repetitions=10):
+    """Paired flushes with PCM active in both modes; identical prep and payload."""
+    import math
+    def detail(values):
+        result=summary(values);mean=result['mean_us']
+        variance=sum((v-mean)*(v-mean) for v in values)/len(values)
+        result.update(variance_us2=variance,stdev_us=math.sqrt(variance),samples_us=list(values))
+        return result
+    if not session.pcm:raise RuntimeError('paired flush comparison requires PCM active')
+    f=session.fb
+    for count in (1,10,100,1200):
+        for enabled in (False,True):
+            transfer=array('I');wait=array('I');total=array('I')
+            for repetition in range(repetitions):
+                # Common untimed preparation, independent of measured renderer.
+                f.set_viper(True);f.fill(0);f.flush()
+                f.set_viper(enabled)
+                for tile in range(count):f.pixel(tile%40*8,tile//40*8,1+repetition%15)
+                gc.collect();session.counter.reset()
+                stats=f.flush()
+                transfer.append(stats['transfer_us']);wait.append(stats['wait_us']);total.append(stats['total_us'])
+            report('paired_flush',viper_enabled=enabled,dirty_tiles=count,
+                   transfer=detail(transfer),fence_host_wait=detail(wait),flush=detail(total),
+                   last_flush=stats,register_write_calls=session.counter.writes,
+                   register_read_calls=session.counter.reads,**session.telemetry())
+    f.set_viper(True)
