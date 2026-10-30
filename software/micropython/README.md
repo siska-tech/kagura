@@ -324,3 +324,36 @@ console／TextLayer／sprite用の独立pattern所有者とは同時に使用し
 RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(False)`でPython、`fb.set_viper(True)`でViper必須、`fb.set_viper()`でautoへ戻す。`fb.viper_enabled`とnative内`fb.kernel_counts`で選択と実行を確認できる。buffer／dirtyと公開描画結果は同じ。通信側のViper FIFO／DMAとは独立で、flush・FENCE・COMMIT・error検査は変更していない。
 
 同条件の大面積fill_rectはPython1239.183 ms／Viper7.672 ms、lineは66.857 ms／1.923 ms（各10回平均）。[全sample・分散・最大・flush・各5分負荷の比較](../../docs/framebuffer-viper-results.md)と[安全範囲・fallback仕様](../../docs/framebuffer.md#viper描画backend)を参照。kernelの個別関数は内部専用。
+
+### デモとViper通信経路（実験）
+
+`examples/framebuffer_demo.py`はPicoのC版`fbdemo`と同じ4場面（パレット回転のプラズマ・トンネル、星空の4D超立方体、虹色の線リボン）をPSGのBGM付きで流す。`run(seconds, max_gap=16, fb=None, fast=False)`。COMMITは待たずに戻し、次フレームの描画をVBlank待ちと重ねる（順序はdevice queueが保つ）。
+
+RP2040のMicroPythonでは文1つに数µsかかり、ドライバの遅さは配線ではなくPython側の手順だった（register 1回約1 ms、FENCE約6 ms）。`fast=True`は`examples/framebuffer_fastlink.py`の実験用経路を使い、トランザクション、FENCE、COMMIT、音源書込み、flush全体をそれぞれViper 1呼出しで行う。64 B以上のpayloadはtransportのDMA 2chで送り、その間にViperが次の256 Bを詰める（約1 MB/s、C版と同等）。ドライバの範囲検査と`Ctrl-C`のpollingは行わず、停止はtimeoutのみ。transportとDMA chはドライバと共有するため、単一所有者で使う。
+
+実機（RP2040 125 MHz、QSPI 5 MHz、各12秒、fps）:
+
+| 場面 | C版`fbdemo` | ドライバ | `fast=True` |
+|---|---:|---:|---:|
+| プラズマ | 59.9 | 42.3 | 60.0 |
+| 超立方体 | 30.0 | 1.6 | 27.0 |
+| トンネル | 59.8 | 41.9 | 60.0 |
+| リボン | 45.1 | 2.2 | 30.9 |
+
+boot.pyのconsoleが残すheapと`mpremote mount`のbufferで38400 Bの連続領域が取れないため、consoleを閉じて先に確保してからmountする。PC側で`.mpy`にして置いたディレクトリ（`kagura/`を含む）で:
+
+```sh
+mpy-cross -march=armv6m examples/framebuffer_demo.py   # fastlink、kagura/*.pyも同様
+mpremote connect COM7 soft-reset exec "import sys, gc
+kagura_console.close(); kagura_console = None; globals().pop('start', None)
+for k in tuple(sys.modules):
+    if k.startswith('kagura'): sys.modules.pop(k)
+gc.collect(); reserve = bytearray(38400)" mount . exec "sys.path.insert(0, '/remote')
+import kagura, framebuffer_demo
+from kagura.framebuffer import TileFramebuffer
+d = kagura.connect(mode='qspi', baudrate=5_000_000); d.transport.accelerate()
+reserve = None; gc.collect(); fb = TileFramebuffer(d)
+framebuffer_demo.run(60, fb=fb, fast=True)"
+```
+
+終了後は`soft-reset`でconsoleが戻る。
