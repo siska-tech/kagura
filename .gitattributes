@@ -1,0 +1,6 @@
+# Preserve exact bytes of SHA-256 identified benchmark artifacts and snapshots.
+/docs/framebuffer-*-logs/** -text
+/docs/framebuffer-*.md -text
+/docs/framebuffer-*.json -text
+/docs/images/framebuffer-transport-baseline.svg -text
+/tools/plot-framebuffer-transport.py -text
