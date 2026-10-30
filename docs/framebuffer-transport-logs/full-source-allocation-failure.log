@@ -1,0 +1,7 @@
+TRANSPORT_SDK_HASHES_PASS 16
+TRANSPORT_SESSION_CLOSED
+Traceback (most recent call last):
+  File "<stdin>", line 351, in <module>
+  File "/fbx/framebuffer_diagnostic.py", line 121, in __init__
+  File "/lib/kagurafbx/framebuffer.py", line 77, in __init__
+MemoryError: memory allocation failed, allocating 38400 bytes

@@ -32,14 +32,19 @@ classify() {
         # The MicroPython driver tests load this PIO timing model.
         software/pico/tests/test_pio_timing.py) mark pico micropython ;;
         software/pico/*) mark pico ;;
+        # The C TileFramebuffer test replays these Python modules and model.
+        software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
+        software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
+        software/micropython/tests/test_driver.py) mark pico micropython ;;
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
         software/micropython/boards/*) mark micropython micropython_firmware ;;
         software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py) mark micropython ;;
-        # Synthesis and board tools; CI does not run them.
+        # Synthesis, board and hardware measurement tools; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
-        tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1) ;;
+        tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
+        tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py) ;;
         *) all ;;
     esac
 }

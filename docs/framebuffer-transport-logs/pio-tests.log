@@ -1,0 +1,77 @@
+test_real_assembler_and_existing_cycle_model (__main__.AssemblerTests.test_real_assembler_and_existing_cycle_model) ... /mnt/c/Users/Shion/Documents/Projects/Kagura/software/pico/tests/test_pio_timing.py:17: ResourceWarning: unclosed file <_io.TextIOWrapper name='/mnt/c/Users/Shion/Documents/Projects/Kagura/build/micropython-check/python-host.pio.h' mode='r' encoding='UTF-8'>
+  text = open(header).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_boot_attaches_detected_display_and_restores_slot (__main__.BootTests.test_boot_attaches_detected_display_and_restores_slot) ... ok
+test_display_initialization_failure_releases_device (__main__.BootTests.test_display_initialization_failure_releases_device) ... ok
+test_missing_fpga_still_attaches_uart (__main__.BootTests.test_missing_fpga_still_attaches_uart) ... ok
+test_timer_failure_restores_previous_stream (__main__.BootTests.test_timer_failure_restores_previous_stream) ... ok
+test_all_speeds_fail_raises_and_releases (__main__.ConnectTests.test_all_speeds_fail_raises_and_releases) ... ok
+test_auto_falls_back_past_bad_links (__main__.ConnectTests.test_auto_falls_back_past_bad_links) ... ok
+test_auto_uses_fastest_speed (__main__.ConnectTests.test_auto_uses_fastest_speed) ... ok
+test_explicit_speed_has_no_fallback_or_link_check (__main__.ConnectTests.test_explicit_speed_has_no_fallback_or_link_check) ... ok
+test_missing_ready_does_not_try_slower_speeds (__main__.ConnectTests.test_missing_ready_does_not_try_slower_speeds) ... ok
+test_slow_system_clock_skips_unreachable_speeds (__main__.ConnectTests.test_slow_system_clock_skips_unreachable_speeds) ... ok
+test_unconfigured_fpga_does_not_try_slower_speeds (__main__.ConnectTests.test_unconfigured_fpga_does_not_try_slower_speeds) ... ok
+test_buffer_overflow_is_bounded_and_counted (__main__.ConsoleTests.test_buffer_overflow_is_bounded_and_counted) ... ok
+test_ctrl_c_raised_in_timer_is_given_back (__main__.ConsoleTests.test_ctrl_c_raised_in_timer_is_given_back) ... ok
+test_display_error_keeps_stream_alive (__main__.ConsoleTests.test_display_error_keeps_stream_alive) ... ok
+test_input_notification_even_when_display_failed (__main__.ConsoleTests.test_input_notification_even_when_display_failed) ... ok
+test_output_deferred_until_idle (__main__.ConsoleTests.test_output_deferred_until_idle) ... ok
+test_pause_and_resume (__main__.ConsoleTests.test_pause_and_resume) ... ok
+test_ring_buffer_wraps (__main__.ConsoleTests.test_ring_buffer_wraps) ... ok
+test_uart_nonblocking_and_controls (__main__.ConsoleTests.test_uart_nonblocking_and_controls) ... ok
+test_abi_zero_requires_exact_minor (__main__.DeviceTests.test_abi_zero_requires_exact_minor) ... ok
+test_error_not_cleared_or_replayed (__main__.DeviceTests.test_error_not_cleared_or_replayed) ... ok
+test_extended_map_preserves_neighbors_palette_and_flip (__main__.DeviceTests.test_extended_map_preserves_neighbors_palette_and_flip) ... ok
+test_extended_tiles_and_split_upload (__main__.DeviceTests.test_extended_tiles_and_split_upload) ... ok
+test_fence_wrap_and_nonzero_initial_done (__main__.DeviceTests.test_fence_wrap_and_nonzero_initial_done) ... ok
+test_fill (__main__.DeviceTests.test_fill) ... ok
+test_fpga_that_never_finishes_loading_times_out (__main__.DeviceTests.test_fpga_that_never_finishes_loading_times_out) ... ok
+test_missing_ready_is_bounded (__main__.DeviceTests.test_missing_ready_is_bounded) ... ok
+test_pcm_error_has_own_status (__main__.DeviceTests.test_pcm_error_has_own_status) ... ok
+test_probe (__main__.DeviceTests.test_probe) ... ok
+test_probe_discards_previous_result_without_replay_or_fault_clear (__main__.DeviceTests.test_probe_discards_previous_result_without_replay_or_fault_clear) ... ok
+test_probe_waits_while_fpga_loads (__main__.DeviceTests.test_probe_waits_while_fpga_loads) ... ok
+test_pulse_pitch (__main__.DeviceTests.test_pulse_pitch) ... ok
+test_ranges_and_capability (__main__.DeviceTests.test_ranges_and_capability) ... ok
+test_raster_validate_before_write (__main__.DeviceTests.test_raster_validate_before_write) ... ok
+test_read_after_interrupted_read (__main__.DeviceTests.test_read_after_interrupted_read) ... ok
+test_sprite_signed_and_flags (__main__.DeviceTests.test_sprite_signed_and_flags) ... ok
+test_status_timeout (__main__.DeviceTests.test_status_timeout) ... ok
+test_vram_write_fence_read (__main__.DeviceTests.test_vram_write_fence_read) ... ok
+test_backspace_crlf_tab (__main__.TerminalTests.test_backspace_crlf_tab) ... ok
+test_malformed_negative_cursor (__main__.TerminalTests.test_malformed_negative_cursor) ... ok
+test_malformed_utf8_is_one_question_mark_each (__main__.TerminalTests.test_malformed_utf8_is_one_question_mark_each) ... ok
+test_repl_editing_split_sequences (__main__.TerminalTests.test_repl_editing_split_sequences) ... ok
+test_scroll_moves_dirty_flags (__main__.TerminalTests.test_scroll_moves_dirty_flags) ... ok
+test_utf8_and_unbounded_escape (__main__.TerminalTests.test_utf8_and_unbounded_escape) ... ok
+test_wrap_scroll (__main__.TerminalTests.test_wrap_scroll) ... ok
+test_failed_flush_does_not_scroll_twice (__main__.TileScreenTests.test_failed_flush_does_not_scroll_twice) ... ok
+test_font_packing_map_stride_and_720p_padding (__main__.TileScreenTests.test_font_packing_map_stride_and_720p_padding) ... ok
+test_newline_scrolls_in_hardware (__main__.TileScreenTests.test_newline_scrolls_in_hardware) ... ok
+test_scroll_wraps_the_32_row_map (__main__.TileScreenTests.test_scroll_wraps_the_32_row_map) ... ok
+test_busy_stall_abort_then_reuse (__main__.TransportTests.test_busy_stall_abort_then_reuse) ... ok
+test_disconnected_ready_sends_no_command (__main__.TransportTests.test_disconnected_ready_sends_no_command) ... ok
+test_dma_stall_times_out_and_aborts (__main__.TransportTests.test_dma_stall_times_out_and_aborts) ... ok
+test_interrupt_during_cs_selection (__main__.TransportTests.test_interrupt_during_cs_selection) ... ok
+test_invalid_config_and_read (__main__.TransportTests.test_invalid_config_and_read) ... ok
+test_keyboard_interrupt_aborts (__main__.TransportTests.test_keyboard_interrupt_aborts) ... ok
+test_long_writes_use_dma_with_the_same_words (__main__.TransportTests.test_long_writes_use_dma_with_the_same_words) ... ok
+test_queue_flags_across_wrap (__main__.TransportTests.test_queue_flags_across_wrap) ... ok
+test_read_count_and_dummy (__main__.TransportTests.test_read_count_and_dummy) ... ok
+test_release_sm_and_reconnect (__main__.TransportTests.test_release_sm_and_reconnect) ... ok
+
+----------------------------------------------------------------------
+Ran 60 tests in 0.751s
+
+OK
+SPI rx ['0x20', '0x4b', '0x39', '0x0', '0x2', '0x13', '0xa5', '0x5a'] expected ['0x20', '0x4b', '0x39', '0x0', '0x2', '0x13', '0xa5', '0x5a']
+SPI SCK high ns min/max 50.0/50.0, low min 50.0, period(within byte) 100.0
+SPI MOSI setup before rise (first byte) min 50.0 ns
+SPI BUSY: rises before 5us 32 (header+3 bytes = 32 expected), first flagged rise at 5083 ns
+50 output-delay draws x 2 modes: 0 failures
+QSPI rx ['0x4b', '0x39', '0x2'] expected ['0x4b', '0x39', '0x2']
+QSPI host releases IO at 483.3 ns, FPGA drives from 632.4 ns, margin 149.1 ns, contention cycles 0
+QSPI SCK high min/max 50.0/50.0, low min 50.0
+PASS

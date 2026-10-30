@@ -8,10 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hardware/clocks.h"
+#include "hardware/watchdog.h"
 #include "pico/stdlib.h"
 #include "kagura_host.h"
 #include "spectacular_demo.h"
 #include "pcm_demo.h"
+#include "fb_bench.h"
+#include "fb_demo.h"
 
 #define PIN_IO0 2u    // IO0..IO3 = GP2..GP5
 #define PIN_SCK 6u
@@ -381,7 +384,13 @@ static void help(void) {
            "                       opts: swap (piano on PCM 0), move (exchange PSRAM locations), solo (melody off),\n"
            "                       mute / mutep (melody / piano read but at gain 0), m=<n> (MASTER_GAIN 0..255)\n"
            "                       nonote (piano channel never started), zero (silence in place of the piano)\n"
-           "  clear                clear ERROR_CODE and IRQ.ERROR\n");
+           "  fbbench [reps] [s] [full] [pcm] [psg]  C TileFramebuffer benchmark (480p ABI 0.6): draw,\n"
+           "                       flush, gap, s-second loop, scene CRC + VRAM read-back; defaults 10 reps,\n"
+           "                       10s; pcm/psg keep PCM 2ch / pulse+noise+wave playing throughout\n"
+           "  fbdemo [s]           C TileFramebuffer showcase with PSG music (480p ABI 0.6): plasma,\n"
+           "                       tesseract, tunnel, ribbon; default 60s, 0 runs until a key\n"
+           "  clear                clear ERROR_CODE and IRQ.ERROR\n"
+           "  reboot               chip reset; boots flash (leaves a RAM-loaded no_flash build)\n");
 }
 
 static bool read_line(char *line, size_t size) {
@@ -416,6 +425,12 @@ int main(void) {
             kh_status s = kagura_spectacular_demo(seconds);
             if (s != KH_OK) printf("ERR show: %s 0x%02x\n", status_name(s), kh_last_error());
         }
+        else if (!strcmp(cmd, "fbdemo")) {
+            unsigned seconds = a1 ? (unsigned)strtoul(a1, NULL, 0) : 60u;
+            if (seconds > 3600u) { printf("ERR seconds 0..3600\n"); continue; }
+            kh_status s = kagura_fb_demo(seconds);
+            if (s != KH_OK) printf("ERR fbdemo: %s 0x%02x\n", status_name(s), kh_last_error());
+        }
         else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
         else if (!strcmp(cmd, "pdbg")) kagura_psram_debug(a1 && !strcmp(a1, "r"), a2 ? (uint8_t)strtoul(a2, NULL, 16) : 0xc3u);
         else if (!strcmp(cmd, "copy")) kagura_copy_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
@@ -431,6 +446,22 @@ int main(void) {
                          !strcmp(f, "nonote") ? PCM_DEMO_NONOTE : !strcmp(f, "zero") ? PCM_DEMO_ZERO : 0u;
             }
             kagura_pcm_demo(seconds, flags, master);
+        }
+        else if (!strcmp(cmd, "fbbench")) {
+            unsigned reps = a1 ? (unsigned)strtoul(a1, NULL, 0) : 10u;
+            unsigned seconds = a2 ? (unsigned)strtoul(a2, NULL, 0) : 10u;
+            unsigned flags = 0;
+            for (char *f = strtok(NULL, " "); f; f = strtok(NULL, " "))
+                flags |= !strcmp(f, "full") ? FB_BENCH_FULL : !strcmp(f, "pcm") ? FB_BENCH_PCM : !strcmp(f, "psg") ? FB_BENCH_PSG : 0u;
+            if (reps < 1u || reps > 256u || seconds > 600u) { printf("ERR reps 1..256, seconds 0..600\n"); continue; }
+            kagura_fb_bench(reps, seconds, flags);
+        }
+        else if (!strcmp(cmd, "reboot")) {
+            printf("OK reboot\n");
+            stdio_flush();
+            sleep_ms(100);
+            watchdog_reboot(0, 0, 10);
+            for (;;) tight_loop_contents();
         }
         else if (!strcmp(cmd, "clear")) printf(kh_clear_errors() == KH_OK ? "OK\n" : "ERR\n");
         else if (!strcmp(cmd, "mode") && a1 && (!strcmp(a1, "spi") || !strcmp(a1, "qspi"))) {

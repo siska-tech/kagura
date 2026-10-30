@@ -1,0 +1,74 @@
+[
+  {
+    "path": "docs/framebuffer-gap-logs/cleanup-incomplete-upload.py",
+    "sha256": "eb6947d544d0d95fa67141428c34a462d8ee67fcf6d557f48bbb144903527b67"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/cleanup.log",
+    "sha256": "24025b53bf93d1b80715c4219b7b0aca842cffa20214ac82c524123d69fd1b13"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/console-ram.log",
+    "sha256": "00a054479df38c43e01e6206e3ec933ec20dc9570aeb3763d05fef5e4c44a249"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/console.log",
+    "sha256": "00a054479df38c43e01e6206e3ec933ec20dc9570aeb3763d05fef5e4c44a249"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/device-ram.log",
+    "sha256": "acdf8a0e4875fe7c4655388b9fb0b15b32bd2e00bb8ed3b83c0b907d110f1e96"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/ram-methods.py",
+    "sha256": "704158ef78cd8ce517894ff0b06b53a35a9539fdd45b906b58e72470b3c56feb"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/README.md",
+    "sha256": "e3b2cfeeb77b5c23101c978dd187c0ac8d081d37f1ee3f75660710932a1e79b5"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/restore-ram.log",
+    "sha256": "e253ae16b07933b01061a9e41118854bd299d615433eb9a52c1a3a6678b5b8c7"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/restore.log",
+    "sha256": "e253ae16b07933b01061a9e41118854bd299d615433eb9a52c1a3a6678b5b8c7"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/run-ram.py",
+    "sha256": "51152c408d65b625d1fc9355fd1ce275b3ca4e7c5a08086cd32a1b77c616c879"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/sdk-tests.log",
+    "sha256": "d8fa934175a47104d6f657bde64a536fb66bc9f79fe03e0f81af185d0aad83bc"
+  },
+  {
+    "path": "docs/framebuffer-gap-logs/upload-sdk.log",
+    "sha256": "93b4d7940d73d8b836d8fe329eb7afb8be72111e61103d524a128a2278c64c9a"
+  },
+  {
+    "path": "docs/framebuffer-gap-optimization.md",
+    "sha256": "9119377a60a794292a0390fab2ed97320b5b8bb06e6913f8569c63725f8e6c46"
+  },
+  {
+    "path": "docs/framebuffer-gap-results.json",
+    "sha256": "1535a2536b7e72466fedf389b019d23be2601e5800b5434d250cd0302df41911"
+  },
+  {
+    "path": "software/micropython/examples/framebuffer_gap_benchmark.py",
+    "sha256": "e61fcd65dae1b60bb3c3859fbcc7a93ca2d49819f2b65fab9359bd92886b9634"
+  },
+  {
+    "path": "software/micropython/kagura/framebuffer.py",
+    "sha256": "c958d83dbab649d1fe99139f3b18e6d19e6cebd8fd29e95f8c4c0c0af038fc09"
+  },
+  {
+    "path": "software/micropython/tests/test_framebuffer.py",
+    "sha256": "4dd95bac142c5fa3c091a6ba5231ee56e9e6a2a66ffa7b5194c59e5d136e84ad"
+  },
+  {
+    "path": "tools/analyze-framebuffer-gap.py",
+    "sha256": "e663befa9b6c3e3bb7b2cbcc5f72340fb6372855cc33e62e74f6388e49d4b464"
+  }
+]

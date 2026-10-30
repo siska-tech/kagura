@@ -1,0 +1,227 @@
+[
+  {
+    "path": "docs/framebuffer-transport-analysis.md",
+    "bytes": 37159,
+    "sha256": "cc11688c22a131dc9e1ac9913498ceccc7c99d29f1a2e0e47d2c57475dcb7a5c"
+  },
+  {
+    "path": "docs/framebuffer-transport-hardware-log.md",
+    "bytes": 13774,
+    "sha256": "9fe958f0e7126b7ffe2d9399dc468cacc5d3966bc25bbacb39cf754cbc8109e3"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/console-final-clean.log",
+    "bytes": 138,
+    "sha256": "2da90b864de14d765cf610cd6bb09743cf87af34f8790452b3311e823bd2ba21"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/finish-device.log",
+    "bytes": 31909,
+    "sha256": "05024f95d719db7fd807f87785d23194264ac6328d8f3ed593cec350e92791f8"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/finish-operations.log",
+    "bytes": 634,
+    "sha256": "6aa8ad68ac94d44c5126c5a39473f506a92a3fc892e51136388f3739a01a0f39"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/flash-abi06-reload.log",
+    "bytes": 173,
+    "sha256": "141a61d0f5872f069c76ff9be15d48c4bfa4a9885cc4bbb5148e22f50bfead55"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/flash-abi06.log",
+    "bytes": 7119,
+    "sha256": "c5f722a2818372a15807e2060daec513259a6efdf64a8892d4b4c40ac259dea5"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/full-source-allocation-failure.log",
+    "bytes": 322,
+    "sha256": "1bc8725d3126c52fe2bf33c5cd9cebaec5aba1b55bb307518a95012b39f6b473"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/full-source-operations.log",
+    "bytes": 535,
+    "sha256": "b317a2ddc3db260b6c4f2424e3580dc8efdb712a4f409a236b224d0911ad619c"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/fullblit-clean.log",
+    "bytes": 4452,
+    "sha256": "b471464dd1078c76a7e08822e4a09f79cb34abd6e27ec6e31ef280e234e865dc"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/micro-0-1024.log",
+    "bytes": 105213,
+    "sha256": "071aea956550456876b43cba5c2239d3ddd5ef21fc710c154de1f49d962bf50c"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/micro1200-scenes-abc.log",
+    "bytes": 17882,
+    "sha256": "dc89eb739d23c17edd8df328985b5f6d1ae88fab2064567bfde65d4569150c63"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/native-helper-manifest.log",
+    "bytes": 468,
+    "sha256": "c8be8c22238ec4433b73d1f4d1c8c6c25e30f7977a05377ad21db1da4b48d950"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/pio-tests.log",
+    "bytes": 7226,
+    "sha256": "fc46cf8f6889d1442d355f9b71fd305e03adae2ef3d5d81e99d3d02df78a4464"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/README.md",
+    "bytes": 8709,
+    "sha256": "3dcc55ab7f66c85bbe2731dca87e8195dfd39b9d1a3e125872c71b981fd37889"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/rectangles-clean.log",
+    "bytes": 5922,
+    "sha256": "3970ace91969f8d7d79b62369231e86a9c15ea8f7b5ca2e5e25901caa5e59c1e"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/restore-clean-boot.log",
+    "bytes": 217,
+    "sha256": "b2a68a243eca7e49e87a29ecacc518cdbda0ffbd716892a554b981b9cdbe9b6d"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/restore-console.log",
+    "bytes": 845,
+    "sha256": "61095dac18b71d91d45cdc3a75a06a206cfacae8a6d5210952aed10b1b61a1d1"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/resume-operations.log",
+    "bytes": 535,
+    "sha256": "698a86f6ea2f16fb2834a4cc3e9903c7dfdbde582f294004006ef01bc58b02da"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/rtl-summary.tsv",
+    "bytes": 1519,
+    "sha256": "a75c8bb1d3d7d6fa624948d0c239d9f0750999dbab3f03145b16068b3befc1a7"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/sdk-tests-final.log",
+    "bytes": 808,
+    "sha256": "2cd887c832f11de8609230496bdc251f4dbffa1924f610f942db25ee52aa18b1"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/sdk-tests.log",
+    "bytes": 801,
+    "sha256": "b780502bfb2da49b1bef9f330e072c4fdc509b056904b6b55ff09ee33de64754"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/uf2-recovery.log",
+    "bytes": 175,
+    "sha256": "e044c590f268dc51eea27bfb4f15dbe78d26ab6b7d01edc7d313b15fbce2d2d1"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-console-check-only.py",
+    "bytes": 323,
+    "sha256": "64408c97544dcfb0d5ba674e2f4628cc46b33d8a369ba9ad5c3818d6e889c573"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-cpu-pack-and-validation.py",
+    "bytes": 1764,
+    "sha256": "d55367311e896c59963f9b79e35b5054aa414f96c984f7a7cc3c08f76a20e2f0"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-finish-safe.py",
+    "bytes": 19681,
+    "sha256": "6eb3e9c5b5e97f371a4b94cde5f94efc689d65cccc3300085a98f8e41f69d182"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-full-source-allocation-failure.py",
+    "bytes": 18870,
+    "sha256": "f15c341535e45aa294809f2b44a2258893d893e9f50bc89a20851a3cac1e1179"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-fullblit-clean.py",
+    "bytes": 21174,
+    "sha256": "925f9980d85ec10b0f554a6c0d6c8487d94fb5697154865f63bf7bd15b523a5b"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-initial.py",
+    "bytes": 14103,
+    "sha256": "bd9d4ab00fc8d53aca51dbb42fb9666cc16cb3493504a78932f6900e2f639763"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-micro1200-scenes-abc.py",
+    "bytes": 17499,
+    "sha256": "705455755004235d0cc5807b873da71366ef6d8e489c244015666d4d25e746da"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-native-helper-manifest.py",
+    "bytes": 689,
+    "sha256": "b8eb5637ee5d2c87d325b43b7d84d7915db2e1c4e7b63676fd0a23d063260e6a"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-rearm-clean-boot.py",
+    "bytes": 92,
+    "sha256": "eaeb39be308e1c89aab23021f111b399b0c3a9979f14debe9c3910ce1072c3a6"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-rectangles-clean.py",
+    "bytes": 20912,
+    "sha256": "a4815c14a64529442efe9f810de5d18f67ee14e5ddef3aaa13ef50a8902c4bea"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-remaining.py",
+    "bytes": 17262,
+    "sha256": "4095ca182385e45ace7d9106492a92ee864b2a339fbd5d0e4780f1d19d072f49"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-restore-clean-boot.py",
+    "bytes": 904,
+    "sha256": "1076afc2a9a05feaca774e2c820e230d1bbb56f9dcc85591c1189c3f8704f974"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-restore-console.py",
+    "bytes": 1660,
+    "sha256": "68d95e76ca18e5780973a39de9674e58b5965afa7e104a85e6dae0111efec67d"
+  },
+  {
+    "path": "docs/framebuffer-transport-logs/workload-setup-clean-boot.py",
+    "bytes": 1162,
+    "sha256": "7c383f8bed49132039ab1d9fddf2c1de075e9d58ba706fb736c94562da987ece"
+  },
+  {
+    "path": "docs/framebuffer-transport-results.json",
+    "bytes": 473978,
+    "sha256": "7043a505bab1bbb5eb92fc13a79129813ffdc980a97fe311b6e5399024ce3681"
+  },
+  {
+    "path": "docs/images/framebuffer-transport-baseline.svg",
+    "bytes": 144868,
+    "sha256": "2d26c7dd2be571d4950d5b0b1d78a9d8461a05e8cffe3f4d93b61109d0cbc2ab"
+  },
+  {
+    "path": "software/micropython/examples/framebuffer_transport_benchmark.py",
+    "bytes": 17015,
+    "sha256": "994c5916fca80d04be7ce80e4d0bf2fef1b75ee9b916203962a12286ba1b13cc"
+  },
+  {
+    "path": "software/micropython/tests/test_transport_benchmark.py",
+    "bytes": 1534,
+    "sha256": "0abdd3efbb284bbbb42f60ec430a52b15a2d9462acc93af34e049a487a4cc066"
+  },
+  {
+    "path": "tools/analyze-framebuffer-transport.py",
+    "bytes": 13351,
+    "sha256": "20ee20c170d0390e2ec19d0027eaa0a2e80656ce18a1af19cf82e48c0b50d2e6"
+  },
+  {
+    "path": "tools/framebuffer-transport-upload.ps1",
+    "bytes": 5418,
+    "sha256": "4a4605bbc4383b462fd7e8438d318930193c61ce05ed16b2b01d6a36907625b8"
+  },
+  {
+    "path": "tools/plot-framebuffer-transport.py",
+    "bytes": 2128,
+    "sha256": "18f8b2a6e62e8a1e6e7e672431f8c4202b5024ee97e79dd4215224c6dbe6b17c"
+  },
+  {
+    "path": "tools/prepare-framebuffer-transport.py",
+    "bytes": 6462,
+    "sha256": "9c190a75deaafd8e8d015a3f9cd375493744a2e5d3cb06c4a679eff4f7110cbf"
+  }
+]

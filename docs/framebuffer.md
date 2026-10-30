@@ -60,10 +60,19 @@ stats = fb.flush()
 | `paint(x,y,color)` | (x,y)と同色で4近傍連結の領域を塗る。完了でTrue、作業stack不足でFalse |
 | `last_paint` | 直前のpaintの`complete`／`peak`／`capacity`／`dropped`／`compactions`／`spans`／`pixels` |
 | `mark_dirty(x=0,y=0,width=320,height=240)` | `buffer`を直接編集した後、clipした矩形のtileをdirtyにする |
-| `flush()` | dirty連続runを転送しFENCE。統計dictを返す |
+| `flush(max_gap=0)` | dirty連続runを転送しFENCE。正のmax_gapで小さなclean gapを統合。統計dictを返す |
 | `last_flush` | 直前のflush／途中で失敗したflushの統計 |
 
 全描画はローカルRAMだけを変更し、未変更画素ではdirtyを立てない。`buffer`の直接編集には明示的な`mark_dirty()`が必要。単一owner専用で、割込みや別taskからの描画は行わない。既存soft console callbackは`device.busy`を尊重する。`line()`は元の線分長、`circle()`は半径に比例する処理なので、極端に大きい画面外座標・半径はCPU時間を消費する。
+
+`max_gap`は0〜1198の整数。0は従来の転送範囲、1はdirty run間の1タイルの空白も送り、
+FENCE・status確認の回数を減らす。先頭・末尾のclean領域は追加しない。
+gapはtileの線形番号で数え、行境界も跨ぐ。1023/1024のVRAM bank分割は既存Videoに任せる。
+bufferの内容は変えず、追加領域を送信前にdirtyにする。成功まで未確定run全体を保持し、
+部分転送・FENCE・error確認失敗時にも自動再送しない。
+`tiles`は確定済み送信tile数、`bytes`は要求送信byte数で、いずれもgapを含む。
+失敗したflushの統計は完了済みと要求済みを区別して読む。
+比較方法・DMA512との組合せは[通信改善の検証](framebuffer-gap-optimization.md)を参照。
 
 ## blit／ellipse／paint
 

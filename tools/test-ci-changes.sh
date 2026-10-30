@@ -38,6 +38,9 @@ files "header tests" "rtl_sources" software/tests/regs_c.c tools/test-headers.sh
 files "C header" "rtl_sources pico" software/include/kagura_regs.h
 files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
+files "C framebuffer differential" "pico" software/pico/tile_fb.c software/pico/tests/test_tile_fb.py
+files "framebuffer reference" "pico micropython micropython_firmware" software/micropython/kagura/framebuffer.py
+files "register model" "pico micropython" software/micropython/tests/test_driver.py
 files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
 files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
 files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
@@ -45,6 +48,8 @@ files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
 files "STAR RUNNER hardware runner" "" tools/star-runner-device.ps1
 files "1200 tile focused regressions" "verilator" tools/test-tile1200-stage1.sh tools/test-tile1200-stage2.sh
 files "1200 tile hardware runner" "" tools/tile1200-device.ps1
+files "framebuffer transport measurement" "" tools/prepare-framebuffer-transport.py tools/framebuffer-transport-upload.ps1 \
+    tools/analyze-framebuffer-transport.py tools/plot-framebuffer-transport.py tools/analyze-framebuffer-gap.py
 files "1200 tile hardware fixture" "micropython" software/micropython/examples/tile1200_accept.py software/micropython/tests/test_tile1200_accept.py
 # PR #31 without its workflow edit: Python, font and docs only.
 files "kagura_ja and font" "micropython" software/micropython/kagura_ja/__init__.py \
