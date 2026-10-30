@@ -63,6 +63,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `fbbench [reps] [seconds] [full] [pcm] [psg]` | C版TileFramebuffer（320×240・4bpp疑似フレームバッファ）のベンチマーク。480p・ABI 0.6・1200パターンのbitstream専用で、画面全体を専有する。既定10回・10秒。`full`で全38400 byteを読み戻す。`pcm`はMicroPythonの`Session.pcm_start()`と同じPCM 2ch（PSRAMの三角波ループ、MASTER_GAIN 64）、`psg`はpulse 3声・noise・wavetable 2声の和音を全区間鳴らし、終了時に止める（下記） |
 | `fbdemo [seconds]` | C版TileFramebufferのデモ。プラズマ・トンネル（1回描いてパレット回転）、星空の上で回る4D超立方体、虹色の線リボン（毎フレーム描き直し、変わったタイルだけ転送）を約12秒ずつフェードで切り替え、PSGのBGMを流す。毎フレーム末尾のパレットCOMMITでVBlankに同期する。fbbenchとフレームバッファを共有し、条件も同じ。既定60秒、`0`はキー入力まで継続 |
 | `imgdemo [gen\|recv]` | 疑似256色の画像デモ（480p・ABI 0.6）。16色×16パレットを8×8セルごとに選び、フェードインで表示して残す。`gen`（既定）はPico上で夕景を計算して減色（約18秒）、`recv`はPCの`send_image.py`から受け取る（下記） |
+| `imgdemo save <n>` / `imgdemo slide [s] [hold_ms]` | 表示中の画像をPSRAMスロットn（0〜15）へ保存／保存済みスロットをPSRAMからのCOPYだけでフェード付きに切り替えるスライドショー（下記） |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 | `reboot` | watchdogでチップをリセットし、Flashから起動し直す（RAMに読み込んだビルドから元のfirmwareへ戻る） |
 
@@ -133,6 +134,20 @@ uv run --with pillow --with numpy software/pico/send_image.py --save photo.kimg 
 ```
 
 `mode qspi`・`div 2`を先に送る（`--no-setup`で省略）。`tests/test_img_demo.py`は`tests/img_quant_host.c`をgcc（ASan/UBSan）でビルドし、出力の範囲・16パレットの使用・PSNR・決定性と、`send_image.py`の画素配置・送信形式が`img_demo.h`と一致することを検査する（CIで実行、NumPy不要）。
+
+### PSRAMスライドショー
+
+PSRAM bitstream（CAPS PSRAM）では、表示中の画像をPSRAMのスロットへ保存し、COPYだけで切り替えられる。スロットn（0〜15）は`0x600000 + n × 64 KiB`（PCMのsample領域0x400000〜とは別）に、パターン38400 B、mapの30行（各128 B、+0x9600）、明るさ0〜16のパレット17組（各512 B、+0xA500）を持つ。
+
+- `imgdemo save n`: `gen`／`recv`で表示した画像を保存する（52 ms）。表示後にframebufferを別のデモが使っていれば、保存時のCRC照合で拒否する。`send_image.py --slot n`は受信・表示の後に続けて保存する。
+- `imgdemo slide [秒] [保持ms]`: 保存済みスロットを順に表示する（既定30秒・3000 ms、0秒はキー入力まで）。表示中スロットの暗いパレットを1段ずつCOPYしてフェードアウトし、全パレットが黒の間にパターン2回（0x0000へ32768 B、0xB000へ5632 B）とmap 3840 BをCOPYし、新しいスロットのパレットでフェードインする。Picoはコマンドだけを送り、画像データはUSBもQSPIも通らない。
+
+実機（QSPI 5 MHz）でCOPYによる差し替えは7.8 ms（約5.4 MB/s、1フレーム未満）、1回の切替はフェード込みで約0.55秒。4枚×4周の40秒でエラー0。スロットの有無はPicoのRAMにだけ記録するので、Picoのリセット後は`save`し直す。
+
+```sh
+uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 --slot 1 photo.jpg
+# シリアルで: imgdemo gen → imgdemo save 0 → imgdemo slide 60 3000
+```
 
 ## 実機確認の手順
 

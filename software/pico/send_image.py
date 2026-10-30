@@ -10,6 +10,7 @@ pyserial to send:
 
     uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 photo.jpg
     uv run --with pillow --with numpy software/pico/send_image.py --preview out.png photo.jpg
+    uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 --slot 1 photo.jpg
     uv run --with pillow --with numpy software/pico/send_image.py --save photo.kimg photo.jpg
 
 A .kimg file holds exactly the bytes sent over USB; MicroPython shows it with
@@ -135,7 +136,7 @@ def preview(path, palette, cells, index):
     img.resize((640, 480), Image.NEAREST).save(path)
 
 
-def send(port, data, setup, timeout=30):
+def send(port, data, setup, slot=None, timeout=30):
     import serial
     with serial.Serial(port, 115200, timeout=0.2) as link:
         def lines(until):
@@ -155,7 +156,14 @@ def send(port, data, setup, timeout=30):
         link.write(data)
         result = lines((b'IMG DONE', b'IMG FAIL', b'ERR'))
         print(result.strip())
-        return 'IMG DONE' in result
+        if 'IMG DONE' not in result:
+            return False
+        if slot is not None:
+            link.write(b'imgdemo save %d\r' % slot)
+            result = lines((b'IMG SAVED', b'IMG FAIL', b'ERR'))
+            print(result.strip())
+            return 'IMG SAVED' in result
+        return True
 
 
 def main():
@@ -165,6 +173,8 @@ def main():
     parser.add_argument('--preview', help='write the converted picture (640x480 PNG) here')
     parser.add_argument('--save', help='write the framed picture (.kimg, the bytes sent over USB) here')
     parser.add_argument('--no-setup', action='store_true', help="skip 'mode qspi' and 'div 2'")
+    parser.add_argument('--slot', type=int, choices=range(16), metavar='0..15',
+                        help="then store it in this PSRAM slot ('imgdemo save'), for 'imgdemo slide'")
     args = parser.parse_args()
     if not (args.port or args.preview or args.save):
         parser.error('give --port, --preview and/or --save')
@@ -177,7 +187,8 @@ def main():
         with open(args.save, 'wb') as f:
             f.write(frame(palette, cells, pack(index)))
     if args.port:
-        ok = send(args.port, frame(palette, cells, pack(index)), [] if args.no_setup else ['mode qspi', 'div 2'])
+        ok = send(args.port, frame(palette, cells, pack(index)), [] if args.no_setup else ['mode qspi', 'div 2'],
+                  args.slot)
         sys.exit(0 if ok else 1)
 
 
