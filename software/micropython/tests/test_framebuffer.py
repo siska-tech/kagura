@@ -231,6 +231,70 @@ class FramebufferTests(TestCase):
         self.assertEqual(self.d.busy,0)
         self.assertEqual(self.fb.flush()['tiles'],1200)
         self.assertEqual(self.model.memory[0:32768],self.fb.buffer[:32768])
+    def test_gap_merge_opt_in_threshold_and_no_edge_padding(self):
+        self.clean()
+        for gap, expected in ((0,(4,4)),(1,(3,5)),(2,(2,7))):
+            self.fb.dirty[:]=bytes(1200)
+            for tile in (0,2,5,1199):self.fb.dirty[tile]=1
+            stats=self.fb.flush(max_gap=gap)
+            self.assertEqual((stats['runs'],stats['tiles']),expected)
+            self.assertEqual(stats['bytes'],expected[1]*32)
+            self.assertEqual(stats['fences'],expected[0])
+            self.assertEqual(sum(self.fb.dirty),0)
+        self.model.calls.clear()
+        self.assertEqual(self.fb.flush(max_gap=1)['tiles'],0)
+        self.assertEqual(self.model.calls,[])
+        for invalid in (-1,1199,None,1.5):
+            with self.assertRaises(ValueError):self.fb.flush(max_gap=invalid)
+        self.assertEqual(self.model.calls,[])
+    def test_gap_merge_bank_split_readback_and_buffer_unchanged(self):
+        self.clean()
+        self.fb.buffer[:]=bytes((i*73+(i>>7)*29)&255 for i in range(38400))
+        before=bytes(self.fb.buffer)
+        for tile in (1022,1024,1199):self.fb.dirty[tile]=1
+        with patch.object(self.d,'write_memory',wraps=self.d.write_memory) as write:
+            stats=self.fb.flush(max_gap=1)
+        self.assertEqual([(a.args[0],len(a.args[1])) for a in write.call_args_list],
+                         [(1022*32,64),(0xB000,32),(0xC5E0,32)])
+        self.assertEqual((stats['runs'],stats['writes'],stats['tiles']),(2,3,4))
+        self.assertEqual(self.fb.buffer,before)
+        self.assertEqual(self.model.memory[1022*32:32768],before[1022*32:32768])
+        self.assertEqual(self.model.memory[0xB000:0xB020],before[32768:32800])
+    def test_gap_merge_failures_preserve_expanded_unconfirmed_run(self):
+        self.clean()
+        for stage in ('write','fence','error'):
+            self.fb.dirty[:]=bytes(1200)
+            self.fb.dirty[1022]=self.fb.dirty[1024]=1
+            def fail(*args):
+                self.assertGreater(self.d.busy,0)
+                self.assertEqual(list(self.fb.dirty[1022:1025]),[1,1,1])
+                if stage=='write':
+                    self.model.memory[1022*32:1022*32+16]=b'\x55'*16
+                raise OSError('injected partial transfer or completion failure')
+            owner,name=(self.fb.video,'tiles') if stage=='write' else (self.d,'fence' if stage=='fence' else 'check_errors')
+            with patch.object(owner,name,side_effect=fail) as call:
+                with self.assertRaises(OSError):self.fb.flush(max_gap=1)
+                self.assertEqual(call.call_count,1)
+            self.assertEqual(list(self.fb.dirty[1022:1025]),[1,1,1])
+            self.assertEqual(self.fb.last_flush['tiles'],0)
+            self.assertEqual(self.d.busy,0)
+            # Explicit retry after the fault is removed, never implicit replay.
+            self.assertEqual(self.fb.flush()['tiles'],3)
+    def test_gap_merge_post_fence_error_keeps_prior_run_confirmed(self):
+        self.clean()
+        for tile in (0,1022,1024):self.fb.dirty[tile]=1
+        fence=self.d.fence;check=self.d.check_errors;completed=[]
+        def complete():
+            fence();completed.append(1)
+        def check_after_fence():
+            if len(completed)==2:raise OSError('post-FENCE error')
+            check()
+        with patch.object(self.d,'fence',side_effect=complete), patch.object(self.d,'check_errors',side_effect=check_after_fence):
+            with self.assertRaises(OSError):self.fb.flush(max_gap=1)
+        self.assertEqual(self.fb.dirty[0],0)
+        self.assertEqual(list(self.fb.dirty[1022:1025]),[1,1,1])
+        self.assertEqual(self.fb.last_flush['tiles'],1)
+        self.assertEqual(self.d.busy,0)
     def test_fence_failure_keeps_run_dirty_and_prior_run_clean(self):
         self.clean()
         self.fb.pixel(0,0,1);self.fb.pixel(16,0,2)

@@ -1,0 +1,3 @@
+TILEFB {"path": "/kagura_dma_pack_viper.mpy", "event": "transport_native_helper", "bytes": 628, "sha256": "60ea999a3fc14be85471877028ca90895d1fe4e178b7501d985d44dd7e4a567f"}
+TILEFB {"path": "/kagura_fifo_xfer_viper.mpy", "event": "transport_native_helper", "bytes": 1453, "sha256": "24417f631ba46d5658e85170f547a841dbfb5b8a5c49e98f6d6eff1a52965fb6"}
+TILEFB {"abi": [0, 6], "mpy_arch": 4870, "console_active": true, "event": "transport_console_checked", "error": 0}

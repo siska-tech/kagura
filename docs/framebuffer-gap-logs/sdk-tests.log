@@ -1,0 +1,7 @@
+TILEFB {"name": "A", "draw_us": 31000, "flush": {"tiles": 1200, "bytes": 38400, "runs": 1, "writes": 2, "fences": 1, "transfer_us": 31000, "wait_us": 0, "total_us": 31000}, "buffer_crc32": 2855766975, "viper_enabled": false, "event": "scene"}
+TILEFB {"name": "A", "draw_us": 204000, "flush": {"tiles": 1200, "bytes": 38400, "runs": 1, "writes": 2, "fences": 1, "transfer_us": 31000, "wait_us": 0, "total_us": 31000}, "buffer_crc32": 2855766975, "viper_enabled": true, "event": "scene"}
+s..........................................................................................................................................................s..................................................
+----------------------------------------------------------------------
+Ran 206 tests in 37.060s
+
+OK (skipped=2)

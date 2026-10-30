@@ -1,0 +1,2 @@
+cp build/transport-gap/kaguragap :/lib/
+mpremote: cp: /lib/kaguragap/device.py: No space left on device.

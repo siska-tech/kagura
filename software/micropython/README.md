@@ -310,6 +310,15 @@ console／TextLayer／sprite用の独立pattern所有者とは同時に使用し
 
 [API・配置と復帰](../../docs/framebuffer.md)、[参照描画・実機診断・性能結果](../../docs/framebuffer-results.md)。診断は`examples/framebuffer_diagnostic.py`、測定は`examples/framebuffer_benchmark.py`。追加試験は`python3 -I software/micropython/tests/test_framebuffer.py`。
 
+通信計測でrunごとの固定費が大きかったため、`fb.flush(max_gap=1)`でdirty run間の
+1タイルのclean gapも転送する方式を選べる。既定の`flush()`は従来どおり。
+追加タイルもFENCEとerror確認までdirtyに保持し、失敗時に自動再送しない。
+統計の`tiles`/`bytes`は追加gapを含む送信量。bufferとVRAMは同じ単一所有者が管理し、
+別ownerが書いた内容をgap転送で保存できるとは扱わない。
+大転送では既存の`device.transport.accelerate(chunk=512)`も選択可能だが、
+128既定に対して1536byteの追加workspaceを使う。既存accelerationを閉じてから切替え、
+使用後もcloseして所有権を返す。[比較計測と適用範囲](../../docs/framebuffer-gap-optimization.md)を参照。
+
 ### Viper描画backend
 
 RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(False)`でPython、`fb.set_viper(True)`でViper必須、`fb.set_viper()`でautoへ戻す。`fb.viper_enabled`とnative内`fb.kernel_counts`で選択と実行を確認できる。buffer／dirtyと公開描画結果は同じ。通信側のViper FIFO／DMAとは独立で、flush・FENCE・COMMIT・error検査は変更していない。
