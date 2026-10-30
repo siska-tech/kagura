@@ -148,6 +148,8 @@ jobs:
         run: python3 -I software/pico/tests/test_pio_timing.py build/pico/kagura_host.pio.h
       - name: Compare the C TileFramebuffer with the Python SDK
         run: python3 -I software/pico/tests/test_tile_fb.py
+      - name: Check the pseudo-256-colour picture quantizer
+        run: python3 -I software/pico/tests/test_img_demo.py
       - uses: actions/upload-artifact@v4
         with:
           name: pico-firmware

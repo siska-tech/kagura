@@ -15,6 +15,7 @@
 #include "pcm_demo.h"
 #include "fb_bench.h"
 #include "fb_demo.h"
+#include "img_demo.h"
 
 #define PIN_IO0 2u    // IO0..IO3 = GP2..GP5
 #define PIN_SCK 6u
@@ -389,6 +390,8 @@ static void help(void) {
            "                       10s; pcm/psg keep PCM 2ch / pulse+noise+wave playing throughout\n"
            "  fbdemo [s]           C TileFramebuffer showcase with PSG music (480p ABI 0.6): plasma,\n"
            "                       tesseract, tunnel, ribbon; default 60s, 0 runs until a key\n"
+           "  imgdemo [gen|recv]   pseudo-256-colour picture, 16 palettes x 16 colours chosen per 8x8 cell:\n"
+           "                       gen computes and quantizes a scene here, recv takes one from send_image.py\n"
            "  clear                clear ERROR_CODE and IRQ.ERROR\n"
            "  reboot               chip reset; boots flash (leaves a RAM-loaded no_flash build)\n");
 }
@@ -430,6 +433,10 @@ int main(void) {
             if (seconds > 3600u) { printf("ERR seconds 0..3600\n"); continue; }
             kh_status s = kagura_fb_demo(seconds);
             if (s != KH_OK) printf("ERR fbdemo: %s 0x%02x\n", status_name(s), kh_last_error());
+        }
+        else if (!strcmp(cmd, "imgdemo") && (!a1 || !strcmp(a1, "gen") || !strcmp(a1, "recv"))) {
+            kh_status s = kagura_img_demo(a1 && !strcmp(a1, "recv"));
+            if (s != KH_OK) printf("ERR imgdemo: %s 0x%02x\n", status_name(s), kh_last_error());
         }
         else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
         else if (!strcmp(cmd, "pdbg")) kagura_psram_debug(a1 && !strcmp(a1, "r"), a2 ? (uint8_t)strtoul(a2, NULL, 16) : 0xc3u);

@@ -62,6 +62,7 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `pcm [seconds] [swap] [move] [solo] [mute] [mutep] [nonote] [zero] [m=<n>]` / `piano ...` | PSRAM版で2秒のメロディ（PCM 0、loop）とCC0の実録ピアノC4（PCM 1、one-shot）をuploadし、ピアノ72000 byteを全量読戻し照合したうえで、2秒ごとにPREPARE＋AUDIO_COMMITで単音を再発音。UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・ERROR_CODE・メロディの停止がなければ`PASS pcm`。`swap`でピアノをPCM 0、メロディをPCM 1へ、`move`で両者のPSRAM配置（0x400000/0x480000）を入れ替え、`solo`でメロディを鳴らさない、`mute`/`mutep`でメロディ/ピアノをゲイン0のまま再生（PSRAM読出しだけ行う）、`nonote`でピアノのチャンネルを動かさず、`zero`でピアノの代わりに無音を再生、`m=<n>`で開始前にMASTER_GAINを設定する（使用値を表示）。既定10秒、`0`はキー入力まで |
 | `fbbench [reps] [seconds] [full] [pcm] [psg]` | C版TileFramebuffer（320×240・4bpp疑似フレームバッファ）のベンチマーク。480p・ABI 0.6・1200パターンのbitstream専用で、画面全体を専有する。既定10回・10秒。`full`で全38400 byteを読み戻す。`pcm`はMicroPythonの`Session.pcm_start()`と同じPCM 2ch（PSRAMの三角波ループ、MASTER_GAIN 64）、`psg`はpulse 3声・noise・wavetable 2声の和音を全区間鳴らし、終了時に止める（下記） |
 | `fbdemo [seconds]` | C版TileFramebufferのデモ。プラズマ・トンネル（1回描いてパレット回転）、星空の上で回る4D超立方体、虹色の線リボン（毎フレーム描き直し、変わったタイルだけ転送）を約12秒ずつフェードで切り替え、PSGのBGMを流す。毎フレーム末尾のパレットCOMMITでVBlankに同期する。fbbenchとフレームバッファを共有し、条件も同じ。既定60秒、`0`はキー入力まで継続 |
+| `imgdemo [gen\|recv]` | 疑似256色の画像デモ（480p・ABI 0.6）。16色×16パレットを8×8セルごとに選び、フェードインで表示して残す。`gen`（既定）はPico上で夕景を計算して減色（約18秒）、`recv`はPCの`send_image.py`から受け取る（下記） |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
 | `reboot` | watchdogでチップをリセットし、Flashから起動し直す（RAMに読み込んだビルドから元のfirmwareへ戻る） |
 
@@ -105,7 +106,32 @@ QSPI 5MHz推奨。ABI 0.3の`RSCROLL`がないbitstreamでも動作するが、b
 python3 -I software/pico/tests/test_tile_fb.py
 ```
 
-PicoのFlash（MicroPythonとboot.py）を書き換えずに測るには、RAM専用ビルドを使う。`-DPICO_DEFAULT_BINARY_TYPE=no_flash`でビルドし（約243KBがSRAMに収まる）、MicroPythonの`machine.bootloader()`で出たRPI-RP2ドライブへUF2をコピーする。`mode qspi`・`div 2`・`fbbench`の後、`reboot`でチップをリセットするとFlashのMicroPythonへ戻る。
+PicoのFlash（MicroPythonとboot.py）を書き換えずに測るには、RAM専用ビルドを使う。`-DPICO_DEFAULT_BINARY_TYPE=no_flash`でビルドし（約253KBがSRAMに収まる。piano sampleを含むため余裕は約4KB）、MicroPythonの`machine.bootloader()`で出たRPI-RP2ドライブへUF2をコピーする。`mode qspi`・`div 2`・`fbbench`の後、`reboot`でチップをリセットするとFlashのMicroPythonへ戻る。
+
+## 疑似256色の画像デモ
+
+map の各セルは16本のパレットから1本を選べる（palette番号×16＋画素値）。TileFramebufferは全セル同じパレットを使うが、`imgdemo`は全1200パターンを書いた後、mapをセルごとのパレット番号で書き直し、画面全体で最大256色（RGB444）を出す。手順は`img_quant.c`（I/Oなし）:
+
+1. セルごとの平均色をk-meansで16グループに分ける（farthest-point初期値で決定的）。
+2. グループごとに、その画素から16色をk-meansで求める。
+3. 各セルを、自分の画素を最もよく再現するパレットへ付け替えて、16色を求め直す（`rounds`回）。
+4. RGB444へ丸め、4×4 Bayerのordered ditherで各画素の色番号を決める。
+
+画素値0は透明でBACKDROP（palette 0の0番）になるため、全パレットの0番は同じ色（最も暗いセルの平均色）とし、パレットごとに選ぶのは1〜15番。
+
+色差は`2ΔR²+4ΔG²+3ΔB²`。元画像は保持せず、必要な度に計算し直す（RGB 76800画素はSRAMに入らない）。作業領域は画素出力の先頭3600 Bを借り、heapを使わない。no_flashビルドに収めるため`img_*.c`は`-Os`。
+
+- `imgdemo gen`: `img_scene.c`の夕焼け・星・3層の山・湖面の映り込みと揺らぐ光の道をPico上で計算・減色する（QSPI 5 MHz、120 MHzで計算約18秒、表示0.46秒）。PCでの参照はPSNR約32 dB。
+- `imgdemo recv`: `IMG READY`の後、`KIMG`、パレット512 B、セルのパレット番号1200 B、画素38400 B（tile-native 4bpp）、その3つのCRC-32（4 B）を受け取る（`img_demo.h`）。長さ・CRC・値の範囲がすべて正しいときだけ表示する。約40 KBの受信は約0.6秒。
+
+`send_image.py`は任意の画像を320×240に縮小・中央切り出しし、同じ手順（反復は多め）で変換して送る。Pillow・NumPy・pyserialが必要:
+
+```sh
+uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 photo.jpg
+uv run --with pillow --with numpy software/pico/send_image.py --preview out.png photo.jpg   # 送らずに確認
+```
+
+`mode qspi`・`div 2`を先に送る（`--no-setup`で省略）。`tests/test_img_demo.py`は`tests/img_quant_host.c`をgcc（ASan/UBSan）でビルドし、出力の範囲・16パレットの使用・PSNR・決定性と、`send_image.py`の画素配置・送信形式が`img_demo.h`と一致することを検査する（CIで実行、NumPy不要）。
 
 ## 実機確認の手順
 
