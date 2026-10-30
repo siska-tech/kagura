@@ -9,10 +9,12 @@ project(kagura_pico_host C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
 
-add_executable(kagura_host main.c kagura_host.c spectacular_demo.c pcm_demo.c tile_fb.c tile_fb_io.c fb_bench.c fb_demo.c)
+add_executable(kagura_host main.c kagura_host.c spectacular_demo.c pcm_demo.c tile_fb.c tile_fb_io.c fb_bench.c fb_demo.c img_quant.c img_scene.c img_demo.c)
 pico_generate_pio_header(kagura_host ${CMAKE_CURRENT_LIST_DIR}/kagura_host.pio)
 target_include_directories(kagura_host PRIVATE ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/../include)
 target_compile_options(kagura_host PRIVATE -Wall -Wextra -Werror)
+# One-shot picture code: size over speed, so the no_flash build still fits in SRAM.
+set_source_files_properties(img_quant.c img_scene.c img_demo.c PROPERTIES COMPILE_OPTIONS -Os)
 target_link_libraries(kagura_host PRIVATE pico_stdlib hardware_pio hardware_clocks hardware_watchdog m)
 pico_enable_stdio_usb(kagura_host 1)
 pico_enable_stdio_uart(kagura_host 0)
