@@ -60,7 +60,10 @@ USBシリアル（COMポート）を端末で開く（改行はLFまたはCR）�
 | `psram [len]` | PSRAM版（`spipsram`/`qspipsram`、CAPS b3）でPSRAM領域の乱数位置へlen byte（既定2048、最大2048）をupload→FENCE→READ_REQUESTで読戻して照合し、速度を表示 |
 | `copy [len]` | PSRAM版でlen byte（既定2048）の乱数をPSRAMへ置き、COMMAND COPYでpattern領域の乱数位置へ複写してVRAMから読戻し照合する。続いて32767 byteの複写時間（FENCE込み）を表示 |
 | `pcm [seconds] [swap] [move] [solo] [mute] [mutep] [nonote] [zero] [m=<n>]` / `piano ...` | PSRAM版で2秒のメロディ（PCM 0、loop）とCC0の実録ピアノC4（PCM 1、one-shot）をuploadし、ピアノ72000 byteを全量読戻し照合したうえで、2秒ごとにPREPARE＋AUDIO_COMMITで単音を再発音。UNDERRUN・CONFIG_ERROR・MEMORY_ERROR・ERROR_CODE・メロディの停止がなければ`PASS pcm`。`swap`でピアノをPCM 0、メロディをPCM 1へ、`move`で両者のPSRAM配置（0x400000/0x480000）を入れ替え、`solo`でメロディを鳴らさない、`mute`/`mutep`でメロディ/ピアノをゲイン0のまま再生（PSRAM読出しだけ行う）、`nonote`でピアノのチャンネルを動かさず、`zero`でピアノの代わりに無音を再生、`m=<n>`で開始前にMASTER_GAINを設定する（使用値を表示）。既定10秒、`0`はキー入力まで |
+| `fbbench [reps] [seconds] [full] [pcm] [psg]` | C版TileFramebuffer（320×240・4bpp疑似フレームバッファ）のベンチマーク。480p・ABI 0.6・1200パターンのbitstream専用で、画面全体を専有する。既定10回・10秒。`full`で全38400 byteを読み戻す。`pcm`はMicroPythonの`Session.pcm_start()`と同じPCM 2ch（PSRAMの三角波ループ、MASTER_GAIN 64）、`psg`はpulse 3声・noise・wavetable 2声の和音を全区間鳴らし、終了時に止める（下記） |
+| `fbdemo [seconds]` | C版TileFramebufferのデモ。プラズマ・トンネル（1回描いてパレット回転）、星空の上で回る4D超立方体、虹色の線リボン（毎フレーム描き直し、変わったタイルだけ転送）を約12秒ずつフェードで切り替え、PSGのBGMを流す。毎フレーム末尾のパレットCOMMITでVBlankに同期する。fbbenchとフレームバッファを共有し、条件も同じ。既定60秒、`0`はキー入力まで継続 |
 | `clear` | ERROR_CODEとIRQ.ERRORをclear |
+| `reboot` | watchdogでチップをリセットし、Flashから起動し直す（RAMに読み込んだビルドから元のfirmwareへ戻る） |
 
 `diag`の内容: READY待ち → ID/ABI/CAPSのINC read（SPIはheaderのFIFO_STATUSも確認）→ SCREEN_HEIGHT → レジスタ書込み・読戻し → VRAM 2048byte書込みと読戻し照合 → FILL＋FENCE → 背景色と16×16 spriteをCOMMITで120frame移動 → 全6音源を1秒鳴動しwave bank交換を読戻し → VBLANKで/IRQが下がりW1Cで戻る → 64回のFILLと4096byte連続書込み（BUSY待ち、FIFO_FULLなし）→ ERROR_CODE=0。転送量・時間・BUSY待ち回数も表示する。画面の動き・音、および基板LED2（adapterの`late`）が消灯のままであることを目視確認する。LED1はreset解除表示なので正常動作中は点灯する。
 
@@ -77,6 +80,32 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/kagura-upload.ps1 -Por
 `show 30`は外部データを使わず、Pico上で4bpp pattern・64×32 map・palette・OAM・wave tableを生成してKAGURA-9へ転送する。月夜の空、雲・砂丘、遠景と近景の都市、屋上、前景を8 bandのraster scrollで異なる速度に動かす。32×32のオリジナル旅人は4個の16×16 spriteで構成し、走行2 poseとjump 2 poseを周期的に切り替える。pulse 3声の和音、noise percussion、wavetable melody/bassを同時演奏する。`show 0`はUSBシリアルへ任意のキーを入力するまで継続する。
 
 QSPI 5MHz推奨。ABI 0.3の`RSCROLL`がないbitstreamでも動作するが、bandごとの横揺れは無効になる。終了時は音源を停止し、映像は最終frameを保持する。診断へ戻す場合はそのまま`diag`を実行できる。
+
+## C版疑似フレームバッファのベンチマーク
+
+`tile_fb.c`（描画、I/Oなし）と`tile_fb_io.c`（初期化・flush）は、MicroPython SDKの[TileFramebuffer](../../docs/framebuffer.md)のC移植。タイル配置、dirty管理、Bresenham線・midpoint円、`flush(max_gap)`のrun分割・1023/1024分割・FENCE確定・失敗時にdirtyを残す規則まで同じ。色が0〜15以外の呼出しは例外の代わりにno-op。`line`／`circle`の座標はint16。
+
+`fb_bench.c`は[`framebuffer_benchmark.py`](../micropython/examples/framebuffer_benchmark.py)と同じ負荷を測り、`FB `で始まる1行1結果で出力する。
+
+| 行 | 内容 |
+|---|---|
+| `FB initialize` | 表示停止・map・上位表・全1200パターン転送・表示再開までの時間 |
+| `FB draw` | CPU描画のみ（SysTickのcycle計測）。pixel_1024・hline・vline・line・fill_rect・fill・circle・rect、clean時のdirty走査。各回0番色・dirty clearから開始 |
+| `FB flush` | dirty 1/10/100/1200 tileのflush。transfer（VRAM書込み＋error確認）、fence_wait（DONE_TAG読出し・FENCE・完了待ち・error確認）、全体。トランザクション数とwire byte数（header・dummy込み）。dirty 0ではI/O 0件を検査 |
+| `FB gap` | 1つおき・8つおきのdirty tileを`max_gap` 0と1／7で比較 |
+| `FB telemetry` | 各区間の後にERROR_CODE、AUDIO_STATUS（FIFO underflow/overflow）、PCM時は両chのstatus（error bitやACTIVE落ち）を検査。loopでは毎回同じ検査を行い、異常で中断する |
+| `FB loop` | 移動window・title bar・cursor点滅を描きflush、毎loop telemetryとFRAME_COUNTを読む。application Hz、HDMI counter Hz、draw／flush／iterationの平均・最小・p95（直近256）・最大 |
+| `FB scene` / `FB readback` | 固定sceneのbuffer CRC32をPC参照値（`SCENE_CRC`）と照合し、flush後にtile 0/1023/1024/1199をVRAMから読戻し照合。`full`は全1200 tile（READ_REQUESTを1 byteずつ使うため遅い） |
+
+最後に`FBBENCH PASS`または`FBBENCH FAIL n`。CPUは120MHz（PIOの都合、MicroPython記録は125MHz）、転送はCPU供給のPIOでDMAは使わない。音源は鳴らさない。終了時はsceneを表示したまま残る。
+
+`tests/test_tile_fb.py`は`tests/tile_fb_host.c`をPCのgcc（ASan/UBSan）でビルドし、Python実装とbuffer・dirty・flush統計・VRAM書込み列・注入した書込み/FENCE失敗後の状態が完全一致することと、`SCENE_CRC`がPythonの結果であることを検査する（CIで実行）。
+
+```sh
+python3 -I software/pico/tests/test_tile_fb.py
+```
+
+PicoのFlash（MicroPythonとboot.py）を書き換えずに測るには、RAM専用ビルドを使う。`-DPICO_DEFAULT_BINARY_TYPE=no_flash`でビルドし（約243KBがSRAMに収まる）、MicroPythonの`machine.bootloader()`で出たRPI-RP2ドライブへUF2をコピーする。`mode qspi`・`div 2`・`fbbench`の後、`reboot`でチップをリセットするとFlashのMicroPythonへ戻る。
 
 ## 実機確認の手順
 

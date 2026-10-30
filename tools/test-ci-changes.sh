@@ -38,6 +38,9 @@ files "header tests" "rtl_sources" software/tests/regs_c.c tools/test-headers.sh
 files "C header" "rtl_sources pico" software/include/kagura_regs.h
 files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
+files "C framebuffer differential" "pico" software/pico/tile_fb.c software/pico/tests/test_tile_fb.py
+files "framebuffer reference" "pico micropython micropython_firmware" software/micropython/kagura/framebuffer.py
+files "register model" "pico micropython" software/micropython/tests/test_driver.py
 files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
 files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
 files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \

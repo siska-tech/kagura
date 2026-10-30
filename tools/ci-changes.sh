@@ -32,6 +32,10 @@ classify() {
         # The MicroPython driver tests load this PIO timing model.
         software/pico/tests/test_pio_timing.py) mark pico micropython ;;
         software/pico/*) mark pico ;;
+        # The C TileFramebuffer test replays these Python modules and model.
+        software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
+        software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
+        software/micropython/tests/test_driver.py) mark pico micropython ;;
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
         software/micropython/boards/*) mark micropython micropython_firmware ;;
