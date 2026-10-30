@@ -176,6 +176,35 @@ class TileFramebuffer:
         finally:
             d.busy -= 1
 
+    def set_cell_palettes(self, cells):
+        """Give each 8x8 cell its own palette: pseudo-256 colours, 16 per cell.
+
+        cells: 1200 palette numbers 0..15 for the 40x30 cells, row-major. Only
+        the palette field of the map words changes; tile numbers and the upper
+        bit table stay as initialize() wrote them. Map words apply as written,
+        not at COMMIT, so change them while the palettes are dark or accept a
+        frame of mixed cells. Pixel value 0 is transparent and shows BACKDROP
+        (palette `self.palette` colour 0), so give every used palette the same
+        colour 0. initialize() puts every cell back on `self.palette`.
+        """
+        if not self.initialized:
+            raise RuntimeError('call initialize() successfully before set_cell_palettes()')
+        if len(cells) != 1200 or any(not 0 <= c <= 15 for c in cells):
+            raise ValueError('cells: 1200 palette numbers 0..15')
+        d, row = self.device, self._map_row
+        d.busy += 1
+        try:
+            for y in range(30):
+                for x in range(40):
+                    tile = y * 40 + x
+                    word = (tile & 1023) | cells[tile] << 10
+                    row[x * 2] = word & 255
+                    row[x * 2 + 1] = word >> 8
+                d.write_memory(0x8000 + y * 128, memoryview(row)[:80])
+            d.fence()   # returns once the map holds every word, as flush() confirms its runs
+        finally:
+            d.busy -= 1
+
     def _native_put(self, x, y, color):
         if 0 <= x < 320 and 0 <= y < 240:
             p = self._params

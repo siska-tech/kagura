@@ -202,6 +202,54 @@ class FramebufferTests(TestCase):
         self.assertEqual(sum(self.fb.dirty),0)
         self.assertEqual(self.model.reg[R.REG_DISPLAY_CTRL],3)
         self.assertEqual(self.d.busy,0)
+    def test_set_cell_palettes_changes_only_the_palette_field(self):
+        with self.assertRaises(RuntimeError):self.fb.set_cell_palettes(bytes(1200))
+        self.fb.initialize()
+        before=bytes(self.model.memory)
+        cells=bytes((t*7+t//40)%16 for t in range(1200))
+        self.fb.set_cell_palettes(cells)
+        for row in range(32):
+            for col in range(64):
+                i=row*64+col
+                word=int.from_bytes(self.model.memory[0x8000+i*2:0x8002+i*2],'little')
+                old=int.from_bytes(before[0x8000+i*2:0x8002+i*2],'little')
+                if row<30 and col<40:
+                    self.assertEqual(word&1023,old&1023)
+                    self.assertEqual(word>>10,cells[row*40+col])
+                else:self.assertEqual(word,old)
+        self.assertEqual(self.model.memory[0x9000:0x9100],before[0x9000:0x9100])
+        self.assertEqual(self.model.memory[:0x8000],before[:0x8000])
+        for bad in (bytes(1199),bytes(1199)+b'\x10'):
+            with self.assertRaises(ValueError):self.fb.set_cell_palettes(bad)
+        self.fb.initialize()
+        self.assertTrue(all(int.from_bytes(self.model.memory[0x8000+(r*64+c)*2:0x8002+(r*64+c)*2],'little')>>10==0
+                            for r in range(30) for c in range(40)))
+        self.assertEqual(self.d.busy,0)
+    def test_image256_shows_a_checked_kimg(self):
+        import tempfile, image256
+        sys.path.insert(0, str(T.ROOT / "software/pico"))
+        import send_image
+        rng=random.Random(256)
+        palette=[0x123]*16+[rng.randrange(4096) for _ in range(240)]
+        for p in range(16):palette[p*16]=0x123
+        cells=[rng.randrange(16) for _ in range(1200)]
+        pixels=bytes(rng.randrange(256) for _ in range(38400))
+        data=send_image.frame(palette,cells,pixels)
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'p.kimg'
+            self.clean()
+            for bad in (data[:-1],data+b'\0',data[:100]+bytes((data[100]^1,))+data[101:],b'KIMX'+data[4:]):
+                path.write_bytes(bad)
+                with self.assertRaises(ValueError):image256.show(self.fb,str(path))
+                self.assertEqual(self.model.calls,[])
+            path.write_bytes(data)
+            image256.show(self.fb,str(path),fade_frames=4)
+        self.assertEqual(bytes(self.fb.buffer),pixels)
+        self.assertEqual(sum(self.fb.dirty),0)
+        self.assertEqual(self.model.memory[:0x8000]+self.model.memory[0xB000:0xC600],pixels)
+        self.assertEqual([int.from_bytes(self.model.memory[0x8000+(t//40*64+t%40)*2:][:2],'little')>>10 for t in range(1200)],cells)
+        self.assertEqual(list(int.from_bytes(self.model.memory[0x9400+i*2:][:2],'little') for i in range(256)),palette)
+        with self.assertRaises(ValueError):image256.show(TileFramebuffer(self.d,palette=1),str(path))
     def test_pattern_count_rejected_before_map_writes(self):
         self.model.ext[R.EXT_PATTERN_COUNT_H]=0
         with self.assertRaises(ValueError):self.fb.initialize()

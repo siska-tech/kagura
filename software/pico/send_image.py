@@ -10,6 +10,10 @@ pyserial to send:
 
     uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 photo.jpg
     uv run --with pillow --with numpy software/pico/send_image.py --preview out.png photo.jpg
+    uv run --with pillow --with numpy software/pico/send_image.py --save photo.kimg photo.jpg
+
+A .kimg file holds exactly the bytes sent over USB; MicroPython shows it with
+software/micropython/examples/image256.py.
 
 The wire format is described in img_demo.h. pack() and frame() need neither
 NumPy nor Pillow, so the tests can import them.
@@ -159,15 +163,19 @@ def main():
     parser.add_argument('image')
     parser.add_argument('--port', help='Pico serial port running the kagura_host firmware')
     parser.add_argument('--preview', help='write the converted picture (640x480 PNG) here')
+    parser.add_argument('--save', help='write the framed picture (.kimg, the bytes sent over USB) here')
     parser.add_argument('--no-setup', action='store_true', help="skip 'mode qspi' and 'div 2'")
     args = parser.parse_args()
-    if not args.port and not args.preview:
-        parser.error('give --port, --preview or both')
+    if not (args.port or args.preview or args.save):
+        parser.error('give --port, --preview and/or --save')
     start = time.monotonic()
     palette, cells, index = quantize(load(args.image))
     print('converted in %.1f s, %d palettes used' % (time.monotonic() - start, len(set(cells))))
     if args.preview:
         preview(args.preview, palette, cells, index)
+    if args.save:
+        with open(args.save, 'wb') as f:
+            f.write(frame(palette, cells, pack(index)))
     if args.port:
         ok = send(args.port, frame(palette, cells, pack(index)), [] if args.no_setup else ['mode qspi', 'div 2'])
         sys.exit(0 if ok else 1)

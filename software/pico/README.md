@@ -129,6 +129,7 @@ map の各セルは16本のパレットから1本を選べる（palette番号×1
 ```sh
 uv run --with pillow --with numpy --with pyserial software/pico/send_image.py --port COM9 photo.jpg
 uv run --with pillow --with numpy software/pico/send_image.py --preview out.png photo.jpg   # 送らずに確認
+uv run --with pillow --with numpy software/pico/send_image.py --save photo.kimg photo.jpg   # MicroPythonのexamples/image256.py用
 ```
 
 `mode qspi`・`div 2`を先に送る（`--no-setup`で省略）。`tests/test_img_demo.py`は`tests/img_quant_host.c`をgcc（ASan/UBSan）でビルドし、出力の範囲・16パレットの使用・PSNR・決定性と、`send_image.py`の画素配置・送信形式が`img_demo.h`と一致することを検査する（CIで実行、NumPy不要）。

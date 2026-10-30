@@ -31,6 +31,8 @@ classify() {
         software/include/*) mark rtl_sources pico ;;
         # The MicroPython driver tests load this PIO timing model.
         software/pico/tests/test_pio_timing.py) mark pico micropython ;;
+        # test_framebuffer.py frames .kimg pictures with this converter.
+        software/pico/send_image.py) mark pico micropython ;;
         software/pico/*) mark pico ;;
         # The C TileFramebuffer test replays these Python modules and model.
         software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\

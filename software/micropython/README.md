@@ -325,6 +325,17 @@ RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(F
 
 同条件の大面積fill_rectはPython1239.183 ms／Viper7.672 ms、lineは66.857 ms／1.923 ms（各10回平均）。[全sample・分散・最大・flush・各5分負荷の比較](../../docs/framebuffer-viper-results.md)と[安全範囲・fallback仕様](../../docs/framebuffer.md#viper描画backend)を参照。kernelの個別関数は内部専用。
 
+### 疑似256色（セルごとのパレット）
+
+`fb.set_cell_palettes(cells)`は40×30セルそれぞれのパレット番号（1200個、0〜15）をmapのpalette欄へ書き、FENCEで確定する。tile番号と上位bit表は変えない。16パレット×16色で画面全体に最大256色（RGB444）を出せる。パレット本体は呼出し側が`device.write_memory(0x9400, 512 B)`＋`commit()`で書く。map wordはCOMMITを待たず書いた時点で反映されるため、パレットを暗くしてから替える。画素値0は透明でBACKDROP（`fb.palette`の0番）になるので、使う全パレットの0番を同じ色にする。`initialize()`で全セルが`fb.palette`へ戻る。
+
+`examples/image256.py`はPC（`software/pico/send_image.py --save photo.kimg photo.jpg`）で減色した`.kimg`（PicoのC版`imgdemo recv`と同じ形式、CRC-32付き）を表示する。ファイル全体を検査してから、パレットを黒にしてbuffer・flush・`set_cell_palettes`を行い、24フレームでフェードインする。検査で失敗すれば何も変えない。`TileFramebuffer(palette=0)`が必要。実機（QSPI 5 MHz）で検査約0.9秒、表示約2.5秒。
+
+```python
+import image256
+image256.run('photo.kimg')        # 接続から。既存のfbがあれば image256.show(fb, 'photo.kimg')
+```
+
 ### デモとViper通信経路（実験）
 
 `examples/framebuffer_demo.py`はPicoのC版`fbdemo`と同じ4場面（パレット回転のプラズマ・トンネル、星空の4D超立方体、虹色の線リボン）をPSGのBGM付きで流す。`run(seconds, max_gap=16, fb=None, fast=False)`。COMMITは待たずに戻し、次フレームの描画をVBlank待ちと重ねる（順序はdevice queueが保つ）。
