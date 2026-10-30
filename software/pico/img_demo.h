@@ -18,4 +18,22 @@
 // (software/pico/send_image.py) when receive is true. It stays on screen.
 kh_status kagura_img_demo(bool receive);
 
+// PSRAM slideshow (CAPS PSRAM). Slot n (0..15) at 0x600000 + n * 64 KiB,
+// clear of the PCM samples at 0x400000..: patterns (38400 B), then the 30
+// map rows (128 B each) at +0x9600, then the palettes at brightness 0..16
+// (512 B each) at +0xA500.
+#define IMG_SLOTS 16u
+#define IMG_SLOT_BASE 0x600000u
+#define IMG_SLOT_SIZE 0x10000u
+
+// `imgdemo save n`: stores the picture on screen (from gen or recv, while
+// the framebuffer still holds it) in slot n.
+kh_status kagura_img_save(unsigned slot);
+
+// `imgdemo slide`: cycles the saved slots for `seconds` (0 = until a key),
+// each held hold_ms. A change fades out by COPYing the darker palettes of
+// the slot on screen, COPYs patterns and map while black, and fades in the
+// same way, so the Pico sends only commands.
+kh_status kagura_img_slide(unsigned seconds, unsigned hold_ms);
+
 #endif

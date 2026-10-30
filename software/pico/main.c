@@ -392,6 +392,9 @@ static void help(void) {
            "                       tesseract, tunnel, ribbon; default 60s, 0 runs until a key\n"
            "  imgdemo [gen|recv]   pseudo-256-colour picture, 16 palettes x 16 colours chosen per 8x8 cell:\n"
            "                       gen computes and quantizes a scene here, recv takes one from send_image.py\n"
+           "  imgdemo save <n>     store the picture on screen in PSRAM slot n (0..15)\n"
+           "  imgdemo slide [s] [hold_ms]  cycle the saved slots by PSRAM COPY with fades; default 30s,\n"
+           "                       3000ms each, 0s runs until a key\n"
            "  clear                clear ERROR_CODE and IRQ.ERROR\n"
            "  reboot               chip reset; boots flash (leaves a RAM-loaded no_flash build)\n");
 }
@@ -434,8 +437,17 @@ int main(void) {
             kh_status s = kagura_fb_demo(seconds);
             if (s != KH_OK) printf("ERR fbdemo: %s 0x%02x\n", status_name(s), kh_last_error());
         }
-        else if (!strcmp(cmd, "imgdemo") && (!a1 || !strcmp(a1, "gen") || !strcmp(a1, "recv"))) {
-            kh_status s = kagura_img_demo(a1 && !strcmp(a1, "recv"));
+        else if (!strcmp(cmd, "imgdemo") && (!a1 || !strcmp(a1, "gen") || !strcmp(a1, "recv") ||
+                                             (!strcmp(a1, "save") && a2) || !strcmp(a1, "slide"))) {
+            kh_status s;
+            if (a1 && !strcmp(a1, "save")) s = kagura_img_save((unsigned)strtoul(a2, NULL, 0));
+            else if (a1 && !strcmp(a1, "slide")) {
+                char *a3 = strtok(NULL, " ");
+                unsigned seconds = a2 ? (unsigned)strtoul(a2, NULL, 0) : 30u;
+                unsigned hold = a3 ? (unsigned)strtoul(a3, NULL, 0) : 3000u;
+                if (seconds > 3600u || hold > 60000u) { printf("ERR seconds 0..3600, hold_ms 0..60000\n"); continue; }
+                s = kagura_img_slide(seconds, hold);
+            } else s = kagura_img_demo(a1 && !strcmp(a1, "recv"));
             if (s != KH_OK) printf("ERR imgdemo: %s 0x%02x\n", status_name(s), kh_last_error());
         }
         else if (!strcmp(cmd, "psram")) kagura_psram_test(a1 ? (size_t)strtoul(a1, NULL, 0) : 2048u);
