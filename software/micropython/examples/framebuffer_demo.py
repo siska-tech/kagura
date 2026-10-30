@@ -52,10 +52,10 @@ def _pack(raw, pal, level: int):
 # ---- plasma: four sines, 16 colour bands wrapping about four times ----
 
 @micropython.viper
-def _plasma(buf, sine):
+def _plasma(buf, sine, y0: int, y1: int):
     b = ptr8(buf)
     s = ptr8(sine)
-    for y in range(240):
+    for y in range(y0, y1):
         dy = y - 100
         for x in range(320):
             dx = x - 160
@@ -84,8 +84,10 @@ def _plasma(buf, sine):
 class Plasma:
     name = 'plasma'
 
-    def enter(self, fb):
-        _plasma(fb.buffer, SINE)
+    def enter(self, fb, play):
+        for y in range(0, 240, 8):   # eight rows per call keep the music going
+            _plasma(fb.buffer, SINE, y, y + 8)
+            play()
         fb.mark_dirty()
 
     def frame(self, fb, t, pal):
@@ -118,7 +120,7 @@ def _tunnel_row(buf, y: int, depth, angle):
 class Tunnel:
     name = 'tunnel'
 
-    def enter(self, fb):
+    def enter(self, fb, play):
         depth, angle = bytearray(160), bytearray(160)   # one quadrant row at a time
         for y in range(120):
             fy = y + 0.5
@@ -127,6 +129,7 @@ class Tunnel:
                 depth[x] = int(1024 / math.sqrt(fx * fx + fy * fy)) & 15
                 angle[x] = int(math.atan2(fy, fx) * 128 / math.pi)
             _tunnel_row(fb.buffer, y, depth, angle)
+            play()
         fb.mark_dirty()
 
     def frame(self, fb, t, pal):
@@ -303,7 +306,7 @@ def _tesseract(segs, work, trig, t: int):
 class Tesseract:
     name = 'tesseract'
 
-    def enter(self, fb):
+    def enter(self, fb, play):
         fb.fill(0)
         # Stars first, then the 32 edges, so edges are drawn on top.
         self.segs = array('h', [0] * 5 * (STARS + 32))
@@ -334,7 +337,7 @@ TRAIL = 24
 class Ribbon:
     name = 'ribbon'
 
-    def enter(self, fb):
+    def enter(self, fb, play):
         fb.fill(0)
         self.ring = array('h', [0] * 10 * TRAIL)   # TRAIL pairs of (line, mirrored line)
         self.view = memoryview(self.ring)
@@ -512,12 +515,25 @@ def run(seconds=60, max_gap=16, fb=None, fast=False):
         scenes = (Plasma(), Tesseract(), Tunnel(), Ribbon())
         end = time.ticks_add(time.ticks_ms(), seconds * 1000)
         next_tick, tick, total, n = time.ticks_us(), 0, 0, 0
+
+        def play():
+            """Send the music tick when due; its duration in us, 0 when not due."""
+            nonlocal next_tick, tick
+            m0 = time.ticks_us()
+            if time.ticks_diff(m0, next_tick) < 0:
+                return 0
+            music.tick(tick)
+            tick += 1
+            late = time.ticks_diff(m0, next_tick) > TICK_US
+            next_tick = time.ticks_add(m0 if late else next_tick, TICK_US)   # resync after a stall
+            return time.ticks_diff(time.ticks_us(), m0)
+
         while time.ticks_diff(end, time.ticks_ms()) > 0:
             scene = scenes[n % len(scenes)]
             n += 1
             gc.collect()
             t0 = time.ticks_ms()
-            scene.enter(fb)
+            scene.enter(fb, play)   # long first pictures call play() as they go
             enter_ms = time.ticks_diff(time.ticks_ms(), t0)
             t0 = time.ticks_ms()
             leave = min(SCENE_MS, max(0, time.ticks_diff(end, t0)))
@@ -536,14 +552,10 @@ def run(seconds=60, max_gap=16, fb=None, fast=False):
                 runs += stats['runs']
                 # The previous COMMIT has applied by now, so AUDIO_COMMIT does
                 # not wait behind it for VBlank.
-                if time.ticks_diff(time.ticks_us(), next_tick) >= 0:
-                    m0 = time.ticks_us()
-                    music.tick(tick)
-                    music_us += time.ticks_diff(time.ticks_us(), m0)
+                us = play()
+                if us:
+                    music_us += us
                     ticks += 1
-                    tick += 1
-                    late = time.ticks_diff(m0, next_tick) > TICK_US
-                    next_tick = time.ticks_add(m0 if late else next_tick, TICK_US)   # resync after a stall
                 show(min(16, t * 16 // FADE, out * 16 // FADE))
                 busy_us += time.ticks_diff(time.ticks_us(), now)
                 # Applied at the next VBlank. The next frame draws meanwhile;
