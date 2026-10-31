@@ -405,17 +405,33 @@ framebuffer_demo.run(60, fb=fb)"
 mpremote connect COM5 fs cp -r kagura_ja :lib/
 mpremote connect COM5 fs mkdir :fonts
 mpremote connect COM5 fs cp fonts/misaki8.kfnt :fonts/misaki8.kfnt
-mpremote connect COM5 fs cp examples/sakura.py examples/sakura_viper.py :
+mpremote connect COM5 fs cp examples/sakura.py examples/sakura_viper.py examples/sakura_hud.py examples/sakura_hud_viper.py :
 mpremote connect COM5 fs cp -r examples/sakura_assets :
 mpremote connect COM5 exec "import sakura; sakura.run(60)"
 ```
 
-`run(seconds=0, device=None, mode='qspi', pcm=True, copy=True, psg=True, font='/fonts/misaki8.kfnt', assets='sakura_assets')`。0秒はキー入力かCtrl-Cまで。`device`を渡さなければ`kagura.connect(mode=mode)`で接続し、終了時に閉じる。`pcm`・`copy`・`psg`はC版の`nopcm`・`nocopy`・`nopsg`と同じく負荷を1つずつ外して故障を切り分ける。終了時に`SAKURA PASS/FAIL: …`を表示し、spriteオーバーフロー・PCMアンダーラン・deviceエラーが無ければ`True`を返す。ピアノの録音はRAMへ丸ごと読まない。22通り（11音×長短）の再標本化はどれも録音を先頭から順に読むので、ファイルを8 KBの窓で1回だけ流し読みし、各音の出力を4 KB単位でそのままPSRAMへ書く（RP2040のheapは空きが180 KBあっても最大の連続領域が45 KB程度しかない）。
+`run(seconds=0, device=None, mode='qspi', pcm=True, copy=True, psg=True, font='/fonts/misaki8.kfnt', assets='sakura_assets', opt=None)`。0秒はキー入力かCtrl-Cまで。`device`を渡さなければ`kagura.connect(mode=mode)`で接続し、終了時に閉じる。`pcm`・`copy`・`psg`はC版の`nopcm`・`nocopy`・`nopsg`と同じく負荷を1つずつ外して故障を切り分ける。終了時に`SAKURA PASS/FAIL: …`を表示し、spriteオーバーフロー・PCMアンダーラン・deviceエラーが無ければ`True`を返す。ピアノの録音はRAMへ丸ごと読まない。22通り（11音×長短）の再標本化はどれも録音を先頭から順に読むので、ファイルを8 KBの窓で1回だけ流し読みし、各音の出力を4 KB単位でそのままPSRAMへ書く（RP2040のheapは空きが180 KBあっても最大の連続領域が45 KB程度しかない）。
 
 場面・パレット・spriteの層・ラスタ表・旋律と伴奏・HUDはC版と同じで、`tests/test_sakura.py`がC版をPC上で動かした出力とbyte単位で照合する（PCM有効時の突風効果音の周波数だけは、C版のfloat計算とCPythonのdoubleでstep値の最下位bitが変わり得るため照合から外している）。RP2040のMicroPythonでは1更新が60 Hzに収まらない見込みなので、動きと音楽はFRAME_COUNT_L（VBlank数）で進め、間に合わないVBlankは描画を飛ばす（遅くはならない）。HUDのFPSは更新回数で、60を下回れば赤になる。花びらOAM・HUD文字・ピアノの再標本化はViper（`examples/sakura_viper.py`）、ラスタ表とCOPY_SRCは1回の`ext_writes()`で送る。PCMのstatusはC版の毎フレームではなくHUD更新（15 VBlankごと）で読む（異常bitはCLEARまで保持されるので見落とさないが、15 VBlank内の複数回は1回と数える）。
 
 実機（2026-10-31、RP2040 125 MHz、QSPI 5 MHz、`accelerate()`、480p FULL+PSRAMのbitstream＝CAPS 0x5B・240 lines、`.mpy`を`mpremote mount`で読込み）で30秒: 1316更新（43.8 updates/s、VBlank 1801回のうち485回は描画を飛ばした）、spriteオーバーフロー0・PCMアンダーラン0・line underrun 0・ERROR_CODE 0でPASS。PSRAM転送3.21 MB（COPY 1.29 MB）。読込みは19.0秒（背景生成とmount経由のファイル読込みを含む）。720p（180 lines）では未測定。映像と音の品質は自動では判定していない。
 
-主ループの最適化は`run(..., opt=...)`で個別に切り替えられる（既定は全部、`opt=()`で元のループ）。`order`（前のCOMMIT適用を待ってから転送）、`hud`（変化したHUDタイルだけを1更新に1行ずつ描き直す）、`bands`（ラスタ表は変わる値だけ書く）、`palette`（色は表引き、灯籠の`mix()`はViperで）、`regs`（毎フレームのレジスタ読出しとCOPY命令をlink 1トランザクションで）。あわせてドライバの毎フレーム操作（`read_reg`・`write_reg`・`ext_writes`・`audio_read`・`audio_writes`・`write_memory`・`wait_status`・`fence`・`commit`・`audio_commit`）はaccelerate時にheapを確保しない。
+主ループの最適化は`run(..., opt=...)`で個別に切り替えられる（既定は`sakura.OPTS`全部、`opt=()`で元のループ）。`order`（前のCOMMIT適用を待ってから転送）、`hud`（変化したHUDタイルを1更新に1行ずつ描く）、`bands`（ラスタ表の変わる値だけ書く）、`palette`（色は表引き、灯籠の`mix()`はViper）、`regs`（固定レジスタの直接トランザクション）に加え、以下を選べる。
 
-同条件（上と同じ実機・bitstream、全最適化、20秒）で、旧ドライバ→新ドライバ: 1更新あたりの確保935→168 byte、GC 12→2回、通常更新の処理p50/p95/p99 14.9/16.8/17.2→13.5/14.5/16.2 ms、表示間隔（1/2/3 VBlank）741/214/10→988/103/2、表示更新55.7〜55.9回/秒（統計なし）。残る確保はHUDの数値整形（約2.2 KB/15 VBlank）で、HUD更新（p50 19.4 ms）とGCの入る更新（約50 ms）は1フレーム16.67 msを超える。
+| opt | 内容 |
+|---|---|
+| `hudascii` | 数値・英字HUDをレイアウトの新規生成なしで描く |
+| `hudbuf` | 固定フィールド・再利用する字形配列・転送ビューでHUDを更新 |
+| `hudround` | RP2のfloat32によるMB整形を整数で再現。異なる浮動小数点形式や範囲外の値は従来の整形へ戻す |
+| `hudglyph` | 位置・色・桁数が同じフィールドでは変化した字形だけをdirtyにする |
+| `steady` | 音声送信ビュー14種類を事前予約する追加オプション。`opt=sakura.STEADY_OPTS`で有効化。既定では使用した長さだけを一度ずつ保持する |
+| `oam` | 256枚の花びらで共通の除算をループ外へ移す |
+| `short` | 加速時の固定レジスタ操作の呼出し段数を減らす。Linkの所有確認・例外処理を通し、加速なしでは従来経路を使う |
+
+固定HUDのモジュールは場面の読込み後に読み込む。`mpremote mount`でRAMの余裕が少ない場合は、上の4ファイルを`mpy-cross -march=armv6m`で`.mpy`にして使う。数値が固定バッファの範囲を超える場合も従来経路で表示する。
+
+同実機・通常ファームの最終版は、20秒の計測後に続く60秒でheap純増0 B・GC検出0回、通常更新p50/p95/p99は13.2/13.6/14.0 ms、HUD平均17.00 ms・最大30.2 msだった。統計ありではCOMMIT適用確認後58.17 displayed/s、続く統計なし20秒では59.94 displayed/s。全エラー0。GCは有効のまま。通常更新の最大14 ms未満・HUDの最大16.67 ms以内という目標は未達で、通常VMの一時的な呼出しフレーム確保も残る。COMMIT待ち（STATUSポーリングを含む）と統計用FRAME_COUNT読出しの時間は処理時間から分離して表示する。
+
+別の新規起動での統計なし20秒は57.58 displayed/sだった。連続運転後の59.94 displayed/sを初回から保証するものではなく、通常VMの呼出しフレーム確保はheap配置の影響を受ける。
+
+過去の旧ドライバ→新ドライバ比較（同実機・全最適化・20秒）では、heap純増935→168 byte/更新、GC検出12→2回、通常更新p50/p95/p99 14.9/16.8/17.2→13.5/14.5/16.2 msだった。ここでのbyte/更新は`gc.mem_alloc()`の標本差分であり、復帰時に解放されるVM呼出しフレームなどの総確保は含まない。現在の`Stats`もこれを「net bytes」と表示し、COMMIT待ちで適用を確認した回数を表示回数として数える。統計なしの`SAKURA display`も追加のレジスタ読出しなしで同じ確認を行い、最後の未確認COMMITは数えない。
