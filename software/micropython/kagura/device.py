@@ -113,6 +113,12 @@ class Kagura:
         self.busy += 1   # inline @operation: no *args/**kwargs objects per call
         try:
             _range(value, 0, 255, "register value")
+            link = self._link()
+            if link is not None:
+                if not 0 <= offset <= 31:
+                    raise ValueError('register offset')
+                link._fast('write', link.k._short, 2, 0x100 | offset, value)
+                return
             w = self._w1
             w[0] = value
             self.transport.write(offset, w)
@@ -122,6 +128,11 @@ class Kagura:
     def read_reg(self, offset):
         self.busy += 1   # inline @operation: no *args/**kwargs objects per call
         try:
+            link = self._link()
+            if link is not None:
+                if not 0 <= offset <= 31:
+                    raise ValueError('register offset or read length (1..256)')
+                return link._fast('read', link.k._short, 2, 0x80 | offset, 0)
             self.transport.readinto(offset, self._one)
             return self._one[0]
         finally:

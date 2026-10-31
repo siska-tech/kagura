@@ -254,6 +254,71 @@ def state(model):
 
 
 class LinkTests(TestCase):
+    def test_scalar_registers_use_owned_short_transactions(self):
+        for lanes in (1, 4):
+            d, model, hw, raw = connect(lanes)
+            # The public device API reaches the same short kernel without
+            # constructing a transport buffer or invoking its wrapper.
+            raw.write = raw.readinto = lambda *a: self.fail('transport wrapper')
+            d.write_reg(offset=R.REG_FENCE_TAG, value=173)
+            self.assertEqual(d.read_reg(offset=R.REG_FENCE_TAG), 173)
+            for closed, active in ((True, False), (False, True)):
+                raw._closed, raw._active = closed, active
+                for call in (lambda: d.read_reg(R.REG_STATUS),
+                             lambda: d.write_reg(R.REG_FENCE_TAG, 1)):
+                    with self.assertRaisesRegex(RuntimeError, '^transport closed or already in use$'):
+                        call()
+                    self.assertEqual(d.busy, 0)
+            raw._closed = raw._active = False
+
+    def test_scalar_validation_matches_transport_and_recovers(self):
+        d, model, hw, raw = connect()
+        for offset in (-1, 32, 'bad', None, 1.5):
+            for api, original in (
+                    (lambda: d.read_reg(offset), lambda: raw.readinto(offset, bytearray(1))),
+                    (lambda: d.write_reg(offset, 1), lambda: raw.write(offset, b'\x01'))):
+                errors = []
+                for call in (original, api):
+                    try:
+                        call()
+                    except (ValueError, TypeError) as error:
+                        errors.append((type(error), str(error)))
+                self.assertEqual(len(errors), 2)
+                self.assertEqual(errors[0], errors[1])
+                self.assertEqual(d.busy, 0)
+                self.assertFalse(raw._active)
+        for reading in (True, False):
+            hw.stall, hw.interrupt_after = True, 1
+            pio_read = hw.pio_read
+            hw.pio_read = lambda i: pio_read(i) | (1 << (8 + hw.sm)) if i == 1 else pio_read(i)
+            raw.link.c[8] = 50000
+            call = (lambda: d.read_reg(R.REG_STATUS)) if reading else (lambda: d.write_reg(R.REG_FENCE_TAG, 1))
+            with self.assertRaises(KeyboardInterrupt):
+                call()
+            self.assertEqual(d.busy, 0)
+            self.assertFalse(raw._active)
+            self.assertTrue(hw.cs)
+            hw.pio_read = pio_read
+            hw.stall, hw.interrupt_after = False, None
+            d.write_reg(R.REG_FENCE_TAG, 7)
+            self.assertEqual(d.read_reg(R.REG_FENCE_TAG), 7)
+
+    def test_reused_packed_oam_buffer_matches_plain_uploads(self):
+        fast, fm, hw, raw = connect()
+        slow, sm_ = plain()
+        records = bytearray(R.VRAM_OAM_SIZE)
+        partial = memoryview(records)[8:24]
+        for device, model in ((fast, fm), (slow, sm_)):
+            for i in range(len(records)):
+                records[i] = i & 255
+            device.write_memory(R.VRAM_OAM_BASE, records)
+            records[8:24] = bytes(range(16))
+            device.write_memory(R.VRAM_OAM_BASE + 8, partial)
+            device.fence()
+            self.assertEqual(model.memory[R.VRAM_OAM_BASE:R.VRAM_OAM_BASE + len(records)], records)
+            self.assertEqual(device.busy, 0)
+        self.assertEqual(state(fm), state(sm_))
+
     def test_inline_busy_operations_keep_the_wrapper_contract(self):
         """The per-frame operations handle busy inline instead of @operation:
         busy held during every transaction, restored after success, a

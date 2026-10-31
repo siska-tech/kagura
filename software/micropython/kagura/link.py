@@ -82,7 +82,7 @@ class Link:
 
     def _fast(self, name, kernel, n, a=0, b=0, e=0):
         """_call(name, kernel, self.c, self.buf, ...) with n of a, b, e after
-        them, without the *args tuple: the per-frame operations allocate nothing."""
+        them, without the *args tuple. VM call frames may still use the heap."""
         raw = self.raw
         if raw._closed or raw._active:
             raise RuntimeError('transport closed or already in use')
