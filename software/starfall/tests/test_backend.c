@@ -78,6 +78,7 @@ kh_status kh_fill(uint32_t addr,uint16_t n,uint8_t v) {
 kh_status kh_vram_write(uint32_t addr,const uint8_t *p,size_t n) {
     if(addr==KAGURA_VRAM_MAP_BASE) { assert(!enabled && n==4096);memcpy(map_image,p,n); }
     if(addr==KAGURA_VRAM_WAVE_BASE) { assert(!enabled && n==512);wave_writes++; }
+    else if(addr==KAGURA_VRAM_PALETTE_BASE+128) { assert(n==32 && blank_waits); }
     else if(enabled) {
         assert(blank_waits>0 && addr>=KAGURA_VRAM_OAM_BASE && addr+n<=KAGURA_VRAM_OAM_BASE+SF_SPRITES*8);
         assert(n%8==0);if(fail_write)return KH_TIMEOUT_BUSY;oam_bytes+=(unsigned)n;
@@ -89,7 +90,7 @@ int main(void) {
     assert(sf_backend_init(&h)==KH_OK && h==240 && fences==1 && commits==2);
     assert(wave_writes==2 && audio_commits==2);
     assert(rs_count==2 && rs_lines[0]==48 && rs_lines[1]==SF_SKY_BOTTOM(h));
-    sf_backend_set_idle(idle);sf_init(&g,h,1);sf_start(&g);g.invincible=0;
+    sf_backend_set_idle(idle);sf_init(&g,h,1);sf_start(&g);sf_begin_play(&g);g.invincible=0;
     assert(sf_render(&g,&f));assert(sf_backend_present(&g,&f)==KH_OK);
     unsigned before=oam_bytes;
     assert(sf_backend_present(&g,&f)==KH_OK && oam_bytes==before);

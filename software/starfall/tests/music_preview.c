@@ -19,6 +19,7 @@ static void scene(SfGame *g,unsigned cue,unsigned t) {
     case SF_MUSIC_CLEAR:g->state=SF_CLEAR;g->state_age=(uint16_t)t;break;
     case SF_MUSIC_OVER:g->state=SF_OVER;g->state_age=(uint16_t)t;break;
     }
+    g->stage_frame=g->stage_tick;
 }
 int main(int argc,char **argv) {
     static const unsigned segments[][2]={

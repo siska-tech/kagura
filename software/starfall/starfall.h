@@ -8,8 +8,11 @@
 #define SF_HOSTILES 3
 #define SF_EFFECTS 6
 #define SF_SPRITES 64
-#define SF_PATTERNS 320
-#define SF_PALETTE_BYTES 128
+#define SF_PATTERNS 640
+#define SF_PALETTE_BYTES 160
+#define SF_STAGE_COUNT 6
+#define SF_TITLE_IDLE_TICKS 900u
+#define SF_DEMO_TICKS 2400u
 #define SF_STAGE_TICKS 3600u
 #define SF_BASE_WORLD_X 1440u
 #define SF_BASE_APPROACH_TICK (SF_BASE_WORLD_X-320u)
@@ -18,7 +21,9 @@
 enum { SF_LEFT=1, SF_RIGHT=2, SF_UP=4, SF_DOWN=8, SF_FIRE=16, SF_EQUIP=32 };
 enum { SF_NORMAL, SF_DOUBLE, SF_LASER };
 enum { SF_SPEED=1, SF_MISSILE, SF_G_DOUBLE, SF_G_LASER, SF_OPTION, SF_SHIELD };
-enum { SF_TITLE, SF_PLAY, SF_OVER, SF_CLEAR };
+enum { SF_TITLE, SF_PLAY, SF_OVER, SF_CLEAR, SF_BOOT, SF_INTRO, SF_ENDING };
+enum { SF_OPENING, SF_MAIN_AREA, SF_CLIMAX, SF_WARNING, SF_BOSS_BATTLE, SF_DEFEAT };
+typedef struct { const char *name;uint8_t theme,boss_kind,music;bool ready; } SfStageDef;
 enum { SF_SCOUT, SF_WAVE, SF_TURRET, SF_BOSS, SF_DIVER };
 enum { SF_SOUND_SHOT=1, SF_SOUND_KILL=2, SF_SOUND_POWER=3, SF_SOUND_WARN=4, SF_SOUND_HIT=5 };
 typedef struct { int32_t x, y; bool active; } SfShot;
@@ -58,6 +63,10 @@ typedef struct {
     SfBeam option_beams[2];
     uint16_t option_hit_serial[2][SF_ENEMIES];
     uint8_t enemy_flash[SF_ENEMIES],muzzle_mask,muzzle_timer;
+    uint32_t stage_frame,demo_frame;
+    uint16_t idle_ticks;
+    uint8_t stage_index;
+    bool attract,start_was_down;
 } SfGame;
 typedef struct { uint8_t oam[SF_SPRITES*8]; unsigned peak_line,dropped_effects; } SfFrame;
 void sf_init(SfGame *g, unsigned height, uint32_t seed);
@@ -90,4 +99,14 @@ void sf_make_palette(uint8_t *palette);
 void sf_option_position(const SfGame *g,unsigned option,int32_t *x,int32_t *y);
 void sf_laser_fit(SfGame *g);
 bool sf_enemy_flying(unsigned type);
+const SfStageDef *sf_stage_def(unsigned index);
+unsigned sf_scene(const SfGame *g);
+void sf_begin_play(SfGame *g);
+void sf_to_title(SfGame *g);
+void sf_clear_combat(SfGame *g);
+void sf_start_demo(SfGame *g);
+unsigned sf_demo_input(const SfGame *g);
+void sf_demo_events(SfGame *g);
+void sf_make_title_map(uint8_t *map,unsigned height);
+void sf_title_palette(const SfGame *g,uint8_t *palette);
 #endif

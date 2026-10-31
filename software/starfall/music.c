@@ -55,14 +55,14 @@ static unsigned frequency(unsigned note) {
     return oct>=0?f<<(unsigned)oct:f>>(unsigned)-oct;
 }
 unsigned sf_music_cue(const SfGame *g) {
-    if(g->state==SF_TITLE)return SF_MUSIC_TITLE;
+    if(g->state==SF_TITLE || g->state==SF_BOOT || g->state==SF_INTRO)return SF_MUSIC_TITLE;
     if(g->state==SF_OVER)return SF_MUSIC_OVER;
-    if(g->state==SF_CLEAR)return SF_MUSIC_CLEAR;
+    if(g->state==SF_CLEAR || g->state==SF_ENDING)return SF_MUSIC_CLEAR;
     if(g->boss_dead)return SF_MUSIC_ESCAPE;
-    if(g->stage_tick>=2760)return SF_MUSIC_BOSS;
-    if(g->stage_tick>=2640)return SF_MUSIC_WARNING;
-    if(g->stage_tick>=SF_BASE_WORLD_X)return SF_MUSIC_BASE;
-    if(g->stage_tick>=SF_BASE_APPROACH_TICK)return SF_MUSIC_ENTRY;
+    if(g->stage_frame>=2760)return SF_MUSIC_BOSS;
+    if(g->stage_frame>=2640)return SF_MUSIC_WARNING;
+    if(g->stage_frame>=SF_BASE_WORLD_X)return SF_MUSIC_BASE;
+    if(g->stage_frame>=SF_BASE_APPROACH_TICK)return SF_MUSIC_ENTRY;
     return SF_MUSIC_SPACE;
 }
 const char *sf_music_name(unsigned cue) {
@@ -71,13 +71,14 @@ const char *sf_music_name(unsigned cue) {
 }
 void sf_music_render(const SfGame *g,SfMusic *m) {
     unsigned cue=sf_music_cue(g);const Score *s=&scores[cue];
-    uint32_t tick=g->stage_tick;
+    uint32_t tick=g->stage_frame;
     if(cue==SF_MUSIC_TITLE || cue==SF_MUSIC_CLEAR || cue==SF_MUSIC_OVER)tick=g->state_age;
     else if(cue==SF_MUSIC_ENTRY)tick-=SF_BASE_APPROACH_TICK;
     else if(cue==SF_MUSIC_BASE)tick-=SF_BASE_WORLD_X;
     else if(cue==SF_MUSIC_WARNING)tick-=2640;
     else if(cue==SF_MUSIC_BOSS)tick-=2760;
     else if(cue==SF_MUSIC_ESCAPE)tick-=g->boss_defeat_tick;
+    if(g->attract && g->state==SF_PLAY)tick/=2;
     memset(m,0,sizeof *m);m->cue=(uint8_t)cue;m->tick=tick;m->duty[0]=s->duty;m->duty[1]=128;
     unsigned step=tick/s->frames,phase=tick%s->frames;
     if(s->once && step>=s->length)return;

@@ -9,6 +9,9 @@ static void pixel(uint8_t *p,unsigned tile,unsigned x,unsigned y,unsigned c) {
 static void large(uint8_t *p,unsigned base,unsigned x,unsigned y,unsigned c) {
     pixel(p,base+(y/8)*2+x/8,x%8,y%8,c);
 }
+static void logo_pixel(uint8_t *p,unsigned x,unsigned y,unsigned c) {
+    if(x<256 && y<64)pixel(p,320+(y/8)*32+x/8,x%8,y%8,c);
+}
 static const uint8_t digits[10][7]={
     {14,17,19,21,25,17,14},{4,12,4,4,4,4,14},{14,17,1,2,4,8,31},
     {30,1,1,14,1,1,30},{2,6,10,18,31,2,2},{31,16,16,30,1,1,30},
@@ -158,16 +161,56 @@ void sf_make_patterns(uint8_t *p) {
         pixel(p,178,x,y,y%3==0?4:x==0?3:11);
         pixel(p,179,x,y,x==1 || x==6?3:y==3 || y==4?5:11);
     }
+    const char *title="STARFALL",*project="PROJECT";
+    for(unsigned y=0;y<7;y++)for(unsigned ch=0;ch<8;ch++)for(unsigned x=0;x<5;x++)
+        if(letters[title[ch]-'A'][y]&(1u<<(4-x)))for(unsigned dy=0;dy<4;dy++)for(unsigned dx=0;dx<4;dx++)
+            logo_pixel(p,34+ch*24+x*4+dx,18+y*4+dy,9);
+    for(unsigned y=0;y<7;y++)for(unsigned ch=0;ch<8;ch++)for(unsigned x=0;x<5;x++)
+        if(letters[title[ch]-'A'][y]&(1u<<(4-x)))for(unsigned dy=0;dy<4;dy++)for(unsigned dx=0;dx<4;dx++)
+            logo_pixel(p,32+ch*24+x*4+dx,16+y*4+dy,y<3?1:y==3?5:4);
+    for(unsigned ch=0;ch<7;ch++)for(unsigned y=0;y<7;y++)for(unsigned x=0;x<5;x++)
+        if(letters[project[ch]-'A'][y]&(1u<<(4-x)))logo_pixel(p,107+ch*6+x,3+y,6);
+    for(unsigned x=20;x<236;x++) { logo_pixel(p,x,12,x%8<6?3:0);logo_pixel(p,x,49,x%8<6?5:0); }
+    for(unsigned y=0;y<64;y++)for(unsigned x=0;x<64;x++) {
+        int dx=(int)x-31,dy=(int)y-31,r=dx*dx+dy*dy;
+        if(r<900) {
+            unsigned c=x+y<48?3:x+y<76?4:11;
+            if(r>800 && x<40)c=5;
+            if((x*3+y*5)%29<5 && r<700)c=9;
+            pixel(p,576+(y/8)*8+x/8,x%8,y%8,c);
+        }
+    }
 }
 void sf_make_palette(uint8_t *p) {
     static const uint16_t c[16]={0x001,0xeff,0x345,0x568,0x168,0x6ef,0xf93,0xf45,
         0x8bf,0x647,0xff7,0x123,0x246,0x469,0x79a,0xfff};
-    for(unsigned bank=0;bank<4;bank++)for(unsigned i=0;i<16;i++) {
+    for(unsigned bank=0;bank<5;bank++)for(unsigned i=0;i<16;i++) {
         uint16_t color=c[i];
         if(bank==1) { if(i==1)color=0xff8;if(i==4)color=0xfa3;if(i==7)color=0xfa3;if(i==8)color=0xfb5;if(i==11)color=0x420; }
         if(bank==2) { if(i==4)color=0x4fc;if(i==11)color=0x032; }
         if(bank==3 && i)color=0xfff;
         p[(bank*16+i)*2]=(uint8_t)color;p[(bank*16+i)*2+1]=(uint8_t)(color>>8);
+    }
+}
+void sf_title_palette(const SfGame *g,uint8_t *p) {
+    uint8_t full[SF_PALETTE_BYTES];sf_make_palette(full);
+    unsigned level=g->state==SF_TITLE?g->state_age/4:15;if(level>15)level=15;
+    for(unsigned i=0;i<16;i++) {
+        unsigned color=full[128+i*2]|((unsigned)full[129+i*2]<<8),out=0;
+        for(unsigned shift=0;shift<=8;shift+=4)out|=(((color>>shift)&15)*level/15)<<shift;
+        p[i*2]=(uint8_t)out;p[i*2+1]=(uint8_t)(out>>8);
+    }
+}
+void sf_make_title_map(uint8_t *map,unsigned height) {
+    (void)height;memset(map,0,4096);uint32_t rng=0x41535452u;
+    for(unsigned i=0;i<2048;i++) { rng=rng*1664525u+1013904223u;map[i*2]=(rng>>27)==0?1:(rng>>26)==1?2:0; }
+    for(unsigned row=0;row<8;row++)for(unsigned col=0;col<32;col++) {
+        unsigned index=((row+5)*64+col+4)*2,word=320+row*32+col+(4u<<10);
+        map[index]=(uint8_t)word;map[index+1]=(uint8_t)(word>>8);
+    }
+    for(unsigned row=0;row<8;row++)for(unsigned col=0;col<8;col++) {
+        unsigned index=((row+14)*64+col+30)*2,word=576+row*8+col+(4u<<10);
+        map[index]=(uint8_t)word;map[index+1]=(uint8_t)(word>>8);
     }
 }
 void sf_make_map(uint8_t *map,unsigned height) {

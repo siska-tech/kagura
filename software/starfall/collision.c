@@ -8,7 +8,7 @@ static void damage(SfGame *g,unsigned j,unsigned amount) {
     if(e->hp>amount) { e->hp=(uint16_t)(e->hp-amount);g->enemy_flash[j]=6;return; }
     e->active=false;sf_explode(g,e->x/256,e->y/256);sf_sound(g,SF_SOUND_KILL);
     g->score+=e->type==SF_BOSS?5000:e->type==SF_TURRET?300:100;
-    if(e->type==SF_BOSS) { g->boss_dead=true;g->boss_defeat_tick=g->stage_tick; }
+    if(e->type==SF_BOSS) { g->boss_dead=true;g->boss_defeat_tick=g->stage_frame; }
     if(e->carrier)sf_drop_capsule(g,e->x,e->y);
     sf_stage_defeat(g,j);
 }

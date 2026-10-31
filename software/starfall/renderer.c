@@ -37,21 +37,37 @@ static bool decorative(unsigned slot) { return (slot>=16 && slot<16+SF_EFFECTS) 
 static void build(const SfGame *g,SfFrame *f,bool rays) {
     memset(f,0,sizeof *f);
     char hud[24];
+    if(g->state==SF_BOOT)return;
+    if(g->state==SF_TITLE) {
+        if((g->tick/30)%2==0)text(f,0,112,"PRESS START");
+        text(f,16,128,"1 PLAYER");text(f,32,144,"FREE PLAY");text(f,48,160,"KAGURA LAB 2026");
+        sprite(f->oam+15*8,(int)(g->state_age*2%352)-16,24,(g->tick/4)%2?300:4,true);return;
+    }
+    if(g->state==SF_INTRO) {
+        snprintf(hud,sizeof hud,"STAGE %u",g->stage_index+1);text(f,0,g->height/2-24,hud);
+        text(f,16,g->height/2,sf_stage_def(g->stage_index)->name);text(f,32,g->height/2+24,"READY");return;
+    }
     const char *label=g->gauge?sf_gauge_name(g->gauge):g->stage_tick<SF_BASE_APPROACH_TICK?"SPACE":g->stage_tick<SF_BASE_WORLD_X?"ENTRY":"BASE";
-    if(g->state==SF_PLAY && g->stage_tick>=2640 && g->stage_tick<2760 && g->tick%30<20)label="WARNING";
+    if(g->state==SF_PLAY && sf_scene(g)==SF_WARNING && g->tick%30<20)label="WARNING";
+    if(g->attract)label="DEMO";
     snprintf(hud,sizeof hud,"%06luL%u %s",(unsigned long)(g->score%1000000),g->lives,label);
     text(f,32,8,hud);
-    if(g->state==SF_PLAY && ((g->stage_tick>=1120 && g->stage_tick<1440) || (g->stage_tick>=2640 && g->stage_tick<2760)) && (g->tick/12)%2)
+    if(g->state==SF_PLAY && ((g->stage_frame>=1120 && g->stage_frame<1440) || sf_scene(g)==SF_WARNING) && (g->tick/12)%2)
         for(unsigned i=32;i<48;i++)f->oam[i*8+5]|=1<<2;
     if(g->state!=SF_PLAY) {
-        text(f,0,g->height/2-16,g->state==SF_TITLE?"PROJECT STARFALL":g->state==SF_OVER?"GAME OVER":"SECTOR CLEAR");
-        if((g->tick/30)%2==0)text(f,16,g->height/2+8,"PUSH FIRE");
+        text(f,0,g->height/2-16,g->state==SF_OVER?"GAME OVER":g->state==SF_ENDING?"ALL CLEAR":"STAGE 1 CLEAR");
+        text(f,16,g->height/2+8,g->state==SF_OVER?"RETURN TO TITLE":"STAR FRONTIER");
     } else {
         for(unsigned i=0;i<6;i++) {
             bool owned=i==0?g->power>0:i==1?g->missile_enabled:i==2?g->weapon==SF_DOUBLE:
                 i==3?g->weapon==SF_LASER:i==4?g->options>0:g->shield>0;
             sprite(f->oam+(48+i)*8,88+(int)i*24,(int)SF_HUD_TOP(g->height)+4,144+i*4,true);
             f->oam[(48+i)*8+5]|=(uint8_t)((g->gauge==i+1?1:owned?2:0)<<2);
+        }
+        if(sf_scene(g)==SF_WARNING) {
+            text(f,0,g->height/2-16,"ENEMY APPROACH");
+            if((g->tick/10)%2==0)text(f,16,g->height/2+8,"WARNING");
+            return;
         }
         if(!g->invincible || (g->tick/5)%2==0)sprite(f->oam,g->x/256,g->y/256,(g->tick/4)%2?300:4,true);
         if(g->shield)f->oam[5]|=2<<2;

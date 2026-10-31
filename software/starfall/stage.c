@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "starfall.h"
+static const SfStageDef stages[SF_STAGE_COUNT]={
+    {"STAR FRONTIER",0,0,0,true},{"FRONTLINE BASE",1,1,1,false},
+    {"VOLCANIC BELT",2,2,2,false},{"ANCIENT RUINS",3,3,3,false},
+    {"BIO HIVE",4,4,4,false},{"CENTRAL FORTRESS",5,5,5,false}
+};
+const SfStageDef *sf_stage_def(unsigned index) { return index<SF_STAGE_COUNT?&stages[index]:0; }
+unsigned sf_scene(const SfGame *g) {
+    if(g->boss_dead)return SF_DEFEAT;
+    if(g->stage_frame>=2760)return SF_BOSS_BATTLE;
+    if(g->stage_frame>=2640)return SF_WARNING;
+    if(g->stage_frame>=2200)return SF_CLIMAX;
+    return g->stage_frame>=SF_BASE_APPROACH_TICK?SF_MAIN_AREA:SF_OPENING;
+}
 typedef struct { uint16_t tick;uint8_t type,lane,count,gap; } Wave;
 static const Wave waves[]={
     {90,SF_SCOUT,128,4,20},{310,SF_WAVE,96,4,22},
@@ -47,11 +60,15 @@ bool sf_terrain_hit(const SfGame *g,int x,int y,int w,int h) {
     }return false;
 }
 void sf_stage_step(SfGame *g) {
-    g->stage_tick++;g->scroll=(uint16_t)(g->stage_tick&511u);
-    if(g->stage_tick==2640)sf_sound(g,SF_SOUND_WARN);
+    unsigned advance=g->attract?2:1;unsigned before=sf_scene(g);
+    g->stage_frame+=advance;
+    if(g->stage_frame<=2640)g->stage_tick=g->stage_frame;
+    g->scroll=(uint16_t)(g->stage_tick&511u);
+    if(before!=SF_WARNING && sf_scene(g)==SF_WARNING) { sf_clear_combat(g);sf_sound(g,SF_SOUND_WARN); }
+    if(sf_scene(g)==SF_WARNING)return;
     while(g->event_index<sizeof waves/sizeof waves[0]) {
         const Wave *w=&waves[g->event_index];
-        if(g->stage_tick<(unsigned)w->tick+g->wave_spawned*w->gap)break;
+        if(g->stage_frame<(unsigned)w->tick+g->wave_spawned*w->gap)break;
         if(w->type==SF_BOSS)for(unsigned i=0;i<SF_ENEMIES;i++)g->enemies[i].active=false;
         unsigned slot=0;while(slot<SF_ENEMIES && g->enemies[slot].active)slot++;
         if(slot<SF_ENEMIES) {

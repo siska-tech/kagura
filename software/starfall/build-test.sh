@@ -16,5 +16,5 @@ cmake -S software/starfall -B build/starfall-qspi -DSTARFALL_PICO=ON -DSTARFALL_
     -Dpicotool_DIR="$PWD/build/starfall-pico/_deps/picotool"
 cmake --build build/starfall-qspi -j4
 arm-none-eabi-size build/starfall-qspi/starfall.elf
-cp build/starfall-pico/starfall.uf2 build/starfall-v6-spi.uf2
-cp build/starfall-qspi/starfall.uf2 build/starfall-v6-qspi.uf2
+cp build/starfall-pico/starfall.uf2 build/starfall-arcade-m1-spi.uf2
+cp build/starfall-qspi/starfall.uf2 build/starfall-arcade-m1-qspi.uf2

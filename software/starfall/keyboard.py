@@ -11,7 +11,7 @@ root.title("PROJECT STARFALL controller")
 tk.Label(root, text="WASD / arrows: move     Space: fire\nX / Shift: activate selected power-up\nKeep this window focused", padx=32, pady=32).pack()
 held = {}
 mapping = {"a": 1, "Left": 1, "d": 2, "Right": 2, "w": 4, "Up": 4,
-           "s": 8, "Down": 8, "space": 16, "x": 32, "X": 32,
+           "s": 8, "Down": 8, "space": 16, "Return": 16, "x": 32, "X": 32,
            "Shift_L": 32, "Shift_R": 32}
 def on_press(event):
     held[event.keycode] = mapping.get(event.keysym, mapping.get(event.keysym.lower(), 0))

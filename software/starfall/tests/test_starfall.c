@@ -5,7 +5,7 @@
 #include <string.h>
 static SfGame a,b;
 static SfFrame frame;
-static void fresh(unsigned height) { sf_init(&a,height,123);sf_start(&a);a.invincible=0; }
+static void fresh(unsigned height) { sf_init(&a,height,123);sf_start(&a);sf_begin_play(&a);a.invincible=0; }
 static void regressions(unsigned height) {
     /* A real trigger starts all three independent rays on the same tick. */
     fresh(height);a.weapon=SF_LASER;a.options=2;sf_bullet_step(&a,SF_FIRE);
@@ -140,7 +140,7 @@ static void checks(unsigned height) {
     sf_hit_player(&a);assert(a.lives==2 && a.invincible==180 && a.options==0 && a.power==0);
     sf_hit_player(&a);assert(a.lives==2); /* invincibility prevents repeat damage */
     a.invincible=0;sf_hit_player(&a);a.invincible=0;sf_hit_player(&a);assert(a.state==SF_OVER);
-    a.state_age=61;a.fire_was_down=false;sf_step(&a,SF_FIRE);assert(a.state==SF_PLAY && a.lives==3);
+    a.state_age=61;a.start_was_down=false;sf_step(&a,SF_FIRE);assert(a.state==SF_TITLE && a.lives==3);
     /* Each generated world column agrees with collision, before/inside the base. */
     for(unsigned c=0;c<512;c++) {
         uint8_t column[32];sf_make_column(column,height,c);
@@ -172,11 +172,11 @@ static void checks(unsigned height) {
     for(unsigned i=0;i<SF_HOSTILES;i++)a.hostile[i].y=low+8*256;
     assert(sf_render(&a,&frame) && frame.peak_line<=16); /* beam tail and HUD do not overlap */
     /* Boss appears at the authored tick; clear requires destruction, not just time. */
-    fresh(height);a.stage_tick=2759;sf_stage_step(&a);
+    fresh(height);a.stage_frame=2759;a.stage_tick=2640;sf_stage_step(&a);
     bool boss=false;for(unsigned i=0;i<SF_ENEMIES;i++)boss|=a.enemies[i].active && a.enemies[i].type==SF_BOSS;
-    assert(boss);a.stage_tick=SF_STAGE_TICKS;sf_step(&a,0);assert(a.state==SF_PLAY);
+    assert(boss);a.stage_frame=SF_STAGE_TICKS;sf_step(&a,0);assert(a.state==SF_PLAY);
     a.boss_dead=true;sf_step(&a,0);assert(a.state==SF_CLEAR);
-    sf_init(&a,height,123);assert(a.state==SF_TITLE);sf_step(&a,SF_FIRE);assert(a.state==SF_PLAY);
+    sf_init(&a,height,123);assert(a.state==SF_TITLE);sf_step(&a,SF_FIRE);assert(a.state==SF_INTRO);
 }
 int main(void) {
     for(unsigned height=180;height<=240;height+=60) {
@@ -200,6 +200,7 @@ int main(void) {
                 assert(!a.enemies[i].active || a.enemies[i].type!=SF_TURRET);
             for(unsigned i=0;i<SF_ENEMIES;i++)boss_seen|=a.enemies[i].active && a.enemies[i].type==SF_BOSS;
             assert(sf_render(&a,&frame));
+            if(a.state==SF_CLEAR)break;
         }
         assert(boss_seen && a.boss_dead && a.state==SF_CLEAR);
         for(unsigned weapon=SF_NORMAL;weapon<=SF_LASER;weapon++) {

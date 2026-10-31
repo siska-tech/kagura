@@ -9,11 +9,14 @@ static unsigned dot(unsigned tile,unsigned x,unsigned y) {
 }
 static void save(const char *prefix,const char *name,SfGame *g) {
     SfFrame f;sf_laser_fit(g);assert(sf_render(g,&f));
-    sf_make_map_at(map,g->height,g->stage_tick/8);
+    if(g->state==SF_TITLE) { sf_make_title_map(map,g->height);sf_title_palette(g,palette+128); }
+    else sf_make_map_at(map,g->height,g->stage_tick/8);
     for(unsigned y=0;y<g->height;y++)for(unsigned x=0;x<320;x++) {
-        unsigned scroll=!sf_stage_base_visible(g) && y>=48 && y<SF_SKY_BOTTOM(g->height)?g->stage_tick/3:g->scroll;
-        unsigned bx=(x+scroll)&511u,tile=map[((y/8)*64+bx/8)*2];
-        canvas[y*320+x]=(uint8_t)dot(tile,bx%8,y%8);
+        unsigned scroll=g->state==SF_TITLE?(y>=40 && y<104?0:g->state_age/8):
+            !sf_stage_base_visible(g) && y>=48 && y<SF_SKY_BOTTOM(g->height)?g->stage_tick/3:g->scroll;
+        unsigned bx=(x+scroll)&511u,index=((y/8)*64+bx/8)*2;
+        unsigned word=map[index]|((unsigned)map[index+1]<<8),c=dot(word&1023,bx%8,y%8);
+        canvas[y*320+x]=(uint8_t)(c?c+((word>>10)&15)*16:0);
     }
     for(int i=SF_SPRITES-1;i>=0;i--) {
         uint8_t *o=f.oam+i*8;if(!(o[3]&4))continue;
@@ -39,7 +42,7 @@ static void save(const char *prefix,const char *name,SfGame *g) {
 int main(int argc,char **argv) {
     const char *prefix=argc>1?argv[1]:"starfall";SfGame g;
     sf_make_patterns(patterns);sf_make_palette(palette);sf_make_map(map,240);
-    sf_init(&g,240,1);save(prefix,"title",&g);sf_start(&g);g.invincible=0;
+    sf_init(&g,240,1);g.state_age=100;save(prefix,"title",&g);sf_start(&g);sf_begin_play(&g);g.invincible=0;
     g.stage_tick=600;g.scroll=600&511;g.score=12700;g.power=2;g.options=2;g.y=105*256;
     g.gauge=SF_G_LASER;g.missile_enabled=true;
     for(unsigned i=0;i<32;i++) { g.history_x[i]=(20+(int)i/2)*256;g.history_y[i]=105*256; }

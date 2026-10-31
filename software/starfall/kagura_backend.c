@@ -12,6 +12,8 @@ static uint16_t previous_sky;
 static bool raster;
 static bool raster_active;
 static uint32_t previous_tick,last_map_col;
+static bool title_map;
+static uint8_t previous_fade;
 static void (*idle_callback)(void);
 void sf_backend_set_idle(void (*callback)(void)) { idle_callback=callback; }
 /* Pace status reads instead of saturating SPI during the 16ms COMMIT wait. */
@@ -58,6 +60,7 @@ kh_status sf_backend_init(unsigned *height) {
     TRY(sf_audio_init(id[4]));TRY(kh_fence(1,KH_DEFAULT_TIMEOUT_US));
     memset(previous,0,sizeof previous);previous_scroll=previous_sky=0;sf_payload_bytes=sf_map_payload_bytes=0;
     previous_tick=0;last_map_col=63;raster_active=raster;
+    title_map=false;previous_fade=255;
     if(raster) {
         TRY(kh_ext_write(KAGURA_EXT_RS_INDEX,0));
         for(unsigned i=0;i<2;i++) {
@@ -73,20 +76,30 @@ kh_status sf_backend_init(unsigned *height) {
     return kh_commit(KH_DEFAULT_TIMEOUT_US);
 }
 kh_status sf_backend_present(const SfGame *g,const SfFrame *f) {
+    bool title=g->state==SF_TITLE || g->state==SF_BOOT;
+    bool layout_changed=title!=title_map;
     /* A new run restores the ring with the display stopped. No live map rewrite. */
-    if(g->stage_tick<previous_tick) {
+    if(layout_changed || (!title && g->stage_tick<previous_tick)) {
         TRY(kh_write_reg(KAGURA_REG_DISPLAY_CTRL,0));TRY(kh_commit(KH_DEFAULT_TIMEOUT_US));
-        sf_make_map(scratch,g->height);TRY(kh_vram_write(KAGURA_VRAM_MAP_BASE,scratch,4096));sf_map_payload_bytes+=4096;
+        if(title)sf_make_title_map(scratch,g->height);else sf_make_map(scratch,g->height);
+        TRY(kh_vram_write(KAGURA_VRAM_MAP_BASE,scratch,4096));sf_map_payload_bytes+=4096;
         TRY(kh_fence(2,KH_DEFAULT_TIMEOUT_US));last_map_col=63;
         TRY(kh_write_reg(KAGURA_REG_DISPLAY_CTRL,KAGURA_DISPLAY_CTRL_DISPLAY_ENABLE|
             KAGURA_DISPLAY_CTRL_BG_ENABLE|KAGURA_DISPLAY_CTRL_SPR_ENABLE));
     }
     TRY(kh_wait_status(KAGURA_STATUS_VBLANK_LIVE,KAGURA_STATUS_VBLANK_LIVE,KH_DEFAULT_TIMEOUT_US));
     uint64_t start=time_us_64();
+    if(layout_changed && raster) {
+        TRY(kh_ext_write(KAGURA_EXT_RS_COUNT,0));TRY(kh_ext_write(KAGURA_EXT_RS_INDEX,0));
+        for(unsigned i=0;i<2;i++) {
+            TRY(kh_ext_write(KAGURA_EXT_RS_LINE,(uint8_t)(title?(i?104:40):(i?SF_SKY_BOTTOM(g->height):48))));
+            TRY(kh_ext_write(KAGURA_EXT_RS_X_L,0));TRY(kh_ext_write(KAGURA_EXT_RS_X_H,0));TRY(kh_ext_write(KAGURA_EXT_RS_Y,0));
+        }
+    }
     uint32_t desired_col=g->stage_tick/8+63;
     /* This column is 23 tiles beyond the right edge. Only low bytes change;
      * all tiles stay <256, map attributes and upper bits remain zero. */
-    while(last_map_col<desired_col) {
+    while(!title && last_map_col<desired_col) {
         uint32_t col=last_map_col+1;uint8_t column[32];sf_make_column(column,g->height,col);
         TRY(kh_set_inc(128));TRY(kh_set_vram_addr(KAGURA_VRAM_MAP_BASE+(col&63)*2));
         TRY(kh_write(KAGURA_REG_VRAM_WRITE,false,column,sizeof column));
@@ -100,22 +113,25 @@ kh_status sf_backend_present(const SfGame *g,const SfFrame *f) {
         unsigned bytes=(i-first)*8;
         TRY(kh_vram_write(KAGURA_VRAM_OAM_BASE+first*8,f->oam+first*8,bytes));sf_payload_bytes+=bytes;
     }
-    if((g->scroll&255u)!=(previous_scroll&255u))TRY(kh_ext_write(KAGURA_EXT_SCROLL_X_L,(uint8_t)g->scroll));
-    if((g->scroll>>8)!=(previous_scroll>>8))TRY(kh_ext_write(KAGURA_EXT_SCROLL_X_H,(uint8_t)(g->scroll>>8)));
-    uint16_t sky=(uint16_t)((g->stage_tick/3)&511u);
-    bool use_raster=raster && !sf_stage_base_visible(g);
-    if(use_raster!=raster_active)TRY(kh_ext_write(KAGURA_EXT_RS_COUNT,use_raster?2:0));
+    uint16_t sky=(uint16_t)((title?g->state_age/8:g->stage_tick/3)&511u);
+    unsigned scroll=title?(raster?sky:0):g->scroll;
+    if((scroll&255u)!=(previous_scroll&255u))TRY(kh_ext_write(KAGURA_EXT_SCROLL_X_L,(uint8_t)scroll));
+    if((scroll>>8)!=(previous_scroll>>8))TRY(kh_ext_write(KAGURA_EXT_SCROLL_X_H,(uint8_t)(scroll>>8)));
+    bool use_raster=raster && (title || !sf_stage_base_visible(g));
+    if(use_raster!=raster_active || layout_changed)TRY(kh_ext_write(KAGURA_EXT_RS_COUNT,use_raster?2:0));
     if(use_raster)for(unsigned i=0;i<2;i++) {
-        unsigned x=i?g->scroll:sky,old=i?previous_scroll:previous_sky;
-        if(x==old && raster_active)continue;
+        unsigned x=title?(i?sky:0):(i?g->scroll:sky),old=i?previous_scroll:previous_sky;
+        if(x==old && raster_active && !layout_changed)continue;
         TRY(kh_ext_write(KAGURA_EXT_RS_INDEX,(uint8_t)i));
-        if((x&255)!=(old&255) || !raster_active)TRY(kh_ext_write(KAGURA_EXT_RS_X_L,(uint8_t)x));
-        if((x>>8)!=(old>>8) || !raster_active)TRY(kh_ext_write(KAGURA_EXT_RS_X_H,(uint8_t)(x>>8)));
+        if((x&255)!=(old&255) || !raster_active || layout_changed)TRY(kh_ext_write(KAGURA_EXT_RS_X_L,(uint8_t)x));
+        if((x>>8)!=(old>>8) || !raster_active || layout_changed)TRY(kh_ext_write(KAGURA_EXT_RS_X_H,(uint8_t)(x>>8)));
     }
+    unsigned fade=title?g->state_age/4:15;if(fade>15)fade=15;
+    if(fade!=previous_fade) { uint8_t palette[32];sf_title_palette(g,palette);TRY(kh_vram_write(KAGURA_VRAM_PALETTE_BASE+128,palette,32)); }
     TRY(sf_audio_update(g));
     uint8_t status;TRY(kh_read_reg(KAGURA_REG_STATUS,&status));
     if(!(status&KAGURA_STATUS_VBLANK_LIVE))sf_blank_overruns++;
     sf_transfer_us=(uint32_t)(time_us_64()-start);TRY(commit());
-    memcpy(previous,f->oam,sizeof previous);previous_scroll=g->scroll;previous_sky=sky;
-    previous_tick=g->stage_tick;raster_active=use_raster;return kh_check_errors();
+    memcpy(previous,f->oam,sizeof previous);previous_scroll=(uint16_t)scroll;previous_sky=sky;
+    previous_tick=g->stage_tick;raster_active=use_raster;title_map=title;previous_fade=(uint8_t)fade;return kh_check_errors();
 }

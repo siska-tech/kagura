@@ -34,6 +34,7 @@ static void scene(SfGame *g,unsigned cue,unsigned local) {
     case SF_MUSIC_OVER:g->state=SF_OVER;g->state_age=(uint16_t)local;break;
     default:assert(false);
     }
+    g->stage_frame=g->stage_tick;
 }
 static void match(const SfGame *g) {
     static const unsigned channels[4]={0,1,4,5};SfMusic m;sf_music_render(g,&m);
@@ -72,7 +73,7 @@ int main(void) {
     const unsigned expected[]={SF_MUSIC_SPACE,SF_MUSIC_SPACE,SF_MUSIC_ENTRY,SF_MUSIC_ENTRY,
         SF_MUSIC_BASE,SF_MUSIC_BASE,SF_MUSIC_WARNING,SF_MUSIC_WARNING,SF_MUSIC_BOSS};
     for(unsigned i=0;i<sizeof boundaries/sizeof boundaries[0];i++) {
-        sf_init(&g,240,1);g.state=SF_PLAY;g.stage_tick=boundaries[i];assert(sf_music_cue(&g)==expected[i]);match(&g);
+        sf_init(&g,240,1);g.state=SF_PLAY;g.stage_frame=g.stage_tick=boundaries[i];assert(sf_music_cue(&g)==expected[i]);match(&g);
     }
     for(unsigned cue=SF_MUSIC_CLEAR;cue<=SF_MUSIC_OVER;cue++) {
         scene(&g,cue,200);match(&g);sf_music_render(&g,&a);

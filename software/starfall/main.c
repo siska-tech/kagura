@@ -34,7 +34,7 @@ int main(void) {
     const kh_config config={STARFALL_LANES,2,2,6,7,8,9,10};kh_init(&config);
     unsigned height=0;kh_status status=sf_backend_init(&height);
     if(status!=KH_OK) { printf("STARFALL init failed %d error=%u\n",status,kh_last_error());return 1; }
-    sf_init(&game,height,0x53544152u);sf_backend_set_idle(report);
+    sf_init(&game,height,0x53544152u);game.state=SF_BOOT;sf_backend_set_idle(report);
     uint8_t last_frame=0;status=kh_read_reg(KAGURA_REG_FRAME_COUNT_L,&last_frame);
     if(status!=KH_OK)return 1;
     uint64_t run_start=time_us_64();
