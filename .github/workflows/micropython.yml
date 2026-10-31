@@ -59,6 +59,8 @@ jobs:
         run: python3 -I software/micropython/tests/test_shooter.py
       - name: Run the Viper link kernels against the register model
         run: python3 -I software/micropython/tests/test_link.py
+      - name: Cherry-blossom showcase against the C stress demo's output
+        run: python3 -I software/micropython/tests/test_sakura.py
       - name: Japanese text tests and font regeneration
         run: |
           curl -fsSL -o build/misaki_bdf_2021-05-05.zip https://littlelimit.net/arc/misaki/misaki_bdf_2021-05-05.zip

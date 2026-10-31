@@ -396,3 +396,22 @@ framebuffer_demo.run(60, fb=fb)"
 ```
 
 終了後は`soft-reset`でconsoleが戻る。
+
+## 桜吹雪ストレスデモ（sakura）
+
+`examples/sakura.py`はPicoのC版`stress`（[桜吹雪ストレス試験](../../docs/validation-status.md)）のMicroPython版。夜の神楽の情景に256枚の花びらsprite、7段のラスタスクロール、毎フレームのPSRAM→VRAM COPYで動くオーロラ、PSRAMに置いたピアノ（PCM 2ch）、PSG 6声の伴奏と効果音を重ね、上2行に美咲フォントのHUD（更新fps、spriteオーバーフロー、PCMアンダーラン、PSRAM転送量、ERROR_CODE）、下端に日本語の電光掲示を流す。ABI 0.6のbitstreamと`kagura_ja`・`fonts/misaki8.kfnt`が必要。ピアノにはCAPS PSRAMと`examples/sakura_assets/piano_c4.pcm`（C版と同じ録音、72000 B）が要り、どちらかが無ければ旋律をPSGの正弦波で鳴らす。
+
+```sh
+mpremote connect COM5 fs cp -r kagura_ja :lib/
+mpremote connect COM5 fs mkdir :fonts
+mpremote connect COM5 fs cp fonts/misaki8.kfnt :fonts/misaki8.kfnt
+mpremote connect COM5 fs cp examples/sakura.py examples/sakura_viper.py :
+mpremote connect COM5 fs cp -r examples/sakura_assets :
+mpremote connect COM5 exec "import sakura; sakura.run(60)"
+```
+
+`run(seconds=0, device=None, mode='qspi', pcm=True, copy=True, psg=True, font='/fonts/misaki8.kfnt', assets='sakura_assets')`。0秒はキー入力かCtrl-Cまで。`device`を渡さなければ`kagura.connect(mode=mode)`で接続し、終了時に閉じる。`pcm`・`copy`・`psg`はC版の`nopcm`・`nocopy`・`nopsg`と同じく負荷を1つずつ外して故障を切り分ける。終了時に`SAKURA PASS/FAIL: …`を表示し、spriteオーバーフロー・PCMアンダーラン・deviceエラーが無ければ`True`を返す。ピアノの録音はRAMへ丸ごと読まない。22通り（11音×長短）の再標本化はどれも録音を先頭から順に読むので、ファイルを8 KBの窓で1回だけ流し読みし、各音の出力を4 KB単位でそのままPSRAMへ書く（RP2040のheapは空きが180 KBあっても最大の連続領域が45 KB程度しかない）。
+
+場面・パレット・spriteの層・ラスタ表・旋律と伴奏・HUDはC版と同じで、`tests/test_sakura.py`がC版をPC上で動かした出力とbyte単位で照合する（PCM有効時の突風効果音の周波数だけは、C版のfloat計算とCPythonのdoubleでstep値の最下位bitが変わり得るため照合から外している）。RP2040のMicroPythonでは1更新が60 Hzに収まらない見込みなので、動きと音楽はFRAME_COUNT_L（VBlank数）で進め、間に合わないVBlankは描画を飛ばす（遅くはならない）。HUDのFPSは更新回数で、60を下回れば赤になる。花びらOAM・HUD文字・ピアノの再標本化はViper（`examples/sakura_viper.py`）、ラスタ表とCOPY_SRCは1回の`ext_writes()`で送る。PCMのstatusはC版の毎フレームではなくHUD更新（15 VBlankごと）で読む（異常bitはCLEARまで保持されるので見落とさないが、15 VBlank内の複数回は1回と数える）。
+
+実機（2026-10-31、RP2040 125 MHz、QSPI 5 MHz、`accelerate()`、480p FULL+PSRAMのbitstream＝CAPS 0x5B・240 lines、`.mpy`を`mpremote mount`で読込み）で30秒: 1316更新（43.8 updates/s、VBlank 1801回のうち485回は描画を飛ばした）、spriteオーバーフロー0・PCMアンダーラン0・line underrun 0・ERROR_CODE 0でPASS。PSRAM転送3.21 MB（COPY 1.29 MB）。読込みは19.0秒（背景生成とmount経由のファイル読込みを含む）。720p（180 lines）では未測定。映像と音の品質は自動では判定していない。
