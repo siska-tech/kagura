@@ -1,0 +1,36 @@
+Start testing: Oct 31 20:42 JST
+----------------------------------------------------------
+1/2 Testing: deterministic_game
+1/2 Test: deterministic_game
+Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_test"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+"deterministic_game" start time: Oct 31 20:42 JST
+Output:
+----------------------------------------------------------
+PASS height=180 deterministic_steps=216000 peak_line=9 state_bytes=120 frame_bytes=76
+PASS height=240 deterministic_steps=216000 peak_line=9 state_bytes=120 frame_bytes=76
+<end of output>
+Test time =   0.35 sec
+----------------------------------------------------------
+Test Passed.
+"deterministic_game" end time: Oct 31 20:42 JST
+"deterministic_game" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: backend_contract
+2/2 Test: backend_contract
+Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_backend_test"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+"backend_contract" start time: Oct 31 20:42 JST
+Output:
+----------------------------------------------------------
+PASS backend blank/immutable BG/differential OAM/failure ordering
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"backend_contract" end time: Oct 31 20:42 JST
+"backend_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 31 20:42 JST

@@ -1,0 +1,52 @@
+Start testing: Oct 31 21:38 JST
+----------------------------------------------------------
+1/3 Testing: deterministic_game
+1/3 Test: deterministic_game
+Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_test"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+"deterministic_game" start time: Oct 31 21:38 JST
+Output:
+----------------------------------------------------------
+PASS height=180 replay_steps=216000 stage=4000 peak_limit=16 state_bytes=604 frame_bytes=520
+PASS height=240 replay_steps=216000 stage=4000 peak_limit=16 state_bytes=604 frame_bytes=520
+<end of output>
+Test time =   2.36 sec
+----------------------------------------------------------
+Test Passed.
+"deterministic_game" end time: Oct 31 21:38 JST
+"deterministic_game" time elapsed: 00:00:02
+----------------------------------------------------------
+
+2/3 Testing: backend_contract
+2/3 Test: backend_contract
+Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_backend_test"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+"backend_contract" start time: Oct 31 21:38 JST
+Output:
+----------------------------------------------------------
+PASS backend dirty runs/failure ordering/blank/50us polling/deferred log/wave banks/audio
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"backend_contract" end time: Oct 31 21:38 JST
+"backend_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/3 Testing: keyboard_protocol
+3/3 Test: keyboard_protocol
+Command: "/usr/bin/python3.14" "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/starfall/tests/test_keyboard.py"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+"keyboard_protocol" start time: Oct 31 21:38 JST
+Output:
+----------------------------------------------------------
+PASS keyboard six-bit mask/Shift+W/key release/focus loss/zero-on-close
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"keyboard_protocol" end time: Oct 31 21:38 JST
+"keyboard_protocol" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 31 21:38 JST
