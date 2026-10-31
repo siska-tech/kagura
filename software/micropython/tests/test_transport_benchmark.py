@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Validate baseline stimulus cardinality and aggregation, not host speed."""
+from pathlib import Path
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_framebuffer  # installs SDK host shims and examples path
 from unittest import TestCase, main
 import framebuffer_transport_benchmark as B

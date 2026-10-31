@@ -352,6 +352,8 @@ RP2040のMicroPythonでは文1つに数µsかかり、ドライバの時間の�
 
 - `fb.lines(segments, count=None, color=None)`: `array('i')`の(x0, y0, x1, y1, 色)を`line()`と同じ画素でまとめて描く。`color=0`で同じ線を消せる。全件を検査してから描く。
 - `device.audio_writes(pairs)`: (index, value)のbyte列で音源registerをまとめて書く。
+- `device.ext_writes(pairs)`: 同じ形式でEXT registerをまとめて書く。固定のbytearrayを更新して再利用できる。奇数長はValueError。
+- OAMは既存の`write_memory(regs.VRAM_OAM_BASE, buffer)`で全2048 Bまたは一部を一括転送できる。固定バッファ描画・COMMIT適用確認・GC有効のSDKベンチと採否理由は[SDK性能記録](../../docs/micropython-sdk-performance.md)を参照。
 - `device.commit(wait=False)`: COMMITを待たずに戻る。次のフレームの描画をVBlank待ちと重ねられる（順序はdevice queueが保つ）。
 
 実機（RP2040 125 MHz、QSPI 5 MHz、µs）:
