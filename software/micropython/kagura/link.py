@@ -149,8 +149,11 @@ class Link:
         self.c[_WAIT] = timeout_us
         self._call('AUDIO_COMMIT', self.k._commit, self.c, self.buf, 4)
 
+    def ext_writes(self, pairs, count):
+        self._call('ext', self.k._batch, self.c, self.buf, pairs, count, 0x0a)
+
     def audio_writes(self, pairs, count):
-        self._call('audio', self.k._audio_batch, self.c, self.buf, pairs, count)
+        self._call('audio', self.k._batch, self.c, self.buf, pairs, count, 0x0c)
 
     def flush(self, dirty, buffer, max_gap, stats, timeout_us):
         """Fill stats like TileFramebuffer._flush; exceptions leave unconfirmed runs dirty."""

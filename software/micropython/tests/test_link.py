@@ -324,9 +324,13 @@ class LinkTests(TestCase):
             d.wait_status(R.STATUS_COMMIT_BUSY, 0)
             d.audio_writes(bytes((0x04, 12, 0x05, 9, 0x14, 33)))
             d.audio_commit()
+            d.ext_writes(bytes((R.EXT_SCROLL_X_L, 77, R.EXT_RS_INDEX, 0, R.EXT_RS_LINE, 16, R.EXT_RS_Y, 5)))
         self.assertEqual(state(fm), state(sm_))
+        self.assertEqual((fm.ext[R.EXT_SCROLL_X_L], fm.ext[R.EXT_RS_LINE], fm.ext[R.EXT_RS_Y]), (77, 16, 5))
         with self.assertRaises(ValueError):
             fast.audio_writes(b'\x01')
+        with self.assertRaises(ValueError):
+            fast.ext_writes(b'\x01')
 
     def test_device_error_is_reported_as_by_the_driver(self):
         for name, call in (('fence', lambda d: d.fence()), ('commit', lambda d: d.commit()),

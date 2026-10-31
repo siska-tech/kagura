@@ -123,6 +123,18 @@ class Kagura:
         return self.read_reg(R.REG_EXT_REG_DATA)
 
     @operation
+    def ext_writes(self, pairs):
+        """Several ext_write()s: pairs is bytes-like index, value, index, value..."""
+        if len(pairs) % 2:
+            raise ValueError("EXT pairs: index, value bytes")
+        link = self._link()
+        if link is not None and getattr(pairs, "itemsize", 1) == 1:
+            link.ext_writes(pairs, len(pairs) // 2)
+            return
+        for i in range(0, len(pairs), 2):
+            self.ext_write(pairs[i], pairs[i + 1])
+
+    @operation
     def audio_write(self, index, value):
         _range(index, 0, 255, "audio index")
         _range(value, 0, 255, "audio value")
