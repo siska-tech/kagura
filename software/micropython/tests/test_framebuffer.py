@@ -108,6 +108,37 @@ def tile_source(data, width):
     return pixel
 
 
+class PsramModel(T.RegisterModel):
+    """The register model plus PSRAM at 0x400000 and COMMAND COPY (at FENCE)."""
+    def __init__(self):
+        super().__init__()
+        self.reg[R.REG_CAPS]|=R.CAPS_PSRAM
+        self.psram=bytearray(0x400000)
+        self.copies=[]
+    def write(self,offset,data,inc=False):
+        if offset==R.REG_COMMAND and bytes(data)==bytes((R.CMD_COPY,)):
+            self.calls.append((offset,bytes(data),inc))
+            src=int.from_bytes(self.ext[R.EXT_COPY_SRC_L:R.EXT_COPY_SRC_L+3],'little')
+            length=int.from_bytes(self.reg[R.REG_LENGTH_L:R.REG_LENGTH_L+2],'little')
+            self.pending.append(('copy',self._addr(),(src,length)))
+            self.copies.append((src,self._addr(),length))
+            return
+        super().write(offset,data,inc)
+    def _drain(self):
+        for op,addr,payload in self.pending:
+            if op=='copy':
+                src,length=payload
+                self.memory[addr:addr+length]=self.psram[src-0x400000:src-0x400000+length]
+            elif op=='write' and addr>=0x400000:
+                self.psram[addr-0x400000]=payload
+            elif op=='write':
+                self.memory[addr]=payload
+            else:
+                length,fill=payload
+                self.memory[addr:addr+length]=bytes((fill,))*length
+        self.pending.clear()
+
+
 class FramebufferTests(TestCase):
     def setUp(self):
         self.model = T.RegisterModel()
@@ -225,16 +256,21 @@ class FramebufferTests(TestCase):
         self.assertTrue(all(int.from_bytes(self.model.memory[0x8000+(r*64+c)*2:0x8002+(r*64+c)*2],'little')>>10==0
                             for r in range(30) for c in range(40)))
         self.assertEqual(self.d.busy,0)
-    def test_image256_shows_a_checked_kimg(self):
-        import tempfile, image256
+    @staticmethod
+    def picture(seed):
+        """A random .kimg (palette, cells, pixels, file bytes) with a shared colour 0."""
         sys.path.insert(0, str(T.ROOT / "software/pico"))
         import send_image
-        rng=random.Random(256)
-        palette=[0x123]*16+[rng.randrange(4096) for _ in range(240)]
-        for p in range(16):palette[p*16]=0x123
+        rng=random.Random(seed)
+        palette=[rng.randrange(4096) for _ in range(256)]
+        for p in range(16):palette[p*16]=palette[0]
         cells=[rng.randrange(16) for _ in range(1200)]
         pixels=bytes(rng.randrange(256) for _ in range(38400))
-        data=send_image.frame(palette,cells,pixels)
+        return palette,cells,pixels,send_image.frame(palette,cells,pixels)
+    def test_image256_shows_a_checked_kimg(self):
+        import tempfile
+        from kagura import image256
+        palette,cells,pixels,data=self.picture(256)
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'p.kimg'
             self.clean()
@@ -250,6 +286,72 @@ class FramebufferTests(TestCase):
         self.assertEqual([int.from_bytes(self.model.memory[0x8000+(t//40*64+t%40)*2:][:2],'little')>>10 for t in range(1200)],cells)
         self.assertEqual(list(int.from_bytes(self.model.memory[0x9400+i*2:][:2],'little') for i in range(256)),palette)
         with self.assertRaises(ValueError):image256.show(TileFramebuffer(self.d,palette=1),str(path))
+    def test_image256_psram_slots_switch_by_copy(self):
+        import tempfile
+        from kagura import image256
+        model=PsramModel()
+        model.ext[R.EXT_SCREEN_HEIGHT]=240
+        model.ext[R.EXT_PATTERN_COUNT_L],model.ext[R.EXT_PATTERN_COUNT_H]=1200&255,1200>>8
+        d=Kagura(model).probe()
+        fb=TileFramebuffer(d);fb.set_viper(self.fb.viper_enabled);fb.initialize()
+        bare=T.RegisterModel();bare.reg[R.REG_CAPS]&=~R.CAPS_PSRAM;bare.ext[R.EXT_SCREEN_HEIGHT]=240
+        with self.assertRaises(NotImplementedError):image256.Slots(TileFramebuffer(Kagura(bare).probe()))
+        slots=image256.Slots(fb)
+        pictures=[self.picture(seed) for seed in (1,2)]
+        with tempfile.TemporaryDirectory() as tmp:
+            for slot,(palette,cells,pixels,data) in zip((3,15),pictures):
+                path=Path(tmp)/('%d.kimg'%slot);path.write_bytes(data)
+                buffer=bytes(fb.buffer)
+                slots.save_file(slot,str(path))
+                self.assertEqual(bytes(fb.buffer),buffer,'save_file leaves the framebuffer alone')
+            path.write_bytes(data[:-1])
+            with self.assertRaises(ValueError):slots.save_file(0,str(path))
+        self.assertEqual(slots.saved,{3,15})
+        with self.assertRaises(ValueError):slots.show(0)
+        with self.assertRaises(ValueError):slots.save_file(16,str(path))
+        for slot,(palette,cells,pixels,data) in ((3,pictures[0]),(15,pictures[1]),(3,pictures[0])):
+            slots.show(slot,fade_frames=4)
+            self.assertEqual(slots.current,slot)
+            self.assertEqual(model.memory[:0x8000]+model.memory[0xB000:0xC600],pixels)
+            self.assertEqual([int.from_bytes(model.memory[0x8000+(t//40*64+t%40)*2:][:2],'little')>>10
+                              for t in range(1200)],cells)
+            self.assertEqual([int.from_bytes(model.memory[0x9400+i*2:][:2],'little') for i in range(256)],palette)
+            self.assertEqual(sum(fb.dirty),1200)
+        # save() takes the picture as shown: buffer, palettes and cells.
+        palette,cells,pixels,data=pictures[1]
+        fb.buffer[:]=pixels
+        slots.save(0,bytes(data[4:516]),bytes(cells))
+        slots.show(0,fade_frames=1)
+        self.assertEqual(model.memory[:0x8000]+model.memory[0xB000:0xC600],pixels)
+        self.assertEqual(model.copies[-1][1:],(0x9400,512))
+    def test_lines_match_line_calls_and_validate_first(self):
+        from array import array
+        rng=random.Random(77)
+        segs=array('i')
+        for _ in range(60):
+            segs.extend((rng.randrange(-60,380),rng.randrange(-60,300),rng.randrange(-60,380),
+                         rng.randrange(-60,300),rng.randrange(16)))
+        segs.extend((-500,-500,-400,-450,3))   # wholly off screen
+        segs.extend((319,239,319,239,9))       # one pixel
+        n=len(segs)//5
+        other=TileFramebuffer(self.d);other.set_viper(self.fb.viper_enabled)
+        def expect(count,color=None):
+            for k in range(count):
+                x0,y0,x1,y1,c=segs[k*5:k*5+5]
+                other.line(x0,y0,x1,y1,c if color is None else color)
+        self.fb.lines(segs);expect(n)
+        self.assertEqual(bytes(self.fb.buffer),bytes(other.buffer))
+        self.assertEqual(bytes(self.fb.dirty),bytes(other.dirty))
+        self.fb.lines(segs,count=20,color=0);expect(20,0)
+        self.assertEqual(bytes(self.fb.buffer),bytes(other.buffer))
+        self.fb.lines(list(segs),count=5);expect(5)   # any sequence takes the line() path
+        self.assertEqual(bytes(self.fb.buffer),bytes(other.buffer))
+        before,dirty=bytes(self.fb.buffer),bytes(self.fb.dirty)
+        for bad,kwargs in ((array('i',list(segs[:50])+[0,0,40000,0,1]),{}),
+                           (array('i',list(segs[:50])+[0,0,10,10,16]),{}),
+                           (segs,{'count':n+1}),(segs,{'color':16}),(segs,{'count':-1})):
+            with self.assertRaises(ValueError):self.fb.lines(bad,**kwargs)
+            self.assertEqual((bytes(self.fb.buffer),bytes(self.fb.dirty)),(before,dirty))
     def test_pattern_count_rejected_before_map_writes(self):
         self.model.ext[R.EXT_PATTERN_COUNT_H]=0
         with self.assertRaises(ValueError):self.fb.initialize()

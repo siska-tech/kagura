@@ -472,6 +472,18 @@ class TransportTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 t.readinto(0, bytearray(length))
 
+    def test_accelerate_reuses_or_replaces_the_session(self):
+        t = PIOTransport()
+        first = t.accelerate()
+        self.assertIs(t.accelerate(), first)
+        other = t.accelerate(chunk=256)
+        self.assertIsNot(other, first)
+        self.assertTrue(first.closed)
+        self.assertIs(t.accelerate(chunk=256), other)
+        other.close()
+        self.assertIsNot(t.accelerate(chunk=256), other)   # a closed session is replaced
+        t.deinit()
+
     def test_release_sm_and_reconnect(self):
         t = PIOTransport()
         with self.assertRaises(RuntimeError):
@@ -603,6 +615,18 @@ class ConnectTests(unittest.TestCase):
         with self.assertRaisesRegex(OSError, "READY"):
             self.connect(ready_timeout_us=10)
         self.assertEqual(len(LinkModel.opened), 1)
+
+    def test_accelerates_by_default(self):
+        self.link = {}
+        calls = []
+        LinkModel.accelerate = lambda transport: calls.append(transport)
+        try:
+            d = self.connect(mode="qspi")
+            self.assertEqual(calls, [d.transport])
+            self.connect(mode="qspi", accelerate=False)
+            self.assertEqual(len(calls), 1)
+        finally:
+            del LinkModel.accelerate
 
     def test_slow_system_clock_skips_unreachable_speeds(self):
         self.link = {}

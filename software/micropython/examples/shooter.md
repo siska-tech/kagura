@@ -29,17 +29,13 @@ shooter.run(console=kagura_console)
 
 自動操縦で開始し、対応capabilityとアセットがあればPCM BGM＋全効果音を使用します。PCMアセットが未配置ならPCMを無効にして続行し、終了結果の`audio_reason`に理由を出します。PSRAM非対応版ではPSG／waveのみです。`pcm_enabled`と`wave_enabled`で実際に有効だった機能を確認してください。FULLを指定しただけで全音源の試験合格にはなりません。
 
-高速版は明示して選択できます。OAM構築とDMA展開だけの旧Viper版は約23.7fps、FIFO一括処理・512バイトDMAチャンク・空きメモリ照会周期を改善した版は、起動直後のHEAVY・400フレームで35.12fpsでした。詳細計測を有効にした実測です。[追加の性能改善レポート](../benchmarks/performance-v3.md)に条件と制約を記録しています。
+通信は既定で高速化されています（`dma='accelerated'`）。`kagura.connect()`が行う`transport.accelerate()`、つまり[kagura.link](../README.md#高速化accelerate)上で動き、`dma_chunk`はDMAの1回の量を選びます。OAM構築もViperにするには`renderer='viper'`を指定します。過去の計測（OAM構築とDMA展開だけの旧Viper版は約23.7fps、FIFO一括処理・512バイトDMAチャンク版は起動直後のHEAVY・400フレームで35.12fps）は[追加の性能改善レポート](../benchmarks/performance-v3.md)に記録しています。
 
 ```python
-shooter.run(console=kagura_console, renderer='viper', dma='accelerated', dma_chunk=512)
+shooter.run(console=kagura_console, renderer='viper', dma_chunk=512)
 ```
 
-更新した`kagura/`が必要です。古い凍結driverを持つUF2では、`kagura/dma_pack.py`をPicoの`/kagura_dma_pack.py`にも置けば、アプリ実行中だけの互換差替えを利用できます。driverのCS・abort・timeout処理は維持し、終了後に元へ戻します。native `.mpy`をPCで作る場合はRP2040用の`-march=armv6m`を指定します。
-
-`dma='accelerated'`を古いUF2で使う場合は、`kagura/fifo_xfer.py`と`kagura/acceleration.py`もそれぞれ`/kagura_fifo_xfer.py`・`/kagura_acceleration.py`へ配置します。通常のMicroPythonへの後付けに対応し、Cモジュール入り専用UF2は不要です。従来の`dma='driver'/'python'/'viper'`も維持しています。`profile=True`は各区間の中央値・p95を直近128フレーム分保存します。空きメモリの最小値はGC周期ごとのサンプル値です。
-
-nativeカーネルの`kagura/dma_pack_viper.py`と`kagura/fifo_xfer_viper.py`も必要です。古いUF2では`/kagura_dma_pack_viper.py`・`/kagura_fifo_xfer_viper.py`へ配置してください。Viperが使用不能・nativeファイルが未配置の場合、`dma='accelerated'`は通常driverへ自動で戻り、結果の`dma_effective='driver'`と`acceleration_reason`に記録します。OAMのViper helperが使えない場合もPython構築へ戻り、`renderer_reason`へ記録します。通信中のエラーでは既存どおりabortし、例外を返します。
+`dma='driver'`はゲームの間だけ高速化を閉じ、素のPython経路で比較します。どちらの場合も終了時に元の高速化へ戻します。Viperが使用不能な環境では`dma='accelerated'`は素の経路で動き、結果の`dma_effective='driver'`と`acceleration_reason`に記録します。OAMのViper helperが使えない場合もPython構築へ戻り、`renderer_reason`へ記録します。通信中のエラーでは既存どおりabortし、例外を返します。`profile=True`は各区間の中央値・p95を直近128フレーム分保存します。空きメモリの最小値はGC周期ごとのサンプル値です。`transport_us`／`wire_bytes`はkagura.linkが1回で行う操作（write_memory・fence・commit等）の時間も含みますが、それらのregister headerはbyte数に入りません。
 
 起動コンソールがある場合は必ず`console=kagura_console`を渡してください。同じPIO SMを`connect()`で再取得しないでください。コンソールを使わない接続例:
 

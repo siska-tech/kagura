@@ -1,56 +1,47 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Reversible RP2040 acceleration for any single-owner KAGURA application.
+"""Reversible RP2040 acceleration: installs kagura.link on a PIOTransport.
 
-Works with stock MicroPython and optional ARMv6-M .mpy modules. No PIO or
-firmware change. Close only after outstanding transfers have returned.
+PIOTransport.accelerate(), which connect() calls, owns the session. With the
+Viper link kernels and DMA available, transport.write/readinto and the
+Kagura and TileFramebuffer operations become one Viper call each (see
+kagura/link.py). Without them the transport is left untouched, enabled is
+False and reason says why. Close only after outstanding transfers have
+returned; the plain Python transport then takes over again.
 """
-from array import array
 try:
-    from . import dma_pack, fifo_xfer
+    from . import link as link_module
 except ImportError:
-    # Older UF2s freeze the original package; install these helpers at root.
-    import kagura_dma_pack as dma_pack
-    import kagura_fifo_xfer as fifo_xfer
+    link_module = None   # older frozen packages have no kagura.link
 
 
 class Acceleration:
-    def __init__(self, transport, timeout_type, fifo=True, chunk=128, packer=None):
+    def __init__(self, transport, timeout_type, chunk=128):
         if chunk not in (128, 256, 512):
             raise ValueError('DMA chunk must be 128, 256 or 512')
         if transport._active or transport._closed:
             raise RuntimeError('transport closed or already in use')
-        self.transport = transport
+        self.transport, self.chunk = transport, chunk
         self.closed = False
         self.enabled = False
         self.reason = ''
         self.previous = {}
-        self.pump = None
-        if dma_pack.viper_pack is None or dma_pack.viper_pack32 is None:
-            self.reason = 'Viper DMA kernel unavailable'
-            return
-        if fifo and fifo_xfer.pump is None:
-            self.reason = 'Viper FIFO kernel unavailable'
+        self.link = None
+        if link_module is None or link_module.kernels is None:
+            error = link_module.native_error if link_module is not None else None
+            self.reason = 'Viper link kernels unavailable' + (': ' + error if error else '')
             return
         if transport._dma_tx is None:
             self.reason = 'DMA unavailable'
             return
-        self.words = transport._words
-        for name in ('_xfer', 'write', 'readinto', '_xfer_dma'):
+        for name in ('write', 'readinto', 'link'):
             self.previous[name] = transport.__dict__.get(name)
-        # Allocate before changing the transport. Buffers remain owned until
-        # synchronous DMA completion; no pointer outlives this object.
-        words = self.words if chunk == 128 else array('H', [0] * (2 * chunk))
-        self.pump = fifo_xfer.Pump(transport, timeout_type) if fifo else None
-        if packer is None:
-            packer = dma_pack.pack32
         try:
-            transport._words = words
-            transport._xfer_dma = lambda data, queued: dma_pack.transfer(
-                transport, data, queued, timeout_type, chunk, packer)
-            if self.pump:
-                transport._xfer = self.pump.transfer
-                transport.write = self.pump.write
-                transport.readinto = self.pump.readinto
+            # Link allocates its buffers before the transport changes hands and
+            # keeps the plain write/readinto for buffers of wider items.
+            self.link = link_module.Link(transport, timeout_type, chunk)
+            transport.write = self.link.write
+            transport.readinto = self.link.readinto
+            transport.link = self.link
             self.enabled = True
         except BaseException:
             self.close()  # Also restore a partially installed session.
@@ -61,7 +52,7 @@ class Acceleration:
             return
         if not self.previous:
             self.closed = True
-            return  # Unavailable native kernels never touched the transport.
+            return  # Unavailable kernels never touched the transport.
         raw = self.transport
         if raw._active or (not raw._closed and (raw._dma_tx.active() or raw._dma_rx.active())):
             raise RuntimeError('cannot disable acceleration during a transfer')
@@ -71,7 +62,6 @@ class Acceleration:
                     delattr(raw, name)
             else:
                 setattr(raw, name, previous)
-        raw._words = self.words
         self.enabled = False
         self.closed = True
 

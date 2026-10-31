@@ -81,11 +81,8 @@ def run(seconds=60, mode='qspi', sdk='kagura', baudrate=5_000_000, pcm=True, ful
     R = __import__(sdk + '.regs', None, None, ['REG_STATUS'])
     Video = __import__(sdk + '.video', None, None, ['Video']).Video
     Audio = __import__(sdk + '.audio', None, None, ['Audio']).Audio
+    # connect() accelerates: the acceptance checks the path applications use.
     d = package.connect(mode=mode, baudrate=baudrate)
-    # Numerical acceptance uses the portable packer, independently of optional
-    # native/Viper support in a particular Pico firmware.
-    packing = __import__(sdk + '.dma_pack', None, None, ['python_pack'])
-    packing.viper_pack = packing.viper_pack32 = None
     v, audio = Video(d), Audio(d)
     pcm_on = bool(pcm and d.caps & R.CAPS_PSRAM)
     checks = 0

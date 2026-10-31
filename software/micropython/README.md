@@ -98,15 +98,11 @@ PCM BGM／効果音・PSG／wave・64〜256個のOAM負荷・終了後の計測�
 64 OAM＋全音源・400フレームで35.12fpsを測定した（統計処理を含むフレーム間隔も記録）。
 `renderer='viper', dma='accelerated', dma_chunk=512`で選択する。
 
-汎用アプリでは、コンソールをpauseした上で次の範囲だけ高速化できる。
+汎用アプリでは何もしなくてよい。`connect()`が既定で`transport.accelerate()`を行い、
+register操作・メモリ書込み・FENCE・COMMIT・flushがViperで動く（[高速化（accelerate）](#高速化accelerate)）。
 既存PIOプログラム・32bit DMAワード形式・READY/BUSY/FENCE/エラー検査は変わらない。
 通常MicroPythonへPythonモジュールまたはARMv6-M `.mpy`を追加する構成で、専用Cファームウェアは不要。
-
-```python
-with dev.transport.accelerate(chunk=512):
-    dev.write_memory(0xA000, oam_buffer)
-    dev.commit()
-```
+`with dev.transport.accelerate(...)`のように閉じると、その後は素のPython経路に戻る。
 
 転送が完了してからスコープを抜けること。元のメソッドとDMAバッファへ復元する。
 nativeカーネルを読み込めない場合は通常driverを維持し、返されたsessionの
@@ -154,6 +150,8 @@ waveのbankはAUDIO_COMMITごとに交換される。初期波形は`wave()`→`
 ### 通信速度
 
 `connect()`と`start()`は既定（`baudrate=None`）でSCKを5MHz→2.5MHz→1MHzの順に試し、最初に合格した速度を使う。各速度でprobe（ID・ABI）に続けて`check_link()`を行う。IDブロックの読出しと、LENGTH_L〜FENCE_TAG（FILL・COPY・FENCEが毎回書き直すので状態を変えない）への4byteパターンの書込み・読戻しを8回照合し、最後にERROR_CODE=0を確認する。所要時間は約40ms。READY=high・BUSY=lowにならない場合（未接続、FPGA未構成）は速度に関係しないので、低速では再試行せずに失敗する。`machine.freq()`がSCKの12倍に満たない速度は飛ばす。
+
+`connect()`は既定（`accelerate=True`）で`device.transport.accelerate()`も行い、Viperが使える環境ではregister操作・メモリ書込み・FENCE・COMMIT・flushがそれぞれ1回のViper呼出しになる（数倍〜10倍速い、[高速化（accelerate）](#高速化accelerate)）。
 
 選ばれた速度は`device.transport.baudrate`で分かり、起動コンソールのメッセージにも`(QSPI 5MHz)`のように出る。`baudrate=`に数値を渡すとその速度だけを使い、照合とfallbackは行わない。照合は接続時の1回だけで、合格した速度で運用中にエラーが出る配線では、低い速度を明示する。
 
@@ -325,36 +323,64 @@ RP2040では利用可能なら描画Viperを自動選択する。`fb.set_viper(F
 
 同条件の大面積fill_rectはPython1239.183 ms／Viper7.672 ms、lineは66.857 ms／1.923 ms（各10回平均）。[全sample・分散・最大・flush・各5分負荷の比較](../../docs/framebuffer-viper-results.md)と[安全範囲・fallback仕様](../../docs/framebuffer.md#viper描画backend)を参照。kernelの個別関数は内部専用。
 
-### 疑似256色（セルごとのパレット）
+### 疑似256色（セルごとのパレット）とPSRAMスライド
 
 `fb.set_cell_palettes(cells)`は40×30セルそれぞれのパレット番号（1200個、0〜15）をmapのpalette欄へ書き、FENCEで確定する。tile番号と上位bit表は変えない。16パレット×16色で画面全体に最大256色（RGB444）を出せる。パレット本体は呼出し側が`device.write_memory(0x9400, 512 B)`＋`commit()`で書く。map wordはCOMMITを待たず書いた時点で反映されるため、パレットを暗くしてから替える。画素値0は透明でBACKDROP（`fb.palette`の0番）になるので、使う全パレットの0番を同じ色にする。`initialize()`で全セルが`fb.palette`へ戻る。
 
-`examples/image256.py`はPC（`software/pico/send_image.py --save photo.kimg photo.jpg`）で減色した`.kimg`（PicoのC版`imgdemo recv`と同じ形式、CRC-32付き）を表示する。ファイル全体を検査してから、パレットを黒にしてbuffer・flush・`set_cell_palettes`を行い、24フレームでフェードインする。検査で失敗すれば何も変えない。`TileFramebuffer(palette=0)`が必要。実機（QSPI 5 MHz）で検査約0.9秒、表示約2.5秒。
+`kagura.image256`はPC（`software/pico/send_image.py --save photo.kimg photo.jpg`）で減色した`.kimg`（PicoのC版`imgdemo recv`と同じ形式、CRC-32付き）を扱う。`TileFramebuffer(palette=0)`が必要。
+
+- `check(path)`: ファイル全体（magic・長さ・値の範囲・CRC）を検査し、パレットとセルを返す。装置へは何もしない。
+- `show(fb, path)`: 検査してから、パレットを黒にしてbuffer・flush・`set_cell_palettes`を行い、24フレームでフェードインする。検査で失敗すれば何も変えない。
+- `Slots(fb)`（CAPS PSRAM）: 画像をPSRAMに置き、COPYだけで切り替える。C版`imgdemo save`／`slide`と同じ配置（スロットnは`0x600000 + n × 64 KiB`、パターン・mapの30行・明るさ0〜16のパレット17組）。`save_file(n, path)`は検査してから1 KiBずつPSRAMへ書き、画面とbufferを変えない。`save(n, palette, cells)`は表示中のbufferを保存する。`show(n)`は表示中スロットの暗いパレットをCOPYしてフェードアウトし、全パレットが黒の間にパターンとmapをCOPYしてフェードインする。その後bufferは画面と一致しないため全タイルdirtyにする。
+
+実機（QSPI 5 MHz、`accelerate()`）で`show()`は約2.5秒、`Slots.show()`の切替はフェード込み約0.55秒（C版と同じ）、`save_file()`は約2秒（`mpremote mount`経由の読込みと検査を含む）。
 
 ```python
-import image256
-image256.run('photo.kimg')        # 接続から。既存のfbがあれば image256.show(fb, 'photo.kimg')
+import image256                                   # examples/image256.py
+image256.run(['sunset.kimg', 'photo.kimg'], seconds=30, hold_ms=3000)   # PSRAMならスライド
 ```
 
-### デモとViper通信経路（実験）
+### 高速化（accelerate）
 
-`examples/framebuffer_demo.py`はPicoのC版`fbdemo`と同じ4場面（パレット回転のプラズマ・トンネル、星空の4D超立方体、虹色の線リボン）をPSGのBGM付きで流す。`run(seconds, max_gap=16, fb=None, fast=False)`。COMMITは待たずに戻し、次フレームの描画をVBlank待ちと重ねる（順序はdevice queueが保つ）。
+RP2040のMicroPythonでは文1つに数µsかかり、ドライバの時間の大半は配線ではなくPython側の手順だった。`connect()`は既定で`device.transport.accelerate()`を呼び、Viperが使えれば`kagura.link`を組み込む。何度呼んでも同じ設定なら同じsessionを返す。`connect(accelerate=False)`または`close()`で素のPython経路になる（Viperのない環境とPCのテストはこの経路）。
 
-RP2040のMicroPythonでは文1つに数µsかかり、ドライバの遅さは配線ではなくPython側の手順だった（register 1回約1 ms、FENCE約6 ms）。`fast=True`は`examples/framebuffer_fastlink.py`の実験用経路を使い、トランザクション、FENCE、COMMIT、音源書込み、flush全体をそれぞれViper 1呼出しで行う。64 B以上のpayloadはtransportのDMA 2chで送り、その間にViperが次の256 Bを詰める（約1 MB/s、C版と同等）。ドライバの範囲検査と`Ctrl-C`のpollingは行わず、停止はtimeoutのみ。transportとDMA chはドライバと共有するため、単一所有者で使う。
+- transportの`write`／`readinto`は、CS・QSPIのpin向き・FIFO・DMAまでをViper 1呼出しで行う。4 byte以下は4段のFIFOへ一度に入れる短い経路、64 byte以上のpayloadはDMA 2chで送り、その間にViperが次のchunkを詰める（約1 MB/s、C版と同等）。
+- `Kagura.write_memory`・`fence`・`commit`・`audio_commit`・`wait_status`、`TileFramebuffer.flush`はそれぞれ1呼出し。flushのrun・gap結合・1023/1024分割・FENCE確定・失敗時にdirtyを残す規則と統計は従来と同じ。
+- 引数の検査、例外の種類と文言（`DeviceError`、`TransferTimeout`、`KAGURA timeout: …`）、失敗時の`_abort()`、`device.busy`は従来どおり。待ちの間も4 msごとにCtrl-Cを受け付ける。
 
-実機（RP2040 125 MHz、QSPI 5 MHz、各12秒、fps）:
+あわせて、1呼出しで多くを済ませるAPIを追加した。
 
-| 場面 | C版`fbdemo` | ドライバ | `fast=True` |
+- `fb.lines(segments, count=None, color=None)`: `array('i')`の(x0, y0, x1, y1, 色)を`line()`と同じ画素でまとめて描く。`color=0`で同じ線を消せる。全件を検査してから描く。
+- `device.audio_writes(pairs)`: (index, value)のbyte列で音源registerをまとめて書く。
+- `device.commit(wait=False)`: COMMITを待たずに戻る。次のフレームの描画をVBlank待ちと重ねられる（順序はdevice queueが保つ）。
+
+実機（RP2040 125 MHz、QSPI 5 MHz、µs）:
+
+| 操作 | 高速化なし | 従来のFIFO・DMA高速化（削除済み） | `accelerate()` |
 |---|---:|---:|---:|
-| プラズマ | 59.9 | 42.3 | 60.0 |
-| 超立方体 | 30.0 | 1.6 | 27.0 |
-| トンネル | 59.8 | 41.9 | 60.0 |
-| リボン | 45.1 | 2.2 | 30.9 |
+| read_reg | 1797 | 891 | 468 |
+| write_reg | 1506 | 983 | 632 |
+| write_memory 32 B | 6685 | 4504 | 836 |
+| write_memory 4 KB | 16819 | 14483 | 3747 |
+| fence | 11413 | 5895 | 494 |
+| audio_write | 1689 | 1046 | 681 |
 
-boot.pyのconsoleが残すheapと`mpremote mount`のbufferで38400 Bの連続領域が取れないため、consoleを閉じて先に確保してからmountする。PC側で`.mpy`にして置いたディレクトリ（`kagura/`を含む）で:
+`tests/test_link.py`はkernelのsourceをPIO・SIO・timer・DMAのモデル上で実行し、register操作・write_memory（FIFOとDMA）・fence・commit・flushの結果と例外が従来のドライバと一致すること、READY低下・BUSY停止・Ctrl-Cからの復帰を検査する。
+
+### デモ
+
+`examples/framebuffer_demo.py`はPicoのC版`fbdemo`と同じ4場面（パレット回転のプラズマ・トンネル、星空の4D超立方体、虹色の線リボン）をPSGのBGM付きで流す。`run(seconds, max_gap=16, fb=None)`。上の高速化API（`connect()`既定の`accelerate()`、`fb.lines()`、`audio_writes()`、`commit(wait=False)`）だけで書いている。
+
+| 場面（各12秒、fps） | C版`fbdemo` | 高速化なし | `accelerate()` |
+|---|---:|---:|---:|
+| プラズマ | 59.9 | 42.3 | 59.9 |
+| 超立方体 | 30.0 | 1.6 | 24.0 |
+| トンネル | 59.8 | 41.9 | 59.9 |
+| リボン | 45.1 | 2.2 | 25.1 |
+
+`kagura`を凍結していない（`/lib`やmountから読む）環境では、boot.pyのconsoleが残すheapと`mpremote mount`のbufferで38400 Bの連続領域が取れないことがある。consoleを閉じて先に確保し、mount・import・接続の後に手放してから`TileFramebuffer`を作る。PC側で`.mpy`にして置いたディレクトリ（`kagura/`を含む）で:
 
 ```sh
-mpy-cross -march=armv6m examples/framebuffer_demo.py   # fastlink、kagura/*.pyも同様
 mpremote connect COM7 soft-reset exec "import sys, gc
 kagura_console.close(); kagura_console = None; globals().pop('start', None)
 for k in tuple(sys.modules):
@@ -362,9 +388,9 @@ for k in tuple(sys.modules):
 gc.collect(); reserve = bytearray(38400)" mount . exec "sys.path.insert(0, '/remote')
 import kagura, framebuffer_demo
 from kagura.framebuffer import TileFramebuffer
-d = kagura.connect(mode='qspi', baudrate=5_000_000); d.transport.accelerate()
+d = kagura.connect(mode='qspi', baudrate=5_000_000)
 reserve = None; gc.collect(); fb = TileFramebuffer(d)
-framebuffer_demo.run(60, fb=fb, fast=True)"
+framebuffer_demo.run(60, fb=fb)"
 ```
 
 終了後は`soft-reset`でconsoleが戻る。

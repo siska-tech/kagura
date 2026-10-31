@@ -167,7 +167,9 @@ def calibration(repetitions=30):
 
 
 class Profile:
-    """Inclusive transport buckets. Never add parent and child totals."""
+    """Inclusive transport buckets of the plain Python transport (kagura.link,
+    which does each operation in one Viper call, is closed meanwhile). Never
+    add parent and child totals."""
     def __init__(self, session):
         self.session=session
         self.saved=[]
@@ -189,8 +191,10 @@ class Profile:
             else:setattr(obj,name,own)
     def run(self):
         s=self.session;r=s.raw;d=s.d
+        chunk=s.accel.chunk if s.accel is not None and not s.accel.closed else None
+        if chunk:s.accel.close()
         package=s.FBM.__name__.rsplit('.',1)[0]
-        pack=__import__(package+'.dma_pack',None,None,['pack32']).pack32
+        pack=__import__(package+'.dma_pack',None,None,['python_pack']).python_pack
         timeout=__import__(package+'.transport_rp2',None,None,['TransferTimeout']).TransferTimeout
         dma=[0,0,0,0]
         # Same synchronous handshake as dma_pack.transfer; adapted from the
@@ -232,8 +236,6 @@ class Profile:
                 (d,'_address','vram_address'),(d,'check_errors','error_check'),
                 (d,'_wait','completion_poll'),(d,'fence','fence')):
             self.wrap(obj,name,label)
-        if s.accel.pump is not None:
-            self.wrap(s.accel.pump,'_packet','native_packet')
         try:
             for index,(count,layout) in enumerate(((0,'contiguous'),(1,'contiguous'),(100,'contiguous'),
                                  (100,'dispersed'),(1024,'contiguous'),(1200,'contiguous'))):
@@ -253,7 +255,9 @@ class Profile:
                        dirty_scan_us=probe.scan_us,dirty_confirm_us=probe.confirm_us,
                        dma_pack_config_wait_us_chunks=dma,
                        flush=stats,instrumented=True)
-        finally:self.close()
+        finally:
+            self.close()
+            if chunk:s.accel=r.accelerate(chunk=chunk)
         s.verify(full=False)
 
 

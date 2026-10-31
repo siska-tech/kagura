@@ -1,58 +1,29 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Optional RP2 Viper byte-to-PIO-word expansion, preserving the wire format."""
-import sys
+"""DMA writes of the plain Python transport: byte to PIO word expansion.
+
+Only the transport without kagura.link uses this (no Viper, or after
+acceleration.close()); with the link, DMA payloads are packed in Viper.
+"""
 from time import ticks_us, ticks_diff
 
 
 def python_pack(data, high, words, start, count):
+    """words[1::2] = high[byte] for data[start:start + count] (16-bit halves)."""
     j = 1
     for k in range(start, start + count):
         words[j] = high[data[k]]
         j += 2
 
 
-# @micropython.viper is compiler syntax, not a runtime module attribute.
-# CPython host tests deliberately take the reference implementation instead.
-viper_pack = viper_pack32 = None
-native_error = None
-if sys.implementation.name == 'micropython':
-    try:
-        try:
-            from .dma_pack_viper import viper_pack, viper_pack32
-        except ImportError:
-            from kagura_dma_pack_viper import viper_pack, viper_pack32
-    except (ImportError, SyntaxError, ValueError) as error:
-        # Missing helper, unsupported emitter, or incompatible native .mpy.
-        native_error = repr(error)
-
-
-def pack(data, high, words, start, count):
-    # Transport.write passes a memoryview. Preserve the old element-wise
-    # behavior for multi-byte buffers rather than reinterpreting their bytes.
-    if viper_pack is not None and getattr(data, 'itemsize', 1) == 1:
-        viper_pack(data, high, words, start, count)
-    else:
-        python_pack(data, high, words, start, count)
-
-
-def pack32(data, high, words, start, count):
-    """Full-word variant for zero-low-half DMA workspaces, not arbitrary arrays."""
-    if viper_pack32 is not None and getattr(data, 'itemsize', 1) == 1:
-        viper_pack32(data, high, words, start, count)
-    else:
-        python_pack(data, high, words, start, count)
-
-
 def transfer(transport, data, queued, timeout_type, chunk=128, packer=None):
-    """Shared, unchanged DMA handshake; also bridges older frozen drivers.
+    """One write's payload by DMA, `chunk` bytes at a time.
 
-    The caller's write() still owns CS, exception recovery, and DMA abort.
-    The byte-expansion kernel is the only accelerated operation here.
+    The caller's write() owns CS, exception recovery and DMA abort.
     """
     high, words = transport._high[queued], transport._words
     tx, rx = transport._dma_tx, transport._dma_rx
     if packer is None:
-        packer = pack
+        packer = python_pack
     n, done = len(data), 0
     while done < n:
         m = min(chunk, n - done)

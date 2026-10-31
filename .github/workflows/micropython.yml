@@ -55,8 +55,8 @@ jobs:
         run: python3 -I software/micropython/tests/test_tile1200_accept.py
       - name: STAR RUNNER game, audio, asset and telemetry tests
         run: python3 -I software/micropython/tests/test_shooter.py
-      - name: Viper FIFO word and interruption semantics
-        run: python3 -I software/micropython/tests/test_fifo_xfer.py
+      - name: Run the Viper link kernels against the register model
+        run: python3 -I software/micropython/tests/test_link.py
       - name: Japanese text tests and font regeneration
         run: |
           curl -fsSL -o build/misaki_bdf_2021-05-05.zip https://littlelimit.net/arc/misaki/misaki_bdf_2021-05-05.zip

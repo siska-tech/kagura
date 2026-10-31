@@ -625,11 +625,14 @@ class Game:
 def run(device=None, console=None, autoplay=True, sound=True, duration=None,
         input_fn=None, music=True, mode='FULL', load='NORMAL', particles=8,
         sprites=128, enhanced=True, assets='star_runner_assets', target_fps=30,
-        samples=1024, report=True, gc_interval=4, frames=None, bgm_gain=224, renderer='python', dma='driver',
+        samples=1024, report=True, gc_interval=4, frames=None, bgm_gain=224, renderer='python', dma='accelerated',
         profile=False, instrument_transport=True, dma_chunk=128):
     """Compatible v1 entry point. Returns bounded benchmark results on exit.
 
     target_fps=0 measures maximum throughput. BASE only silences audio at setup.
+    dma='accelerated' runs on transport.accelerate(chunk=dma_chunk) (kagura.link,
+    as connect() sets up); dma='driver' closes it for the run to compare with
+    the plain Python transport. The transport's acceleration is restored after.
     See shooter.md for mode matrix, controls, assets and timing definitions.
     """
     global LAST_STATS
@@ -637,8 +640,8 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
         raise ValueError('duration/frames must be nonnegative')
     if not 0 <= target_fps <= 120 or not 1 <= gc_interval <= 60:
         raise ValueError('invalid target_fps/gc_interval')
-    if dma not in ('driver', 'python', 'viper', 'accelerated'):
-        raise ValueError('dma must be driver, python, viper or accelerated')
+    if dma not in ('driver', 'accelerated'):
+        raise ValueError('dma must be driver or accelerated')
     if dma_chunk not in (128, 256, 512):
         raise ValueError('dma_chunk must be 128, 256 or 512')
     if console is not None:
@@ -664,44 +667,21 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
     wire_start = 0
     minimum_free = None
     free_memory = getattr(gc, 'mem_free', None)
-    dma_override = False
-    prior_dma_override = None
-    acceleration = None
+    prior = getattr(old_transport, 'acceleration', None)
+    prior_chunk = prior.chunk if prior is not None and not prior.closed else None
     dma_effective, acceleration_reason = dma, ''
     try:
         if paused:
             console.pause()
         if dma == 'accelerated':
-            try:
-                try:
-                    from kagura.acceleration import Acceleration
-                except ImportError:
-                    from kagura_acceleration import Acceleration
-            except (ImportError, SyntaxError, ValueError) as error:
-                dma_effective, acceleration_reason = 'driver', repr(error)
+            if not hasattr(old_transport, 'accelerate'):
+                dma_effective, acceleration_reason = 'driver', 'transport has no accelerate()'
             else:
-                from kagura.transport_rp2 import TransferTimeout
-                acceleration = Acceleration(old_transport, TransferTimeout, chunk=dma_chunk)
-                if not acceleration.enabled:
-                    dma_effective, acceleration_reason = 'driver', acceleration.reason
-        elif dma != 'driver':
-            try:
-                from kagura import dma_pack as dma_helper
-            except ImportError:
-                # Compatibility with UF2s freezing the pre-acceleration driver.
-                import kagura_dma_pack as dma_helper
-            from kagura.transport_rp2 import TransferTimeout
-            if not getattr(old_transport, '_dma_tx', None):
-                raise RuntimeError('DMA transport unavailable')
-            if dma == 'viper' and dma_helper.viper_pack is None:
-                raise RuntimeError('Viper DMA kernel unavailable')
-            packer = dma_helper.pack if dma == 'viper' else dma_helper.python_pack
-            try:
-                prior_dma_override = old_transport.__dict__.get('_xfer_dma')
-            except AttributeError:
-                pass
-            old_transport._xfer_dma = lambda data, queued: dma_helper.transfer(old_transport, data, queued, TransferTimeout, packer=packer)
-            dma_override = True
+                session = old_transport.accelerate(chunk=dma_chunk)
+                if not session.enabled:
+                    dma_effective, acceleration_reason = 'driver', session.reason
+        elif prior_chunk is not None:
+            prior.close()   # dma='driver': the plain Python transport for this run
         game = Game(device, autoplay, sound, music, mode, load, particles, sprites,
                     enhanced, assets, stats, bgm_gain, renderer)
         keyboard = input_fn if input_fn is not None else Keyboard()
@@ -780,16 +760,14 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
             except BaseException as error:
                 cleanup_errors.append(repr(error))
         device.transport = old_transport
-        if acceleration is not None:
-            try:
-                acceleration.close()
-            except BaseException as error:
-                cleanup_errors.append(repr(error))
-        if dma_override:
-            if prior_dma_override is None:
-                del old_transport._xfer_dma
-            else:
-                old_transport._xfer_dma = prior_dma_override
+        try:   # the acceleration the transport had before the run
+            current = getattr(old_transport, 'acceleration', None)
+            if prior_chunk is not None:
+                old_transport.accelerate(chunk=prior_chunk)
+            elif current is not None and not current.closed:
+                current.close()
+        except BaseException as error:
+            cleanup_errors.append(repr(error))
         try:
             if paused:
                 console.resume()

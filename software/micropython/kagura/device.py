@@ -164,11 +164,20 @@ class Kagura:
     def _address(self, address):
         self.transport.write(R.REG_VRAM_ADDR_L, _le(address, 3), True)
 
+    def _link(self):
+        # kagura.link.Link installed by transport.accelerate(), else None.
+        return getattr(self.transport, "link", None)
+
     @operation
     def write_memory(self, address, data):
         data = memoryview(data)
         self._memory_range(address, len(data))
         if not data:
+            return
+        link = self._link()
+        # MicroPython's memoryview has no itemsize; it then holds bytes.
+        if link is not None and getattr(data, "itemsize", 1) == 1:
+            link.write_memory(address, data, self.timeout_us)
             return
         self.transport.write(R.REG_INC_L, b"\x01\x00", True)
         self._address(address)
@@ -199,6 +208,12 @@ class Kagura:
 
     @operation
     def wait_status(self, mask, value):
+        link = self._link()
+        if link is not None:
+            _range(mask, 0, 255, "status mask")
+            _range(value, 0, 255, "status value")
+            link.wait_status(mask, value, self.timeout_us)
+            return
         self._wait(lambda: self.read_reg(R.REG_STATUS) & mask == value, "STATUS")
 
     @operation
@@ -229,6 +244,10 @@ class Kagura:
     def fence(self):
         # Choose a tag different from the *current* DONE_TAG, including reset
         # and wrap. A cached local counter could match a stale completion.
+        link = self._link()
+        if link is not None:
+            link.fence(self.timeout_us)
+            return
         tag = (self.read_reg(R.REG_DONE_TAG) + 1) & 255
         self.write_reg(R.REG_FENCE_TAG, tag)
         self.write_reg(R.REG_COMMAND, R.CMD_FENCE)
@@ -240,6 +259,10 @@ class Kagura:
     def commit(self, wait=True):
         # wait=False returns before the next frame applies the shadows; the
         # next commit still waits first, so shadows are never overwritten early.
+        link = self._link()
+        if link is not None:
+            link.commit(wait, self.timeout_us)
+            return
         self.wait_status(R.STATUS_COMMIT_BUSY, 0)
         self.write_reg(R.REG_COMMAND, R.CMD_COMMIT)
         self.check_errors()
@@ -247,7 +270,23 @@ class Kagura:
             self.wait_status(R.STATUS_COMMIT_BUSY, 0)
 
     @operation
+    def audio_writes(self, pairs):
+        """Several audio_write()s: pairs is bytes-like index, value, index, value..."""
+        if len(pairs) % 2:
+            raise ValueError("audio pairs: index, value bytes")
+        link = self._link()
+        if link is not None and getattr(pairs, "itemsize", 1) == 1:
+            link.audio_writes(pairs, len(pairs) // 2)
+            return
+        for i in range(0, len(pairs), 2):
+            self.audio_write(pairs[i], pairs[i + 1])
+
+    @operation
     def audio_commit(self):
+        link = self._link()
+        if link is not None:
+            link.audio_commit(self.timeout_us)
+            return
         self._wait(lambda: not self.audio_read(R.AUDIO_STATUS) & R.AUDIO_STATUS_APPLY_BUSY,
                    "AUDIO_COMMIT")
         self.write_reg(R.REG_COMMAND, R.CMD_AUDIO_COMMIT)
