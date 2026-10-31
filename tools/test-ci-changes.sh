@@ -39,6 +39,7 @@ files "C header" "rtl_sources pico" software/include/kagura_regs.h
 files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
 files "picture converter" "pico micropython" software/pico/send_image.py
+files "piano sample" "pico micropython" software/pico/piano_c4_sample.h
 files "C framebuffer differential" "pico" software/pico/tile_fb.c software/pico/tests/test_tile_fb.py
 files "framebuffer reference" "pico micropython micropython_firmware" software/micropython/kagura/framebuffer.py
 files "register model" "pico micropython" software/micropython/tests/test_driver.py

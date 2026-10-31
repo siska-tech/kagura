@@ -1,0 +1,33 @@
+FW link._fast True device kagura/link.py
+SAKURA CAPS 0x5b, 240 lines
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 19596 ms (702084 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 1152 updates in 20.0 s (57.58 updates/s, 138 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 2.48 MB (COPY 1.13 MB)
+SAKURA display: 1151 COMMITs confirmed in 20.0 s (57.53 displayed/s)
+BENCH final20 updates=1152 displayed/s=57.53 vblanks=1200 (59.98 Hz)
+BENCH final20 proc all    n=1151 mean=13.81 p50=12.5 p95=20.3 p99=25.3 max=34.9 ms
+BENCH final20 proc normal n=894 mean=12.84 p50=12.5 p95=13.4 p99=21.2 max=21.3 ms
+BENCH final20 proc hud    n=257 mean=17.20 p50=16.5 p95=25.1 p99=30.6 max=34.9 ms
+BENCH final20 proc gc     n=0 mean=0.00 p50=0.0 p95=0.0 p99=0.0 max=0.0 ms
+BENCH final20 heap: 0 net bytes per update, 0 detected collections in 20.0 s
+BENCH final20 sync: mean=2.186 max=11.734 ms (COMMIT wait incl STATUS polling), stats FRAME_COUNT read mean=0.324 ms
+BENCH final20 over 16.7 ms: 164, cadence (VBlanks per shown update) 1:1102 2:49
+BENCHRAW final20 net_heap_growth=176 sampled_updates=1110 detected_collections=0
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 3492 updates in 60.0 s (58.19 updates/s, 343 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 8.81 MB (COPY 3.41 MB)
+SAKURA display: 3491 COMMITs confirmed in 60.0 s (58.17 displayed/s)
+BENCH soak updates=3492 displayed/s=58.17 vblanks=3600 (59.99 Hz)
+BENCH soak proc all    n=3491 mean=14.09 p50=13.3 p95=19.0 p99=20.0 max=30.2 ms
+BENCH soak proc normal n=2724 mean=13.27 p50=13.2 p95=13.6 p99=14.0 max=14.3 ms
+BENCH soak proc hud    n=767 mean=17.00 p50=16.4 p95=20.0 p99=30.0 max=30.2 ms
+BENCH soak proc gc     n=0 mean=0.00 p50=0.0 p95=0.0 p99=0.0 max=0.0 ms
+BENCH soak heap: 0 net bytes per update, 0 detected collections in 60.0 s
+BENCH soak sync: mean=1.680 max=11.851 ms (COMMIT wait incl STATUS polling), stats FRAME_COUNT read mean=0.341 ms
+BENCH soak over 16.7 ms: 376, cadence (VBlanks per shown update) 1:3382 2:109
+BENCHRAW soak net_heap_growth=0 sampled_updates=3450 detected_collections=0
+PLAIN final20
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 1200 updates in 20.0 s (59.99 updates/s, 86 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 7.93 MB (COPY 1.17 MB)
+SAKURA display: 1199 COMMITs confirmed in 20.0 s (59.94 displayed/s)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sakura-perf\run is mounted at /remote

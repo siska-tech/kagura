@@ -1,0 +1,20 @@
+FW link._fast True device kagura/link.py
+SAKURA CAPS 0x5b, 240 lines
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 17480 ms (702084 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph steady oam short)
+SAKURA PASS: 1188 updates in 20.0 s (59.38 updates/s, 110 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 2.53 MB (COPY 1.16 MB)
+GROSS gc256-direct stats=True allocations=0 bytes=0 collections=0 GCenabled=True
+BENCH gc256-direct updates=1188 displayed/s=59.33 vblanks=1200 (59.98 Hz)
+BENCH gc256-direct proc all    n=1187 mean=13.24 p50=12.4 p95=20.1 p99=20.3 max=20.6 ms
+BENCH gc256-direct proc normal n=927 mean=12.42 p50=12.4 p95=12.8 p99=13.2 max=13.4 ms
+BENCH gc256-direct proc hud    n=260 mean=16.19 p50=15.3 p95=20.3 p99=20.4 max=20.6 ms
+BENCH gc256-direct proc gc     n=0 mean=0.00 p50=0.0 p95=0.0 p99=0.0 max=0.0 ms
+BENCH gc256-direct heap: 0 net bytes per update, 0 detected collections in 20.0 s
+BENCH gc256-direct over 16.7 ms: 101, cadence (VBlanks per shown update) 1:1174 2:13
+GROSS audio lengths [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 38, 44, 50]
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph steady oam short)
+SAKURA PASS: 1200 updates in 20.0 s (59.99 updates/s, 86 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 3.93 MB (COPY 1.17 MB)
+GROSS gc256-direct stats=False allocations=0 bytes=0 collections=0 GCenabled=True
+GROSS audio lengths [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 38, 44, 50]
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sakura-perf\run is mounted at /remote

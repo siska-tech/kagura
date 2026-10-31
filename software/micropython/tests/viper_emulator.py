@@ -8,7 +8,7 @@ from pathlib import Path
 # Locals holding uint words (nibble-replicated colours, XOR tests).
 UNSIGNED = {'word', 'oldword', 'newword', 'ones', 'highs', 'allones', 'v'}
 # Per-width access counts, so tests can prove which copy path ran.
-ACCESS = {'read1': 0, 'read4': 0, 'write1': 0, 'write4': 0}
+ACCESS = {'read1': 0, 'read2': 0, 'read4': 0, 'write1': 0, 'write2': 0, 'write4': 0}
 
 
 def int32(value):
@@ -18,6 +18,8 @@ def int32(value):
 
 class Pointer:
     def __init__(self,buffer,width):
+        if isinstance(buffer, str):
+            buffer = buffer.encode('utf-8')  # MicroPython exposes str's UTF-8 buffer to Viper.
         self.buffer=memoryview(buffer).cast('B')
         self.width=width
     def __getitem__(self,index):
@@ -34,13 +36,14 @@ class Pointer:
         self.buffer[offset:offset+self.width]=(value&((1<<(8*self.width))-1)).to_bytes(self.width,'little')
 
 
-def load():
-    path=Path(__file__).resolve().parents[1]/'kagura/framebuffer_viper.py'
-    tree=ast.parse(path.read_text())
+def load(path=None):
+    """The kernels of path (default kagura/framebuffer_viper.py) as a namespace."""
+    path=Path(path) if path else Path(__file__).resolve().parents[1]/'kagura/framebuffer_viper.py'
+    tree=ast.parse(path.read_text(encoding='utf-8'))
     functions=[node for node in tree.body if isinstance(node,ast.FunctionDef)]
     for node in functions:node.decorator_list=[]
     module=ast.Module(body=functions,type_ignores=[])
-    namespace=dict(ptr8=lambda b:Pointer(b,1),ptr32=lambda b:Pointer(b,4),
+    namespace=dict(ptr8=lambda b:Pointer(b,1),ptr16=lambda b:Pointer(b,2),ptr32=lambda b:Pointer(b,4),
                    int=int32,uint=lambda n:int(n)&0xFFFFFFFF)
     exec(compile(module,str(path),'exec'),namespace)
     return types.SimpleNamespace(**{node.name:namespace[node.name] for node in functions})

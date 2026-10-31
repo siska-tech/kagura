@@ -1,0 +1,17 @@
+SDK FINAL device kagura/device.mpy
+SAKURA CAPS 0x5b, 240 lines, nopcm: melody on the PSG sine
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 16447 ms (16384 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 18 updates in 3.1 s (5.84 updates/s, 119 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 0.02 MB (COPY 0.02 MB)
+SAKURA display: 17 COMMITs confirmed in 3.1 s (5.51 displayed/s)
+Local directory build/sakura-perf/run is mounted at /remote
+SDK FINAL device kagura/device.mpy
+PLAINPROBE acceleration.close()
+SAKURA CAPS 0x5b, 240 lines, nopcm: melody on the PSG sine
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 16592 ms (16384 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 18 updates in 3.1 s (5.76 updates/s, 119 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 0.02 MB (COPY 0.02 MB)
+SAKURA display: 17 COMMITs confirmed in 3.1 s (5.44 displayed/s)
+PLAINPROBE connect(accelerate=False)

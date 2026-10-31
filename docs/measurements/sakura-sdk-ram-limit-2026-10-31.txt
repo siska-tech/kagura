@@ -1,0 +1,27 @@
+SDK FINAL device kagura/device.mpy
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/finalbench.py", line 7, in run
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 937, in __init__
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 183, in __init__
+MemoryError: memory allocation failed, allocating 4096 bytes
+Local directory build/sakura-perf/run is mounted at /remote
+SDK FINAL device kagura/device.mpy
+PLAINPROBE acceleration.close()
+SAKURA CAPS 0x5b, 240 lines, nopcm: melody on the PSG sine
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 16592 ms (16384 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 18 updates in 3.1 s (5.76 updates/s, 119 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 0.02 MB (COPY 0.02 MB)
+SAKURA display: 17 COMMITs confirmed in 3.1 s (5.44 displayed/s)
+PLAINPROBE connect(accelerate=False)
+SAKURA CAPS 0x5b, 240 lines, nopcm: melody on the PSG sine
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/plainprobe.py", line 25, in run
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/plainprobe.py", line 11, in check
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 1253, in run
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 1227, in load
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 378, in build_scenery
+MemoryError: memory allocation failed, allocating 2344 bytes
+Local directory build/sakura-perf/run is mounted at /remote
