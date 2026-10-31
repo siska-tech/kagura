@@ -65,7 +65,18 @@ class Transport:
     def write(self, offset, data, inc=False):
         assert self.device.busy > 0, 'bare transport write outside device.busy'
         for i, value in enumerate(data):
-            self.device.reg[offset + (i if inc else 0)] = value
+            if offset == R.REG_COMMAND and not inc:
+                self.device.write_reg(offset, value)
+            else:
+                self.device.reg[offset + (i if inc else 0)] = value
+
+    def readinto(self, offset, buffer, inc=False):
+        assert self.device.busy > 0, 'bare transport read outside device.busy'
+        assert len(buffer) == 1 and not inc
+        if offset == R.REG_AUDIO_REG_DATA:
+            buffer[0] = self.device.audio_read(self.device.reg[R.REG_AUDIO_REG_INDEX])
+        else:
+            buffer[0] = self.device.read_reg(offset)
 
 
 class Device:
@@ -324,6 +335,95 @@ class Sound(unittest.TestCase):
         for update in skipping:
             gains = sorted(i for i in update if i % 16 == R.AUDIO_GAIN_L)
             self.assertEqual(gains, [2 * 16 + 4, 3 * 16 + 4, 4 * 16 + 4, 5 * 16 + 4])
+
+
+class Optimized(unittest.TestCase):
+    """Each main-loop optimization against the code it replaces."""
+
+    def test_palette_tables_match_palette_frame(self):
+        fast = S.PaletteFrame()
+        a, b = bytearray(512), bytearray(512)
+        S.build_palette(a, 0)
+        S.build_palette(b, 0)
+        for t in list(range(0, 3000)) + [3000 + 7 * i for i in range(400)] + [216000, 216003]:
+            S.palette_frame(a, t)
+            fast(b, t)
+            self.assertEqual(a, b, t)
+
+    def test_allocation_free_replacements_are_exact(self):
+        # The gust sweep's whole-hertz steps: 700 .. 700 + 120 * 22 + 64 * 6, and beyond.
+        for hz in range(0, 4096):
+            self.assertEqual(S.step_whole_hz(hz), S.step_hz(hz), hz)
+        # The lantern flame in native words against mix() in Python integers.
+        for key in list(range(0, 3000)) + [72000 + 7919 * i for i in range(300)] + [(1 << 30) - 1]:
+            f = S.mix(key)
+            self.assertEqual(S.K.flame(key), S.rgb(15, 10 + f % 4, 3 + (f >> 8) % 3), key)
+        self.assertEqual(S.SEMI_STEPS[-3], S.semi_step(-3))
+
+    def test_band_template_matches_bands(self):
+        for lines in (240, 180):
+            for rscroll in (True, False):
+                for copy in (True, False):
+                    slow, quick = Demo(), Demo()
+                    for demo in (slow, quick):
+                        demo.ext, demo.lines, demo.rscroll, demo.copy = bytearray(80), lines, rscroll, copy
+                    quick.bands = lambda t: S.Sakura.bands(quick, t)
+                    S.Sakura.bands_template(quick)
+                    for t in list(range(0, 1100, 3)) + [216000, 999999]:
+                        n = S.Sakura.bands(slow, t)
+                        self.assertEqual(S.Sakura.bands_fast(quick, t), n)
+                        self.assertEqual(slow.ext[:n], quick.ext[:n], (lines, rscroll, copy, t))
+
+    def test_hud_by_difference_matches_full_redraw(self):
+        import random
+        rng = random.Random(3)
+        full, diff = Demo(), Demo()
+        for demo in (full, diff):
+            demo.d = Device()
+            demo.text = S.Text(FONT)
+            demo.hud_rows = [b'', b'']
+            demo.upload = (lambda demo: lambda first, tiles, row=None: S.Sakura.upload(demo, first, tiles, row))(demo)
+        diff.hud_strips = [diff.text.strip, bytearray(4096)]
+        diff.hud_placed = [None, None]
+        for name in ('hud_prepare', 'hud_paint', 'hud_upload'):   # the loop's separate steps
+            setattr(diff, name, getattr(S.Sakura, name).__get__(diff))
+        hud = {'fps10': 600, 'status': None, 'overflow': 0, 'underrun': 0, 'line_underrun': 0,
+               'psram_bytes': 0, 'psram_kbs': 0, 'errors': 0}
+        sent = []
+        for step in range(150):
+            if step:
+                hud['fps10'] = rng.choice((600, 598, 437, 1, 999, hud['fps10']))
+                hud['psram_bytes'] += rng.choice((0, 5, 70000, 1 << 20, 3 << 22))
+                hud['psram_kbs'] = rng.choice((0, 9, 345, 12345, hud['psram_kbs']))
+                if rng.random() < 0.1:
+                    hud['overflow'] += rng.choice((1, 9, 90))
+                if rng.random() < 0.1:
+                    hud['underrun'] += rng.choice((1, 12))
+                if rng.random() < 0.05:
+                    hud['errors'] |= rng.choice((0x20, 0x80, 0x01))
+                    hud['line_underrun'] += 1
+            S.Sakura.draw_hud(full, hud)
+            sent.append(sum(S.Sakura.hud_row(diff, row, S.Sakura.hud_runs(diff, hud, row)) for row in range(2)))
+            self.assertEqual(full.d.memory[16 * 32:96 * 32], diff.d.memory[16 * 32:96 * 32], step)
+        self.assertEqual(sent[0], 80)
+        self.assertLess(sum(sent[1:]) / len(sent[1:]), 40, 'mostly a few tiles per update')
+
+    def test_every_option_alone_and_together_passes(self):
+        for opt in [()] + [(o,) for o in S.OPTS] + [S.OPTS]:
+            d = Device()
+            d.vblanks_per_read = 2
+            stats = S.Stats()
+            demo = S.Sakura(d, font=FONT, assets=ASSETS, pcm=False, opt=opt)
+            demo.load()
+            self.assertTrue(demo.loop(0.3, stats), opt)
+            self.assertEqual(d.busy, 0)
+            self.assertGreater(d.copies, 0)
+            self.assertEqual(d.ext[R.EXT_RS_COUNT], S.BANDS + 1)
+            self.assertGreater(stats.n, 3)
+            # The fake counter moves on every read: a constant cadence means one shown frame per update.
+            self.assertEqual(sum(1 for c in stats.cadence if c), 1, opt)
+            self.assertEqual(stats.vblanks, sum(c * stats.cadence[c] for c in range(16)))
+            stats.report(' '.join(opt) or 'none', stats.seconds)
 
 
 class Run(unittest.TestCase):

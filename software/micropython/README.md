@@ -415,3 +415,7 @@ mpremote connect COM5 exec "import sakura; sakura.run(60)"
 場面・パレット・spriteの層・ラスタ表・旋律と伴奏・HUDはC版と同じで、`tests/test_sakura.py`がC版をPC上で動かした出力とbyte単位で照合する（PCM有効時の突風効果音の周波数だけは、C版のfloat計算とCPythonのdoubleでstep値の最下位bitが変わり得るため照合から外している）。RP2040のMicroPythonでは1更新が60 Hzに収まらない見込みなので、動きと音楽はFRAME_COUNT_L（VBlank数）で進め、間に合わないVBlankは描画を飛ばす（遅くはならない）。HUDのFPSは更新回数で、60を下回れば赤になる。花びらOAM・HUD文字・ピアノの再標本化はViper（`examples/sakura_viper.py`）、ラスタ表とCOPY_SRCは1回の`ext_writes()`で送る。PCMのstatusはC版の毎フレームではなくHUD更新（15 VBlankごと）で読む（異常bitはCLEARまで保持されるので見落とさないが、15 VBlank内の複数回は1回と数える）。
 
 実機（2026-10-31、RP2040 125 MHz、QSPI 5 MHz、`accelerate()`、480p FULL+PSRAMのbitstream＝CAPS 0x5B・240 lines、`.mpy`を`mpremote mount`で読込み）で30秒: 1316更新（43.8 updates/s、VBlank 1801回のうち485回は描画を飛ばした）、spriteオーバーフロー0・PCMアンダーラン0・line underrun 0・ERROR_CODE 0でPASS。PSRAM転送3.21 MB（COPY 1.29 MB）。読込みは19.0秒（背景生成とmount経由のファイル読込みを含む）。720p（180 lines）では未測定。映像と音の品質は自動では判定していない。
+
+主ループの最適化は`run(..., opt=...)`で個別に切り替えられる（既定は全部、`opt=()`で元のループ）。`order`（前のCOMMIT適用を待ってから転送）、`hud`（変化したHUDタイルだけを1更新に1行ずつ描き直す）、`bands`（ラスタ表は変わる値だけ書く）、`palette`（色は表引き、灯籠の`mix()`はViperで）、`regs`（毎フレームのレジスタ読出しとCOPY命令をlink 1トランザクションで）。あわせてドライバの毎フレーム操作（`read_reg`・`write_reg`・`ext_writes`・`audio_read`・`audio_writes`・`write_memory`・`wait_status`・`fence`・`commit`・`audio_commit`）はaccelerate時にheapを確保しない。
+
+同条件（上と同じ実機・bitstream、全最適化、20秒）で、旧ドライバ→新ドライバ: 1更新あたりの確保935→168 byte、GC 12→2回、通常更新の処理p50/p95/p99 14.9/16.8/17.2→13.5/14.5/16.2 ms、表示間隔（1/2/3 VBlank）741/214/10→988/103/2、表示更新55.7〜55.9回/秒（統計なし）。残る確保はHUDの数値整形（約2.2 KB/15 VBlank）で、HUD更新（p50 19.4 ms）とGCの入る更新（約50 ms）は1フレーム16.67 msを超える。

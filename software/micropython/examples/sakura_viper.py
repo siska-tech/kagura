@@ -79,6 +79,24 @@ def build_oam(oam, xs, phases, sine, layers, p):
 
 
 @micropython.viper
+def flame(key: int) -> int:
+    """sakura.palette_frame()'s lantern colour rgb(15, 10 + h % 4, 3 + (h >> 8) % 3)
+    for h = mix(key), in native 32-bit words: no big integers on the RP2040.
+    The masks keep 64-bit Viper ports and the host model, whose integers never
+    wrap, exact."""
+    mask = (uint(0xffff) << 16) | uint(0xffff)
+    h = uint(key) & mask
+    h ^= h >> 16
+    h = (h * uint((0x7feb << 16) | 0x352d)) & mask
+    h ^= h >> 15
+    h = (h * uint((0x846c << 16) | 0xa68b)) & mask
+    h ^= h >> 16
+    g = int(h & uint(3))
+    b = int((h >> 8) & uint(0xffffff)) % 3
+    return (15 << 8) | ((10 + g) << 4) | (3 + b)
+
+
+@micropython.viper
 def glyph(strip, x: int, rows, wc: int):
     """Draw 8 glyph rows (bit 7 leftmost) at x into the 8 x 512 strip with a
     drop shadow of colour 1; wc = width | colour << 8."""
@@ -95,6 +113,52 @@ def glyph(strip, x: int, rows, wc: int):
                 px = x + b + dx
                 if (bits & (0x80 >> b)) and px >= 0 and px < 512:
                     st[(y + dx) * 512 + px] = c
+
+
+@micropython.viper
+def draw_run(strip, atlas, layout, xc: int, clip: int):
+    """glyph() for a whole run of text, drawing only pixels lo <= px < hi.
+
+    atlas: 8 rows per glyph slot; layout: 4 bytes per glyph (dx low, dx
+    high, slot, width); xc = x | colour << 12; clip = lo | hi << 12.
+    Redrawing the glyphs over a cleared span in their original order
+    reproduces exactly what a full redraw leaves there."""
+    st = ptr8(strip)
+    at = ptr8(atlas)
+    lay = ptr8(layout)
+    x0 = xc & 0xfff
+    colour = (xc >> 12) & 15
+    lo = clip & 0xfff
+    hi = (clip >> 12) & 0xfff
+    n = int(len(layout)) >> 2
+    for g in range(n):
+        x = x0 + int(lay[4 * g]) + (int(lay[4 * g + 1]) << 8)
+        width = int(lay[4 * g + 3])
+        if x >= hi or x + width < lo:
+            continue
+        r = int(lay[4 * g + 2]) * 8
+        for shadow in range(2):
+            dx = 1 - shadow
+            c = 1 if shadow == 0 else colour
+            for y in range(8 - dx):
+                bits = int(at[r + y])
+                for b in range(width):
+                    px = x + b + dx
+                    if (bits & (0x80 >> b)) and px >= lo and px < hi:
+                        st[(y + dx) * 512 + px] = c
+
+
+@micropython.viper
+def pack_span(strip, out, first: int, end: int):
+    """pack() of the cells first..end-1 only, at their own places in out."""
+    st = ptr8(strip)
+    o = ptr8(out)
+    for t in range(first, end):
+        for y in range(8):
+            row = y * 512 + t * 8
+            d = t * 32 + y * 4
+            for x in range(4):
+                o[d + x] = (st[row + 2 * x] << 4) | st[row + 2 * x + 1]
 
 
 @micropython.viper
