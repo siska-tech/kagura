@@ -84,12 +84,20 @@ WRAP = 352 * 16    # wind_x period in 1/16 px; the petals wrap every 352 px
 #   bands   fill only the changing values of a precomputed EXT table
 #   palette per-frame colours from tables, the flame's mix() every third VBlank
 #   regs    per-frame register reads and the COPY command as bare link transactions
-OPTS = ('order', 'hud', 'bands', 'palette', 'regs')
+#   hudascii draw ASCII HUD fields directly, without caching numeric layouts
+#   hudbuf  fixed fields and native diff/draw; load its kernels after the scene
+#   hudround match RP2 float32 MB formatting with integer arithmetic
+#   hudglyph dirty only the changed glyphs within a stationary fixed field
+#   steady  optionally reserve every sound view before timing (STEADY_OPTS)
+#   short   fixed register transactions through Link's ownership/error wrapper
+OPTS = ('order', 'hud', 'bands', 'palette', 'regs', 'hudascii', 'hudbuf', 'hudround', 'hudglyph', 'short')
+STEADY_OPTS = OPTS + ('steady',)
 
 MARQUEE = ("◆ 神楽九 KAGURA-9 ◆ 桜256枚・ラスター8段・PSRAMピアノ2声・PSG6声 同時処理中 "
            "◆ Tang Nano 9K + Raspberry Pi Pico + MicroPython")   # 512 px; the 512 px loop wraps into the first ◆
 TITLE = "神楽 全機能ストレステスト"
 LABELS = ("スプライト", "オーバーフロー", "PCMアンダーラン")
+HUD_WIDE = (TITLE,) + LABELS
 LOADING = ("背景を生成中", "オーロラをPSRAMへ転送中", "オーロラを生成中",
            "ピアノ音源をPSRAMへ転送中", "音源を初期化中")
 
@@ -167,12 +175,12 @@ class Text:
         if len(codes) > 256:
             raise ValueError('more than 256 glyphs')
         self.slots = {code: i for i, code in enumerate(codes)}
-        self.atlas = b''.join(self.glyphs[code][0] for code in codes)
+        # ASCII slot lookup precedes the glyph rows, shared by both draw_run modes.
+        self.atlas = bytes(self.slots.get(code, self.slots[0x3f]) for code in range(128)) + b''.join(
+            self.glyphs[code][0] for code in codes)
         self.layouts = {}
         self.strip = bytearray(8 * 512)
         self.packed = bytearray(64 * 32)
-        self._bar = bytes((C_BAR,)) * (7 * 512)
-        self._rules = {c: bytes((c,)) * 512 for c in (C_BAR, C_RULE)}
 
     def text(self, x, s, colour):
         """Draw UTF-8 text with a drop shadow; with colour 0 only measure.
@@ -186,8 +194,7 @@ class Text:
         return x
 
     def clear(self, rule):
-        self.strip[:7 * 512] = self._bar
-        self.strip[7 * 512:] = self._rules[rule]
+        K.clear_span(self.strip, 0, 512, rule)
 
     def pack(self, tiles):
         K.pack(self.strip, self.packed, tiles)
@@ -571,6 +578,7 @@ class Sound:
     def __init__(self, d, pcm, psg):
         self.d, self.pcm, self.psg = d, pcm, psg
         self.ops, self.n = bytearray(128), 0
+        self.ops_view = memoryview(self.ops)
         self.views = {}
         self.noise = self.bass = self.bell = self.gust = self.lead = 0
         self.next_pcm = 0
@@ -580,6 +588,16 @@ class Sound:
         self.note_len = [[0, 0] for _ in range(NOTES)]
         self.audio_read = d.audio_read   # Sakura swaps in a raw read for opt 'regs'
         self.started = False             # a piano note started since the flag was cleared
+        self.steady = False
+
+    def reserve_views(self):
+        view = self.ops_view
+        # All queued lengths of the melody/envelopes with 1..8 VBlanks per
+        # update. Reserve the used lengths rather than enlarging the dict
+        # to every even size; arbitrary future writes still use send's fallback.
+        for n in (12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 38, 44, 50):
+            if n not in self.views:
+                self.views[n] = view[:n]
 
     def write(self, index, value):
         ops, n = self.ops, self.n
@@ -591,7 +609,7 @@ class Sound:
         if n:
             view = self.views.get(n)
             if view is None:                        # one view per length, kept: no new view per update
-                view = self.views[n] = memoryview(self.ops)[:n]
+                view = self.views[n] = self.ops_view[:n] if self.steady else memoryview(self.ops)[:n]
             self.d.audio_writes(view)
             self.n = 0
 
@@ -640,6 +658,14 @@ class Sound:
             self.d.audio_commit()
 
     def played(self, p, now):
+        if self.steady:
+            length = self.length[p]
+            elapsed = ticks_diff(now, self.start[p])
+            if length <= 0 or elapsed <= 0:
+                return 0
+            if elapsed >= 1000000 and length <= 48000:
+                return length
+            return min(elapsed * 48 // 1000, length)
         n = ticks_diff(now, self.start[p]) * 48 // 1000
         return max(0, min(n, self.length[p]))
 
@@ -753,6 +779,7 @@ def _keyboard():
 
     # ipoll() reuses one result instead of returning a new list (no garbage per update).
     ready = getattr(poll, 'ipoll', poll.poll)
+    ready(0)                                       # allocate ipoll's cached tuple before timing; do not read stdin
 
     def pressed():
         for _ in ready(0):
@@ -776,8 +803,9 @@ class Stats:
     COMMITs, read right after each wait, so every counted update was shown.
 
     The heap is sampled every SAMPLE updates (gc.mem_alloc() walks the whole
-    allocation table, milliseconds): bytes per update from windows without a
-    collection; a drop marks a collection, whose update is taken to be the
+    allocation table, milliseconds): net heap growth per update from windows
+    without a collection. Temporaries freed before a sample (notably VM call
+    frames) are not counted. A drop detects a collection, whose update is taken to be the
     slowest one of that window and is counted under 'gc' instead.
     """
 
@@ -786,7 +814,7 @@ class Stats:
     SAMPLE = 30    # updates per heap sample
 
     def __init__(self):
-        # Allocated once (reset() reuses them): recording and reporting allocate nothing.
+        # Recording buffers allocated once; reset() reuses them.
         self.hist = [array('H', (0 for _ in range(self.BINS))) for _ in range(4)]   # all, normal, hud, gc
         self.total = [0, 0, 0, 0]
         self.count = [0, 0, 0, 0]
@@ -804,6 +832,8 @@ class Stats:
         self.over = 0      # updates over one 59.94 Hz frame (16.68 ms)
         self.n = 0
         self.frame = None
+        self.confirmed = None
+        self.sync_us = self.sync_max_us = self.sample_us = 0
         self.vblanks = 0
         self.track_heap = hasattr(gc, 'mem_alloc')   # MicroPython only
         self.heap = None
@@ -860,14 +890,19 @@ class Stats:
         return (n, self.total[k] / n / 1000) + tuple(out)
 
     def report(self, label, seconds):
+        displayed = self.n - 1 if self.confirmed is None else self.confirmed
         print('BENCH %s updates=%d displayed/s=%.2f vblanks=%d (%.2f Hz)' % (
-            label, self.n, (self.n - 1) / seconds, self.vblanks, self.vblanks / seconds))
+            label, self.n, displayed / seconds, self.vblanks, self.vblanks / seconds))
         for k, name in ((0, 'all   '), (1, 'normal'), (2, 'hud   '), (3, 'gc    ')):
             print('BENCH %s proc %s n=%d mean=%.2f p50=%.1f p95=%.1f p99=%.1f max=%.1f ms' % (
                 (label, name) + self.summary(k)))
         if self.heap is not None:
-            print('BENCH %s heap: %.0f bytes allocated per update, %d collections in %.1f s' % (
+            print('BENCH %s heap: %.0f net bytes per update, %d detected collections in %.1f s' % (
                 label, self.allocated / max(1, self.allocating), self.collections, seconds))
+        print('BENCH %s sync: mean=%.3f max=%.3f ms (COMMIT wait incl STATUS polling), '
+              'stats FRAME_COUNT read mean=%.3f ms' % (
+                  label, self.sync_us / max(1, self.n) / 1000, self.sync_max_us / 1000,
+                  self.sample_us / max(1, self.n) / 1000))
         print('BENCH %s over 16.7 ms: %d, cadence (VBlanks per shown update) %s' % (
             label, self.over, ' '.join('%d:%d' % (c, self.cadence[c]) for c in range(16) if self.cadence[c])))
 
@@ -902,7 +937,7 @@ class Sakura:
         self.sound = Sound(d, self.pcm, psg)
         self.oam = bytearray(R.VRAM_OAM_SIZE)
         self.pal = bytearray(R.VRAM_PALETTE_SIZE)
-        self.work = bytearray(8192)
+        self.work = bytearray(4096)                  # map row/table and streaming piano output
         self.ext = bytearray(2 * (3 + 1 + 4 * (BANDS + 1) + 1 + 3))
         self.p = array('i', [0] * 5)
         self.wind_x = [0, 0, 0]                     # 1/16 px
@@ -969,7 +1004,7 @@ class Sakura:
     # tiles dirty, and only glyphs over those tiles are drawn again.
 
     def hud_runs(self, h, row):
-        m = self.text.measure
+        m = self.hud_width
         if row == 0:
             v = 'FPS %d.%d' % (h['fps10'] // 10, h['fps10'] % 10)
             return ((3, 'KAGURA-9', C_TEXT), (3 + m('KAGURA-9') + 6, TITLE, C_NOTE),
@@ -1001,7 +1036,7 @@ class Sakura:
     def hud_prepare(self, row, runs):
         """Diff runs against what the row shows; keep the dirty tile span in
         hud_first/hud_end and the runs to paint. False when nothing changed."""
-        layout = self.text.layout
+        width = self.hud_width
         old = self.hud_placed[row]
         if old is None:
             lo, hi = 0, 320
@@ -1009,15 +1044,21 @@ class Sakura:
             lo, hi = 512, 0
             for run in runs:
                 if run not in old:
-                    lo, hi = min(lo, run[0]), max(hi, run[0] + layout(run[1])[1] + 1)   # + 1: the shadow
+                    lo, hi = min(lo, run[0]), max(hi, run[0] + width(run[1]) + 1)   # + 1: the shadow
             for run in old:
                 if run not in runs:
-                    lo, hi = min(lo, run[0]), max(hi, run[0] + layout(run[1])[1] + 1)
+                    lo, hi = min(lo, run[0]), max(hi, run[0] + width(run[1]) + 1)
             if hi <= lo:
                 return False
         self.hud_placed[row] = runs
         self.hud_first, self.hud_end = max(0, lo // 8), min(40, (hi + 7) // 8)
         return self.hud_first < self.hud_end
+
+    def hud_width(self, s):
+        # HUD runs are either all ASCII (4 px each), or fixed Japanese labels.
+        if 'hudascii' in self.opt and s not in HUD_WIDE:
+            return len(s) * 4
+        return self.text.layout(s)[1]
 
     def hud_paint(self, row):
         """Clear the dirty span of the row's strip, draw the runs over it, pack it."""
@@ -1025,12 +1066,13 @@ class Sakura:
         layout, first, end = tx.layout, self.hud_first, self.hud_end
         a, b = first * 8, end * 8
         strip = self.hud_strips[row]
-        bar = memoryview(tx._bar)[:b - a]
-        for y in range(7):
-            strip[y * 512 + a:y * 512 + b] = bar
-        strip[7 * 512 + a:7 * 512 + b] = memoryview(tx._rules[C_BAR if row == 0 else C_RULE])[:b - a]
+        K.clear_span(strip, a, b, C_BAR if row == 0 else C_RULE)
         clip, atlas = a | b << 12, tx.atlas
         for x, s, colour in self.hud_placed[row]:
+            if 'hudascii' in self.opt and s not in HUD_WIDE:
+                if x < b and x + len(s) * 4 >= a:
+                    K.draw_run(strip, atlas, s, x | colour << 12 | 0x10000, clip)
+                continue
             lay, width = layout(s)
             if x < b and x + width >= a:
                 K.draw_run(strip, atlas, lay, x | colour << 12, clip)
@@ -1195,7 +1237,7 @@ class Sakura:
             gc.collect()
         self.loading(LOADING[4])
         self.sound.init(work)
-        self.work = None                            # 8 KB less for every collection to scan
+        self.work = None                            # release the loading workspace
         print('SAKURA loaded in %d ms (%d bytes to PSRAM)' % (ticks_diff(ticks_ms(), t_load), load_bytes))
         for i in range(256):
             h = mix(i * 2654435761 + 7)
@@ -1215,37 +1257,66 @@ class Sakura:
         True on PASS. stats: a Stats to fill (adds one FRAME_COUNT read per
         update, excluded from its processing time)."""
         d, sound, p, opt = self.d, self.sound, self.p, self.opt
+        track_sync = stats and hasattr(stats, 'sync_us')
         o_order, o_hud, o_bands, o_regs = 'order' in opt, 'hud' in opt, 'bands' in opt, 'regs' in opt
         tr = d.transport
         b1 = bytearray(1)
         ab = bytearray(1)
+        link = getattr(tr, 'link', None) if 'short' in opt and o_regs else None
+        short = link is not None and hasattr(link, '_fast')
+        if short:
+            # Known byte-sized register operations; keep Link's ownership,
+            # abort and exception translation. Call the method directly:
+            # caching a bound _fast would allocate an argument array per call.
+            short_kernel = link.k._short
 
-        def reg(offset):                            # one bare link transaction (opt 'regs')
-            tr.readinto(offset, b1)
-            return b1[0]
+            def reg(offset):
+                return link._fast('read', short_kernel, 2, 0x80 | offset, 0)
 
-        def audio_reg(index):
-            ab[0] = index
-            tr.write(R.REG_AUDIO_REG_INDEX, ab)
-            tr.readinto(R.REG_AUDIO_REG_DATA, b1)
-            return b1[0]
+            def audio_reg(index):
+                link._fast('write', short_kernel, 2, 0x100 | R.REG_AUDIO_REG_INDEX, index)
+                return link._fast('read', short_kernel, 2, 0x80 | R.REG_AUDIO_REG_DATA, 0)
+        else:
+            def reg(offset):                        # one bare link transaction (opt 'regs')
+                tr.readinto(offset, b1)
+                return b1[0]
+
+            def audio_reg(index):
+                ab[0] = index
+                tr.write(R.REG_AUDIO_REG_INDEX, ab)
+                tr.readinto(R.REG_AUDIO_REG_DATA, b1)
+                return b1[0]
         read_reg = reg if o_regs else d.read_reg
         sound.audio_read = audio_reg if o_regs else d.audio_read
+        sound.steady = 'hudround' in opt or 'steady' in opt
+        rate = None
+        if sound.steady:
+            from sakura_hud_viper import bandwidth
+            rate = bandwidth
+        if 'steady' in opt:
+            sound.reserve_views()
         palette = PaletteFrame() if 'palette' in opt else palette_frame
         if o_bands:
             self.bands_template()
             ext_view = memoryview(self.ext)[:self.ext_n]   # the length never changes: no view per update
         print('SAKURA GO - %s (opt %s)' % ('timed run' if seconds else 'press any key to stop',
-                                           ' '.join(o for o in OPTS if o in opt) or 'none'))
+                                           ' '.join(o for o in STEADY_OPTS if o in opt) or 'none'))
         pressed = _keyboard()
         hud = {'fps10': 600, 'status': None, 'overflow': 0, 'underrun': 0, 'line_underrun': 0,
                'psram_bytes': 0, 'psram_kbs': 0, 'errors': 0}
-        if o_hud:                                   # the first full draw happens before the timed run
+        fixed_hud = None
+        if o_hud and 'hudbuf' in opt:
+            from sakura_hud import Hud
+            fixed_hud = Hud(self)
+            for row in range(2):
+                fixed_hud.update(hud, row)
+        elif o_hud:                                 # the first full draw happens before the timed run
             self.hud_strips = [self.text.strip, bytearray(8 * 512)]
             self.hud_placed = [None, None]
             for row in range(2):
                 self.hud_row(row, self.hud_runs(hud, row))
         copy_bytes = overflow_frames = device_errors = updates = skipped = 0
+        confirmed, pending = 0, False
         ovf_index = ovf_line = stage = shown = 0
         t, gust = -1, 0
         aurora = bytes((TILE_AURORA * 32 & 255, TILE_AURORA * 32 >> 8, 0))
@@ -1285,6 +1356,7 @@ class Sakura:
                 updates += 1
                 window_updates += 1
                 waited = 0
+                synced = sampled = 0
                 try:
                     if not o_order:
                         # Queued behind the previous COMMIT, which applies them at the next VBlank.
@@ -1294,24 +1366,37 @@ class Sakura:
                     # the wait comes first, and this update's writes all go to the next frame.
                     w0 = ticks_us()
                     d.wait_status(R.STATUS_COMMIT_BUSY, 0)
+                    if track_sync:
+                        synced = ticks_diff(ticks_us(), w0)
+                    if pending:
+                        confirmed += 1
+                        pending = False
                     if stats:
                         shown = reg(R.REG_FRAME_COUNT_L)
                     waited = ticks_diff(ticks_us(), w0)
+                    if track_sync:
+                        sampled = waited - synced
                     if o_order:
                         d.write_memory(R.VRAM_OAM_BASE, oam)
                         d.write_memory(R.VRAM_PALETTE_BASE, pal)
                     self.ext_writes(ext_view if o_bands else memoryview(self.ext)[:n])
                     if self.copy:
-                        tr.write(R.REG_VRAM_ADDR_L, aurora, True)
-                        tr.write(R.REG_LENGTH_L, b'\x00\x04', True)
-                        if o_regs:
-                            tr.write(R.REG_COMMAND, b'\x05')   # CMD_COPY
+                        if short:
+                            link._fast('write', short_kernel, 2, 0x340 | R.REG_VRAM_ADDR_L, TILE_AURORA * 32)
+                            link._fast('write', short_kernel, 2, 0x240 | R.REG_LENGTH_L, 1024)
+                            link._fast('write', short_kernel, 2, 0x100 | R.REG_COMMAND, R.CMD_COPY)
                         else:
+                            tr.write(R.REG_VRAM_ADDR_L, aurora, True)
+                            tr.write(R.REG_LENGTH_L, b'\x00\x04', True)
+                        if o_regs and not short:
+                            tr.write(R.REG_COMMAND, b'\x05')   # CMD_COPY
+                        elif not o_regs:
                             d.write_reg(R.REG_COMMAND, R.CMD_COPY)
                         copy_bytes += 1024
                     sound.send()
                     d.audio_commit()
                     d.commit(wait=False)
+                    pending = True
                     # Counters: sprite overflow (IRQ b5 with index/line).
                     irq = read_reg(R.REG_IRQ_STATUS)
                     if irq & R.IRQ_STATUS_SPR_OVERFLOW:
@@ -1347,7 +1432,11 @@ class Sakura:
                         elapsed = ticks_diff(us, window)
                         if elapsed >= 1000000:
                             hud['fps10'] = window_updates * 10000000 // elapsed
-                            hud['psram_kbs'] = (total - window_bytes) * 1000000 // elapsed // 1024
+                            delta_bytes = total - window_bytes
+                            if rate and 0 <= delta_bytes <= 0x3fffffff and elapsed < 0x8000000:
+                                hud['psram_kbs'] = rate(delta_bytes, elapsed)
+                            else:
+                                hud['psram_kbs'] = delta_bytes * 1000000 // elapsed // 1024
                             window, window_updates, window_bytes = us, 0, total
                         hud['overflow'] = overflow_frames
                         hud['psram_bytes'] = total
@@ -1359,7 +1448,10 @@ class Sakura:
                             stage = 2
                         else:
                             row = 1 if stage == 2 else 0
-                            self.hud_row(row, self.hud_runs(hud, row))
+                            if fixed_hud:
+                                fixed_hud.update(hud, row)
+                            else:
+                                self.hud_row(row, self.hud_runs(hud, row))
                             stage = 3 if stage == 2 else 0
                 except DeviceError as error:        # keep running, but show and count it
                     flags |= 4
@@ -1373,6 +1465,10 @@ class Sakura:
                         flags |= 2
                     # Processing ends here; the statistics' own heap sampling is not part of it.
                     stats.add(ticks_diff(ticks_us(), t0) - waited, flags, shown)
+                    if track_sync:
+                        stats.sync_us += synced
+                        stats.sample_us += sampled
+                        stats.sync_max_us = max(stats.sync_max_us, synced)
                 sound.started = False
         except KeyboardInterrupt:
             interrupted = True
@@ -1391,6 +1487,11 @@ class Sakura:
                   psram, copy_bytes / 1048576, ' (Ctrl-C)' if interrupted else ''))
         if stats:
             stats.seconds = secs
+            if hasattr(stats, 'confirmed'):
+                stats.confirmed = confirmed
+        self.displayed = confirmed
+        print('SAKURA display: %d COMMITs confirmed in %.1f s (%.2f displayed/s)' % (
+              confirmed, secs, confirmed / secs if secs > 0 else 0.0))
         return ok
 
 def run(seconds=0, device=None, mode='qspi', pcm=True, copy=True, psg=True,
@@ -1402,7 +1503,8 @@ def run(seconds=0, device=None, mode='qspi', pcm=True, copy=True, psg=True,
     pcm/copy/psg=False turn single loads off to isolate a fault: the melody
     then plays on a PSG sine, the aurora stops, or the PSG voices stay off.
     opt: the main-loop optimizations to use (OPTS, all by default); () runs
-    the original loop for comparison.
+    the original loop for comparison. STEADY_OPTS additionally reserves sound
+    transfer views before timing; the default caches used lengths lazily.
     """
     own = device is None
     d = kagura.connect(mode=mode) if own else device

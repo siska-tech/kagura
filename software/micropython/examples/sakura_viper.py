@@ -116,11 +116,22 @@ def glyph(strip, x: int, rows, wc: int):
 
 
 @micropython.viper
+def clear_span(strip, lo: int, hi: int, rule: int):
+    """Clear a text span without keeping full-row fill buffers on the heap."""
+    st = ptr8(strip)
+    for y in range(8):
+        colour = rule if y == 7 else 2
+        for x in range(lo, hi):
+            st[y * 512 + x] = colour
+
+
+@micropython.viper
 def draw_run(strip, atlas, layout, xc: int, clip: int):
     """glyph() for a whole run of text, drawing only pixels lo <= px < hi.
 
-    atlas: 8 rows per glyph slot; layout: 4 bytes per glyph (dx low, dx
+    atlas: 128 ASCII slots, then 8 rows per glyph slot; layout: 4 bytes per glyph (dx low, dx
     high, slot, width); xc = x | colour << 12; clip = lo | hi << 12.
+    With xc bit 16 set, layout is an ASCII string (4 px per character).
     Redrawing the glyphs over a cleared span in their original order
     reproduces exactly what a full redraw leaves there."""
     st = ptr8(strip)
@@ -130,13 +141,21 @@ def draw_run(strip, atlas, layout, xc: int, clip: int):
     colour = (xc >> 12) & 15
     lo = clip & 0xfff
     hi = (clip >> 12) & 0xfff
-    n = int(len(layout)) >> 2
+    ascii = (xc >> 16) & 1
+    n = int(len(layout))
+    if ascii == 0:
+        n >>= 2
     for g in range(n):
-        x = x0 + int(lay[4 * g]) + (int(lay[4 * g + 1]) << 8)
-        width = int(lay[4 * g + 3])
+        if ascii:
+            x = x0 + g * 4
+            width = 4
+            r = int(at[lay[g]]) * 8 + 128
+        else:
+            x = x0 + int(lay[4 * g]) + (int(lay[4 * g + 1]) << 8)
+            width = int(lay[4 * g + 3])
+            r = int(lay[4 * g + 2]) * 8 + 128
         if x >= hi or x + width < lo:
             continue
-        r = int(lay[4 * g + 2]) * 8
         for shadow in range(2):
             dx = 1 - shadow
             c = 1 if shadow == 0 else colour

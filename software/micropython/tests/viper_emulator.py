@@ -18,6 +18,8 @@ def int32(value):
 
 class Pointer:
     def __init__(self,buffer,width):
+        if isinstance(buffer, str):
+            buffer = buffer.encode('utf-8')  # MicroPython exposes str's UTF-8 buffer to Viper.
         self.buffer=memoryview(buffer).cast('B')
         self.width=width
     def __getitem__(self,index):

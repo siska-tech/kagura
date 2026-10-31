@@ -26,6 +26,8 @@ EXAMPLES = ROOT / 'software/micropython/examples'
 sys.path.insert(0, str(EXAMPLES))
 sys.modules['sakura_viper'] = load(EXAMPLES / 'sakura_viper.py')
 import sakura as S
+sys.modules['sakura_hud_viper'] = load(EXAMPLES / 'sakura_hud_viper.py')
+import sakura_hud as H
 from kagura import regs as R
 from kagura.device import DeviceError
 
@@ -165,6 +167,32 @@ class Device:
 
 class Demo:
     """Bare attributes for calling one Sakura method."""
+    opt = ()
+    hud_width = S.Sakura.hud_width
+
+
+class ShortLink:
+    """Decode Link._short's header through the existing fake transport."""
+    def __init__(self, raw):
+        from types import SimpleNamespace
+        self.raw = raw
+        self.k = SimpleNamespace(_short=object())
+        self.calls = 0
+
+    def _fast(self, name, kernel, n, operation, value):
+        assert kernel is self.k._short and n == 2
+        self.calls += 1
+        offset = operation & 31
+        if operation & 0x80:
+            assert name == 'read'
+            out = bytearray(1)
+            self.raw.readinto(offset, out)
+            return out[0]
+        assert name == 'write'
+        size = operation >> 8
+        data = bytes((value >> (8 * i)) & 255 for i in range(size))
+        self.raw.write(offset, data, bool(operation & 0x40))
+        return 0
 
 
 def petals():
@@ -260,15 +288,44 @@ class Scene(unittest.TestCase):
 
 
 class Sound(unittest.TestCase):
+    def test_reserved_views_cover_melody_with_skipped_vblanks(self):
+        for pcm in (False, True):
+            for dt in range(1, 9):
+                d = Device()
+                d.audio_writes = lambda pairs: None
+                sound = S.Sound(d, pcm, True)
+                sound.reserve_views()
+                reserved = set(sound.views)
+                for t in range(0, 1920, dt):
+                    for tick in range(t, t + dt):
+                        sound.tick(tick, tick == t + dt - 1)
+                    sound.send()
+                self.assertEqual(set(sound.views), reserved, (pcm, dt, set(sound.views) - reserved))
+
+    def test_steady_played_matches_original_at_time_boundaries(self):
+        sound = S.Sound(Device(), True, True)
+        for length in (0, 100, 23040, 48000, 96000):
+            sound.length[0] = length
+            for elapsed in (-1, 0, 1, 20833, 500000, 999999, 1000000, 23000000, 500000000):
+                with patch.object(S, 'ticks_diff', lambda now, start: elapsed):
+                    sound.steady = False
+                    original = sound.played(0, 0)
+                    sound.steady = True
+                    self.assertEqual(sound.played(0, 0), original, (length, elapsed))
+
     def test_piano_asset_is_the_c_sample(self):
         header = (ROOT / 'software/pico/piano_c4_sample.h').read_text()
         values = [int(v) for v in re.findall(r'-?\d+', header[header.index('{') + 1:header.rindex('}')])]
         self.assertEqual((Path(ASSETS) / 'piano_c4.pcm').read_bytes(), bytes(v & 255 for v in values))
 
     def test_piano_notes_match_c(self):
+        self.check_piano_notes_match_c(4096)
+        self.check_piano_notes_match_c(8192)
+
+    def check_piano_notes_match_c(self, work_size):
         demo = Demo()
         demo.d = d = Device()
-        demo.work = bytearray(8192)
+        demo.work = bytearray(work_size)
         demo.piano = ASSETS + '/piano_c4.pcm'
         demo.window = bytearray(S.PIANO_WINDOW)
         demo.sound = S.Sound(d, True, True)
@@ -375,6 +432,12 @@ class Optimized(unittest.TestCase):
                         self.assertEqual(slow.ext[:n], quick.ext[:n], (lines, rscroll, copy, t))
 
     def test_hud_by_difference_matches_full_redraw(self):
+        self.check_hud_by_difference(())
+        self.check_hud_by_difference(('hudascii',))
+        self.check_hud_by_difference(('hudascii', 'hudbuf'))
+        self.check_hud_by_difference(('hudascii', 'hudbuf', 'hudglyph'))
+
+    def check_hud_by_difference(self, opt):
         import random
         rng = random.Random(3)
         full, diff = Demo(), Demo()
@@ -385,8 +448,10 @@ class Optimized(unittest.TestCase):
             demo.upload = (lambda demo: lambda first, tiles, row=None: S.Sakura.upload(demo, first, tiles, row))(demo)
         diff.hud_strips = [diff.text.strip, bytearray(4096)]
         diff.hud_placed = [None, None]
+        diff.opt = opt
         for name in ('hud_prepare', 'hud_paint', 'hud_upload'):   # the loop's separate steps
             setattr(diff, name, getattr(S.Sakura, name).__get__(diff))
+        fixed = H.Hud(diff) if 'hudbuf' in opt else None
         hud = {'fps10': 600, 'status': None, 'overflow': 0, 'underrun': 0, 'line_underrun': 0,
                'psram_bytes': 0, 'psram_kbs': 0, 'errors': 0}
         sent = []
@@ -403,13 +468,116 @@ class Optimized(unittest.TestCase):
                     hud['errors'] |= rng.choice((0x20, 0x80, 0x01))
                     hud['line_underrun'] += 1
             S.Sakura.draw_hud(full, hud)
-            sent.append(sum(S.Sakura.hud_row(diff, row, S.Sakura.hud_runs(diff, hud, row)) for row in range(2)))
+            sent.append(sum(fixed.update(hud, row) if fixed else
+                            S.Sakura.hud_row(diff, row, S.Sakura.hud_runs(diff, hud, row)) for row in range(2)))
             self.assertEqual(full.d.memory[16 * 32:96 * 32], diff.d.memory[16 * 32:96 * 32], step)
         self.assertEqual(sent[0], 80)
         self.assertLess(sum(sent[1:]) / len(sent[1:]), 40, 'mostly a few tiles per update')
+        if 'hudascii' in opt and not fixed:
+            self.assertFalse(any(s.startswith(('FPS ', 'ERR ')) or s[0].isdigit()
+                                 for s in diff.text.layouts), 'numeric layouts do not enter the cache')
+        if fixed:
+            self.assertEqual([fixed.update(hud, row) for row in range(2)], [0, 0])
+
+    def test_fixed_hud_number_fields_match_formatting(self):
+        tx = S.Text(FONT)
+        out = bytearray(192)
+        reverse = {slot: chr(code) for code, slot in tx.slots.items()}
+        for value in (0, 1, 9, 10, 15, 16, 99, 100, 255, 256, 595, 600, 999, 1000, 0x3fffffff):
+            for mode, expected in ((0, '%d' % value),
+                                   (1, 'FPS %d.%d' % (value // 10, value % 10)),
+                                   (2, 'ERR %02X' % value)):
+                n = H.K.number_field(out, tx.atlas, 0, value, mode, 0)
+                self.assertEqual(''.join(reverse[out[4 * i + 2]] for i in range(n)), expected)
+            for kbs in (0, 9, 345, 0x3fffffff):
+                n = H.K.number_field(out, tx.atlas, 0, value, 3, kbs)
+                self.assertEqual(''.join(reverse[out[4 * i + 2]] for i in range(n)),
+                                 '%d.%02dMB %dKB/s' % (value // 100, value % 100, kbs))
+
+    def test_fixed_hud_float32_rounding(self):
+        import random
+        import struct
+        from viper_emulator import int32_checked
+
+        def f32(x):
+            return struct.unpack('<f', struct.pack('<f', x))[0]
+
+        def expected(n):
+            value = f32(n) / 1048576
+            initial = int(f32(f32(value * 100) + 0.5))
+            low = int(value * 100)
+            return min((low, low + 1), key=lambda c:
+                       (abs(f32(c / 100) - value), c % 10 != 0, c != initial))
+
+        rng = random.Random(931)
+        values = [0, 1, 131072, 655360, 1179648, 1221591, 10732175,
+                  16782458, 16782459, 16782460, 0x3fffffff]
+        values += [rng.randrange(1 << 30) for _ in range(2000)]
+        checked = int32_checked(H.K.cents)
+        for value in values:
+            self.assertEqual(checked(value), expected(value), value)
+
+    def test_fixed_hud_float32_fields_match_full_pixels(self):
+        full = S.Sakura(Device(), pcm=False, font=FONT, assets=ASSETS)
+        diff = S.Sakura(Device(), pcm=False, font=FONT, assets=ASSETS)
+        with patch.object(H, 'FLOAT32', True):
+            fixed = H.Hud(diff)
+        cases = ((0, 0), (131072, 13), (655360, 63), (1179648, 113),
+                 (1221591, 117), (16782458, 1600), (16782459, 1601),
+                 (104857600, 10000), (0x3fffffff, 102400), (0, 0))
+        for i, (bytecount, hundredths) in enumerate(cases):
+            hud = {'fps10': 598, 'status': None, 'overflow': i, 'underrun': 0,
+                   'line_underrun': 0, 'psram_bytes': bytecount, 'psram_kbs': i * 345,
+                   'errors': 0x20 if i & 1 else 0}
+            # Feed the full renderer the already-established RP2 decimal value;
+            # CPython's own binary ties/float size differ from the RP2 formatter.
+            expected = dict(hud, psram_bytes=hundredths * 1048576 / 100)
+            full.draw_hud(expected)
+            fixed.update(hud, 0)
+            fixed.update(hud, 1)
+            self.assertEqual(full.d.memory[16 * 32:96 * 32], diff.d.memory[16 * 32:96 * 32], bytecount)
+
+    def test_native_bandwidth_matches_unbounded_integer_expression(self):
+        import random
+        from viper_emulator import int32_checked
+        rng = random.Random(912)
+        checked = int32_checked(H.K.bandwidth)
+        cases = [(n, elapsed) for n in (0, 1, 65535, 65536, 1 << 20, 1 << 24, 0x3fffffff)
+                 for elapsed in (1000000, 1000123, 2000000, 0x7ffffff)]
+        cases += [(rng.randrange(1 << 30), rng.randrange(1000000, 1 << 27)) for _ in range(300)]
+        for n, elapsed in cases:
+            self.assertEqual(checked(n, elapsed), n * 1000000 // elapsed // 1024, (n, elapsed))
+
+    def test_fixed_hud_large_counter_fallback_and_reentry(self):
+        full = S.Sakura(Device(), pcm=False, font=FONT, assets=ASSETS)
+        diff = S.Sakura(Device(), pcm=False, font=FONT, assets=ASSETS)
+        fixed = H.Hud(diff)
+        hud = {'fps10': 600, 'status': None, 'overflow': 0, 'underrun': 0,
+               'line_underrun': 0, 'psram_bytes': 0, 'psram_kbs': 0, 'errors': 0}
+        for overflow, kbs in ((0, 0), (1 << 30, 300), (7, 300),
+                              (7, 10 ** 50), (0, 0), (-1, 0), (0, 0)):
+            hud['overflow'], hud['psram_kbs'] = overflow, kbs
+            full.draw_hud(hud)
+            for row in range(2):
+                fixed.update(hud, row)
+            self.assertEqual(full.d.memory[16 * 32:96 * 32], diff.d.memory[16 * 32:96 * 32])
+
+    def test_fixed_hud_dirty_glyphs_limit_transfer(self):
+        demo = S.Sakura(Device(), pcm=False, font=FONT, assets=ASSETS)
+        fixed = H.Hud(demo)
+        hud = {'fps10': 600, 'status': None, 'overflow': 0, 'underrun': 0,
+               'line_underrun': 0, 'psram_bytes': 1048576, 'psram_kbs': 345, 'errors': 0}
+        self.assertEqual(fixed.update(hud, 0), 40)
+        self.assertEqual(fixed.update(hud, 1), 40)
+        hud['fps10'] = 601
+        self.assertLessEqual(fixed.update(hud, 0), 2)
+        hud['psram_bytes'] += 11000
+        self.assertLessEqual(fixed.update(hud, 1), 2)
+        hud['psram_kbs'] = 346
+        self.assertLessEqual(fixed.update(hud, 1), 2)
 
     def test_every_option_alone_and_together_passes(self):
-        for opt in [()] + [(o,) for o in S.OPTS] + [S.OPTS]:
+        for opt in [()] + [(o,) for o in S.OPTS] + [('steady',), S.OPTS, S.STEADY_OPTS]:
             d = Device()
             d.vblanks_per_read = 2
             stats = S.Stats()
@@ -427,6 +595,47 @@ class Optimized(unittest.TestCase):
 
 
 class Run(unittest.TestCase):
+    def test_display_count_waits_for_successful_commit_application(self):
+        d = Device()
+        demo = S.Sakura(d, pcm=False, font=FONT, assets=ASSETS)
+        demo.load()
+        before = d.commits
+        d.interrupt_commit = before + 12
+        stats = S.Stats()
+        self.assertTrue(demo.loop(0, stats))
+        # The 12th commit is interrupted; the preceding 11 have already
+        # been observed idle by wait_status, including the final iteration.
+        self.assertEqual(demo.displayed, 11)
+        self.assertEqual(stats.confirmed, 11)
+        self.assertEqual(d.busy, 0)
+
+    def test_keyboard_warmup_does_not_consume_pending_key(self):
+        from types import SimpleNamespace
+        reads = []
+        stream = SimpleNamespace(read=lambda n: reads.append('q') or 'q')
+        poll = SimpleNamespace(register=lambda *args: None,
+                               ipoll=lambda timeout: iter(((stream, 1),)),
+                               poll=lambda timeout: ())
+        with patch.dict(sys.modules, {'select': SimpleNamespace(poll=lambda: poll, POLLIN=1)}):
+            with patch.object(S.sys, 'stdin', stream):
+                pressed = S._keyboard()
+                self.assertEqual(reads, [])
+                self.assertTrue(pressed())
+                self.assertEqual(reads, ['q'])
+
+    def test_short_transactions_match_transport_and_release_busy(self):
+        original, quick = Device(), Device()
+        quick.transport.link = link = ShortLink(quick.transport)
+        for d, opt in ((original, tuple(o for o in S.OPTS if o != 'short')), (quick, S.OPTS)):
+            d.vblanks_per_read = 2
+            d.interrupt_commit = 80
+            self.assertTrue(S.run(0, device=d, font=FONT, assets=ASSETS, pcm=False, opt=opt))
+            self.assertEqual(d.busy, 0)
+        self.assertGreater(link.calls, 100)
+        self.assertEqual(original.memory, quick.memory)
+        self.assertEqual(original.audio_log, quick.audio_log)
+        self.assertEqual(original.ext, quick.ext)
+
     def run_demo(self, d, **kwargs):
         return S.run(0.4, device=d, font=FONT, assets=ASSETS, **kwargs)
 
