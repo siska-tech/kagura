@@ -3,8 +3,11 @@
 
 Plasma and tunnel are drawn once into the buffer by Viper loops and moved by
 palette cycling; the tesseract over parallax stars and the line ribbon are
-redrawn every frame and only changed tiles are flushed. The palette COMMIT at
-the end of each frame waits for VBlank. A PSG song runs on its own clock.
+redrawn every frame with TileFramebuffer.lines() and only changed tiles are
+flushed. Each frame ends with commit(wait=False): the palette applies at the
+next VBlank while the next frame is drawn, and the device queue keeps that
+frame's patterns behind it. A PSG song runs on its own clock through
+device.audio_writes().
 Needs a 480p ABI 0.6 bitstream. Usage: import framebuffer_demo; framebuffer_demo.run(60)
 """
 import gc
@@ -138,82 +141,6 @@ class Tunnel:
             pal[i] = scale(RAINBOW[(t // 2 + i * 4) & 255], light)
 
 
-# ---- batched segments: one Viper call draws or erases many lines ----
-
-@micropython.viper
-def _segments(buf, dirty, segs, n: int):
-    """Bresenham-style lines for n (x0, y0, x1, y1, colour) records of an array('h').
-
-    n < 0 draws -n records in colour 0 (erase). Off-screen pixels are skipped;
-    a tile is marked dirty only when one of its bytes changes.
-    """
-    b = ptr8(buf)
-    dt = ptr8(dirty)
-    s = ptr16(segs)
-    erase = n < 0
-    if erase:
-        n = -n
-    for k in range(n):
-        x0 = int(s[k * 5])
-        y0 = int(s[k * 5 + 1])
-        x1 = int(s[k * 5 + 2])
-        y1 = int(s[k * 5 + 3])
-        if x0 > 32767:
-            x0 -= 65536
-        if y0 > 32767:
-            y0 -= 65536
-        if x1 > 32767:
-            x1 -= 65536
-        if y1 > 32767:
-            y1 -= 65536
-        c = 0 if erase else int(s[k * 5 + 4]) & 15
-        hi = c << 4
-        dx = x1 - x0
-        sx = 1
-        if dx < 0:
-            dx = -dx
-            sx = -1
-        dy = y1 - y0
-        sy = 1
-        if dy < 0:
-            dy = -dy
-            sy = -1
-        # One loop per major axis: a step along it every pixel, along the
-        # other when the error term crosses zero.
-        if dx >= dy:
-            err = dx >> 1
-            for i in range(dx + 1):
-                if uint(x0) < uint(320) and uint(y0) < uint(240):
-                    tile = (y0 >> 3) * 40 + (x0 >> 3)
-                    o = (tile << 5) | ((y0 & 7) << 2) | ((x0 & 7) >> 1)
-                    v = int(b[o])
-                    w = (v & 0xf0) | c if x0 & 1 else (v & 15) | hi
-                    if w != v:
-                        b[o] = w
-                        dt[tile] = 1
-                err -= dy
-                if err < 0:
-                    y0 += sy
-                    err += dx
-                x0 += sx
-        else:
-            err = dy >> 1
-            for i in range(dy + 1):
-                if uint(x0) < uint(320) and uint(y0) < uint(240):
-                    tile = (y0 >> 3) * 40 + (x0 >> 3)
-                    o = (tile << 5) | ((y0 & 7) << 2) | ((x0 & 7) >> 1)
-                    v = int(b[o])
-                    w = (v & 0xf0) | c if x0 & 1 else (v & 15) | hi
-                    if w != v:
-                        b[o] = w
-                        dt[tile] = 1
-                err -= dx
-                if err < 0:
-                    x0 += sx
-                    err += dy
-                y0 += sy
-
-
 # ---- tesseract: 4D rotation, perspective twice, depth-coloured edges ----
 
 STARS = 48
@@ -222,12 +149,12 @@ TRIG = array('h', [round(16384 * math.sin(2 * math.pi * i / 1024)) for i in rang
 
 @micropython.viper
 def _tesseract(segs, work, trig, t: int):
-    """Fill segs with STARS star records then 32 edge records, in Q14 fixed point.
+    """Fill segs (array('i')) with STARS star records then 32 edge records, Q14.
 
     work: array('i') of 3 words per star (x << 8, y, speed), then px, py, pz
     for the 16 vertices. Angles step 0.021, 0.013 and 0.009 rad per frame.
     """
-    s = ptr16(segs)
+    s = ptr32(segs)
     w = ptr32(work)
     sn = ptr16(trig)
     i = 0
@@ -306,11 +233,14 @@ def _tesseract(segs, work, trig, t: int):
 class Tesseract:
     name = 'tesseract'
 
+    def __init__(self):
+        # Allocated once, before the heap fragments. Stars first, then the
+        # 32 edges, so edges are drawn on top.
+        self.segs = array('i', (0 for _ in range(5 * (STARS + 32))))
+        self.work = array('i', (0 for _ in range(3 * STARS + 48)))
+
     def enter(self, fb, play):
         fb.fill(0)
-        # Stars first, then the 32 edges, so edges are drawn on top.
-        self.segs = array('h', [0] * 5 * (STARS + 32))
-        self.work = array('i', [0] * (3 * STARS + 48))
         for k in range(STARS):
             self.work[3 * k], self.work[3 * k + 1], self.work[3 * k + 2] = rnd(320) << 8, rnd(240), 1 + rnd(4)
         self.drawn = False
@@ -321,11 +251,10 @@ class Tesseract:
             pal[k] = 0x111 * (k * 3) + k
         for k in range(8):
             pal[8 + k] = scale(RAINBOW[(t // 2 + k * 10) & 255], 6 + k * 10 // 7)
-        n = STARS + 32
         if self.drawn:
-            _segments(fb.buffer, fb.dirty, self.segs, -n)
+            fb.lines(self.segs, color=0)   # erase last frame's stars and edges
         _tesseract(self.segs, self.work, TRIG, t)
-        _segments(fb.buffer, fb.dirty, self.segs, n)
+        fb.lines(self.segs)
         self.drawn = True
 
 
@@ -337,10 +266,11 @@ TRAIL = 24
 class Ribbon:
     name = 'ribbon'
 
+    def __init__(self):
+        self.ring = array('i', (0 for _ in range(10 * TRAIL)))   # TRAIL pairs of (line, mirrored line)
+
     def enter(self, fb, play):
         fb.fill(0)
-        self.ring = array('h', [0] * 10 * TRAIL)   # TRAIL pairs of (line, mirrored line)
-        self.view = memoryview(self.ring)
         self.head = self.count = self.serial = 0
         self.p = [40, 30, 250, 200]
         self.v = [3, 2, -2, 3]
@@ -349,9 +279,9 @@ class Ribbon:
         pal[0] = 0
         for i in range(15):
             pal[1 + i] = RAINBOW[(i * 17 + t * 3) & 255]
-        buf, dirty, ring, view, h = fb.buffer, fb.dirty, self.ring, self.view, self.head
+        ring, h = self.ring, self.head
         if self.count == TRAIL:
-            _segments(buf, dirty, view[h * 10:h * 10 + 10], -2)   # erase the oldest pair
+            fb.lines(ring[h * 10:h * 10 + 10], color=0)   # erase the oldest pair
         p, v = self.p, self.v
         for k in range(4):
             limit = 239 if k & 1 else 319
@@ -370,11 +300,11 @@ class Ribbon:
         # Redraw the whole trail oldest first so the erase above leaves no gaps.
         if self.count == TRAIL:
             h = self.head
-            _segments(buf, dirty, view[h * 10:], (TRAIL - h) * 2)
+            fb.lines(ring[h * 10:])
             if h:
-                _segments(buf, dirty, view[:h * 10], h * 2)
+                fb.lines(ring[:h * 10])
         else:
-            _segments(buf, dirty, view[:self.count * 10], self.count * 2)
+            fb.lines(ring, self.count * 2)
 
 
 _rng = [0x2545f491]
@@ -395,8 +325,8 @@ STEP = tuple(round(440 * 2 ** ((m - 69) / 12) * 16777216 / 48000) for m in range
 
 
 class Music:
-    """Register writes are queued as (index, value) pairs and sent per tick:
-    in one Viper call when the device offers audio_writes(), else one by one."""
+    """Register writes are queued as (index, value) pairs and sent per tick
+    with device.audio_writes(), one Viper call when accelerate() is on."""
 
     def __init__(self, d, R):
         self.d, self.R = d, R
@@ -427,11 +357,7 @@ class Music:
 
     def send(self):
         d, ops, n = self.d, self.ops, self.n
-        if hasattr(d, 'audio_writes'):
-            d.audio_writes(ops, n // 2)
-        else:
-            for i in range(0, n, 2):
-                d.audio_write(ops[i], ops[i + 1])
+        d.audio_writes(memoryview(ops)[:n])
         self.n = 0
 
     def note(self, ch, midi):
@@ -473,45 +399,36 @@ class Music:
         self.d.audio_commit()
 
 
-def run(seconds=60, max_gap=16, fb=None, fast=False):
+def run(seconds=60, max_gap=16, fb=None):
     """Play the scenes for `seconds` (Ctrl-C stops). max_gap is passed to flush().
-
-    fast=True sends flush, palette, COMMIT and music through the experimental
-    Viper path in framebuffer_fastlink instead of the driver.
 
     Pass a TileFramebuffer created early when the heap is fragmented (its
     38400-byte buffer needs one contiguous block); its device is used as is.
+    connect() turns on kagura.link: flush, COMMIT and the music are one Viper
+    call per operation.
     """
     from kagura import regs as R
     own = fb is None
     if own:
         d = kagura.connect(mode='qspi', baudrate=5_000_000)
-        d.transport.accelerate()
     else:
         d = fb.device
     music = None
     try:
         if own:
             fb = TileFramebuffer(d)
-        pal, raw, io = array('H', [0] * 16), bytearray(32), d
+        pal, raw = array('H', [0] * 16), bytearray(32)
         base = 0x9400 + fb.palette * 32
 
         def show(level):
             _pack(raw, pal, level)
-            io.write_memory(base, raw)
+            d.write_memory(base, raw)
 
         d.clear_errors()
         show(0)   # initialize()'s COMMIT applies it
         fb.initialize()
-        if fast:
-            from framebuffer_fastlink import FastLink
-            io = FastLink(d)
-            flush = lambda: io.flush(fb, max_gap)
-        else:
-            io = d
-            flush = lambda: fb.flush(max_gap)
-        music = Music(io, R)
-        print('FBDEMO GO viper=%s max_gap=%d fast=%s' % (fb.viper_enabled, max_gap, fast))
+        music = Music(d, R)
+        print('FBDEMO GO viper=%s link=%s max_gap=%d' % (fb.viper_enabled, d.transport.link is not None, max_gap))
         scenes = (Plasma(), Tesseract(), Tunnel(), Ribbon())
         end = time.ticks_add(time.ticks_ms(), seconds * 1000)
         next_tick, tick, total, n = time.ticks_us(), 0, 0, 0
@@ -546,7 +463,7 @@ def run(seconds=60, max_gap=16, fb=None, fast=False):
                 f0 = time.ticks_us()
                 scene.frame(fb, t, pal)
                 draw_us += time.ticks_diff(time.ticks_us(), f0)
-                stats = flush()   # its writes queue behind the previous COMMIT
+                stats = fb.flush(max_gap)   # its writes queue behind the previous COMMIT
                 flush_us += stats['total_us']
                 tiles += stats['tiles']
                 runs += stats['runs']
@@ -560,7 +477,7 @@ def run(seconds=60, max_gap=16, fb=None, fast=False):
                 busy_us += time.ticks_diff(time.ticks_us(), now)
                 # Applied at the next VBlank. The next frame draws meanwhile;
                 # its flush and this COMMIT stay in order in the device queue.
-                io.commit(wait=False)
+                d.commit(wait=False)
                 frames += 1
                 t += 1
             elapsed = time.ticks_diff(time.ticks_ms(), t0) / 1000

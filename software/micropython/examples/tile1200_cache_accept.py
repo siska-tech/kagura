@@ -36,8 +36,6 @@ def _font_codes(path, count):
 def run(sdk='kagura', japanese='kagura_ja', font_path='/fonts/misaki8.kfnt', mode='qspi'):
     package = __import__(sdk, None, None, ['connect'])
     R = __import__(sdk + '.regs', None, None, ['REG_STATUS'])
-    packing = __import__(sdk + '.dma_pack', None, None, ['python_pack'])
-    packing.viper_pack = packing.viper_pack32 = None
     TileScreen = __import__(sdk + '.terminal', None, None, ['TileScreen']).TileScreen
     Video = __import__(sdk + '.video', None, None, ['Video']).Video
     ja = __import__(japanese, None, None, ['Font'])

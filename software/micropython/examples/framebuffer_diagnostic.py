@@ -106,14 +106,12 @@ class Session:
         self.FBM = __import__(sdk+'.framebuffer',None,None,['TileFramebuffer'])
         FB = self.FBM.TileFramebuffer
         self.Audio = __import__(sdk+'.audio',None,None,['Audio']).Audio
-        self.d = K.connect(mode='qspi',baudrate=5_000_000)
-        self.accel = None
+        self.d = K.connect(mode='qspi',baudrate=5_000_000,accelerate=accelerated)
         self.raw = self.d.transport
+        self.accel = self.raw.acceleration if accelerated else None
         self.pcm = False
         self.fb = None
         try:
-            if accelerated:
-                self.accel = self.raw.accelerate()
             self.counter = Counter(self.raw)
             self.d.transport = self.counter
             gc.collect()

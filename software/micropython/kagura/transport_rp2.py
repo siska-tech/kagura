@@ -77,6 +77,9 @@ class TransferTimeout(OSError):
 
 
 class PIOTransport:
+    link = None          # kagura.link.Link while accelerate() has one installed
+    acceleration = None  # the session accelerate() returned last
+
     def __init__(self, mode="spi", baudrate=1_000_000, sm_id=0,
                  io0=2, sck=6, cs=7, busy=8, ready=9, irq=10,
                  timeout_us=100_000):
@@ -167,9 +170,21 @@ class PIOTransport:
         return bool(self._ready.value())
 
     def accelerate(self, chunk=128):
-        """Return a reversible Viper FIFO/DMA session (stock RP2 firmware)."""
+        """Return the reversible kagura.link session (stock RP2 firmware).
+
+        connect() already calls this: one Viper call per transaction and per
+        write_memory/fence/commit/flush, DMA chunks of `chunk` words. The open
+        session is returned again for the same chunk and replaced for another;
+        close() it to go back to the plain Python transport.
+        """
+        current = self.acceleration
+        if current is not None and not current.closed:
+            if current.chunk == chunk:
+                return current
+            current.close()
         from .acceleration import Acceleration
-        return Acceleration(self, TransferTimeout, chunk=chunk)
+        self.acceleration = Acceleration(self, TransferTimeout, chunk=chunk)
+        return self.acceleration
 
     def idle(self):
         # An FPGA still loading its bitstream pulls every pin high, READY

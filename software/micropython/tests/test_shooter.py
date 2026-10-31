@@ -125,31 +125,25 @@ def console_for(device):
 class ShooterTests(unittest.TestCase):
     def test_optional_native_import_failures_keep_reference_driver(self):
         original_import = builtins.__import__
-        for module, native, symbol in (('dma_pack','dma_pack_viper','viper_pack'),
-                                        ('fifo_xfer','fifo_xfer_viper','pump')):
-            path = ROOT / ('software/micropython/kagura/'+module+'.py')
-            for error in (ImportError('missing helper'), SyntaxError('unsupported emitter'),
-                          ValueError('incompatible .mpy file')):
-                def unavailable(name,*args,**kwargs):
-                    if native in name:
-                        raise error
-                    return original_import(name,*args,**kwargs)
-                namespace = {'__name__':'kagura.fallback_test','__package__':'kagura'}
-                with patch.object(sys.implementation,'name','micropython'),patch.object(builtins,'__import__',unavailable):
-                    exec(compile(path.read_text(encoding='utf-8'),str(path),'exec'),namespace)
-                self.assertIsNone(namespace[symbol])
-                self.assertTrue(namespace['native_error'])
-                if module == 'dma_pack':
-                    words = [0]*4
-                    namespace['pack'](b'\x01\x02',list(range(256)),words,0,2)
-                    self.assertEqual(words,[0,1,0,2])
+        path = ROOT / 'software/micropython/kagura/link.py'
+        for error in (ImportError('missing helper'), SyntaxError('unsupported emitter'),
+                      ValueError('incompatible .mpy file')):
+            def unavailable(name,*args,**kwargs):
+                if 'link_viper' in name or (args[2:3] and args[2] and 'link_viper' in args[2]):
+                    raise error
+                return original_import(name,*args,**kwargs)
+            namespace = {'__name__':'kagura.fallback_test','__package__':'kagura'}
+            with patch.object(sys.implementation,'name','micropython'),patch.object(builtins,'__import__',unavailable):
+                exec(compile(path.read_text(encoding='utf-8'),str(path),'exec'),namespace)
+            self.assertIsNone(namespace['kernels'])
+            self.assertTrue(namespace['native_error'])
 
     def test_acceleration_unavailable_never_mutates_transport(self):
         from kagura import acceleration as A
-        for pack, pack32, fifo, dma in ((None,None,None,True),(1,1,None,True),(1,1,1,None)):
+        for kernels, dma in ((None,True),(object(),None)):
             raw = types.SimpleNamespace(_active=False,_closed=False,_dma_tx=dma)
             before = raw.__dict__.copy()
-            with patch.object(A.dma_pack,'viper_pack',pack),patch.object(A.dma_pack,'viper_pack32',pack32),patch.object(A.fifo_xfer,'pump',fifo):
+            with patch.object(A.link_module,'kernels',kernels):
                 with A.Acceleration(raw,RuntimeError) as session:
                     self.assertFalse(session.enabled)
                     self.assertTrue(session.reason)
@@ -176,32 +170,35 @@ class ShooterTests(unittest.TestCase):
     def test_game_falls_back_when_viper_unavailable(self):
         from kagura import acceleration as A
         d = Device(caps=0)
-        d.transport._active = d.transport._closed = False
         raw = d.transport
+        raw._active = raw._closed = False
+        raw._dma_tx = None
+        raw.accelerate = lambda chunk=128: A.Acceleration(raw,RuntimeError,chunk)
         before = raw.__dict__.copy()
-        with patch.object(A.dma_pack,'viper_pack',None):
+        with patch.object(A.link_module,'kernels',None):
             result = shooter.run(device=d,mode='BASE',frames=4,report=False,
                                  input_fn=lambda:0,target_fps=0,dma='accelerated')
         self.assertEqual(result['dma_effective'],'driver')
-        self.assertEqual(result['acceleration_reason'],'Viper DMA kernel unavailable')
+        self.assertTrue(result['acceleration_reason'].startswith('Viper link kernels unavailable'))
         self.assertEqual(raw.__dict__,before)
 
     def test_partial_acceleration_install_is_rolled_back(self):
         from kagura import acceleration as A
-        from array import array
         class Interrupted(types.SimpleNamespace):
             def __setattr__(self,name,value):
-                if name=='write' and self.__dict__.get('interrupt'):
+                if name=='readinto' and self.__dict__.get('interrupt'):
                     self.__dict__['interrupt'] = False
                     raise KeyboardInterrupt
                 super().__setattr__(name,value)
+        class FakeLink:
+            def __init__(self, transport, timeout_type, chunk):
+                self.write = self.readinto = lambda *args: None
         fn = lambda *args,**kwargs:None
         raw = Interrupted(_active=False,_closed=False,_dma_tx=types.SimpleNamespace(active=lambda:False),
-                          _dma_rx=types.SimpleNamespace(active=lambda:False),_words=array('H',[0]*256),
-                          _sm_id=0,lanes=4,timeout_us=100000,_xfer=fn,write=fn,readinto=fn,interrupt=True)
+                          _dma_rx=types.SimpleNamespace(active=lambda:False),write=fn,readinto=fn,interrupt=True)
         before = raw.__dict__.copy()
         before['interrupt'] = False
-        with patch.object(A.dma_pack,'viper_pack',1),patch.object(A.dma_pack,'viper_pack32',1),patch.object(A.fifo_xfer,'pump',fn):
+        with patch.object(A.link_module,'kernels',object()),patch.object(A.link_module,'Link',FakeLink):
             with self.assertRaises(KeyboardInterrupt):
                 A.Acceleration(raw,RuntimeError,chunk=512)
         self.assertEqual(raw.__dict__,before)
@@ -242,43 +239,22 @@ class ShooterTests(unittest.TestCase):
         self.assertIsNone(result['wire_bytes'])
         self.assertLessEqual(result['exclusive_stage_sum_us'],result['frame_mean_us'])
 
-    def test_acceleration_restores_transport_and_buffer(self):
-        from array import array
+    def test_acceleration_restores_transport(self):
         from kagura import acceleration as A
+        class FakeLink:
+            def __init__(self, transport, timeout_type, chunk):
+                self.write = self.readinto = lambda *args: None
         fn = lambda *args,**kwargs:None
         raw = types.SimpleNamespace(_active=False,_closed=False,_dma_tx=types.SimpleNamespace(active=lambda:False),
-                                    _dma_rx=types.SimpleNamespace(active=lambda:False),
-                                    _words=array('H',[0]*256),_sm_id=0,lanes=4,timeout_us=100000,
-                                    _xfer=fn,write=fn,readinto=fn)
+                                    _dma_rx=types.SimpleNamespace(active=lambda:False),write=fn,readinto=fn)
         before = raw.__dict__.copy()
-        with patch.object(A.dma_pack,'viper_pack',object()),patch.object(A.dma_pack,'viper_pack32',object()),patch.object(A.fifo_xfer,'pump',fn):
+        with patch.object(A.link_module,'kernels',object()),patch.object(A.link_module,'Link',FakeLink):
             with self.assertRaises(KeyboardInterrupt):
-                with A.Acceleration(raw,RuntimeError,chunk=512):
-                    self.assertEqual(len(raw._words),1024)
+                with A.Acceleration(raw,RuntimeError,chunk=512) as session:
                     self.assertIsNot(raw.write,fn)
+                    self.assertIs(raw.link,session.link)
                     raise KeyboardInterrupt
         self.assertEqual(raw.__dict__,before)
-
-    def test_native_read_rejects_readonly_and_short_buffers(self):
-        from kagura import fifo_xfer as F
-        calls = []
-        raw = types.SimpleNamespace(_sm_id=0,lanes=4,timeout_us=100000,
-                                    _xfer=lambda *a:calls.append(a),
-                                    write=lambda *a:None,readinto=lambda *a:None)
-        with patch.object(F,'pump',lambda *a:1):
-            pump = F.Pump(raw,RuntimeError)
-            for buffer in (b'x',memoryview(b'x')):
-                with self.assertRaises(TypeError):
-                    pump.readinto(0,buffer)
-            pump.transfer(b'long',bytearray(1))
-        self.assertEqual(len(calls),1)
-        def timeout(tx,rx,settings):
-            settings[9] = 5  # Conservative completed count including prefix.
-            return 0
-        with patch.object(F,'pump',timeout):
-            with self.assertRaises(RuntimeError) as caught:
-                pump._packet(b'xx',bytearray(8),11,2,3,11,release=True)
-        self.assertEqual(caught.exception.args,(2,))
 
     def test_oam_kernel_reference_semantics(self):
         spec = importlib.util.spec_from_file_location('kernel_test', EXAMPLES / 'shooter_oam_viper.py')
@@ -316,21 +292,34 @@ class ShooterTests(unittest.TestCase):
         data = memoryview(array('H', [1, 2, 255]))
         high = array('H', [value << 7 for value in range(256)])
         words = array('H', [0x55AA] * 6)
-        dma_pack.pack(data, high, words, 0, 3)
+        dma_pack.python_pack(data, high, words, 0, 3)
         self.assertEqual(list(words), [0x55AA, 128, 0x55AA, 256, 0x55AA, 32640])
 
-    def test_dma_override_restored_on_interrupt(self):
+    def test_driver_mode_restores_acceleration_on_interrupt(self):
         d = Device(caps=0)
         console = console_for(d)
-        sentinel = lambda data, queued: None
-        d.transport._xfer_dma = sentinel
+        class Session:
+            def __init__(self, chunk):
+                self.chunk, self.closed, self.enabled = chunk, False, True
+            def close(self):
+                self.closed = True
+        raw = d.transport
+        raw.acceleration = Session(256)
+        prior = raw.acceleration
+        def accelerate(chunk=128):
+            raw.acceleration = Session(chunk)
+            return raw.acceleration
+        raw.accelerate = accelerate
         def interrupt():
-            self.assertIsNot(d.transport._xfer_dma, sentinel)
+            self.assertTrue(prior.closed)
             raise KeyboardInterrupt
         with self.assertRaises(KeyboardInterrupt):
-            shooter.run(console=console, dma='python', input_fn=interrupt, report=False)
-        self.assertIs(d.transport._xfer_dma, sentinel)
+            shooter.run(console=console, dma='driver', input_fn=interrupt, report=False)
+        self.assertFalse(raw.acceleration.closed)
+        self.assertEqual(raw.acceleration.chunk, 256)
         self.assertFalse(console.paused)
+        with self.assertRaises(ValueError):
+            shooter.run(device=d, dma='python', report=False)
 
     def test_keyboard_split_arrow_hold_and_toggle(self):
         class Stream:

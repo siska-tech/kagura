@@ -337,6 +337,38 @@ class TileFramebuffer:
                 error += dx
                 y0 += sy
 
+    def lines(self, segments, count=None, color=None):
+        """Draw many lines in one call; each exactly as line() draws it.
+
+        segments: array('i') of (x0, y0, x1, y1, colour) records, `count` of
+        them (default all). color, if given, replaces every record's colour,
+        so color=0 erases what the same records drew. Coordinates must be in
+        -32767..32767 and colours 0..15; nothing is drawn unless all are.
+        With the Viper backend this costs one call instead of one per line.
+        """
+        n = len(segments) // 5 if count is None else count
+        _ints(n)
+        _range(n, 0, len(segments) // 5, 'segment count')
+        if color is not None:
+            _range(color, 0, 15, 'color')
+        # MicroPython arrays have no typecode: one item's byte size tells.
+        if (self._kernels is not None and type(segments) is array and
+                (not n or len(bytes(segments[:1])) == 4)):
+            p = self._params
+            p[0], p[1] = n, -1 if color is None else color
+            bad = self._kernels.lines(self.buffer, self.dirty, segments, p)
+            if bad >= 0:
+                raise ValueError('segment %d: coordinates -32767..32767, colour 0..15' % bad)
+            return
+        for k in range(n):
+            record = segments[k * 5:k * 5 + 5]
+            if (any(not -32767 <= v <= 32767 for v in record[:4]) or
+                    color is None and not 0 <= record[4] <= 15):
+                raise ValueError('segment %d: coordinates -32767..32767, colour 0..15' % k)
+        for k in range(n):
+            x0, y0, x1, y1, c = segments[k * 5:k * 5 + 5]
+            self.line(x0, y0, x1, y1, c if color is None else color)
+
     def circle(self, x, y, radius, color):
         _ints(x, y, radius)
         _range(radius, 0, 0x7FFFFFFF, 'radius')
@@ -653,6 +685,16 @@ class TileFramebuffer:
         self.last_flush = stats
         start = ticks_us()
         d = self.device
+        link = d._link()
+        if link is not None:
+            # accelerate(): the same runs, gap merge, split, FENCEs and stats
+            # in one Viper call (kagura/link_viper.py _flush).
+            d.busy += 1
+            try:
+                link.flush(self.dirty, self.buffer, max_gap, stats, d.timeout_us)
+            finally:
+                d.busy -= 1
+            return stats
         d.busy += 1
         try:
             if max_gap:

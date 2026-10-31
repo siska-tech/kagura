@@ -142,6 +142,26 @@ class Stats:
                     particle_culled=self.particle_culled)
 
 
+class LinkMeter:
+    """kagura.link operations timed into a TransportMeter."""
+    def __init__(self, meter, link):
+        self.meter, self.target = meter, link
+
+    def __getattr__(self, name):
+        operation, meter = getattr(self.target, name), self.meter
+        def timed(*args):
+            stamp = ticks_us()
+            try:
+                return operation(*args)
+            finally:
+                meter.io_us += ticks_diff(ticks_us(), stamp)
+                if name == 'write_memory':
+                    meter.wire_bytes += len(args[1]) + 1
+                    if len(args[1]) >= 16:
+                        meter.dma_payload += len(args[1])
+        return timed
+
+
 class TransportMeter:
     """Application-scoped wrapper around the existing DMA-capable transport.
 
@@ -151,9 +171,22 @@ class TransportMeter:
     def __init__(self, transport):
         self.raw = transport
         self.wire_bytes = self.io_us = self.dma_payload = 0
+        self._links = (None, None)   # (raw link, its meter)
 
     def __getattr__(self, name):
         return getattr(self.raw, name)
+
+    @property
+    def link(self):
+        # Device operations that kagura.link does in one call bypass write()
+        # and readinto(); time them here as well. Only write_memory adds wire
+        # bytes (its payload); those operations' headers are not counted.
+        raw_link = getattr(self.raw, 'link', None)
+        if raw_link is None:
+            return None
+        if self._links[0] is not raw_link:
+            self._links = (raw_link, LinkMeter(self, raw_link))
+        return self._links[1]
 
     def write(self, offset, data, inc=False):
         stamp = ticks_us()

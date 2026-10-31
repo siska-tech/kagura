@@ -92,6 +92,46 @@ def line(buffer, dirty, params, counters):
 
 
 @micropython.viper
+def lines(buffer, dirty, segments, params) -> int:
+    # params[0] records of (x0, y0, x1, y1, colour) in an array('i');
+    # params[1] >= 0 replaces every colour. All records are checked before
+    # any pixel changes; returns the first bad record or -1. Same stepping
+    # as line() above.
+    dst=ptr8(buffer);marks=ptr8(dirty);s=ptr32(segments);p=ptr32(params)
+    n=int(p[0]);override=int(p[1])
+    for k in range(n):
+        for j in range(4):
+            v=int(s[k*5+j])
+            if v<-32767 or v>32767:return k
+        c=int(s[k*5+4])
+        if override<0 and (c<0 or c>15):return k
+    for k in range(n):
+        x=int(s[k*5]);y=int(s[k*5+1]);endx=int(s[k*5+2]);endy=int(s[k*5+3])
+        c=override
+        if c<0:c=int(s[k*5+4])
+        # Wholly off screen: line() returns before stepping, so skip too.
+        if (x<0 and endx<0) or (x>=320 and endx>=320) or (y<0 and endy<0) or (y>=240 and endy>=240):
+            continue
+        dx=endx-x;dy=endy-y;sx=1;sy=1
+        if dx<0:dx=-dx;sx=-1
+        if dy<0:dy=-dy;sy=-1
+        error=dx-dy
+        while True:
+            if x>=0 and x<320 and y>=0 and y<240:
+                tile=(y>>3)*40+(x>>3)
+                address=tile*32+(y&7)*4+((x&7)>>1)
+                shift=4
+                if x&1:shift=0
+                old=int(dst[address]);value=(old&(255^(15<<shift)))|(c<<shift)
+                if old!=value:dst[address]=value;marks[tile]=1
+            if x==endx and y==endy:break
+            twice=error*2
+            if twice>=-dy:error-=dy;x+=sx
+            if twice<=dx:error+=dx;y+=sy
+    return -1
+
+
+@micropython.viper
 def circle(buffer, dirty, params, counters):
     dst=ptr8(buffer);marks=ptr8(dirty);p=ptr32(params);calls=ptr32(counters)
     calls[3]+=1
