@@ -407,6 +407,16 @@ class Optimized(unittest.TestCase):
             fast(b, t)
             self.assertEqual(a, b, t)
 
+    def test_oam_hoisted_divisions_match_original(self):
+        xs, phases = petals()
+        for lines in (180, 240):
+            for t in list(range(0, 300, 7)) + list(TIMES) + [999999]:
+                expected = oam_frame(xs, phases, lines, t)
+                p = array('i', [t, lines, t * 37 // 16, t * 21 // 16, t * 11 // 16])
+                out = bytearray(2048)
+                H.K.build_oam_fast(out, xs, phases, S.SINE_BYTES, S.LAYERS, p)
+                self.assertEqual(out, expected, (lines, t))
+
     def test_allocation_free_replacements_are_exact(self):
         # The gust sweep's whole-hertz steps: 700 .. 700 + 120 * 22 + 64 * 6, and beyond.
         for hz in range(0, 4096):

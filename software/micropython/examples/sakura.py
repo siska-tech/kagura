@@ -89,8 +89,9 @@ WRAP = 352 * 16    # wind_x period in 1/16 px; the petals wrap every 352 px
 #   hudround match RP2 float32 MB formatting with integer arithmetic
 #   hudglyph dirty only the changed glyphs within a stationary fixed field
 #   steady  optionally reserve every sound view before timing (STEADY_OPTS)
+#   oam     hoist frame/layer constants out of the 256-petal native loop
 #   short   fixed register transactions through Link's ownership/error wrapper
-OPTS = ('order', 'hud', 'bands', 'palette', 'regs', 'hudascii', 'hudbuf', 'hudround', 'hudglyph', 'short')
+OPTS = ('order', 'hud', 'bands', 'palette', 'regs', 'hudascii', 'hudbuf', 'hudround', 'hudglyph', 'oam', 'short')
 STEADY_OPTS = OPTS + ('steady',)
 
 MARQUEE = ("◆ 神楽九 KAGURA-9 ◆ 桜256枚・ラスター8段・PSRAMピアノ2声・PSG6声 同時処理中 "
@@ -1258,6 +1259,10 @@ class Sakura:
         update, excluded from its processing time)."""
         d, sound, p, opt = self.d, self.sound, self.p, self.opt
         track_sync = stats and hasattr(stats, 'sync_us')
+        build_oam = K.build_oam
+        if 'oam' in opt:
+            from sakura_hud_viper import build_oam_fast
+            build_oam = build_oam_fast
         o_order, o_hud, o_bands, o_regs = 'order' in opt, 'hud' in opt, 'bands' in opt, 'regs' in opt
         tr = d.transport
         b1 = bytearray(1)
@@ -1350,7 +1355,7 @@ class Sakura:
                 p[0] = t
                 for l in range(3):
                     p[2 + l] = self.wind_x[l] // 16
-                K.build_oam(oam, self.petal_x, self.petal_phase, SINE_BYTES, LAYERS, p)
+                build_oam(oam, self.petal_x, self.petal_phase, SINE_BYTES, LAYERS, p)
                 palette(self.pal, t)
                 n = self.bands_fast(t) if o_bands else self.bands(t)
                 updates += 1

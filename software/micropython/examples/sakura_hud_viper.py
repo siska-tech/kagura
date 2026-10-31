@@ -4,6 +4,79 @@ import micropython
 
 
 @micropython.viper
+def build_oam_fast(oam, xs, phases, sine, layers, p):
+    """Write all 256 petal records into oam.
+
+    xs: array('H') base X 0..351; phases: bytearray; sine: bytes of
+    sine64(i) + 64 for i in 0..63; p: array('i') [t, lines, wind0, wind1,
+    wind2] with wind_x // 16 >= 0 per layer.
+    """
+    o = ptr8(oam)
+    px = ptr16(xs)
+    pp = ptr8(phases)
+    s = ptr8(sine)
+    ly = ptr8(layers)
+    q = ptr32(p)
+    t = int(q[0])
+    lines = int(q[1])
+    half = t // 2
+    sixth = t // 6
+    tenth = t // 10
+    for l in range(3):
+        b = l * 7
+        first = int(ly[b])
+        count = int(ly[b + 1])
+        size = int(ly[b + 2])
+        speed = int(ly[b + 3])
+        sway = int(ly[b + 4])
+        palette = int(ly[b + 6])
+        top = 16 - size
+        field = lines - 8 - top
+        fall = t * speed
+        field16 = field * 16
+        wind = int(q[2 + l])
+        for k in range(count):
+            i = first + k
+            ph = int(pp[i])
+            y = top + (k * field16 // count + fall) // 16 % field
+            v = sway * (int(s[(half + ph) & 63]) - 64)  # C truncates sway * sine / 64 toward zero
+            if v < 0:
+                v = 0 - (0 - v) // 64
+            else:
+                v = v // 64
+            x = (int(px[i]) + wind + v + 352) % 352 - 16  # wraps through negative X
+            attr = 1                                      # SPR_ON
+            if size == 16:
+                tile = 196 + ((tenth + ph) & 1) * 4
+                attr |= 2                                 # SPR_16
+                if ph & 1:
+                    attr |= 4
+            else:
+                f = (sixth + ph) & 3                     # 0 1 2 1-mirrored: a tumbling petal
+                tile = 192 + f
+                mirror = ph & 1
+                if f == 3:
+                    tile = 193
+                    mirror ^= 1
+                if mirror:
+                    attr |= 4                             # SPR_HFLIP
+            if ph & 2:
+                attr |= 8                                 # SPR_VFLIP
+            # The HUD and marquee bars are opaque, so behind hides petals there.
+            if l == 2 or y < 16 or y + size > lines - 8:
+                attr |= 16                                # SPR_BEHIND
+            e = i * 8
+            o[e] = x & 255
+            o[e + 1] = (x >> 8) & 3
+            o[e + 2] = y & 255
+            o[e + 3] = ((y >> 8) & 3) | (attr << 2)
+            o[e + 4] = tile & 255
+            o[e + 5] = ((tile >> 8) & 3) | (palette << 2)
+            o[e + 6] = 0
+            o[e + 7] = 0
+
+
+@micropython.viper
 def cents(value: int) -> int:
     """RP2 float32 APPROX '%.2f' of bytes/2**20; input 0..2**30-1.
 
