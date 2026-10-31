@@ -1,0 +1,9 @@
+SDK FINAL device kagura/device.mpy
+SDK FINAL free 48736
+SAKURA CAPS 0x5b, 240 lines
+SAKURA scenery: 265 unique tiles
+SAKURA loaded in 19515 ms (702084 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 1156 updates in 20.0 s (57.77 updates/s, 125 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 2.48 MB (COPY 1.13 MB)
+SAKURA display: 1155 COMMITs confirmed in 20.0 s (57.72 displayed/s)
+Local directory build/sakura-perf/run is mounted at /remote

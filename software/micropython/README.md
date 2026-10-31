@@ -430,6 +430,8 @@ mpremote connect COM5 exec "import sakura; sakura.run(60)"
 
 固定HUDのモジュールは場面の読込み後に読み込む。`mpremote mount`でRAMの余裕が少ない場合は、上の4ファイルを`mpy-cross -march=armv6m`で`.mpy`にして使う。数値が固定バッファの範囲を超える場合も従来経路で表示する。
 
+条件別の測定表、GC標本と総確保の区別、診断VMを採用しなかった理由は[桜吹雪の性能記録](../../docs/micropython-sakura-performance.md)に記載した。汎用SDKの変更と性能比較は[別記録](../../docs/micropython-sdk-performance.md)に分離している。
+
 同実機・通常ファームの最終版は、20秒の計測後に続く60秒でheap純増0 B・GC検出0回、通常更新p50/p95/p99は13.2/13.6/14.0 ms、HUD平均17.00 ms・最大30.2 msだった。統計ありではCOMMIT適用確認後58.17 displayed/s、続く統計なし20秒では59.94 displayed/s。全エラー0。GCは有効のまま。通常更新の最大14 ms未満・HUDの最大16.67 ms以内という目標は未達で、通常VMの一時的な呼出しフレーム確保も残る。COMMIT待ち（STATUSポーリングを含む）と統計用FRAME_COUNT読出しの時間は処理時間から分離して表示する。
 
 別の新規起動での統計なし20秒は57.58 displayed/sだった。連続運転後の59.94 displayed/sを初回から保証するものではなく、通常VMの呼出しフレーム確保はheap配置の影響を受ける。
