@@ -66,7 +66,7 @@ class Link:
         import uctypes
         return uctypes.addressof(buffer)
 
-    # Every kernel call goes through here: one owner at a time, the
+    # Every kernel call goes through _call or _fast: one owner at a time, the
     # transport's own recovery on any failure, the driver's exceptions.
     def _call(self, name, kernel, *args):
         raw = self.raw
@@ -78,6 +78,31 @@ class Link:
         except BaseException:
             raw._abort()   # e.g. KeyboardInterrupt mid-transfer: CS high, DMA off
             raise
+        return self._result(name, r)
+
+    def _fast(self, name, kernel, n, a=0, b=0, e=0):
+        """_call(name, kernel, self.c, self.buf, ...) with n of a, b, e after
+        them, without the *args tuple: the per-frame operations allocate nothing."""
+        raw = self.raw
+        if raw._closed or raw._active:
+            raise RuntimeError('transport closed or already in use')
+        raw._active = True
+        try:
+            if n == 2:
+                r = kernel(self.c, self.buf, a, b)
+            elif n == 1:
+                r = kernel(self.c, self.buf, a)
+            elif n == 0:
+                r = kernel(self.c, self.buf)
+            else:
+                r = kernel(self.c, self.buf, a, b, e)
+        except BaseException:
+            raw._abort()   # e.g. KeyboardInterrupt mid-transfer: CS high, DMA off
+            raise
+        return self._result(name, r)
+
+    def _result(self, name, r):
+        raw = self.raw
         raw._active = False
         if r >= 0x100:
             raise DeviceError(r & 255)
@@ -104,7 +129,7 @@ class Link:
             value = 0
             for i in range(n):
                 value |= data[i] << (8 * i)
-            self._call('write', self.k._short, self.c, self.buf, header | n << 8, value)
+            self._fast('write', self.k._short, 2, header | n << 8, value)
             return
         c = self.c
         c[_N] = c[_TXLEN] = n + 1
@@ -118,7 +143,7 @@ class Link:
         if getattr(buffer, 'itemsize', 1) != 1:
             return self.fallback_readinto(offset, buffer, inc)
         if len(buffer) == 1 and not inc:
-            buffer[0] = self._call('read', self.k._short, self.c, self.buf, 0x80 | offset, 0)
+            buffer[0] = self._fast('read', self.k._short, 2, 0x80 | offset, 0)
             return
         n, c = len(buffer), self.c
         c[_N], c[_TXLEN], c[_FLAGS], c[_OFFSET], c[_INC] = n + 3, 2, 2, offset, int(inc)
@@ -131,29 +156,29 @@ class Link:
     def write_memory(self, address, data, timeout_us):
         c = self.c
         c[_SRC], c[_LEN], c[_WAIT] = 0, len(data), timeout_us
-        self._call('write_memory', self.k._write_memory, c, self.buf, address, data)
+        self._fast('write_memory', self.k._write_memory, 2, address, data)
 
     def fence(self, timeout_us):
         self.c[_WAIT] = timeout_us
-        self._call('FENCE', self.k._fence, self.c, self.buf)
+        self._fast('FENCE', self.k._fence, 0)
 
     def wait_status(self, mask, value, timeout_us):
         self.c[_WAIT] = timeout_us
-        self._call('STATUS', self.k._wait, self.c, self.buf, 0, mask << 8 | value)
+        self._fast('STATUS', self.k._wait, 2, 0, mask << 8 | value)
 
     def commit(self, wait, timeout_us):
         self.c[_WAIT] = timeout_us
-        self._call('STATUS', self.k._commit, self.c, self.buf, 3 | (0 if wait else 0x100))
+        self._fast('STATUS', self.k._commit, 1, 3 | (0 if wait else 0x100))
 
     def audio_commit(self, timeout_us):
         self.c[_WAIT] = timeout_us
-        self._call('AUDIO_COMMIT', self.k._commit, self.c, self.buf, 4)
+        self._fast('AUDIO_COMMIT', self.k._commit, 1, 4)
 
     def ext_writes(self, pairs, count):
-        self._call('ext', self.k._batch, self.c, self.buf, pairs, count, 0x0a)
+        self._fast('ext', self.k._batch, 3, pairs, count, 0x0a)
 
     def audio_writes(self, pairs, count):
-        self._call('audio', self.k._batch, self.c, self.buf, pairs, count, 0x0c)
+        self._fast('audio', self.k._batch, 3, pairs, count, 0x0c)
 
     def flush(self, dirty, buffer, max_gap, stats, timeout_us):
         """Fill stats like TileFramebuffer._flush; exceptions leave unconfirmed runs dirty."""

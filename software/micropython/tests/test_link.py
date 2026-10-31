@@ -254,6 +254,49 @@ def state(model):
 
 
 class LinkTests(TestCase):
+    def test_inline_busy_operations_keep_the_wrapper_contract(self):
+        """The per-frame operations handle busy inline instead of @operation:
+        busy held during every transaction, restored after success, a
+        transfer failure (same exception) and a rejected argument, on the
+        link and on the plain transport; keyword calls still work."""
+        cases = (('write_reg', (R.REG_FENCE_TAG, 7), {}), ('write_reg', (), {'offset': R.REG_FENCE_TAG, 'value': 9}),
+                 ('read_reg', (R.REG_STATUS,), {}), ('ext_writes', (bytes((R.EXT_SCROLL_X_L, 3)),), {}),
+                 ('audio_read', (R.AUDIO_STATUS,), {}), ('audio_writes', (bytes((4, 1)),), {}),
+                 ('write_memory', (0x100, b'abcd'), {}), ('wait_status', (R.STATUS_COMMIT_BUSY, 0), {}),
+                 ('fence', (), {}), ('commit', (), {}), ('commit', (), {'wait': False}), ('audio_commit', (), {}))
+        for path in ('link', 'plain'):
+            for name, args, kw in cases:
+                d = connect()[0] if path == 'link' else plain()[0]
+                target = d.transport.link if path == 'link' else d.transport
+                methods = ('_fast', '_call') if path == 'link' else ('write', 'readinto')
+                seen, fail = [], [False]
+
+                def spy(original):
+                    def call(*a, **k):
+                        seen.append(d.busy)
+                        if fail[0]:
+                            raise OSError('injected transfer failure')
+                        return original(*a, **k)
+                    return call
+                for m in methods:
+                    setattr(target, m, spy(getattr(target, m)))
+                getattr(d, name)(*args, **kw)
+                self.assertTrue(seen and min(seen) >= 1, (path, name, seen))
+                self.assertEqual(d.busy, 0, (path, name))
+                fail[0] = True
+                with self.assertRaises(OSError) as raised:
+                    getattr(d, name)(*args, **kw)
+                self.assertEqual(str(raised.exception), 'injected transfer failure')
+                self.assertEqual(d.busy, 0, (path, name))
+            d = connect()[0] if path == 'link' else plain()[0]
+            with self.assertRaises(ValueError):
+                d.write_reg(R.REG_FENCE_TAG, 256)
+            with self.assertRaises(ValueError):
+                d.write_memory(0x7ffe, b'abcd')
+            with self.assertRaises(ValueError):
+                d.ext_writes(b'\x01')
+            self.assertEqual(d.busy, 0)
+
     def test_register_operations_match_the_driver(self):
         for lanes in (1, 4):
             for sm in (0, 3):
