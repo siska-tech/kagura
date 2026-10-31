@@ -1,0 +1,45 @@
+SDKBUILD main /remote/kagura/device.mpy
+SDKBENCH read_reg mean=493.9 median=497 max=595 us net_heap=12800 B n=200
+SDKBENCH write_reg mean=770.4 median=761 max=934 us net_heap=22400 B n=200
+SDKBENCH audio_read mean=1407.7 median=1423 max=1590 us net_heap=41600 B n=200
+SDKBENCH ext_writes_3 mean=3073.4 median=3119 max=3875 us net_heap=67200 B n=200
+SDKBENCH oam_2048 mean=2461.3 median=2461 max=2645 us net_heap=16000 B n=200
+SDKBENCH commit_wait mean=16569.2 median=16649 max=16670 us net_heap=9600 B n=200
+SDKBENCH PASS (GC enabled; net_heap is not gross allocation)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sdk-perf\main is mounted at /remote
+SDKBUILD main /remote/kagura/device.mpy
+SDKBENCH read_reg mean=492.2 median=498 max=612 us net_heap=12800 B n=200
+SDKBENCH write_reg mean=768.6 median=754 max=916 us net_heap=22400 B n=200
+SDKBENCH audio_read mean=1402.6 median=1399 max=1586 us net_heap=41600 B n=200
+SDKBENCH ext_writes_3 mean=3056.8 median=3108 max=3829 us net_heap=67200 B n=200
+SDKBENCH oam_2048 mean=2454.4 median=2453 max=2644 us net_heap=16000 B n=200
+SDKBENCH commit_wait mean=16569.3 median=16649 max=16671 us net_heap=9600 B n=200
+SDKBENCH PASS (GC enabled; net_heap is not gross allocation)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sdk-perf\main is mounted at /remote
+SDKBUILD short /remote/kagura/device.mpy
+SDKBENCH read_reg mean=382.5 median=383 max=419 us net_heap=0 B n=200
+SDKBENCH write_reg mean=476.5 median=476 max=530 us net_heap=0 B n=200
+SDKBENCH audio_read mean=914.3 median=914 max=958 us net_heap=0 B n=200
+SDKBENCH ext_writes_3 mean=539.2 median=539 max=591 us net_heap=0 B n=200
+SDKBENCH oam_2048 mean=2436.6 median=2437 max=2505 us net_heap=0 B n=200
+SDKBENCH commit_wait mean=16569.7 median=16649 max=16674 us net_heap=0 B n=200
+SDKBENCH PASS (GC enabled; net_heap is not gross allocation)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sdk-perf\short is mounted at /remote
+SDKBUILD short /remote/kagura/device.mpy
+SDKBENCH read_reg mean=383.6 median=383 max=410 us net_heap=0 B n=200
+SDKBENCH write_reg mean=476.5 median=475 max=526 us net_heap=0 B n=200
+SDKBENCH audio_read mean=913.8 median=913 max=958 us net_heap=0 B n=200
+SDKBENCH ext_writes_3 mean=540.5 median=540 max=587 us net_heap=0 B n=200
+SDKBENCH oam_2048 mean=2435.8 median=2436 max=2479 us net_heap=0 B n=200
+SDKBENCH commit_wait mean=16570.1 median=16649 max=16672 us net_heap=0 B n=200
+SDKBENCH PASS (GC enabled; net_heap is not gross allocation)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sdk-perf\short is mounted at /remote
+SDKBUILD tuples /remote/kagura/device.mpy
+SDKBENCH read_reg mean=469.4 median=469 max=556 us net_heap=0 B n=200
+SDKBENCH write_reg mean=591.4 median=590 max=652 us net_heap=0 B n=200
+SDKBENCH audio_read mean=1124.6 median=1124 max=1194 us net_heap=0 B n=200
+SDKBENCH ext_writes_3 mean=539.8 median=540 max=587 us net_heap=0 B n=200
+SDKBENCH oam_2048 mean=2434.9 median=2434 max=2471 us net_heap=0 B n=200
+SDKBENCH commit_wait mean=16570.1 median=16650 max=16672 us net_heap=0 B n=200
+SDKBENCH PASS (GC enabled; net_heap is not gross allocation)
+Local directory C:\Users\Shion\Documents\Projects\Kagura\build\sdk-perf\tuples is mounted at /remote

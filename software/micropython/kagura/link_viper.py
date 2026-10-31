@@ -368,11 +368,12 @@ def _commit(settings, buf, command: int) -> int:
 
 
 @micropython.viper
-def _audio_batch(settings, buf, ops, n: int) -> int:
-    """n (index, value) byte pairs, each one INC write of AUDIO_REG_INDEX and DATA."""
+def _batch(settings, buf, ops, n: int, offset: int) -> int:
+    """n (index, value) byte pairs, each one INC write of an INDEX register at
+    offset (EXT 0x0a, AUDIO 0x0c) and the DATA register after it."""
     p = ptr8(ops)
     for k in range(n):
-        r = int(_short(settings, buf, 0x4c | 0x200, int(p[2 * k]) | (int(p[2 * k + 1]) << 8)))
+        r = int(_short(settings, buf, 0x40 | offset | 0x200, int(p[2 * k]) | (int(p[2 * k + 1]) << 8)))
         if r < 0:
             return r
     return 0

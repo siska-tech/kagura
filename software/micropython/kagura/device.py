@@ -31,6 +31,10 @@ def _range(value, lo, hi, name):
         raise ValueError(name)
 
 
+# The buffers write_memory() passes on as they are (a constant: the tuple is not rebuilt per call).
+_BUFFERS = (bytes, bytearray, memoryview)
+
+
 def _le(value, size):
     return bytes((value >> (8 * i)) & 255 for i in range(size))
 
@@ -45,6 +49,10 @@ class Kagura:
         self.height = 0
         self.abi = None
         self._one = bytearray(1)
+        # Scratch for one register write: the transfer is synchronous and only
+        # the busy owner gets here, so reusing them is safe and allocates nothing.
+        self._w1 = bytearray(1)
+        self._w2 = bytearray(2)
         self._read_pending = False
 
     @operation
@@ -101,37 +109,78 @@ class Kagura:
             if ticks_diff(ticks_us(), start) >= timeout_us:
                 raise OSError("KAGURA timeout: " + name)
 
-    @operation
     def write_reg(self, offset, value):
-        _range(value, 0, 255, "register value")
-        self.transport.write(offset, bytes((value,)))
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            _range(value, 0, 255, "register value")
+            link = self._link()
+            if link is not None:
+                if not 0 <= offset <= 31:
+                    raise ValueError('register offset')
+                link._fast('write', link.k._short, 2, 0x100 | offset, value)
+                return
+            w = self._w1
+            w[0] = value
+            self.transport.write(offset, w)
+        finally:
+            self.busy -= 1
 
-    @operation
     def read_reg(self, offset):
-        self.transport.readinto(offset, self._one)
-        return self._one[0]
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            link = self._link()
+            if link is not None:
+                if not 0 <= offset <= 31:
+                    raise ValueError('register offset or read length (1..256)')
+                return link._fast('read', link.k._short, 2, 0x80 | offset, 0)
+            self.transport.readinto(offset, self._one)
+            return self._one[0]
+        finally:
+            self.busy -= 1
 
     @operation
     def ext_write(self, index, value):
         _range(index, 0, 255, "EXT index")
         _range(value, 0, 255, "EXT value")
-        self.transport.write(R.REG_EXT_REG_INDEX, bytes((index, value)), True)
+        w = self._w2
+        w[0], w[1] = index, value
+        self.transport.write(R.REG_EXT_REG_INDEX, w, True)
 
     @operation
     def ext_read(self, index):
         self.write_reg(R.REG_EXT_REG_INDEX, index)
         return self.read_reg(R.REG_EXT_REG_DATA)
 
+    def ext_writes(self, pairs):
+        """Several ext_write()s: pairs is bytes-like index, value, index, value..."""
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            if len(pairs) % 2:
+                raise ValueError("EXT pairs: index, value bytes")
+            link = self._link()
+            if link is not None and getattr(pairs, "itemsize", 1) == 1:
+                link.ext_writes(pairs, len(pairs) // 2)
+                return
+            for i in range(0, len(pairs), 2):
+                self.ext_write(pairs[i], pairs[i + 1])
+        finally:
+            self.busy -= 1
+
     @operation
     def audio_write(self, index, value):
         _range(index, 0, 255, "audio index")
         _range(value, 0, 255, "audio value")
-        self.transport.write(R.REG_AUDIO_REG_INDEX, bytes((index, value)), True)
+        w = self._w2
+        w[0], w[1] = index, value
+        self.transport.write(R.REG_AUDIO_REG_INDEX, w, True)
 
-    @operation
     def audio_read(self, index):
-        self.write_reg(R.REG_AUDIO_REG_INDEX, index)
-        return self.read_reg(R.REG_AUDIO_REG_DATA)
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            self.write_reg(R.REG_AUDIO_REG_INDEX, index)
+            return self.read_reg(R.REG_AUDIO_REG_DATA)
+        finally:
+            self.busy -= 1
 
     @operation
     def check_errors(self):
@@ -168,21 +217,25 @@ class Kagura:
         # kagura.link.Link installed by transport.accelerate(), else None.
         return getattr(self.transport, "link", None)
 
-    @operation
     def write_memory(self, address, data):
-        data = memoryview(data)
-        self._memory_range(address, len(data))
-        if not data:
-            return
-        link = self._link()
-        # MicroPython's memoryview has no itemsize; it then holds bytes.
-        if link is not None and getattr(data, "itemsize", 1) == 1:
-            link.write_memory(address, data, self.timeout_us)
-            return
-        self.transport.write(R.REG_INC_L, b"\x01\x00", True)
-        self._address(address)
-        self.transport.write(R.REG_VRAM_WRITE, data)
-        self.check_errors()
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            if not isinstance(data, _BUFFERS):
+                data = memoryview(data)   # already byte buffers: no new view per call
+            self._memory_range(address, len(data))
+            if not data:
+                return
+            link = self._link()
+            # MicroPython's memoryview has no itemsize; it then holds bytes.
+            if link is not None and getattr(data, "itemsize", 1) == 1:
+                link.write_memory(address, data, self.timeout_us)
+                return
+            self.transport.write(R.REG_INC_L, b"\x01\x00", True)
+            self._address(address)
+            self.transport.write(R.REG_VRAM_WRITE, data)
+            self.check_errors()
+        finally:
+            self.busy -= 1
 
     @operation
     def read_memory_into(self, address, buffer):
@@ -206,15 +259,18 @@ class Kagura:
         self.check_errors()
         return len(buffer)
 
-    @operation
     def wait_status(self, mask, value):
-        link = self._link()
-        if link is not None:
-            _range(mask, 0, 255, "status mask")
-            _range(value, 0, 255, "status value")
-            link.wait_status(mask, value, self.timeout_us)
-            return
-        self._wait(lambda: self.read_reg(R.REG_STATUS) & mask == value, "STATUS")
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            link = self._link()
+            if link is not None:
+                _range(mask, 0, 255, "status mask")
+                _range(value, 0, 255, "status value")
+                link.wait_status(mask, value, self.timeout_us)
+                return
+            self._wait_status_plain(mask, value)
+        finally:
+            self.busy -= 1
 
     @operation
     def fill(self, address, length, value=0):
@@ -240,14 +296,68 @@ class Kagura:
         self.write_reg(R.REG_COMMAND, R.CMD_COPY)
         self.check_errors()
 
-    @operation
     def fence(self):
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            link = self._link()
+            if link is not None:
+                link.fence(self.timeout_us)
+                return
+            self._fence_plain()
+        finally:
+            self.busy -= 1
+
+    def commit(self, wait=True):
+        # wait=False returns before the next frame applies the shadows; the
+        # next commit still waits first, so shadows are never overwritten early.
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            link = self._link()
+            if link is not None:
+                link.commit(wait, self.timeout_us)
+                return
+            self.wait_status(R.STATUS_COMMIT_BUSY, 0)
+            self.write_reg(R.REG_COMMAND, R.CMD_COMMIT)
+            self.check_errors()
+            if wait:
+                self.wait_status(R.STATUS_COMMIT_BUSY, 0)
+        finally:
+            self.busy -= 1
+
+    def audio_writes(self, pairs):
+        """Several audio_write()s: pairs is bytes-like index, value, index, value..."""
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            if len(pairs) % 2:
+                raise ValueError("audio pairs: index, value bytes")
+            link = self._link()
+            if link is not None and getattr(pairs, "itemsize", 1) == 1:
+                link.audio_writes(pairs, len(pairs) // 2)
+                return
+            for i in range(0, len(pairs), 2):
+                self.audio_write(pairs[i], pairs[i + 1])
+        finally:
+            self.busy -= 1
+
+    def audio_commit(self):
+        self.busy += 1   # inline @operation: no *args/**kwargs objects per call
+        try:
+            link = self._link()
+            if link is not None:
+                link.audio_commit(self.timeout_us)
+                return
+            self._audio_commit_plain()
+        finally:
+            self.busy -= 1
+
+    # The plain-transport bodies of wait_status, fence and audio_commit (their
+    # lambdas would allocate closure cells on every call of the fast paths).
+    def _wait_status_plain(self, mask, value):
+        self._wait(lambda: self.read_reg(R.REG_STATUS) & mask == value, "STATUS")
+
+    def _fence_plain(self):
         # Choose a tag different from the *current* DONE_TAG, including reset
         # and wrap. A cached local counter could match a stale completion.
-        link = self._link()
-        if link is not None:
-            link.fence(self.timeout_us)
-            return
         tag = (self.read_reg(R.REG_DONE_TAG) + 1) & 255
         self.write_reg(R.REG_FENCE_TAG, tag)
         self.write_reg(R.REG_COMMAND, R.CMD_FENCE)
@@ -255,38 +365,7 @@ class Kagura:
         self._wait(lambda: self.read_reg(R.REG_DONE_TAG) == tag, "FENCE")
         self.check_errors()
 
-    @operation
-    def commit(self, wait=True):
-        # wait=False returns before the next frame applies the shadows; the
-        # next commit still waits first, so shadows are never overwritten early.
-        link = self._link()
-        if link is not None:
-            link.commit(wait, self.timeout_us)
-            return
-        self.wait_status(R.STATUS_COMMIT_BUSY, 0)
-        self.write_reg(R.REG_COMMAND, R.CMD_COMMIT)
-        self.check_errors()
-        if wait:
-            self.wait_status(R.STATUS_COMMIT_BUSY, 0)
-
-    @operation
-    def audio_writes(self, pairs):
-        """Several audio_write()s: pairs is bytes-like index, value, index, value..."""
-        if len(pairs) % 2:
-            raise ValueError("audio pairs: index, value bytes")
-        link = self._link()
-        if link is not None and getattr(pairs, "itemsize", 1) == 1:
-            link.audio_writes(pairs, len(pairs) // 2)
-            return
-        for i in range(0, len(pairs), 2):
-            self.audio_write(pairs[i], pairs[i + 1])
-
-    @operation
-    def audio_commit(self):
-        link = self._link()
-        if link is not None:
-            link.audio_commit(self.timeout_us)
-            return
+    def _audio_commit_plain(self):
         self._wait(lambda: not self.audio_read(R.AUDIO_STATUS) & R.AUDIO_STATUS_APPLY_BUSY,
                    "AUDIO_COMMIT")
         self.write_reg(R.REG_COMMAND, R.CMD_AUDIO_COMMIT)

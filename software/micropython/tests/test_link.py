@@ -254,6 +254,114 @@ def state(model):
 
 
 class LinkTests(TestCase):
+    def test_scalar_registers_use_owned_short_transactions(self):
+        for lanes in (1, 4):
+            d, model, hw, raw = connect(lanes)
+            # The public device API reaches the same short kernel without
+            # constructing a transport buffer or invoking its wrapper.
+            raw.write = raw.readinto = lambda *a: self.fail('transport wrapper')
+            d.write_reg(offset=R.REG_FENCE_TAG, value=173)
+            self.assertEqual(d.read_reg(offset=R.REG_FENCE_TAG), 173)
+            for closed, active in ((True, False), (False, True)):
+                raw._closed, raw._active = closed, active
+                for call in (lambda: d.read_reg(R.REG_STATUS),
+                             lambda: d.write_reg(R.REG_FENCE_TAG, 1)):
+                    with self.assertRaisesRegex(RuntimeError, '^transport closed or already in use$'):
+                        call()
+                    self.assertEqual(d.busy, 0)
+            raw._closed = raw._active = False
+
+    def test_scalar_validation_matches_transport_and_recovers(self):
+        d, model, hw, raw = connect()
+        for offset in (-1, 32, 'bad', None, 1.5):
+            for api, original in (
+                    (lambda: d.read_reg(offset), lambda: raw.readinto(offset, bytearray(1))),
+                    (lambda: d.write_reg(offset, 1), lambda: raw.write(offset, b'\x01'))):
+                errors = []
+                for call in (original, api):
+                    try:
+                        call()
+                    except (ValueError, TypeError) as error:
+                        errors.append((type(error), str(error)))
+                self.assertEqual(len(errors), 2)
+                self.assertEqual(errors[0], errors[1])
+                self.assertEqual(d.busy, 0)
+                self.assertFalse(raw._active)
+        for reading in (True, False):
+            hw.stall, hw.interrupt_after = True, 1
+            pio_read = hw.pio_read
+            hw.pio_read = lambda i: pio_read(i) | (1 << (8 + hw.sm)) if i == 1 else pio_read(i)
+            raw.link.c[8] = 50000
+            call = (lambda: d.read_reg(R.REG_STATUS)) if reading else (lambda: d.write_reg(R.REG_FENCE_TAG, 1))
+            with self.assertRaises(KeyboardInterrupt):
+                call()
+            self.assertEqual(d.busy, 0)
+            self.assertFalse(raw._active)
+            self.assertTrue(hw.cs)
+            hw.pio_read = pio_read
+            hw.stall, hw.interrupt_after = False, None
+            d.write_reg(R.REG_FENCE_TAG, 7)
+            self.assertEqual(d.read_reg(R.REG_FENCE_TAG), 7)
+
+    def test_reused_packed_oam_buffer_matches_plain_uploads(self):
+        fast, fm, hw, raw = connect()
+        slow, sm_ = plain()
+        records = bytearray(R.VRAM_OAM_SIZE)
+        partial = memoryview(records)[8:24]
+        for device, model in ((fast, fm), (slow, sm_)):
+            for i in range(len(records)):
+                records[i] = i & 255
+            device.write_memory(R.VRAM_OAM_BASE, records)
+            records[8:24] = bytes(range(16))
+            device.write_memory(R.VRAM_OAM_BASE + 8, partial)
+            device.fence()
+            self.assertEqual(model.memory[R.VRAM_OAM_BASE:R.VRAM_OAM_BASE + len(records)], records)
+            self.assertEqual(device.busy, 0)
+        self.assertEqual(state(fm), state(sm_))
+
+    def test_inline_busy_operations_keep_the_wrapper_contract(self):
+        """The per-frame operations handle busy inline instead of @operation:
+        busy held during every transaction, restored after success, a
+        transfer failure (same exception) and a rejected argument, on the
+        link and on the plain transport; keyword calls still work."""
+        cases = (('write_reg', (R.REG_FENCE_TAG, 7), {}), ('write_reg', (), {'offset': R.REG_FENCE_TAG, 'value': 9}),
+                 ('read_reg', (R.REG_STATUS,), {}), ('ext_writes', (bytes((R.EXT_SCROLL_X_L, 3)),), {}),
+                 ('audio_read', (R.AUDIO_STATUS,), {}), ('audio_writes', (bytes((4, 1)),), {}),
+                 ('write_memory', (0x100, b'abcd'), {}), ('wait_status', (R.STATUS_COMMIT_BUSY, 0), {}),
+                 ('fence', (), {}), ('commit', (), {}), ('commit', (), {'wait': False}), ('audio_commit', (), {}))
+        for path in ('link', 'plain'):
+            for name, args, kw in cases:
+                d = connect()[0] if path == 'link' else plain()[0]
+                target = d.transport.link if path == 'link' else d.transport
+                methods = ('_fast', '_call') if path == 'link' else ('write', 'readinto')
+                seen, fail = [], [False]
+
+                def spy(original):
+                    def call(*a, **k):
+                        seen.append(d.busy)
+                        if fail[0]:
+                            raise OSError('injected transfer failure')
+                        return original(*a, **k)
+                    return call
+                for m in methods:
+                    setattr(target, m, spy(getattr(target, m)))
+                getattr(d, name)(*args, **kw)
+                self.assertTrue(seen and min(seen) >= 1, (path, name, seen))
+                self.assertEqual(d.busy, 0, (path, name))
+                fail[0] = True
+                with self.assertRaises(OSError) as raised:
+                    getattr(d, name)(*args, **kw)
+                self.assertEqual(str(raised.exception), 'injected transfer failure')
+                self.assertEqual(d.busy, 0, (path, name))
+            d = connect()[0] if path == 'link' else plain()[0]
+            with self.assertRaises(ValueError):
+                d.write_reg(R.REG_FENCE_TAG, 256)
+            with self.assertRaises(ValueError):
+                d.write_memory(0x7ffe, b'abcd')
+            with self.assertRaises(ValueError):
+                d.ext_writes(b'\x01')
+            self.assertEqual(d.busy, 0)
+
     def test_register_operations_match_the_driver(self):
         for lanes in (1, 4):
             for sm in (0, 3):
@@ -324,9 +432,13 @@ class LinkTests(TestCase):
             d.wait_status(R.STATUS_COMMIT_BUSY, 0)
             d.audio_writes(bytes((0x04, 12, 0x05, 9, 0x14, 33)))
             d.audio_commit()
+            d.ext_writes(bytes((R.EXT_SCROLL_X_L, 77, R.EXT_RS_INDEX, 0, R.EXT_RS_LINE, 16, R.EXT_RS_Y, 5)))
         self.assertEqual(state(fm), state(sm_))
+        self.assertEqual((fm.ext[R.EXT_SCROLL_X_L], fm.ext[R.EXT_RS_LINE], fm.ext[R.EXT_RS_Y]), (77, 16, 5))
         with self.assertRaises(ValueError):
             fast.audio_writes(b'\x01')
+        with self.assertRaises(ValueError):
+            fast.ext_writes(b'\x01')
 
     def test_device_error_is_reported_as_by_the_driver(self):
         for name, call in (('fence', lambda d: d.fence()), ('commit', lambda d: d.commit()),
