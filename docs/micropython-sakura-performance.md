@@ -13,6 +13,12 @@ SDK還元PR作成時の統合再確認では、最終`device`をRAM `.mpy`へ差
 これは従来条件の57.58／59.94とは別構成で、性能を直接比較しない。
 統計付き構成では追加RAM負荷による起動時MemoryErrorを確認したため、
 新SDKを凍結したファームでの統計付き再測定は未実施。今回Flashは変更していない。
+同じRAM差分構成の非加速はPCMなしで独立確認し、加速解除後と新規accelerate=Falseは
+各3秒・18更新でPASS、全エラー0。両場面を1セッションで続けると後者の起動が
+MemoryErrorとなったため、後者はsoft resetして再確認した。
+これはRAM差分構成のメモリ制約で、通常fw-ABCでは両経路の連続確認も成功している。
+[非加速ログ](measurements/sakura-sdk-nonaccelerated-2026-10-31.txt)と
+[RAM制約の失敗ログ](measurements/sakura-sdk-ram-limit-2026-10-31.txt)も保存する。
 
 ## 結果と測定値の訂正
 
