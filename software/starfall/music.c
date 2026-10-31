@@ -46,7 +46,12 @@ static const Score scores[SF_MUSIC_COUNT]={
      {48,53,55,48,48,48,48,48},0x0101,0,0},
     /* Lost signal: descending one-shot cadence. */
     {12,8,3,128,13,6,true,
-     {72,71,67,66,64,63,60,0}, {48,47,43,42,40,39,36,36},0,0,0}
+     {72,71,67,66,64,63,60,0}, {48,47,43,42,40,39,36,36},0,0,0},
+    /* Flight display: a dedicated attract loop at 112.5 BPM. */
+    {8,32,4,96,15,7,false,
+     {67,71,74,79,78,74,71,69,71,74,79,83,81,79,74,0,
+      69,72,76,81,79,76,72,71,67,71,74,79,81,78,74,71},
+     {43,43,50,50,45,45,48,50},0x1111,0x1010,0x4444}
 };
 static unsigned frequency(unsigned note) {
     static const uint16_t octave[12]={262,277,294,311,330,349,370,392,415,440,466,494};
@@ -61,12 +66,13 @@ unsigned sf_music_cue(const SfGame *g) {
     if(g->boss_dead)return SF_MUSIC_ESCAPE;
     if(g->stage_frame>=2760)return SF_MUSIC_BOSS;
     if(g->stage_frame>=2640)return SF_MUSIC_WARNING;
+    if(g->attract)return SF_MUSIC_DEMO;
     if(g->stage_frame>=SF_BASE_WORLD_X)return SF_MUSIC_BASE;
     if(g->stage_frame>=SF_BASE_APPROACH_TICK)return SF_MUSIC_ENTRY;
     return SF_MUSIC_SPACE;
 }
 const char *sf_music_name(unsigned cue) {
-    static const char *names[]={"TITLE","SPACE","ENTRY","BASE","WARNING","BOSS","ESCAPE","CLEAR","OVER"};
+    static const char *names[]={"TITLE","SPACE","ENTRY","BASE","WARNING","BOSS","ESCAPE","CLEAR","OVER","DEMO"};
     return cue<SF_MUSIC_COUNT?names[cue]:"NONE";
 }
 void sf_music_render(const SfGame *g,SfMusic *m) {
@@ -78,7 +84,8 @@ void sf_music_render(const SfGame *g,SfMusic *m) {
     else if(cue==SF_MUSIC_WARNING)tick-=2640;
     else if(cue==SF_MUSIC_BOSS)tick-=2760;
     else if(cue==SF_MUSIC_ESCAPE)tick-=g->boss_defeat_tick;
-    if(g->attract && g->state==SF_PLAY)tick/=2;
+    else if(cue==SF_MUSIC_DEMO)tick=g->demo_frame;
+    if(g->attract && g->state==SF_PLAY && cue!=SF_MUSIC_DEMO)tick/=2;
     memset(m,0,sizeof *m);m->cue=(uint8_t)cue;m->tick=tick;m->duty[0]=s->duty;m->duty[1]=128;
     unsigned step=tick/s->frames,phase=tick%s->frames;
     if(s->once && step>=s->length)return;

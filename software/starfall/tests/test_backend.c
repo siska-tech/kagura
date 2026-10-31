@@ -134,6 +134,12 @@ int main(void) {
         assert(rs_count==(tick<SF_BASE_APPROACH_TICK?2:0));
     }
     assert(column_writes==1000 && sf_map_payload_bytes==500*32);
+    sf_to_title(&g);view_tick=0;assert(sf_render(&g,&f));assert(sf_backend_present(&g,&f)==KH_OK);
+    assert(rs_lines[0]==40 && rs_lines[1]==104 && rs_count==2 && sf_scene_load_us);
+    assert(map_image[5*128+4*2+1]==0x11); /* title tile320 + palette4 */
+    sf_start(&g);assert(sf_render(&g,&f));assert(sf_backend_present(&g,&f)==KH_OK);
+    sf_make_map(initial,h);assert(!memcmp(initial,map_image,4096));
+    assert(rs_lines[0]==48 && rs_lines[1]==SF_SKY_BOTTOM(h));
     puts("PASS backend dirty runs/failure/blank/poll/audio/ring INC128/offscreen columns/space-base/restart");
     return 0;
 }

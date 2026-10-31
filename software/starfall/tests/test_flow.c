@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "starfall.h"
+#include "profile.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +33,15 @@ int main(void) {
         a.lives=1;a.invincible=0;sf_hit_player(&a);assert(a.state==SF_OVER);
         for(unsigned i=0;i<240;i++)sf_step(&a,0);
         assert(a.state==SF_TITLE);
+        sf_start(&a);sf_begin_play(&a);unsigned formations=0;bool meteor=false;
+        for(unsigned t=0;t<2800;t++) {
+            a.invincible=2;sf_step(&a,0);
+            for(unsigned e=0;e<SF_ENEMIES;e++)if(a.enemies[e].active) {
+                if(sf_enemy_flying(a.enemies[e].type))formations|=1u<<(a.enemies[e].phase&7);
+                if(a.enemies[e].type==SF_METEOR)meteor=true;
+            }
+        }
+        assert(formations==127 && meteor);sf_to_title(&a);
         sf_init(&a,h,1);uint8_t pal[32];sf_title_palette(&a,pal);
         for(unsigned i=0;i<32;i++)assert(!pal[i]);
         a.state_age=60;sf_title_palette(&a,pal);assert(pal[2] || pal[3]);
@@ -43,5 +53,11 @@ int main(void) {
         printf("PASS flow height=%u title/intro/40s replay/start/reset/over/logo\n",h);
     }
     for(unsigned i=0;i<SF_STAGE_COUNT;i++)assert(sf_stage_def(i) && sf_stage_def(i)->ready==(i==0));
-    assert(!sf_stage_def(6));return 0;
+    assert(!sf_stage_def(6));
+    SfProfile p={0};assert(!sf_profile_p95(&p));
+    for(unsigned i=1;i<=256;i++)sf_profile_add(&p,i);
+    assert(p.max==256 && p.sum==32896 && sf_profile_p95(&p)==244);
+    for(unsigned i=1;i<=256;i++)sf_profile_add(&p,i+1000);
+    assert(p.max==1256 && sf_profile_p95(&p)==1244);
+    return 0;
 }

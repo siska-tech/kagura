@@ -80,19 +80,25 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
         for(unsigned i=0;i<SF_ENEMIES;i++) {
             const SfEnemy *e=&g->enemies[i];if(!e->active)continue;
             if(e->type==SF_BOSS) {
-                for(unsigned part=0;part<4;part++)sprite(f->oam+(5+part)*8,
-                    e->x/256+(int)(part%2)*16,e->y/256+(int)(part/2)*16,
-                    (e->age%72>=56?272:48)+part*4,true);
+                static const uint8_t slots[6]={5,6,30,7,8,31};
+                for(unsigned part=0;part<6;part++) {
+                    bool turret=part==2 || part==5;unsigned p=part==5?1:0;
+                    if(turret && !g->boss.parts[p])continue;
+                    unsigned tile=turret?640+p*4:(e->age%72>=56?272:48)+(part/3*2+part%3)*4;
+                    sprite(f->oam+slots[part]*8,e->x/256+(int)(part%3)*16,e->y/256+(int)(part/3)*16,tile,true);
+                    if(g->enemy_flash[i])f->oam[slots[part]*8+5]|=12;
+                }
             }else {
                 bool alternate=(e->age/8)%2;
-                unsigned tile=e->type==SF_TURRET?20:e->type==SF_WAVE?(alternate?260:16):
+                unsigned tile=e->type==SF_METEOR?(alternate?660:656):e->type==SF_TURRET?20:e->type==SF_WAVE?(alternate?260:16):
                     e->type==SF_DIVER?(alternate?268:264):(alternate?256:12);
                 sprite(f->oam+(5+i)*8,e->x/256,e->y/256,tile,true);
                 if(e->type==SF_TURRET && e->phase)f->oam[(5+i)*8+3]|=32;
                 if(e->carrier)f->oam[(5+i)*8+5]|=1<<2;
+                else if((e->phase&7)==SF_FORM_REAR && sf_enemy_flying(e->type))f->oam[(5+i)*8+5]|=2<<2;
             }
             if(g->enemy_flash[i]) {
-                if(e->type==SF_BOSS)for(unsigned p=0;p<4;p++)f->oam[(5+p)*8+5]=(uint8_t)((f->oam[(5+p)*8+5]&0xc3)|12);
+                if(e->type==SF_BOSS) { /* composite parts flashed above */ }
                 else f->oam[(5+i)*8+5]=(uint8_t)((f->oam[(5+i)*8+5]&0xc3)|12);
             }
         }

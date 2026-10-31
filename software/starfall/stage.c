@@ -1,30 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "starfall.h"
-static const SfStageDef stages[SF_STAGE_COUNT]={
-    {"STAR FRONTIER",0,0,0,true},{"FRONTLINE BASE",1,1,1,false},
-    {"VOLCANIC BELT",2,2,2,false},{"ANCIENT RUINS",3,3,3,false},
-    {"BIO HIVE",4,4,4,false},{"CENTRAL FORTRESS",5,5,5,false}
-};
-const SfStageDef *sf_stage_def(unsigned index) { return index<SF_STAGE_COUNT?&stages[index]:0; }
 unsigned sf_scene(const SfGame *g) {
+    const SfStageDef *def=sf_stage_def(g->stage_index);
     if(g->boss_dead)return SF_DEFEAT;
-    if(g->stage_frame>=2760)return SF_BOSS_BATTLE;
-    if(g->stage_frame>=2640)return SF_WARNING;
+    if(def->boss_frame && g->stage_frame>=def->boss_frame)return SF_BOSS_BATTLE;
+    if(def->warning_frame && g->stage_frame>=def->warning_frame)return SF_WARNING;
     if(g->stage_frame>=2200)return SF_CLIMAX;
     return g->stage_frame>=SF_BASE_APPROACH_TICK?SF_MAIN_AREA:SF_OPENING;
 }
-typedef struct { uint16_t tick;uint8_t type,lane,count,gap; } Wave;
+typedef SfStageEvent Wave;
 static const Wave waves[]={
-    {90,SF_SCOUT,128,4,20},{310,SF_WAVE,96,4,22},
-    {550,SF_DIVER,180,4,20},{790,SF_WAVE,128,4,22},
-    {1030,SF_DIVER,80,4,20},{1270,SF_WAVE,150,4,22},
-    {1450,SF_TURRET,220,1,1},{1550,SF_SCOUT,128,3,22},
-    {1790,SF_TURRET,30,1,1},{1870,SF_WAVE,170,3,22},
-    {2130,SF_TURRET,220,1,1},{2230,SF_SCOUT,100,3,22},
-    {2420,SF_WAVE,150,3,22},{2600,SF_SCOUT,128,3,22},{2760,SF_BOSS,128,1,1}
+    {90,SF_SCOUT,128,4,20,SF_FORM_LINE},{310,SF_SCOUT,96,4,0,SF_FORM_V},
+    {550,SF_DIVER,128,2,0,SF_FORM_PINCER},{790,SF_WAVE,128,4,22,SF_FORM_ARC},
+    {1030,SF_METEOR,80,2,48,SF_FORM_LINE},{1270,SF_WAVE,150,4,22,SF_FORM_CARRIER},
+    {1450,SF_TURRET,220,1,1,SF_FORM_LINE},{1550,SF_SCOUT,128,2,22,SF_FORM_REAR},
+    {1790,SF_TURRET,30,1,1,SF_FORM_LINE},{1870,SF_WAVE,170,3,22,SF_FORM_WAVE},
+    {2130,SF_TURRET,220,1,1,SF_FORM_LINE},{2230,SF_SCOUT,100,3,22,SF_FORM_V},
+    {2420,SF_WAVE,150,3,22,SF_FORM_CARRIER},{2600,SF_SCOUT,128,2,20,SF_FORM_LINE},
+    {2760,SF_BOSS,128,1,1,SF_FORM_LINE}
 };
+_Static_assert(sizeof waves/sizeof waves[0]<=16,"formation reward mask capacity");
+static const SfStageDef stages[SF_STAGE_COUNT]={
+    {"STAR FRONTIER",0,0,0,true,waves,sizeof waves/sizeof waves[0],2640,2760},
+    {"FRONTLINE BASE",1,1,1,false,0,0,0,0},{"VOLCANIC BELT",2,2,2,false,0,0,0,0},
+    {"ANCIENT RUINS",3,3,3,false,0,0,0,0},{"BIO HIVE",4,4,4,false,0,0,0,0},
+    {"CENTRAL FORTRESS",5,5,5,false,0,0,0,0}
+};
+const SfStageDef *sf_stage_def(unsigned index) { return index<SF_STAGE_COUNT?&stages[index]:0; }
 void sf_stage_reset(SfGame *g) {
-    for(unsigned i=0;i<sizeof waves/sizeof waves[0];i++)g->group_remaining[i]=waves[i].count;
+    const SfStageDef *def=sf_stage_def(g->stage_index);
+    for(unsigned i=0;i<def->event_count;i++)g->group_remaining[i]=def->events[i].count;
 }
 void sf_stage_lost(SfGame *g,unsigned slot) {
     unsigned group=g->enemy_group[slot];if(group)g->group_failed|=(uint16_t)(1u<<(group-1));
@@ -33,7 +38,7 @@ void sf_stage_defeat(SfGame *g,unsigned slot) {
     unsigned group=g->enemy_group[slot];if(!group)return;
     unsigned index=group-1;if(!g->group_remaining[index])return;
     g->group_remaining[index]--;
-    if(!g->group_remaining[index] && !(g->group_failed&(1u<<index)) && sf_enemy_flying(waves[index].type)) {
+    if(!g->group_remaining[index] && !(g->group_failed&(1u<<index)) && sf_enemy_flying(sf_stage_def(g->stage_index)->events[index].type)) {
         g->score+=500;sf_drop_capsule(g,g->enemies[slot].x,g->enemies[slot].y);
     }
 }
@@ -60,30 +65,38 @@ bool sf_terrain_hit(const SfGame *g,int x,int y,int w,int h) {
     }return false;
 }
 void sf_stage_step(SfGame *g) {
+    const SfStageDef *def=sf_stage_def(g->stage_index);
     unsigned advance=g->attract?2:1;unsigned before=sf_scene(g);
     g->stage_frame+=advance;
-    if(g->stage_frame<=2640)g->stage_tick=g->stage_frame;
+    if(g->stage_frame<=def->warning_frame)g->stage_tick=g->stage_frame;
     g->scroll=(uint16_t)(g->stage_tick&511u);
     if(before!=SF_WARNING && sf_scene(g)==SF_WARNING) { sf_clear_combat(g);sf_sound(g,SF_SOUND_WARN); }
     if(sf_scene(g)==SF_WARNING)return;
-    while(g->event_index<sizeof waves/sizeof waves[0]) {
-        const Wave *w=&waves[g->event_index];
+    while(g->event_index<def->event_count) {
+        const Wave *w=&def->events[g->event_index];
         if(g->stage_frame<(unsigned)w->tick+g->wave_spawned*w->gap)break;
         if(w->type==SF_BOSS)for(unsigned i=0;i<SF_ENEMIES;i++)g->enemies[i].active=false;
         unsigned slot=0;while(slot<SF_ENEMIES && g->enemies[slot].active)slot++;
         if(slot<SF_ENEMIES) {
             int y=40+(int)w->lane*((int)SF_HUD_TOP(g->height)-88)/256;
+            int x=w->formation==SF_FORM_REAR?-16:320;
+            if(w->formation==SF_FORM_V) {
+                y+=((int)g->wave_spawned*2-3)*6;
+                x-=g->wave_spawned==1 || g->wave_spawned==2?16:0;
+            }
+            if(w->formation==SF_FORM_PINCER)y=g->wave_spawned%2?SF_HUD_TOP(g->height)-40:40;
             if(w->type==SF_TURRET) {
                 int top,bottom;sf_terrain((g->stage_tick+320)/8,g->height,&top,&bottom);
                 y=w->lane<128?top:bottom-16;
             }
-            g->enemies[slot]=(SfEnemy){320*256,y*256,(int16_t)y,0,
-                w->type==SF_BOSS?100:w->type==SF_TURRET?3:1,w->type,
-                w->type==SF_TURRET && w->lane<128?1:0,true,
+            g->enemies[slot]=(SfEnemy){x*256,y*256,(int16_t)y,0,
+                w->type==SF_BOSS?100:w->type==SF_TURRET?3:w->type==SF_METEOR?3:1,w->type,
+                w->type==SF_TURRET?(w->lane<128?1:0):w->formation,true,
                 g->wave_spawned==0 && sf_enemy_flying(w->type)};
             g->enemy_flash[slot]=0;
             g->enemy_group[slot]=(uint8_t)(g->event_index+1);
             if(++g->enemy_serial[slot]==0)g->enemy_serial[slot]++;
+            if(w->type==SF_BOSS)sf_boss_begin(g,slot);
         }else g->group_failed|=(uint16_t)(1u<<g->event_index);
         if(++g->wave_spawned>=w->count) { g->wave_spawned=0;g->event_index++; }
     }

@@ -18,12 +18,13 @@ static void scene(SfGame *g,unsigned cue,unsigned t) {
     case SF_MUSIC_ESCAPE:g->boss_dead=true;g->boss_defeat_tick=3000;g->stage_tick=3000+t;break;
     case SF_MUSIC_CLEAR:g->state=SF_CLEAR;g->state_age=(uint16_t)t;break;
     case SF_MUSIC_OVER:g->state=SF_OVER;g->state_age=(uint16_t)t;break;
+    case SF_MUSIC_DEMO:g->attract=true;g->demo_frame=t;break;
     }
     g->stage_frame=g->stage_tick;
 }
 int main(int argc,char **argv) {
     static const unsigned segments[][2]={
-        {SF_MUSIC_TITLE,180},{SF_MUSIC_SPACE,240},{SF_MUSIC_ENTRY,180},
+        {SF_MUSIC_TITLE,180},{SF_MUSIC_DEMO,180},{SF_MUSIC_SPACE,240},{SF_MUSIC_ENTRY,180},
         {SF_MUSIC_BASE,240},{SF_MUSIC_WARNING,120},{SF_MUSIC_BOSS,240},
         {SF_MUSIC_ESCAPE,120},{SF_MUSIC_CLEAR,180},{SF_MUSIC_OVER,120}};
     unsigned frames=0;for(unsigned i=0;i<sizeof segments/sizeof segments[0];i++)frames+=segments[i][1];

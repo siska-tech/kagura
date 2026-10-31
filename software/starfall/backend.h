@@ -7,6 +7,7 @@ kh_status sf_backend_init(unsigned *height);
 kh_status sf_backend_present(const SfGame *g, const SfFrame *f);
 extern uint32_t sf_transfer_us, sf_blank_overruns;
 extern uint32_t sf_commit_wait_us;
+extern uint32_t sf_scene_load_us;
 extern uint64_t sf_payload_bytes;
 extern uint64_t sf_map_payload_bytes;
 kh_status sf_audio_init(uint8_t caps);

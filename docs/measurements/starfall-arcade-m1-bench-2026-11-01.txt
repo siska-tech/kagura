@@ -1,0 +1,1 @@
+HOST_ONLY frames=12000 avg_ns=11205 max_ns=362482 p95_last256_us=6 peak_line=16 shortened_frames=2308 state_bytes=700 frame_bytes=520

@@ -42,7 +42,8 @@ static void save(const char *prefix,const char *name,SfGame *g) {
 int main(int argc,char **argv) {
     const char *prefix=argc>1?argv[1]:"starfall";SfGame g;
     sf_make_patterns(patterns);sf_make_palette(palette);sf_make_map(map,240);
-    sf_init(&g,240,1);g.state_age=100;save(prefix,"title",&g);sf_start(&g);sf_begin_play(&g);g.invincible=0;
+    sf_init(&g,240,1);g.state_age=100;save(prefix,"title",&g);sf_start(&g);save(prefix,"intro",&g);
+    sf_begin_play(&g);g.invincible=0;
     g.stage_tick=600;g.scroll=600&511;g.score=12700;g.power=2;g.options=2;g.y=105*256;
     g.gauge=SF_G_LASER;g.missile_enabled=true;
     for(unsigned i=0;i<32;i++) { g.history_x[i]=(20+(int)i/2)*256;g.history_y[i]=105*256; }
@@ -64,6 +65,11 @@ int main(int argc,char **argv) {
     sf_terrain((g.stage_tick+180)/8,g.height,&top,&bottom);
     g.missile=(SfShot){180*256,(bottom-8)*256,true};g.missile_grounded=true;save(prefix,"laser",&g);
     for(unsigned i=0;i<SF_ENEMIES;i++)g.enemies[i].active=false;
-    g.stage_tick=3000;g.scroll=3000&511;g.enemies[0]=(SfEnemy){260*256,96*256,96,0,80,SF_BOSS,0,true,false};
-    save(prefix,"boss",&g);return 0;
+    sf_clear_combat(&g);g.stage_frame=2640;g.stage_tick=2640;g.scroll=2640&511;save(prefix,"warning",&g);
+    g.stage_frame=3000;g.stage_tick=2640;g.scroll=2640&511;g.enemies[0]=(SfEnemy){240*256,96*256,96,100,80,SF_BOSS,0,true,false};
+    sf_boss_begin(&g,0);g.boss.phase=1;
+    save(prefix,"boss",&g);
+    sf_clear_combat(&g);g.state=SF_CLEAR;save(prefix,"clear",&g);
+    sf_start_demo(&g);for(unsigned i=0;i<1000;i++)sf_step(&g,0);save(prefix,"demo",&g);
+    return 0;
 }

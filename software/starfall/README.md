@@ -1,4 +1,10 @@
-# PROJECT STARFALL — プレイアブル第6版
+# PROJECT STARFALL — Arcade Milestone 1 (Phase A/B)
+
+現在完成しているのは **Stage 1 STAR FRONTIERの短縮版**。
+6面のカタログと共通イベント/ボスinterfaceを追加したが、Stage 2〜6は未実装で選択・進行できない。
+Stage 1クリア後はタイトルへ戻る。全6面/ending完成版とは扱わない。
+[拡張設計・Phase別計画](../../docs/starfall-arcade-plan.md)、
+[マイルストーンの検証・使用量・実機手順](../../docs/measurements/starfall-arcade-m1-2026-11-01.md)。
 
 設計・制約・以降の計画: [Phase 0設計](../../docs/starfall-design.md)。
 [Phase 1検証記録](../../docs/measurements/starfall-phase1-2026-10-31.md)。
@@ -15,6 +21,9 @@ Phase 2（敵・敵弾・衝突・爆発・スコア・残機）から順に拡�
 ## 遊び方
 
 - タイトルで **Space / FIRE**。WASD・矢印キーで8方向移動、Space押しっぱなしで連射。
+- **EnterもSTART/FIRE**。タイトルは大型BGロゴ、惑星、fade、通過自機、FREE PLAY。
+- 15秒無操作で40秒のアトラクトへ。デモ中STARTは即座に通常ゲームのintroへ移る。
+- 2秒のSTAGE INTRO後、空中戦→施設外壁→climax→WARNING→部品boss→大型爆発→clear。
 - 序盤は壁のない宇宙で空中戦。約19秒から基地の入口が右端に現れ、約24秒で内部へ。
 - 基地では金属隔壁・警戒ストライプ・壁面砲台が登場し、最後は広いボス格納庫へ進む。
 - 赤い旋回編隊、紫の可動翼機、急降下迎撃機、壁面砲台を撃破して進む。
@@ -34,8 +43,10 @@ Phase 2（敵・敵弾・衝突・爆発・スコア・残機）から順に拡�
 - SHIELDは3発まで吸収。吸収時は45tick無敵。失機すると全装備を失う。
 - 橙色の編隊長を撃破するとカプセル。編隊を全滅させると500点＋追加カプセル。
 - カプセルが既に画面内にある場合、追加分は最大8個まで待機し、次を1個ずつ出す。
-- 44秒付近で警告、46秒で中ボス。中ボス撃破かつ60秒経過でクリア（生存中は延長）。
-- GAME OVER / SECTOR CLEAR後は1秒待ってSpaceを一度離して押すと再スタート。
+- ステージ時刻44秒でスクロール停止、2秒WARNING、48×32の大型迎撃艦が登場。
+- ボスは登場後80tickまで無敵。右側の上下砲台は個別破壊可能。左側中央の光るcoreが弱点。
+- core HPで攻撃が変化し、撃破後2秒の連続爆発からSTAGE 1 CLEARへ。
+- clearは5秒、GAME OVERは4秒でタイトル復帰。1秒以降の新しいSTARTでもタイトルへ戻れる。
 
 上段はスコア・残機と選択装備名。未選択ならSPACE/ENTRY/BASEを表示する。
 6枠のパワーゲージは**画面下の専用パネル**。橙=選択中、緑=取得済み。
@@ -58,7 +69,7 @@ bash software/starfall/build-test.sh
 
 SDK/コンパイラ既定配置は `~/opt`。PICO_SDK_PATHとPATHで変更可能。
 UF2: `build/starfall-pico/starfall.uf2`（SPI、5MHz）。
-build-test.shは `build/starfall-v6-spi.uf2` / `build/starfall-v6-qspi.uf2` にもコピーする。
+build-test.shは `build/starfall-arcade-m1-spi.uf2` / `build/starfall-arcade-m1-qspi.uf2` にもコピーする。
 QSPI bitstream用は別のbuild directoryに作る:
 
 ```sh
@@ -80,17 +91,18 @@ build-test.shはASan/UBSanを追加する。216000 ticks×2解像度の再現性
 これは実機連続運転試験ではない。
 backendのmock試験も行い、VBlank・差分OAM・初期化時の表示停止・失敗時の順序を検査する。
 180/240両方で4000tick分のmap列更新を模擬し、画面外への転送・地形の一致・再開を検査する。
-場面別BGMは切替境界・9曲の差異・SFXの優先度・wave bank保持・終曲後の停止を検査する。
+場面別BGMは切替境界・10曲の差異・SFXの優先度・wave bank保持・終曲後の停止を検査する。
+現在は専用DEMO曲を含む10曲。状態遷移/40秒replay/START割込みとbossの個別部位/HP phaseも検査する。
 オプション同時レーザー、混雑時の全発射元表示、旧ラスタでの床混入再現と修正後の0件も検査する。
 関連する既存RTLの限定回帰は `bash software/starfall/test-rtl.sh`。
 
 ホストの参照シンセで曲を順番に試聴するWAVを作る場合:
 
 ```sh
-build/starfall-host/starfall_music_preview build/starfall-v5-music.wav
+build/starfall-host/starfall_music_preview build/starfall-arcade-m1-music.wav
 ```
 
-27秒のタイトル→宇宙→接近→基地→警告→ボス→脱出→クリア→GAME OVER。
+30秒のタイトル→デモ→宇宙→接近→基地→警告→ボス→脱出→クリア→GAME OVER。
 実機録音ではなく、BGMのみの参照合成（RTLとのbit一致を保証するものではない）。
 
 ## 実機
@@ -115,9 +127,13 @@ GPIO入力とserial maskはOR合成。CPUは固定120MHz。
 
 256frameごとにUSBへ性能ログ。USB未接続でもprintで長時間停止しない設定。
 集計・ログ送信は次フレームのCOMMIT投入後に行い、VBlankのOAM転送を妨げない。
-`hz_x100=5994`なら平均59.94Hz。`wire_*`は状態poll込み、`oam_avg`はOAM payloadのみ。
-`p95_us`は直近256frameのCPU+転送時間でCOMMIT待ちを除く。
-`map_bytes`は起動後のmap転送payload累計（32 B/列、再開時4096 Bを含む）。
+`hz100=5994`なら平均59.94Hz。
+`cpu_us=平均/p95/最大`、`io_us=平均/p95/最大`、`commit_us=平均/p95/最大`で単位はus。
+p95は直近256frame、平均/最大は起動後累計。CPU/転送/COMMIT待ちを分離する。
+`wire=平均/最大`は状態poll込みのwire byte、`oam`はOAM payload平均、`map`はmap payload累計。
+`load_max`はmap scene交換の最大時間（表示停止のCOMMIT/FENCE待ち込み）。
+`stage`は1始まり、`scene`は0空中戦/1main/2climax/3warning/4boss/5撃破。
+`demo=1`はattract、`overflow/audio/missed/blank`は従来のfault/遅延カウンタ。
 `bgm`は現在の曲名（SPACE/ENTRY/BASE/WARNING/BOSSなど）。
 起動時ABI/capability/既存faultが不適合ならエラーで停止する。途中I/O失敗も
 再送せず停止し、最終映像を保持する。リセット後、診断firmwareでfaultを調査できる。

@@ -5,6 +5,7 @@
 #include <string.h>
 #define TRY(x) do { kh_status s_=(x);if(s_!=KH_OK)return s_; } while(0)
 static uint8_t cache[6][10],priority,remaining,last_state;
+static uint8_t last_scene;
 static bool enabled,dirty;
 static kh_status field(unsigned ch,unsigned off,uint8_t value) {
     if(cache[ch][off]==value)return KH_OK;
@@ -23,7 +24,7 @@ static kh_status voice(unsigned ch,unsigned hz,unsigned gain) {
 kh_status sf_audio_init(uint8_t caps) {
     enabled=(caps&(KAGURA_CAPS_HDMI_AUDIO|KAGURA_CAPS_WAVE))==(KAGURA_CAPS_HDMI_AUDIO|KAGURA_CAPS_WAVE);
     if(!enabled)return KH_OK;
-    memset(cache,255,sizeof cache);priority=0;remaining=0;last_state=255;dirty=false;
+    memset(cache,255,sizeof cache);priority=0;remaining=0;last_state=last_scene=255;dirty=false;
     for(unsigned ch=0;ch<6;ch++)TRY(field(ch,KAGURA_AUDIO_CONTROL,0));
     if(caps&KAGURA_CAPS_PSRAM)for(unsigned p=0;p<2;p++)
         TRY(kh_audio_write((uint8_t)KAGURA_AUDIO_PCM_INDEX(p,KAGURA_AUDIO_PCM_CONTROL),0));
@@ -40,7 +41,10 @@ kh_status sf_audio_init(uint8_t caps) {
 kh_status sf_audio_update(const SfGame *g) {
     if(!enabled)return KH_OK;
     dirty=false;
-    if(last_state!=g->state) { priority=remaining=0;last_state=g->state; }
+    unsigned scene=g->state==SF_PLAY?sf_scene(g):255;
+    if(last_state!=g->state || last_scene!=scene) {
+        priority=remaining=0;last_state=g->state;last_scene=(uint8_t)scene;
+    }
     SfMusic music;sf_music_render(g,&music);
     static const uint8_t channels[4]={0,1,4,5};
     for(unsigned v=0;v<4;v++)TRY(voice(channels[v],music.hz[v],music.gain[v]));

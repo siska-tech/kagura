@@ -3,6 +3,7 @@
 #include <string.h>
 #include "pico/time.h"
 uint32_t sf_transfer_us,sf_blank_overruns,sf_commit_wait_us;
+uint32_t sf_scene_load_us;
 uint64_t sf_payload_bytes;
 uint64_t sf_map_payload_bytes;
 #define TRY(call) do { kh_status s_=(call);if(s_!=KH_OK)return s_; } while(0)
@@ -78,14 +79,17 @@ kh_status sf_backend_init(unsigned *height) {
 kh_status sf_backend_present(const SfGame *g,const SfFrame *f) {
     bool title=g->state==SF_TITLE || g->state==SF_BOOT;
     bool layout_changed=title!=title_map;
+    sf_scene_load_us=0;
     /* A new run restores the ring with the display stopped. No live map rewrite. */
     if(layout_changed || (!title && g->stage_tick<previous_tick)) {
+        uint64_t loading=time_us_64();
         TRY(kh_write_reg(KAGURA_REG_DISPLAY_CTRL,0));TRY(kh_commit(KH_DEFAULT_TIMEOUT_US));
         if(title)sf_make_title_map(scratch,g->height);else sf_make_map(scratch,g->height);
         TRY(kh_vram_write(KAGURA_VRAM_MAP_BASE,scratch,4096));sf_map_payload_bytes+=4096;
         TRY(kh_fence(2,KH_DEFAULT_TIMEOUT_US));last_map_col=63;
         TRY(kh_write_reg(KAGURA_REG_DISPLAY_CTRL,KAGURA_DISPLAY_CTRL_DISPLAY_ENABLE|
             KAGURA_DISPLAY_CTRL_BG_ENABLE|KAGURA_DISPLAY_CTRL_SPR_ENABLE));
+        sf_scene_load_us=(uint32_t)(time_us_64()-loading);
     }
     TRY(kh_wait_status(KAGURA_STATUS_VBLANK_LIVE,KAGURA_STATUS_VBLANK_LIVE,KH_DEFAULT_TIMEOUT_US));
     uint64_t start=time_us_64();

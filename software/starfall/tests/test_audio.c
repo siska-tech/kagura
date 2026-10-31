@@ -32,6 +32,7 @@ static void scene(SfGame *g,unsigned cue,unsigned local) {
     case SF_MUSIC_ESCAPE:g->boss_dead=true;g->boss_defeat_tick=3000;g->stage_tick=3000+local;break;
     case SF_MUSIC_CLEAR:g->state=SF_CLEAR;g->state_age=(uint16_t)local;break;
     case SF_MUSIC_OVER:g->state=SF_OVER;g->state_age=(uint16_t)local;break;
+    case SF_MUSIC_DEMO:g->attract=true;g->demo_frame=local;break;
     default:assert(false);
     }
     g->stage_frame=g->stage_tick;

@@ -175,7 +175,7 @@ static void checks(unsigned height) {
     fresh(height);a.stage_frame=2759;a.stage_tick=2640;sf_stage_step(&a);
     bool boss=false;for(unsigned i=0;i<SF_ENEMIES;i++)boss|=a.enemies[i].active && a.enemies[i].type==SF_BOSS;
     assert(boss);a.stage_frame=SF_STAGE_TICKS;sf_step(&a,0);assert(a.state==SF_PLAY);
-    a.boss_dead=true;sf_step(&a,0);assert(a.state==SF_CLEAR);
+    a.boss_dead=true;a.boss.death_age=119;sf_step(&a,0);assert(a.state==SF_CLEAR);
     sf_init(&a,height,123);assert(a.state==SF_TITLE);sf_step(&a,SF_FIRE);assert(a.state==SF_INTRO);
 }
 int main(void) {

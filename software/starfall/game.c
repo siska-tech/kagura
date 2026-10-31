@@ -20,6 +20,7 @@ void sf_clear_combat(SfGame *g) {
     memset(g->option_beams,0,sizeof g->option_beams);memset(&g->beam,0,sizeof g->beam);
     g->missile.active=false;g->pickup_active=false;g->capsule_queue=0;g->muzzle_mask=g->muzzle_timer=0;
     g->cooldown=g->missile_cooldown=0;
+    memset(&g->boss,0,sizeof g->boss);
 }
 void sf_sound(SfGame *g,unsigned sound) { if(sound>g->sound)g->sound=(uint8_t)sound; }
 void sf_explode(SfGame *g,int x,int y) {
@@ -65,15 +66,12 @@ void sf_step(SfGame *g,unsigned input) {
         goto done;
     }
     if(g->invincible)g->invincible--;
+    if(sf_scene(g)==SF_DEFEAT) { g->stage_frame+=g->attract?2:1;sf_boss_death_step(g);goto done; }
     sf_stage_step(g);sf_player_step(g,input);sf_powerup_step(g);
     if(sf_scene(g)==SF_WARNING)goto done;
     if(g->attract)sf_demo_events(g);
     if((input&SF_EQUIP) && !g->equip_was_down)sf_equip(g);
     sf_bullet_step(g,input);sf_enemy_step(g);sf_collision_step(g);
-    if(g->state==SF_PLAY && g->stage_frame>=SF_STAGE_TICKS && g->boss_dead) {
-        g->state=SF_CLEAR;g->state_age=0;g->score+=5000;
-        sf_clear_combat(g);
-    }
 done:
     g->start_was_down=(real&SF_FIRE)!=0;
     g->fire_was_down=(input&SF_FIRE)!=0;
