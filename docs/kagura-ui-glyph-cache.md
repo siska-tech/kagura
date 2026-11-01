@@ -82,6 +82,8 @@ PCテストでは、この参照経路とPython/Viperの結果を、上下左右
   focus（26.86〜26.94 → 27.00〜27.10 ms、+0.5%）とbutton（+0.15%）は範囲がわずかに重ならない。
   これらは部分clipの字形を描かないため、別sessionの差と見ているが、原因は確認していない。
 - tile数・payloadは同一。CRC一致、`ERROR_CODE 0`、console復帰。
+- 送信sourceのsha256は各branchのファイルと一致する（maskedのfonts.pyは測定後にコメントだけ変更したため`0b32cc78…`→`90c31e0e…`）。
+  logの`git=`はrebase前のcommit。
 - log: [clipped-glyph-rp2040-base.txt](kagura-ui-logs/clipped-glyph-rp2040-base.txt)、
   [clipped-glyph-rp2040-masked.txt](kagura-ui-logs/clipped-glyph-rp2040-masked.txt)
 
