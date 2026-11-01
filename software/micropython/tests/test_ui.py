@@ -715,11 +715,18 @@ class SDKTests(unittest.TestCase):
         namespace = {}
         exec(compile(tool.branch_app_source(), 'app.py', 'exec'), namespace)
         self.assertTrue(hasattr(namespace['App'], '_add_damage'))
+        # --framebuffer: the SDK source runs in its own globals and is handed to the UI.
+        from kagura.framebuffer import TileFramebuffer
+        fb_namespace = {'__name__': 'damage_framebuffer'}
+        exec(compile(tool.framebuffer_source(), 'framebuffer.py', 'exec'), fb_namespace)
+        self.assertIsNot(fb_namespace['TileFramebuffer'], TileFramebuffer)
         app, scene = B.make(namespace['App'], self.device, self.theme.font.source, exclusive=True)
+        app.backend.fb = fb_namespace['TileFramebuffer'](self.device)
         lines = []
         try:
             B.run(app, scene, samples=4, rounds=2,
                   report=lambda tag, value: lines.append(tag + ' ' + json.dumps(value)))
+            self.assertIs(type(app.backend.fb), fb_namespace['TileFramebuffer'])
         finally:
             app.close()
         rows = [json.loads(line.split(' ', 1)[1]) for line in lines if line.startswith('UI_DAMAGE ')]
