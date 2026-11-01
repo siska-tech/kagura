@@ -145,6 +145,7 @@ UI damageは最大`damage_limit`個（既定1）の矩形で保持し、SDKのdi
 奥から再合成するため重なりの残像は残さない。矩形間の境界で字形が部分clipになると
 glyph8ではなく行単位描画になる。矩形数だけtree走査が増える。
 静止時にはfocus候補も再走査しない。tree/layout/有効状態の変更時と入力配送時に再検証する。
+同じeventでのTab/矢印移動は配送時の走査結果を再利用し、handlerがtree/有効状態を変えた場合だけ再走査する。
 画面が静止しているstepではflushしない。描画中の新しいinvalidateも次frameへ保持する。
 flush失敗時の再試行対象はSDK dirtyとUI damageの両方に残る。
 
@@ -164,7 +165,9 @@ callbackから追加されたeventは次stepへ送る。uasyncioは必須にし�
 32 queue slots（RP2040では参照payload約128 B）、widget/font/module/VM overhead。
 実際のheapはこれを上回る。既存SDKのconstructor実測は約40 KBだが、新UI全体の予算値ではない。
 美咲ファイル71718 Bはstorageから逐次検索。glyph戻り値bytes、Event、矩形tuple、
-再帰generator、SDK統計dict、navigation候補list等のallocationは残る。
+SDK統計dict等のallocationは残る。focus候補の走査は再利用listへ整数clipで書き込む。
+unix MicroPythonでは走査ごとの割当が0 B、Tab 1回の配送が約0.4〜0.6 KB（Eventを除き、主にdamage矩形）。
+走査を再帰generatorで行っていた従来版では、同じ配送で7〜22 KBだった（`tests/ui_focus_alloc.py`）。
 **allocation-freeではない**。heap正味増加ゼロからallocation回数ゼロを結論しない。
 メモリ不足時は例外伝播、UI runはfinallyでconsole復帰。大規模treeの深い再帰も避ける。
 RP2040実測ではApp/Theme/Gallery treeが3984 B、Framebuffer constructorが40544 B（各GC後差分、module/font openは除外）。

@@ -17,20 +17,54 @@ class FocusManager:
     def __init__(self, app):
         self.app, self.current = app, None
         self.dirty = True
+        # Reused scan result: found[:count] in tree order. No generator or clip tuples.
+        self.found, self.count = [], 0
 
-    def _walk(self, widget, clip):
-        if widget is None or not widget.visible or not widget.enabled:
+    def _collect(self, widget, left, top, right, bottom):
+        if not widget.visible or not widget.enabled:
             return
-        clip = intersect(clip, widget.bounds)
-        if not nonempty(clip):
+        # Comparisons instead of max/min builtins: this runs once per visible widget.
+        b = widget.bounds
+        if b[0] > left:
+            left = b[0]
+        if b[1] > top:
+            top = b[1]
+        if b[2] < right:
+            right = b[2]
+        if b[3] < bottom:
+            bottom = b[3]
+        if left >= right or top >= bottom:
             return
         if widget.focusable:
-            yield widget
-        for child in widget.children:
-            yield from self._walk(child, clip)
+            found, count = self.found, self.count
+            if count < len(found):
+                found[count] = widget
+            else:
+                found.append(widget)
+            self.count = count + 1
+        children = widget.children
+        index = 0
+        while index < len(children):
+            self._collect(children[index], left, top, right, bottom)
+            index += 1
 
     def candidates(self):
-        return self._walk(self.app.root, (0, 0, self.app.renderer.width, self.app.renderer.height))
+        """Rescan; return the number of focus candidates stored in found[:count]."""
+        found, previous = self.found, self.count
+        self.count = 0
+        if self.app.root is not None:
+            self._collect(self.app.root, 0, 0, self.app.renderer.width, self.app.renderer.height)
+        # Drop stale references so removed widgets are not kept alive.
+        for index in range(self.count, previous):
+            found[index] = None
+        return self.count
+
+    def _index(self, widget):
+        found = self.found
+        for index in range(self.count):
+            if found[index] is widget:
+                return index
+        return -1
 
     def set(self, widget):
         if widget is self.current:
@@ -48,23 +82,21 @@ class FocusManager:
     def repair(self, force=False):
         if not force and not self.dirty:
             return
-        first = None
-        found = False
-        for widget in self.candidates():
-            if first is None:
-                first = widget
-            if widget is self.current:
-                found = True
-        if not found:
-            self.set(first)
+        # Clear dirty before the scan: a set() side effect must not hide later changes.
         self.dirty = False
+        count = self.candidates()
+        if self._index(self.current) < 0:
+            self.set(self.found[0] if count else None)
 
     def move(self, backwards=False):
-        # Navigation is infrequent; this bounded-by-tree list is not a frame buffer.
-        widgets = list(self.candidates())
-        if widgets:
-            index = widgets.index(self.current) if self.current in widgets else (-1 if not backwards else 0)
-            self.set(widgets[(index + (-1 if backwards else 1)) % len(widgets)])
+        # Reuse the scan from repair() unless the tree/layout changed since then.
+        count = self.candidates() if self.dirty else self.count
+        self.dirty = False
+        if count:
+            index = self._index(self.current)
+            if index < 0:
+                index = -1 if not backwards else 0
+            self.set(self.found[(index + (-1 if backwards else 1)) % count])
 
     def dispatch(self, event):
         self.repair(force=True)
