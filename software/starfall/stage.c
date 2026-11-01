@@ -39,7 +39,11 @@ void sf_stage_defeat(SfGame *g,unsigned slot) {
     unsigned index=group-1;if(!g->group_remaining[index])return;
     g->group_remaining[index]--;
     if(!g->group_remaining[index] && !(g->group_failed&(1u<<index)) && sf_enemy_flying(sf_stage_def(g->stage_index)->events[index].type)) {
-        g->score+=500;sf_drop_capsule(g,g->enemies[slot].x,g->enemies[slot].y);
+        g->score+=500;
+        if(!(g->group_rewarded&(1u<<index))) {
+            sf_drop_capsule(g,g->enemies[slot].x,g->enemies[slot].y);
+            g->group_rewarded|=(uint16_t)(1u<<index);
+        }
     }
 }
 void sf_terrain(unsigned col,unsigned height,int *top,int *bottom) {

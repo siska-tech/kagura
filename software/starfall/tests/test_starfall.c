@@ -7,17 +7,20 @@ static SfGame a,b;
 static SfFrame frame;
 static void fresh(unsigned height) { sf_init(&a,height,123);sf_start(&a);sf_begin_play(&a);a.invincible=0; }
 static void regressions(unsigned height) {
-    /* Four-member formations drop once, only after the last kill. */
+    /* Normal formations pay on completion; orange carriers pay immediately. */
+    for(unsigned carrier=0;carrier<2;carrier++) {
     fresh(height);a.group_remaining[0]=4;
     for(unsigned i=0;i<4;i++) {
         a.enemy_group[i]=1;
-        a.enemies[i]=(SfEnemy){100*256,80*256,80,0,1,SF_SCOUT,0,true,i==0};
+        a.enemies[i]=(SfEnemy){100*256,80*256,80,0,1,SF_SCOUT,0,true,carrier && i==0};
     }
     for(unsigned i=0;i<4;i++) {
         a.shots[0]=(SfShot){100*256,80*256,true};sf_collision_step(&a);
-        assert(a.pickup_active==(i==3) && !a.capsule_queue);
+        assert(a.pickup_active==(carrier?i==0:i==3) && !a.capsule_queue);
+        if(carrier && i==0)a.pickup_active=false; /* collected before formation completion */
     }
     assert(a.score==900);sf_stage_defeat(&a,3);assert(!a.capsule_queue);
+    }
     /* A fixed turret keeps the same terrain coordinate at both demo speeds. */
     for(unsigned demo=0;demo<2;demo++) {
         fresh(height);a.attract=demo!=0;a.event_index=6;

@@ -64,7 +64,7 @@ typedef struct {
     bool missile_enabled,equip_was_down;
     uint8_t enemy_group[SF_ENEMIES],group_remaining[16],wave_spawned;
     uint32_t enemy_world_x[SF_ENEMIES]; /* fixed terrain anchor for turrets */
-    uint16_t group_failed;
+    uint16_t group_failed,group_rewarded;
     uint16_t enemy_serial[SF_ENEMIES],beam_hit_serial[SF_ENEMIES];
     int16_t missile_vy;
     bool missile_grounded;

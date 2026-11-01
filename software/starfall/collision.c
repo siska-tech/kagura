@@ -8,8 +8,14 @@ static void damage(SfGame *g,unsigned j,unsigned amount) {
     if(e->hp>amount) { e->hp=(uint16_t)(e->hp-amount);g->enemy_flash[j]=6;return; }
     e->active=false;sf_explode(g,e->x/256,e->y/256);sf_sound(g,SF_SOUND_KILL);
     g->score+=e->type==SF_TURRET?300:e->type==SF_METEOR?200:100;
-    // Scripted formations award exactly one capsule on complete destruction.
-    if(e->carrier && !g->enemy_group[j])sf_drop_capsule(g,e->x,e->y);
+    // Orange carriers pay immediately; the group's completion cannot pay twice.
+    if(e->carrier) {
+        unsigned group=g->enemy_group[j];
+        if(!group || !(g->group_rewarded&(1u<<(group-1)))) {
+            sf_drop_capsule(g,e->x,e->y);
+            if(group)g->group_rewarded|=(uint16_t)(1u<<(group-1));
+        }
+    }
     sf_stage_defeat(g,j);
 }
 static bool hit(SfGame *g,unsigned slot,int x,int y,int w,int h,unsigned amount) {
