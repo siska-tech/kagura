@@ -41,6 +41,7 @@ make -C build/micropython-src/ports/rp2 BOARD=KAGURA_PICO \
   BUILD=build-KAGURA_PICO_main-d219778
 ```
 
+- **再現性:** 別のbuild directory（`build-KAGURA_PICO_main-d219778-r2`）で最初からbuildし直すと、UF2のsha256が同じ`a5166d79…`になった。sizeとbuild dateも同じだった。
 - **frozen nativeの4-byte整列:** `align_frozen.py`は適用済みである。
   - `frozen_content.c`の`fun_data`は19件すべて`aligned (4)`で、`aligned (2)`は0件。
 - **payloadの範囲:** 保存領域`0x100A0000`より前で終わる。UF2の書込みは保存領域に触れない。
