@@ -215,6 +215,37 @@ class UITests(unittest.TestCase):
             self.assertEqual(bytes(font.glyph('日')), bytes(font.glyph('?')))
         self.assertEqual(self.theme.font.glyph('\U0001f600'), self.theme.font.glyph('?'))
 
+    def test_glyph_cache_hits_collisions_fallback_and_close(self):
+        source = self.theme.font.source
+        font = BitmapFont8(source, cache=4)
+        calls = []
+        original = source.glyph
+        with patch.object(source, 'glyph', side_effect=lambda code: calls.append(code) or original(code)):
+            first = font.glyph('日')
+            self.assertIs(font.glyph('日'), first)  # hit: same object, no file lookup
+            self.assertEqual(calls, [ord('日')])
+            self.assertEqual(first, original(ord('日')))
+            # A code in the same slot replaces it; the old code is looked up again.
+            other = chr(ord('日') + 4)
+            font.glyph(other); font.glyph('日')
+            self.assertEqual(calls, [ord('日'), ord(other), ord('日')])
+            # Missing glyphs cache their '?' fallback under the requested code.
+            del calls[:]
+            self.assertEqual(font.glyph('\U0001f600'), original(63))
+            font.glyph('\U0001f600')
+            self.assertEqual(calls, [0x1f600, 63])
+        uncached = BitmapFont8(source, cache=0)
+        with patch.object(source, 'glyph', side_effect=lambda code: calls.append(code) or original(code)):
+            del calls[:]
+            uncached.glyph('日'); uncached.glyph('日')
+            self.assertEqual(calls, [ord('日'), ord('日')])
+        for bad in (3, -1, 1.0, None):
+            with self.assertRaises(ValueError): BitmapFont8(source, cache=bad)
+        closed = Font(str(ROOT / 'software/micropython/fonts/misaki8.kfnt'))
+        cached = BitmapFont8(closed)
+        cached.glyph('日'); closed.close()
+        with self.assertRaisesRegex(ValueError, 'closed'): cached.glyph('日')
+
     def test_terminal_unknown_sequence_crlf_and_malformed_utf8(self):
         q, adapter = EventQueue(), TerminalInput()
         adapter.feed(b'\x1b[1;5A\r\nx\xff',q)

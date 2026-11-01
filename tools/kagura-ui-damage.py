@@ -5,9 +5,11 @@ run: the named Pico is soft-reset, this checkout's kagura/ui/app.py is sent as
 source over raw REPL (relative imports made absolute) and used for BOTH limits,
 so frozen-versus-RAM bytecode does not bias the comparison. The rest of the UI
 and the SDK stay frozen; the frozen kagura/ui must match this checkout except
-app.py and the data-only Widget/Panel.opaque attributes, which are set on older
-frozen classes and logged. The HDMI console is lent to the UI and restored;
-FPGA ERROR_CODE is read.
+app.py, fonts.py and the data-only Widget/Panel.opaque attributes, which are set
+on older frozen classes and logged. kagura/ui/fonts.py is sent the same way and
+its BitmapFont8 is used for both limits; --font-cache selects its glyph cache
+(0 disables), so cache on/off are separate sessions. The HDMI console is lent
+to the UI and restored; FPGA ERROR_CODE is read.
 summarize: offline table from a run log (also used by the PC tests).
 """
 import argparse
@@ -24,12 +26,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def branch_app_source():
-    source = (ROOT / 'software/micropython/kagura/ui/app.py').read_text(encoding='utf8')
+def branch_source(name, min_imports=0):
+    source = (ROOT / 'software/micropython/kagura/ui' / name).read_text(encoding='utf8')
     rewritten, count = re.subn(r'^from \.(\w+) import', r'from kagura.ui.\1 import', source, flags=re.M)
-    if count < 3 or '\nfrom .' in rewritten:
-        raise SystemExit('unexpected imports in kagura/ui/app.py')
+    if count < min_imports or '\nfrom .' in rewritten:
+        raise SystemExit('unexpected imports in kagura/ui/' + name)
     return rewritten
+
+
+def branch_app_source():
+    return branch_source('app.py', 3)
 
 
 def git_identity():
@@ -51,6 +57,7 @@ def run_device(args):
             (ports[0].serial_number or '').lower() != args.expected_serial.lower()):
         raise SystemExit('port/USB vendor/serial mismatch; no device action taken')
     app_source = branch_app_source()
+    font_source = branch_source('fonts.py')
     bench_source = (ROOT / 'software/micropython/examples/ui_damage_benchmark.py').read_bytes()
     args.log.parent.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(encoding='utf8')
@@ -62,9 +69,11 @@ def run_device(args):
             log.flush()
 
         emit('HOST_START %s\n' % datetime.now(timezone.utc).isoformat())
-        emit('HOST_SOURCE git=%s app_sha256=%s bench_sha256=%s\n' % (
+        emit('HOST_SOURCE git=%s app_sha256=%s fonts_sha256=%s bench_sha256=%s font_cache=%s\n' % (
             git_identity(), hashlib.sha256(app_source.encode('utf8')).hexdigest(),
-            hashlib.sha256(bench_source).hexdigest()))
+            hashlib.sha256(font_source.encode('utf8')).hexdigest(),
+            hashlib.sha256(bench_source).hexdigest(),
+            'default' if args.font_cache is None else args.font_cache))
         transport = SerialTransport(args.port, timeout=0.2)
         transport.serial.write_timeout = 5
         entered = False
@@ -105,9 +114,12 @@ def run_device(args):
             run("from kagura.ui.widget import Widget as _W, Panel as _P\n"
                 "if not hasattr(_W,'opaque'):\n _W.opaque=False; _P.opaque=True; print('DAMAGE_FROZEN_ATTR opaque set')\n"
                 "assert _P.opaque and not _W.opaque")
+            run(font_source + "\nDamageFont=BitmapFont8\ndel BitmapFont8\ngc.collect()\nprint('DAMAGE_FONT_LOADED',gc.mem_free())")
             run(bench_source + b"\ngc.collect()\nprint('DAMAGE_BENCH_LOADED',gc.mem_free())")
+            font_class = 'DamageFont' if args.font_cache is None else 'lambda s:DamageFont(s,cache=%d)' % args.font_cache
             run("font=Font('/fonts/misaki8.kfnt'); del _reserve; gc.collect(); "
-                "app,scene=make(DamageApp,d,font,console=kagura_console); print('DAMAGE_APP_READY',gc.mem_free())")
+                "app,scene=make(DamageApp,d,font,console=kagura_console,font_class=%s); "
+                "print('DAMAGE_APP_READY',gc.mem_free(),'FONT_CACHE',len(getattr(app.theme.font,'_keys',None) or ()))" % font_class)
             begin = time.monotonic()
             run("try:\n run(app,scene,limits=(1,4),samples=%d,rounds=%d)\n"
                 " full=(0,0,320,240); app.step(); c=binascii.crc32(app.backend.fb.buffer)\n"
@@ -185,6 +197,8 @@ def main():
     device.add_argument('--rounds', type=int, default=4)
     device.add_argument('--timeout', type=int, default=1800)
     device.add_argument('--log', type=Path, default=Path('build/ui-damage/device.txt'))
+    device.add_argument('--font-cache', type=int, default=None,
+                        help='BitmapFont8 glyph cache slots (0 or a power of two); default: the branch default')
     offline = sub.add_parser('summarize')
     offline.add_argument('log', type=Path)
     args = parser.parse_args()
