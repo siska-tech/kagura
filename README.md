@@ -59,6 +59,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 
 [MicroPythonドライバ](software/micropython/README.md)は、SPI/QSPI制御とUARTキーボード入力・HDMI REPL、REPL出力とアプリ画面の8×8日本語表示（美咲ゴシック）を提供します。導入方法と実機検証の残作業はリンク先を参照してください。
 
+[実機紹介プレゼンテーション](software/micropython/examples/showcase.md)は、日本語の疑似256色スライドからトンネル・ネオン風の描画、[PROJECT STARFALLのMicroPython移植](software/micropython/examples/starfall.md)、桜吹雪までを自動進行します。480p FULL+PSRAM構成を使用します。
+
 ## リポジトリ
 
 | path | 内容 |

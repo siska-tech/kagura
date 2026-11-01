@@ -371,6 +371,11 @@ RP2040のMicroPythonでは文1つに数µsかかり、ドライバの時間の�
 
 ### デモ
 
+KAGURA-9の紹介には[総合プレゼンテーション](examples/showcase.md)を用意している。
+日本語の疑似256色スライド、字幕付きのプラズマ・トンネル・4D超立方体・ネオンリボン、
+[PROJECT STARFALLのMicroPython移植](examples/starfall.md)、桜吹雪を約4分の自動進行でつなぐ。480p FULL+PSRAMが必要。
+`import showcase; showcase.run()`。既存コンソールを閉じてから起動し、Space/Nで次の章、Q/Ctrl-Cで終了する。
+
 `examples/framebuffer_demo.py`はPicoのC版`fbdemo`と同じ4場面（パレット回転のプラズマ・トンネル、星空の4D超立方体、虹色の線リボン）をPSGのBGM付きで流す。`run(seconds, max_gap=16, fb=None)`。上の高速化API（`connect()`既定の`accelerate()`、`fb.lines()`、`audio_writes()`、`commit(wait=False)`）だけで書いている。
 
 | 場面（各12秒、fps） | C版`fbdemo` | 高速化なし | `accelerate()` |

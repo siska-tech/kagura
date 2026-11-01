@@ -53,6 +53,11 @@ files "1200 tile hardware runner" "" tools/tile1200-device.ps1
 files "framebuffer transport measurement" "" tools/prepare-framebuffer-transport.py tools/framebuffer-transport-upload.ps1 \
     tools/analyze-framebuffer-transport.py tools/plot-framebuffer-transport.py tools/analyze-framebuffer-gap.py
 files "1200 tile hardware fixture" "micropython" software/micropython/examples/tile1200_accept.py software/micropython/tests/test_tile1200_accept.py
+files "live presentation and asset generator" "micropython" tools/gen-showcase-assets.py tools/prepare-showcase.py \
+    software/micropython/examples/showcase.py software/micropython/examples/showcase_assets/opening.kimg \
+    software/micropython/tests/test_showcase.py
+files "STARFALL MicroPython port and original C oracle" "micropython" tools/gen-starfall-mpy-assets.py \
+    software/micropython/examples/starfall.py software/micropython/tests/starfall_oracle.c software/starfall/game.c
 # PR #31 without its workflow edit: Python, font and docs only.
 files "kagura_ja and font" "micropython" software/micropython/kagura_ja/__init__.py \
     software/micropython/fonts/misaki8.kfnt software/micropython/fonts/README.md \
