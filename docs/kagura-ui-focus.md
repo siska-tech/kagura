@@ -46,6 +46,7 @@ unix MicroPython v1.26（64-bit object）で測ったTab 1回の`dispatch`のhea
 RP2040 125 MHz、#51のfirmware（変更なし）、QSPI 4 lanes / 5 MHz、Viper有効。
 [複数damage矩形](kagura-ui-damage.md)と同じ`tools/kagura-ui-damage.py`で、32 samples × 4 rounds。
 同じsessionで、ベースラインと変更後を続けて実行した。各runは、送信したapp.pyだけが異なる。
+logの`git=`はmainへのrebase前のcommit。送信したapp.pyのsha256は、このbranchのapp.pyと一致する。
 
 | run | app.py | log |
 | --- | --- | --- |
