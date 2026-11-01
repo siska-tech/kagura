@@ -36,7 +36,8 @@ classify() {
         # test_sakura.py checks the piano asset against this sample.
         software/pico/piano_c4_sample.h) mark pico micropython ;;
         software/pico/*) mark pico ;;
-        software/starfall/*) mark pico ;;
+        # The MicroPython STARFALL oracle links the original C game directly.
+        software/starfall/*) mark pico micropython ;;
         # The C TileFramebuffer test replays these Python modules and model.
         software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
         software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
@@ -44,7 +45,8 @@ classify() {
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
         software/micropython/boards/*) mark micropython micropython_firmware ;;
-        software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py) mark micropython ;;
+        software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py|\
+        tools/gen-showcase-assets.py|tools/prepare-showcase.py|tools/gen-starfall-mpy-assets.py) mark micropython ;;
         # Synthesis, board and hardware measurement tools; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\

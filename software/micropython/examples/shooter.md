@@ -147,6 +147,7 @@ result = shooter_bench.soak(kagura_console)  # HEAVY、5分、目標30fps
 - `mean_us`／`max_us`: 入力、移動、当たり判定、OAM構築、OAM転送、scroll、COMMIT、音声、監視、GC、sleepを分離します。OAM転送はDMA処理を含むAPI呼出しの時間で、DMA装置だけの時間ではありません。
 - `transport_us`／`wire_bytes`: 全transport呼出しをアプリ内wrapperで測定。レジスタ・読出しheader等を含み、上の各区間と**重複**します。`dma_payload_bytes`はDMA対象writeのpayload量です。途中例外時は試みた転送量で、部分完了byte数の保証ではありません。
 - GCは自動回収を測定区間で止め、既定4更新ごと、または空き24KiB未満で明示回収します。停止時間は`gc`、最小空きは`minimum_free_bytes`です。元のGC有効／無効状態は終了時に戻します。
+- `gc_interval=None`では自動GCを有効にしたまま実行します（開始時にGC有効が必要）。総合紹介プレゼンはこの設定です。既定の数値指定による過去の性能測定とは条件が異なります。
 - 約15更新ごとにPCM両ch、AUDIO_STATUS、ERROR_CODE、sprite overflowをpollします。音声errorはsticky bitの新しい出現をincidentとして数えます。PCM faultは勝手に再PREPAREせず、BGM予期せぬ停止も数えます。瞬間的な停止やpoll間の聴感異常は直接検出できません。
 
 errorは直近32incidentを保存し、列順は`[frame, enabled_sprites, oam_bytes, frame_wire_bytes, ERROR_CODE, AUDIO_STATUS, PCM0_STATUS, PCM1_STATUS, overflow_index, overflow_line]`です。`audio_errors`と描画上限の`sprite_overflows`を分けます。ホスト例外は`failure`、復旧中の例外は`cleanup_errors`へ残します。

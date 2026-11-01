@@ -1,0 +1,52 @@
+{
+  "format": "KIMG",
+  "size": [
+    320,
+    240
+  ],
+  "palette_rule": "16 per 8x8 cell; shared colour 0",
+  "slides": [
+    {
+      "name": "opening",
+      "bytes": 40120,
+      "sha256": "f2c14c7875890c35b1ed15df0b21643953ea9d0777d2aa9702a3618faa9833b1"
+    },
+    {
+      "name": "architecture",
+      "bytes": 40120,
+      "sha256": "232571f3899d047b18ffb64089919b1cc43a8c044aa812507bb8affff30490f9"
+    },
+    {
+      "name": "colour",
+      "bytes": 40120,
+      "sha256": "b2b32c8aaa954cbb51e484c63de6ec5da712047fa0a30259d16e89c61f1c2c19"
+    },
+    {
+      "name": "game",
+      "bytes": 40120,
+      "sha256": "026b71b62d5f430200786a1760e4cb131e2210697882c3aeb49d5ce8dafdf30e"
+    },
+    {
+      "name": "orchestra",
+      "bytes": 40120,
+      "sha256": "a867adb696f99c37e88bdae01d7bf71df04d26941c5dd57b120dc70818d826a1"
+    },
+    {
+      "name": "create",
+      "bytes": 40120,
+      "sha256": "27da9d8c4f5ac88d211ad4580c89ed0041a6356ef022615cfd79de84ad40ec32"
+    },
+    {
+      "name": "closing",
+      "bytes": 40120,
+      "sha256": "af5941cf7103940117946c500de6bafe1bc84a5d6fa45ad5c8ee8893233f9a7e"
+    }
+  ],
+  "scenery": {
+    "tiles": 265,
+    "bytes": 12586,
+    "sha256": "169dd21ef5b583b37a5d258a2bdb0a25839eed0bf31c15234b08f60d8d0a771d",
+    "tile_sha256": "7fbb439c73c9349d6bfb469531aade624b367bd1ac25cbf5d4c8294b5a4500af",
+    "map_sha256": "8042ff048dadc456effa1d7ef5072f011e6985a7373d2d74c37e1539be6e0b64"
+  }
+}

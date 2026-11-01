@@ -1,0 +1,30 @@
+SHOWCASE slide ready opening
+SHOWCASE slide ready architecture
+SHOWCASE slide ready colour
+SHOWCASE slide ready game
+SHOWCASE slide ready orchestra
+SHOWCASE slide ready create
+SHOWCASE slide ready closing
+SHOWCASE scenery checked 265
+SHOWCASE scenery streamed 265
+SHOWCASE loop 1
+SHOWCASE card opening
+SHOWCASE card architecture
+SHOWCASE card colour
+SHOWCASE graphics plasma
+SHOWCASE graphics tunnel
+SHOWCASE graphics tesseract
+SHOWCASE graphics ribbon
+SHOWCASE card game
+SHOWCASE live STAR RUNNER
+SHOWCASE card orchestra
+SHOWCASE live SAKURA
+SHOWCASE free before SAKURA 79216
+SAKURA CAPS 0x5b, 240 lines
+SAKURA loaded in 6788 ms (702084 bytes to PSRAM)
+SAKURA GO - timed run (opt order hud bands palette regs hudascii hudbuf hudround hudglyph oam short)
+SAKURA PASS: 2368 updates in 40.0 s (59.18 updates/s, 198 VBlanks skipped), sprite overflow frames 0, PCM underruns 0, line underruns 0, ERROR_CODE seen 0x00 (0 driver reports), PSRAM 5.00 MB (COPY 2.31 MB)
+SAKURA display: 2367 COMMITs confirmed in 40.0 s (59.16 displayed/s)
+SHOWCASE card create
+SHOWCASE card closing
+SHOWCASE loop 2
