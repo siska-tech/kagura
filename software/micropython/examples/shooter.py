@@ -630,6 +630,8 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
     """Compatible v1 entry point. Returns bounded benchmark results on exit.
 
     target_fps=0 measures maximum throughput. BASE only silences audio at setup.
+    gc_interval=None keeps automatic GC enabled; numeric intervals retain
+    the original scheduled collection policy.
     dma='accelerated' runs on transport.accelerate(chunk=dma_chunk) (kagura.link,
     as connect() sets up); dma='driver' closes it for the run to compare with
     the plain Python transport. The transport's acceleration is restored after.
@@ -638,8 +640,10 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
     global LAST_STATS
     if duration is not None and duration < 0 or frames is not None and frames < 0:
         raise ValueError('duration/frames must be nonnegative')
-    if not 0 <= target_fps <= 120 or not 1 <= gc_interval <= 60:
+    if not 0 <= target_fps <= 120 or (gc_interval is not None and not 1 <= gc_interval <= 60):
         raise ValueError('invalid target_fps/gc_interval')
+    if gc_interval is None and not gc.isenabled():
+        raise ValueError('automatic GC requires GC enabled')
     if dma not in ('driver', 'accelerated'):
         raise ValueError('dma must be driver or accelerated')
     if dma_chunk not in (128, 256, 512):
@@ -693,7 +697,9 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
         device.write_reg(R.REG_IRQ_STATUS, R.IRQ_STATUS_SPR_OVERFLOW)
         game.monitor()
         gc.collect()
-        gc.disable()
+        if gc_interval is not None:
+            gc.disable()
+        sample_interval = 32 if gc_interval is None else gc_interval
         start = ticks_us()
         start_ms = ticks_ms()
         while (duration is None or ticks_diff(ticks_ms(), start_ms) < duration * 1000) and (frames is None or stats.frames < frames):
@@ -719,11 +725,11 @@ def run(device=None, console=None, autoplay=True, sound=True, duration=None,
             # before scheduled collections, rather than scanning every frame.
             # Collection cadence is unchanged; a low sample collects at once.
             stamp = ticks_us()
-            free = free_memory() if free_memory and (stats.frames == 0 or stats.frames % gc_interval == gc_interval - 1) else None
+            free = free_memory() if free_memory and (stats.frames == 0 or stats.frames % sample_interval == sample_interval - 1) else None
             stats.add(T.MEMORY_POLL, ticks_diff(ticks_us(), stamp))
             if free is not None:
                 minimum_free = free if minimum_free is None else min(minimum_free, free)
-            if stats.frames % gc_interval == gc_interval - 1 or free is not None and free < 24576:
+            if gc_interval is not None and (stats.frames % gc_interval == gc_interval - 1 or free is not None and free < 24576):
                 stamp = ticks_us()
                 gc.collect()
                 stats.add(T.GC, ticks_diff(ticks_us(), stamp))

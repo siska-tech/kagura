@@ -239,6 +239,21 @@ class ShooterTests(unittest.TestCase):
         self.assertIsNone(result['wire_bytes'])
         self.assertLessEqual(result['exclusive_stage_sum_us'],result['frame_mean_us'])
 
+    def test_automatic_gc_mode_never_disables_gc(self):
+        gc.enable()
+        with patch.object(gc, 'disable', side_effect=AssertionError('automatic GC disabled')):
+            result = shooter.run(device=Device(), mode='BASE', frames=4, report=False,
+                                 input_fn=lambda: 0, target_fps=0, gc_interval=None)
+        self.assertTrue(gc.isenabled())
+        self.assertIsNone(result['gc_interval'])
+        self.assertEqual(result['commit_completions_observed'], 4)
+
+    def test_automatic_gc_requires_enabled_collector_before_device_io(self):
+        with patch.object(gc, 'isenabled', return_value=False), \
+             patch.object(shooter, 'Game', side_effect=AssertionError('game constructed')):
+            with self.assertRaisesRegex(ValueError, 'automatic GC requires GC enabled'):
+                shooter.run(device=Device(), gc_interval=None, report=False)
+
     def test_acceleration_restores_transport(self):
         from kagura import acceleration as A
         class FakeLink:

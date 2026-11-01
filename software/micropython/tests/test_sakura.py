@@ -210,6 +210,23 @@ def oam_frame(xs, phases, lines, t):
 
 
 class Scene(unittest.TestCase):
+    def test_piano_reader_uses_small_real_buffers_and_handles_partial_reads(self):
+        data = bytes(range(256)) * 17 + b'END'
+        for size in (0, 127, 4096, 8192):
+            class Reader:
+                offset = 0
+                def readinto(reader, out):
+                    self.assertIsInstance(out, bytearray)
+                    self.assertLessEqual(len(out), 512)
+                    n = min(len(out), 137, len(data) - reader.offset)
+                    out[:n] = data[reader.offset:reader.offset + n]
+                    reader.offset += n
+                    return n
+            out = bytearray(size)
+            n = S.read_fully(Reader(), memoryview(out), bytearray(512))
+            self.assertEqual(n, min(size, len(data)))
+            self.assertEqual(out[:n], data[:n])
+
     def test_scenery_matches_c(self):
         d = Device()
         strip, packed, work = bytearray(4096), bytearray(2048), bytearray(8192)

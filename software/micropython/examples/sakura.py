@@ -280,8 +280,10 @@ class Scene:
     Every feature repeats with a period that divides the 512 px map width."""
 
     def __init__(self):
-        self.mt = array('h', [mountain_top(x) for x in range(514)])
-        self.ht = array('h', [hill_top(x) for x in range(512)])
+        # Stream into compact arrays; a temporary 514-item Python list
+        # needs a 4 KB growth block on the Pico's fragmented presentation heap.
+        self.mt = array('h', (mountain_top(x) for x in range(514)))
+        self.ht = array('h', (hill_top(x) for x in range(512)))
         self.trees = tuple((mix(k) % 5 - 2, 10 + mix(k + 100) % 12) for k in range(8))
         self.stars = bytearray(128)
 
@@ -349,7 +351,8 @@ def build_scenery(d, strip, packed, work):
     scene = Scene()
     seen = {}
     blank = bytes(32)
-    work[:4096] = bytes(4096)
+    for i in range(4096):
+        work[i] = 0  # reuse the map workspace, no temporary 4 KB zero string
     for col in range(64):
         map_set(work, col, 0, TILE_MARQUEE + col, PAL_MARQUEE)
         map_set(work, col, 30, TILE_HUD + col if col < 40 else 0, PAL_HUD)
@@ -528,13 +531,27 @@ CHORDS = ((-15, 0, 4), (-19, -3, 0), (-15, 0, 4), (-20, -3, -1),
           (-19, -3, 0), (-15, 0, 4), (-22, -7, -3), (-15, -3, 0))
 
 
-def read_fully(f, buf):
-    """readinto() until buf is full or the file ends; returns the bytes read."""
+def read_fully(f, buf, chunk=None):
+    """Fill a buffer without passing large views to mpremote's RemoteFile.
+
+    RemoteFile copies memoryviews to find their byte length, after starting
+    its wire transaction. A small real bytearray avoids both the copy and
+    a mid-protocol MemoryError on a fragmented multi-demo heap.
+    """
+    if not len(buf):
+        return 0
+    if chunk is None:
+        chunk = bytearray(min(512, len(buf)))
+    if not len(chunk):
+        raise ValueError('read chunk must not be empty')
     got = 0
     while got < len(buf):
-        n = f.readinto(buf[got:])
+        left = len(buf) - got
+        target = chunk if left >= len(chunk) else bytearray(left)
+        n = f.readinto(target)
         if not n:
             break
+        buf[got:got + n] = memoryview(target)[:n]
         got += n
     return got
 
@@ -1177,8 +1194,9 @@ class Sakura:
         q = array('i', [0] * 7)
         blocks = (count + PIANO_BLOCK - 1) // PIANO_BLOCK
         keep = PIANO_WINDOW - PIANO_BLOCK
+        input_chunk = bytearray(512)
         with open(self.piano, 'rb') as f:
-            w0, filled = 0, read_fully(f, memoryview(window))
+            w0, filled = 0, read_fully(f, memoryview(window), input_chunk)
             while True:
                 last = w0 + filled >= count
                 # The highest source index a version may start a sample at: its k + 1 must be loaded too.
@@ -1199,7 +1217,7 @@ class Sakura:
                 self.loading('%s %d/%d' % (LOADING[3], w0 // PIANO_BLOCK + 1, blocks))
                 window[:keep] = memoryview(window)[PIANO_BLOCK:]   # keep == PIANO_BLOCK: no overlap
                 w0 += PIANO_BLOCK
-                filled = keep + read_fully(f, memoryview(window)[keep:])
+                filled = keep + read_fully(f, memoryview(window)[keep:], input_chunk)
         if any(v[4] != v[1] for v in versions):
             raise OSError('piano_c4.pcm ended early')
         d.fence()
@@ -1224,7 +1242,8 @@ class Sakura:
         self.ext_writes(memoryview(self.ext)[:self.bands(0)])
         self.loading(LOADING[0])
         self.draw_marquee()
-        build_scenery(d, tx.strip, tx.packed, work)
+        scenery_loader = getattr(self, '_scenery_loader', build_scenery)
+        scenery_loader(d, tx.strip, tx.packed, work)
         make_petals(work)
         d.write_memory(TILE_PETAL * 32, memoryview(work)[:12 * 32])
         self.loading(LOADING[1] if self.psram else LOADING[2])
@@ -1495,6 +1514,7 @@ class Sakura:
             if hasattr(stats, 'confirmed'):
                 stats.confirmed = confirmed
         self.displayed = confirmed
+        self.interrupted = interrupted
         print('SAKURA display: %d COMMITs confirmed in %.1f s (%.2f displayed/s)' % (
               confirmed, secs, confirmed / secs if secs > 0 else 0.0))
         return ok
