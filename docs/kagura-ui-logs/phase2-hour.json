@@ -1,0 +1,314 @@
+{
+  "console_attached": true,
+  "heap": {
+    "last_cycle": 536,
+    "groups": 537,
+    "max_free": 137664,
+    "last_free": 137664,
+    "first_free": 137664,
+    "min_free": 137664,
+    "elapsed_ms": 3601159
+  },
+  "workloads": {
+    "scroll": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 396354,
+      "pattern_payload_bytes": 12683328,
+      "flush_us_percentile_ranges": [
+        [
+          3179,
+          3203
+        ],
+        [
+          3200,
+          3264
+        ],
+        [
+          3205,
+          3457
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": [
+        [
+          2724,
+          2794
+        ],
+        [
+          2838,
+          3224
+        ],
+        [
+          2853,
+          3741
+        ]
+      ],
+      "frame_us_percentile_ranges": [
+        [
+          23602,
+          23778
+        ],
+        [
+          24082,
+          26172
+        ],
+        [
+          24812,
+          34243
+        ]
+      ],
+      "latency_samples": 16112
+    },
+    "focus": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 721824,
+      "pattern_payload_bytes": 23098368,
+      "flush_us_percentile_ranges": [
+        [
+          5265,
+          5312
+        ],
+        [
+          5291,
+          5375
+        ],
+        [
+          5295,
+          5525
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": [
+        [
+          4300,
+          4417
+        ],
+        [
+          4908,
+          6102
+        ],
+        [
+          5089,
+          7255
+        ]
+      ],
+      "frame_us_percentile_ranges": [
+        [
+          40256,
+          40589
+        ],
+        [
+          42376,
+          45732
+        ],
+        [
+          43584,
+          47761
+        ]
+      ],
+      "latency_samples": 17184
+    },
+    "idle": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 0,
+      "pattern_payload_bytes": 0,
+      "flush_us_percentile_ranges": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": null,
+      "frame_us_percentile_ranges": [
+        [
+          456,
+          472
+        ],
+        [
+          469,
+          494
+        ],
+        [
+          471,
+          513
+        ]
+      ],
+      "latency_samples": 0
+    },
+    "label": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 30795,
+      "pattern_payload_bytes": 985440,
+      "flush_us_percentile_ranges": [
+        [
+          1869,
+          1888
+        ],
+        [
+          1891,
+          1923
+        ],
+        [
+          1895,
+          1933
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": null,
+      "frame_us_percentile_ranges": [
+        [
+          16768,
+          16881
+        ],
+        [
+          17013,
+          17246
+        ],
+        [
+          17083,
+          17357
+        ]
+      ],
+      "latency_samples": 0
+    },
+    "button": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 197254,
+      "pattern_payload_bytes": 6312128,
+      "flush_us_percentile_ranges": [
+        [
+          2745,
+          2862
+        ],
+        [
+          2765,
+          2938
+        ],
+        [
+          2769,
+          3162
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": [
+        [
+          2872,
+          3015
+        ],
+        [
+          3328,
+          3675
+        ],
+        [
+          3539,
+          4645
+        ]
+      ],
+      "frame_us_percentile_ranges": [
+        [
+          32270,
+          42463
+        ],
+        [
+          34178,
+          46348
+        ],
+        [
+          43141,
+          52862
+        ]
+      ],
+      "latency_samples": 17184
+    },
+    "move": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 343660,
+      "pattern_payload_bytes": 10997120,
+      "flush_us_percentile_ranges": [
+        [
+          3147,
+          3169
+        ],
+        [
+          3167,
+          3269
+        ],
+        [
+          3173,
+          3303
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": null,
+      "frame_us_percentile_ranges": [
+        [
+          12819,
+          13485
+        ],
+        [
+          13301,
+          15248
+        ],
+        [
+          13655,
+          16136
+        ]
+      ],
+      "latency_samples": 0
+    },
+    "screen": {
+      "samples": 17184,
+      "groups": 537,
+      "tiles": 20620800,
+      "pattern_payload_bytes": 659865600,
+      "flush_us_percentile_ranges": [
+        [
+          29653,
+          29819
+        ],
+        [
+          29851,
+          29902
+        ],
+        [
+          29851,
+          29982
+        ]
+      ],
+      "synthetic_invalidate_us_percentile_ranges": null,
+      "frame_us_percentile_ranges": [
+        [
+          50827,
+          52939
+        ],
+        [
+          84251,
+          94017
+        ],
+        [
+          84391,
+          95196
+        ]
+      ],
+      "latency_samples": 0
+    }
+  },
+  "console_paused": false,
+  "error": null,
+  "finish": {
+    "cycles": 537,
+    "heap_end": 137760,
+    "heap_start": 140544,
+    "elapsed_ms": 3601176
+  },
+  "done": true
+}

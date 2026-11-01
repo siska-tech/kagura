@@ -67,6 +67,9 @@ class BitmapFont8:
                 continue
             if x < renderer.clip[2] and x + 8 > renderer.clip[0] and y < renderer.clip[3] and y + 8 > renderer.clip[1]:
                 rows = self.glyph(ch)
+                if renderer.glyph8(rows, x, y, color):
+                    x += self.advance(ch)
+                    continue
                 # Horizontal runs use the SDK's Viper fill_rect where available.
                 for yy in range(8):
                     bits, xx = rows[yy], 0

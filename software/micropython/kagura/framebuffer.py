@@ -391,6 +391,31 @@ class TileFramebuffer:
                 a -= 1
                 decision += (b - a) * 2 + 1
 
+    def glyph8(self, rows, x, y, color):
+        """Transparent 8x8 bitmap; eight bytes, MSB at the left edge.
+
+        Reuses the text raster kernel and dirty tracking. The caller retains
+        ownership of rows; it is consumed synchronously and never modified.
+        """
+        _ints(x, y)
+        _range(color, 0, 15, 'color')
+        if not isinstance(rows, (bytes, bytearray)):
+            raise TypeError('glyph8 rows must be bytes or bytearray')
+        if len(rows) != 8:
+            raise ValueError('glyph8 requires eight rows')
+        if x >= 320 or x + 8 <= 0 or y >= 240 or y + 8 <= 0:
+            return
+        if self._kernels is not None:
+            p = self._params
+            p[0], p[1], p[2] = x, y, color
+            self._kernels.glyph(self.buffer, self.dirty, p, self._kernel_counts, rows)
+        else:
+            for yy in range(8):
+                bits = rows[yy]
+                for xx in range(8):
+                    if bits & (128 >> xx):
+                        self._python_put(x + xx, y + yy, color)
+
     def text(self, value, x, y, color):
         """Transparent 8x8 ASCII using MicroPython's built-in font."""
         _ints(x, y)

@@ -3,7 +3,8 @@
 **RP2040 / USB CDCで最小UIの主要受入試験に合格。**
 main `45e490b`を基準に、専用ブランチ`feat/kagura-ui-phase1`で実装した。
 既存driver/transport/RTL/ABIの処理は変更していない。
-UARTキーボード、Pico 2系、1時間以上の連続運転は未検証。通常配置の追加受入は下記に記録。
+UARTキーボード、Pico 2系は未検証。通常配置の追加受入は下記に記録。
+1時間のbitmap UI連続試験は、その後の[Phase 2記録](kagura-ui-phase2.md)を参照。
 
 ## 確認済み
 
@@ -278,7 +279,7 @@ UI 26件、配置補正1件、Framebuffer既存85件を再実行しPASS。
 Framebufferの最初の再実行はWindows sandbox TEMP権限で4エラーとなったため、
 workspace内TEMPを指定して再実行した。描画のassert失敗ではない。
 
-通常配置の阻害要因は解消した。PRのDraft解除を技術的に妨げる既知のPhase 1不具合はなく、
-最新変更のCIとコードレビューを残す。mainへのmergeは行っていない。
+通常配置の阻害要因は解消した。このPhase 1記録以降、PR #50はユーザーにより
+main `41669a2`へmergeされた。追加開発は[Phase 2記録](kagura-ui-phase2.md)を参照。
 
-長時間試験、UART/HID、Pico 2/2 Wは引き続き未実施。物理電源断による再投入試験も未実施。
+Phase 1時点では長時間試験、UART/HID、Pico 2/2 W、物理電源断による再投入は未実施だった。

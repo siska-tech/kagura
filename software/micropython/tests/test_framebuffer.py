@@ -166,6 +166,34 @@ class FramebufferTests(TestCase):
     def random_plane(self, rng):
         for n in range(38400):
             self.fb.buffer[n] = rng.randrange(256)
+    def test_glyph8_reference_clipping_transparency_and_dirty(self):
+        rows = bytes((0x81, 0x42, 0x24, 0x18, 0xff, 0, 0x55, 0xaa))
+        self.random_plane(random.Random(61))
+        for x, y in ((-7,-7),(0,0),(7,7),(184,200),(192,200),(319,239),
+                     (320,240),(1<<70,0),(-(1<<70),0)):
+            before = self.sync()
+            self.fb.glyph8(rows, x, y, 13)
+            # Independent reference: each row is a binary string, left first.
+            for yy, row in enumerate(rows):
+                for xx, bit in enumerate(format(row, '08b')):
+                    if bit == '1': self.ref.pixel(x+xx, y+yy, 13)
+            self.compare()
+            self.assert_dirty_exact(before)
+            self.fb.dirty[:] = bytes(1200)
+            self.fb.glyph8(bytearray(rows), x, y, 13)
+            self.assertEqual(sum(self.fb.dirty), 0)
+        self.assertEqual(rows, bytes((0x81,0x42,0x24,0x18,0xff,0,0x55,0xaa)))
+
+    def test_glyph8_invalid_input_does_not_draw(self):
+        before = self.sync()
+        for args, error in (((b'123',0,0,1),ValueError),
+                            (([0]*8,0,0,1),TypeError),
+                            ((bytes(8),0,0,16),ValueError),
+                            ((bytes(8),0.5,0,1),TypeError)):
+            with self.assertRaises(error): self.fb.glyph8(*args)
+        self.assertEqual(bytes(self.fb.buffer), before)
+        self.assertEqual(sum(self.fb.dirty), 0)
+
     def test_nibbles_corners_tile_boundaries(self):
         self.fb.dirty[:] = bytes(1200)
         for x,y,c in ((0,0,1),(1,0,2),(7,7,3),(8,7,4),(319,0,5),(0,239,6),(319,239,7),(191,199,8),(192,199,9)):
