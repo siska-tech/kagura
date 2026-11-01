@@ -4,6 +4,8 @@ from .render import intersect, nonempty
 
 class Widget:
     focusable = False
+    # True only if paint() always fills the whole of self.bounds.
+    opaque = False
 
     def __init__(self, x=0, y=0, width=None, height=None, visible=True, enabled=True):
         if width is not None and width < 0 or height is not None and height < 0:
@@ -112,6 +114,8 @@ class Widget:
 
 
 class Panel(Widget):
+    opaque = True
+
     def __init__(self, color=None, **kwargs):
         super().__init__(**kwargs)
         self.color = color

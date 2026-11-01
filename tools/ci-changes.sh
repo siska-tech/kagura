@@ -49,7 +49,8 @@ classify() {
         software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py|\
         tools/gen-showcase-assets.py|tools/prepare-showcase.py|tools/gen-starfall-mpy-assets.py|\
         tools/measure-kagura-ui.py|tools/render-kagura-ui.py|tools/kagura-ui-device.py|\
-        tools/kagura-ui-standard.py|tools/kagura-ui-soak.py|tools/summarize-kagura-ui.py) mark micropython ;;
+        tools/kagura-ui-standard.py|tools/kagura-ui-soak.py|tools/summarize-kagura-ui.py|\
+        tools/compare-ui-damage.py|tools/kagura-ui-damage.py) mark micropython ;;
         # Synthesis, board and hardware measurement tools; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\

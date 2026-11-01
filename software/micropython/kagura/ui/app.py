@@ -5,6 +5,14 @@ from .render import Renderer, FramebufferBackend, intersect, nonempty
 from .theme import Theme
 
 
+def _union(a, b):
+    return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+
+
+def _area(r):
+    return (r[2] - r[0]) * (r[3] - r[1])
+
+
 class FocusManager:
     def __init__(self, app):
         self.app, self.current = app, None
@@ -83,7 +91,9 @@ class App:
     No uasyncio dependency. An external loop can call step() at its own cadence.
     """
     def __init__(self, device=None, backend=None, console=None, exclusive=False,
-                 theme=None, input_adapter=None, queue_capacity=32):
+                 theme=None, input_adapter=None, queue_capacity=32, damage_limit=1):
+        if type(damage_limit) is not int or damage_limit < 1:
+            raise ValueError('damage_limit must be a positive integer')
         if backend is None:
             if device is None:
                 raise ValueError('device or backend required')
@@ -96,7 +106,10 @@ class App:
         self.events = EventQueue(queue_capacity)
         self.focus = FocusManager(self)
         self.root = None
-        self._damage = None
+        # Up to damage_limit disjoint rectangles. Default 1 (one bounding rectangle): on
+        # RP2040 each extra rectangle costs a fixed repaint pass (docs/kagura-ui-damage.md).
+        self.damage_limit = damage_limit
+        self._damage, self._painting = [], []
         self._layout = False
         self.started = self.running = False
         self.last_frame_us = self.last_input_us = 0
@@ -110,9 +123,35 @@ class App:
         if nonempty(rect):
             if self._event_timestamp is not None and self.last_invalidate_us is None:
                 self.last_invalidate_us = elapsed(now_us(), self._event_timestamp)
-            old = self._damage
-            self._damage = rect if old is None else (min(old[0], rect[0]), min(old[1], rect[1]),
-                                                     max(old[2], rect[2]), max(old[3], rect[3]))
+            self._add_damage(rect)
+
+    def _add_damage(self, rect):
+        rects = self._damage
+        while True:
+            # Absorb overlapping or edge-sharing rectangles (not corner-only contact);
+            # restart as rect grows.
+            index = 0
+            while index < len(rects):
+                r = rects[index]
+                ox = min(r[2], rect[2]) - max(r[0], rect[0])
+                oy = min(r[3], rect[3]) - max(r[1], rect[1])
+                if ox >= 0 and oy >= 0 and (ox or oy):
+                    rect = _union(rects.pop(index), rect)
+                    index = 0
+                else:
+                    index += 1
+            if len(rects) < self.damage_limit:
+                rects.append(rect)
+                return
+            # Overflow: merge into the rectangle that grows least, then recheck overlaps.
+            best = growth = None
+            for index in range(len(rects)):
+                r = rects[index]
+                u = _union(r, rect)
+                g = _area(u) - _area(r)
+                if growth is None or g < growth:
+                    best, growth = index, g
+            rect = _union(rects.pop(best), rect)
 
     def request_layout(self):
         self._layout = True
@@ -172,22 +211,34 @@ class App:
                 self._event_timestamp = None
             remaining -= 1
         self.focus.repair()
-        rect = self._damage
-        if rect is None:
+        rects = self._damage
+        if not rects:
             self.last_frame_us = elapsed(now_us(), begin)
             return False
-        self._damage = None
-        self.renderer.clip = rect
-        # Preserve damage through both paint and flush exceptions.
+        # Swap the two fixed lists; invalidations raised while painting go to the next frame.
+        self._damage, self._painting = self._painting, rects
+        # Preserve damage through both paint and flush exceptions. One flush covers all rects.
+        root = self.root
+        # An opaque root (Screen/Panel) repaints every pixel it covers; skip the
+        # duplicate background fill, a fixed-cost SDK call per rectangle.
+        cover = root.bounds if root is not None and root.visible and root.opaque else None
         try:
-            self.renderer.fill_rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1],
-                                    self.theme.background)
-            if self.root is not None:
-                self.root._draw(self.renderer, self.theme)
+            for rect in rects:
+                self.renderer.clip = rect
+                if (cover is None or rect[0] < cover[0] or rect[1] < cover[1] or
+                        rect[2] > cover[2] or rect[3] > cover[3]):
+                    self.renderer.fill_rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1],
+                                            self.theme.background)
+                if root is not None:
+                    root._draw(self.renderer, self.theme)
             self.last_flush = self.backend.flush()
         except BaseException:
-            self.damage(rect)
+            for rect in rects:
+                self._add_damage(rect)
             raise
+        finally:
+            while rects:
+                rects.pop()
         self.frames += 1
         self.last_frame_us = elapsed(now_us(), begin)
         return True

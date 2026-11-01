@@ -1,0 +1,201 @@
+# SPDX-License-Identifier: Apache-2.0
+"""RP2040 damage_limit=1 versus 4 on the installed firmware; no flash/filesystem writes.
+
+run: the named Pico is soft-reset, this checkout's kagura/ui/app.py is sent as
+source over raw REPL (relative imports made absolute) and used for BOTH limits,
+so frozen-versus-RAM bytecode does not bias the comparison. The rest of the UI
+and the SDK stay frozen; the frozen kagura/ui must match this checkout except
+app.py and the data-only Widget/Panel.opaque attributes, which are set on older
+frozen classes and logged. The HDMI console is lent to the UI and restored;
+FPGA ERROR_CODE is read.
+summarize: offline table from a run log (also used by the PC tests).
+"""
+import argparse
+import codecs
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def branch_app_source():
+    source = (ROOT / 'software/micropython/kagura/ui/app.py').read_text(encoding='utf8')
+    rewritten, count = re.subn(r'^from \.(\w+) import', r'from kagura.ui.\1 import', source, flags=re.M)
+    if count < 3 or '\nfrom .' in rewritten:
+        raise SystemExit('unexpected imports in kagura/ui/app.py')
+    return rewritten
+
+
+def git_identity():
+    try:
+        head = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+        dirty = subprocess.run(['git', '-C', str(ROOT), 'status', '--porcelain', '--', 'software', 'tools'],
+                               capture_output=True, text=True).stdout.strip()
+        return head + ('+dirty' if dirty else '')
+    except OSError:
+        return 'unknown'
+
+
+def run_device(args):
+    from mpremote.transport_serial import SerialTransport
+    from serial.tools.list_ports import comports
+
+    ports = [p for p in comports() if p.device.lower() == args.port.lower()]
+    if (len(ports) != 1 or ports[0].vid != 0x2e8a or
+            (ports[0].serial_number or '').lower() != args.expected_serial.lower()):
+        raise SystemExit('port/USB vendor/serial mismatch; no device action taken')
+    app_source = branch_app_source()
+    bench_source = (ROOT / 'software/micropython/examples/ui_damage_benchmark.py').read_bytes()
+    args.log.parent.mkdir(parents=True, exist_ok=True)
+    sys.stdout.reconfigure(encoding='utf8')
+    with args.log.open('w', encoding='utf8', newline='\n') as log:
+        def emit(value):
+            value = value.replace('\r', '')
+            print(value, end='', flush=True)
+            log.write(value)
+            log.flush()
+
+        emit('HOST_START %s\n' % datetime.now(timezone.utc).isoformat())
+        emit('HOST_SOURCE git=%s app_sha256=%s bench_sha256=%s\n' % (
+            git_identity(), hashlib.sha256(app_source.encode('utf8')).hexdigest(),
+            hashlib.sha256(bench_source).hexdigest()))
+        transport = SerialTransport(args.port, timeout=0.2)
+        transport.serial.write_timeout = 5
+        entered = False
+        failed = True
+
+        def run(source, timeout=60):
+            decoder = codecs.getincrementaldecoder('utf8')('replace')
+            pending = bytearray()
+
+            def consume(data):
+                if data != b'\x04':
+                    pending.extend(data)
+                    if b'\n' in data or len(pending) >= 1024:
+                        emit(decoder.decode(pending))
+                        pending.clear()
+            output, error = transport.exec_raw(source, timeout=timeout, data_consumer=consume)
+            emit(decoder.decode(pending, final=True))
+            if output:
+                emit(output.decode('utf8', 'replace'))
+            if error:
+                emit(error.decode('utf8', 'replace'))
+                raise RuntimeError('device exception; see log')
+
+        try:
+            transport.enter_raw_repl(soft_reset=True)
+            entered = True
+            run("import sys,gc,machine,binascii,kagura,kagura.ui; from kagura.framebuffer import TileFramebuffer; from kagura_ja import Font; "
+                "assert sys.implementation.version[:3]==(1,26,0); assert 'RP2040' in sys.implementation._machine; "
+                "assert kagura.ui.__path__=='.frozen/kagura/ui'; assert callable(getattr(TileFramebuffer,'glyph8',None)); "
+                "d=kagura_console.screen.device; t=d.transport; "
+                "print('DAMAGE_RUNTIME',sys.implementation); "
+                "print('DAMAGE_PROFILE',machine.freq(),d.abi,d.caps,t.link,getattr(t,'lanes',None),getattr(t,'baudrate',None),t.acceleration.enabled); "
+                "gc.collect(); _reserve=bytearray(40000)")
+            # Branch App in RAM; it shadows nothing in kagura.ui (frozen modules unchanged).
+            run(app_source + "\nDamageApp=App\nassert hasattr(DamageApp,'_add_damage')\ndel App\ngc.collect()\nprint('DAMAGE_APP_LOADED',gc.mem_free())")
+            # Branch widget.py adds data-only class attributes; mirror them on older frozen
+            # UI classes (never on SDK classes) and log it.
+            run("from kagura.ui.widget import Widget as _W, Panel as _P\n"
+                "if not hasattr(_W,'opaque'):\n _W.opaque=False; _P.opaque=True; print('DAMAGE_FROZEN_ATTR opaque set')\n"
+                "assert _P.opaque and not _W.opaque")
+            run(bench_source + b"\ngc.collect()\nprint('DAMAGE_BENCH_LOADED',gc.mem_free())")
+            run("font=Font('/fonts/misaki8.kfnt'); del _reserve; gc.collect(); "
+                "app,scene=make(DamageApp,d,font,console=kagura_console); print('DAMAGE_APP_READY',gc.mem_free())")
+            begin = time.monotonic()
+            run("try:\n run(app,scene,limits=(1,4),samples=%d,rounds=%d)\n"
+                " full=(0,0,320,240); app.step(); c=binascii.crc32(app.backend.fb.buffer)\n"
+                " app.backend.fb.set_viper(False); app.damage(full); app.step(); p=binascii.crc32(app.backend.fb.buffer)\n"
+                " app.backend.fb.set_viper(True); print('DAMAGE_VIPER_PYTHON_CRC',c,p); assert c==p\n"
+                "finally:\n app.close()" % (args.samples, args.rounds), timeout=args.timeout)
+            emit('HOST_RUN_SECONDS %.3f\n' % (time.monotonic() - begin))
+            run("from kagura import regs as R; code=d.read_reg(R.REG_ERROR_CODE); print('DAMAGE_FPGA_ERROR_CODE',code); "
+                "d.check_errors(); print('DAMAGE_RESTORED',kagura_console.paused,kagura_console._attached); "
+                "assert not kagura_console.paused and kagura_console._attached; font.close()")
+            failed = False
+        finally:
+            try:
+                if entered:
+                    if failed:
+                        # Interrupt a still-running bounded loop; keep globals so app.close restores video.
+                        transport.enter_raw_repl(soft_reset=False)
+                    run("\nif 'app' in globals(): app.close()\nif 'font' in globals(): font.close()\nprint('DAMAGE_CLEANUP')")
+                    transport.exit_raw_repl()
+            finally:
+                transport.close()
+                emit('HOST_END %s %s\n' % (datetime.now(timezone.utc).isoformat(), 'FAILED' if failed else 'OK'))
+
+
+def summarize(lines):
+    """Per limit/workload over rounds: min..max of per-round p50, max of p95/p99, total tiles/bytes."""
+    rows, done, checks = {}, None, {}
+    for line in lines:
+        for tag in ('UI_DAMAGE_DONE ', 'UI_DAMAGE ', 'DAMAGE_FPGA_ERROR_CODE ', 'DAMAGE_RESTORED ', 'DAMAGE_VIPER_PYTHON_CRC '):
+            if line.startswith(tag):
+                body = line[len(tag):].strip()
+                if tag == 'UI_DAMAGE ':
+                    value = json.loads(body)
+                    rows.setdefault((value['workload'], value['limit']), []).append(value)
+                elif tag == 'UI_DAMAGE_DONE ':
+                    done = json.loads(body)
+                else:
+                    checks[tag.strip()] = body
+                break
+    if done is None:
+        raise SystemExit('UI_DAMAGE_DONE missing: incomplete run')
+    for key, values in rows.items():
+        if len(values) != done['rounds']:
+            raise SystemExit('incomplete rounds for %r' % (key,))
+    out = ['| workload | limit | frame p50 (min..max) | frame p95/p99 max | cpu p50 | flush p50 | tiles | payload B | heap/step p50 | GC seen |',
+           '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |']
+    for workload in done['workloads']:
+        for limit in done['limits']:
+            v = rows[(workload, limit)]
+            p50 = [r['frame_us_p50_p95_p99'][0] for r in v]
+            heap = [r['heap_step_delta_p50_max'][0] for r in v if r['heap_step_delta_p50_max']]
+            gcs = [r['gc_observed_steps'] for r in v if r['gc_observed_steps'] is not None]
+            out.append('| %s | %d | %d..%d | %d/%d | %d..%d | %d..%d | %d | %d | %s | %s |' % (
+                workload, limit, min(p50), max(p50),
+                max(r['frame_us_p50_p95_p99'][1] for r in v), max(r['frame_us_p50_p95_p99'][2] for r in v),
+                min(r['cpu_us_p50_p95_p99'][0] for r in v), max(r['cpu_us_p50_p95_p99'][0] for r in v),
+                min(r['flush_us_p50_p95_p99'][0] for r in v), max(r['flush_us_p50_p95_p99'][0] for r in v),
+                sum(r['tiles'] for r in v), sum(r['pattern_payload_bytes'] for r in v),
+                ('%d..%d' % (min(heap), max(heap))) if heap else 'n/a',
+                sum(gcs) if gcs else 'n/a'))
+    out.append('')
+    out.append('percentiles are per round of %d samples (floor((N-1)*p/100)); not whole-run percentiles.' % done['samples'])
+    for name, body in checks.items():
+        out.append('%s %s' % (name, body))
+    return '\n'.join(out)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest='command', required=True)
+    device = sub.add_parser('run')
+    device.add_argument('--port', required=True)
+    device.add_argument('--expected-serial', required=True)
+    device.add_argument('--samples', type=int, default=32)
+    device.add_argument('--rounds', type=int, default=4)
+    device.add_argument('--timeout', type=int, default=1800)
+    device.add_argument('--log', type=Path, default=Path('build/ui-damage/device.txt'))
+    offline = sub.add_parser('summarize')
+    offline.add_argument('log', type=Path)
+    args = parser.parse_args()
+    if args.command == 'run':
+        if not 2 <= args.samples <= 512 or not 2 <= args.rounds <= 64 or args.rounds % 2:
+            parser.error('samples 2..512; rounds even 2..64 (ABBA order)')
+        run_device(args)
+    else:
+        sys.stdout.reconfigure(encoding='utf8')
+        print(summarize(args.log.read_text(encoding='utf8').splitlines()))
+
+
+if __name__ == '__main__':
+    main()
