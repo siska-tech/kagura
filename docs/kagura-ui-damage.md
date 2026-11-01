@@ -24,14 +24,15 @@ tile trackerを複製せず、UI側は矩形のclipだけを増やした。
 ### 代償
 
 - 矩形数だけ再描画passが増える。RP2040では1矩形あたり約2.4 msの固定費（rootのfillとtree走査）がある。
-- 矩形境界で字形が部分clipになると、glyph8ではなく従来の行単位描画になる。
+- 矩形境界で字形が部分clipになると、従来の行単位描画になる（測定時点）。
+  後続の変更でmaskしたrowsによる1回のglyph8になった（[glyph cache記録](kagura-ui-glyph-cache.md#部分clipの字形)）。
 - `_add_damage`は矩形tupleを生成する。allocation回数は従来どおり未計測で、allocation-freeとは主張しない。
 
 ## 検証（PC）
 
 | 項目 | 結果 |
 | --- | --- |
-| `test_ui.py` | 38件PASS（既存33＋新規5、うち1件は実機benchmarkのPC実行）。既存の`_damage`参照はlist形式へ更新 |
+| `test_ui.py` | 39件PASS（既存33＋新規6、うち1件は実機benchmarkのPC実行、1件は背景fill省略）。既存の`_damage`参照はlist形式へ更新 |
 | 新規: 離れた2 widget | 間のsentinel pixelを描き直さない。`damage_limit=1`では描き直す |
 | 新規: 結合規則 | 重なり/辺共有/角接触/上限超過/画面clipの各期待値 |
 | 新規: 40操作の乱数列 | 移動/非表示/日本語Label/Tab/List操作とflush失敗再試行で、limit 4とlimit 1の全pixelが毎step一致。最後に全画面再描画しても不変 |

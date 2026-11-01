@@ -175,8 +175,8 @@ def run(app, scene, limits=(1, 4), samples=32, rounds=2, report=None):
                                   gc_observed_steps=gc_seen_total if _free() is not None else None))
 
 
-def make(app_class, device, font, console=None, exclusive=False):
-    app = app_class(device, console=console, exclusive=exclusive, theme=Theme(BitmapFont8(font)))
+def make(app_class, device, font, console=None, exclusive=False, font_class=BitmapFont8):
+    app = app_class(device, console=console, exclusive=exclusive, theme=Theme(font_class(font)))
     app.input = None  # deterministic synthetic input
     scene = Scene(app)
     app.set_root(scene.root)

@@ -120,7 +120,7 @@ finally:
 | `ProgressBar(value=0,maximum=100,width=120,height=12,...)`, `set_value(n)` | 0..maximumへclamp。maximumは正値 |
 | `ListView(items,on_select=None,width=120,height=64,...)`, `set_items(sequence)` | 可視行のみ描画。上下で選択/scroll、Enterでcallback(index,text)。itemsはcaller所有。set_itemsで選択範囲を補正して再描画 |
 | `Theme(font=None)` | palette 16色と描画色indexを設定。実行中のpalette変更APIは未提供 |
-| `BitmapFont8(source=None)` | sourceは既存kagura_ja.Font。height/advance/measure/glyph/drawを提供。fileを所有しない |
+| `BitmapFont8(source=None, cache=64)` | sourceは既存kagura_ja.Font。height/advance/measure/glyph/drawを提供。fileを所有しない。cacheはファイル由来の字形rowsを保持する直接マップのslot数（0か2のべき乗、0で無効）。glyphの戻り値は読取り専用として扱う |
 | `Event(key,text='',shift=False,kind='press',repeat=False)` | key: up/down/left/right/enter/escape/tab/backspace/delete/text。timestampは生成時刻 |
 | `EventQueue(capacity=32).post(event)` | 固定slot ring。満杯では最新eventを捨てFalse、dropped加算。popは空でNone |
 | `TerminalInput(stream=None).feed(bytes,queue)`, `poll(queue)` | 非blocking readinto stream、分割CSI/UTF-8、Shift+Tab、Escape 30ms timeout。OS repeatを連続pressとして配送 |
@@ -142,9 +142,9 @@ UI damageは最大`damage_limit`個（既定1）の矩形で保持し、SDKのdi
 4の方が約6%遅く、字形を切る更新では4が77%速かった（[実測](kagura-ui-damage.md)）。
 不透明なroot（Screen/Panel）が覆う矩形では背景fillを省く。
 上限超過や辺共有の結合では、離れた変更の間まで再描画する場合が残る。
-奥から再合成するため重なりの残像は残さない。矩形間の境界で字形が部分clipになると
-glyph8ではなく行単位描画になる。矩形数だけtree走査が増える。
+奥から再合成するため重なりの残像は残さない。矩形数だけtree走査が増える。
 静止時にはfocus候補も再走査しない。tree/layout/有効状態の変更時と入力配送時に再検証する。
+同じeventでのTab/矢印移動は配送時の走査結果を再利用し、handlerがtree/有効状態を変えた場合だけ再走査する。
 画面が静止しているstepではflushしない。描画中の新しいinvalidateも次frameへ保持する。
 flush失敗時の再試行対象はSDK dirtyとUI damageの両方に残る。
 
@@ -164,7 +164,9 @@ callbackから追加されたeventは次stepへ送る。uasyncioは必須にし�
 32 queue slots（RP2040では参照payload約128 B）、widget/font/module/VM overhead。
 実際のheapはこれを上回る。既存SDKのconstructor実測は約40 KBだが、新UI全体の予算値ではない。
 美咲ファイル71718 Bはstorageから逐次検索。glyph戻り値bytes、Event、矩形tuple、
-再帰generator、SDK統計dict、navigation候補list等のallocationは残る。
+SDK統計dict等のallocationは残る。focus候補の走査は再利用listへ整数clipで書き込む。
+unix MicroPythonでは走査ごとの割当が0 B、Tab 1回の配送が約0.4〜0.6 KB（Eventを除き、主にdamage矩形）。
+走査を再帰generatorで行っていた従来版では、同じ配送で7〜22 KBだった（`tests/ui_focus_alloc.py`）。
 **allocation-freeではない**。heap正味増加ゼロからallocation回数ゼロを結論しない。
 メモリ不足時は例外伝播、UI runはfinallyでconsole復帰。大規模treeの深い再帰も避ける。
 RP2040実測ではApp/Theme/Gallery treeが3984 B、Framebuffer constructorが40544 B（各GC後差分、module/font openは除外）。
@@ -204,11 +206,13 @@ UART入力、Pico 2系は未検証。1時間のbitmap UI試験は[Phase 2記録]
 
 Rendererは`glyph8(rows,x,y,color)`という任意のbackend高速経路を持つ。
 backendの実装は描画できたらTrue、未対応の場合はFalseを返す。
-8×8全体が現在のclip内にある場合だけ呼び、FramebufferBackendはSDKの
-`TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
-fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。glyph cacheや追加framebufferは作らない。
-部分clip、旧SDKでのglyph8未提供、bytes/bytearray以外の行sequence、MockBackendは
-既存のclipped run描画を使う。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
+8×8全体が現在のclip内にあればrowsをそのまま、一部だけなら、clip外の行・列のbitを
+再利用する8 B bufferで0にしてから呼ぶ（SDKのglyph8は1のbitだけを書く透過描画）。
+FramebufferBackendはSDKの`TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
+fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。追加framebufferは作らない。
+ファイル由来の字形rowsは`BitmapFont8`の小さな直接マップcacheに保持する（[glyph cache記録](kagura-ui-glyph-cache.md)）。
+旧SDKでのglyph8未提供、clip内に収まるbytes/bytearray以外の行sequence、MockBackendは
+既存のclipped run描画を使う（[部分clipの実測](kagura-ui-glyph-cache.md#部分clipの字形)）。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
 
 `ui_benchmark.run(app,widgets,samples=32,cycles=2,seconds=3600,profile='glyph8')`は
 固定長sample配列を使い、指定巡数と指定秒数の両方を満たすまで動作する。

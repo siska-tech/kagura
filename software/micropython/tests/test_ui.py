@@ -101,6 +101,32 @@ class UITests(unittest.TestCase):
         panel.set_visible(False); self.app.step()
         self.assertIs(self.app.focus.current, a)
 
+    def test_focus_scan_reuse_rescan_and_release(self):
+        root = VBox()
+        class Disabler(Button):
+            def handle(widget, event):
+                if event.key == 'down':
+                    b.set_enabled(False)  # tree change inside handle, then unconsumed
+                    return False
+                return super().handle(event)
+        a = root.add(Disabler('A')); b = root.add(Button('B')); c = root.add(Button('C'))
+        self.app.set_root(root); self.app.step()
+        self.assertEqual(self.app.focus.count, 3)
+        # move() must rescan after the handler's change instead of reusing repair()'s scan.
+        self.app.events.post(Event('down')); self.app.step()
+        self.assertIs(self.app.focus.current, c)
+        self.app.events.post(Event('tab', shift=True)); self.app.step()
+        self.assertIs(self.app.focus.current, a)
+        # Removed widgets are not retained by the reused result list.
+        root.remove(c); self.app.step()
+        self.assertEqual(self.app.focus.count, 1)  # b is still disabled
+        self.assertNotIn(c, self.app.focus.found)
+        root.remove(a); root.remove(b); self.app.step()
+        self.assertIsNone(self.app.focus.current)
+        self.assertEqual(self.app.focus.found, [None, None, None])
+        self.app.set_root(None); self.app.step()
+        self.assertEqual(self.app.focus.candidates(), 0)
+
     def test_queue_overflow_and_bounded_callbacks(self):
         q = EventQueue(2)
         self.assertTrue(q.post(Event('up'))); q.post(Event('down'))
@@ -188,6 +214,71 @@ class UITests(unittest.TestCase):
             self.assertEqual(bytes(font.glyph('A')), expected)
             self.assertEqual(bytes(font.glyph('日')), bytes(font.glyph('?')))
         self.assertEqual(self.theme.font.glyph('\U0001f600'), self.theme.font.glyph('?'))
+
+    def test_glyph_cache_hits_collisions_fallback_and_close(self):
+        source = self.theme.font.source
+        font = BitmapFont8(source, cache=4)
+        calls = []
+        original = source.glyph
+        with patch.object(source, 'glyph', side_effect=lambda code: calls.append(code) or original(code)):
+            first = font.glyph('日')
+            self.assertIs(font.glyph('日'), first)  # hit: same object, no file lookup
+            self.assertEqual(calls, [ord('日')])
+            self.assertEqual(first, original(ord('日')))
+            # A code in the same slot replaces it; the old code is looked up again.
+            other = chr(ord('日') + 4)
+            font.glyph(other); font.glyph('日')
+            self.assertEqual(calls, [ord('日'), ord(other), ord('日')])
+            # Missing glyphs cache their '?' fallback under the requested code.
+            del calls[:]
+            self.assertEqual(font.glyph('\U0001f600'), original(63))
+            font.glyph('\U0001f600')
+            self.assertEqual(calls, [0x1f600, 63])
+        uncached = BitmapFont8(source, cache=0)
+        with patch.object(source, 'glyph', side_effect=lambda code: calls.append(code) or original(code)):
+            del calls[:]
+            uncached.glyph('日'); uncached.glyph('日')
+            self.assertEqual(calls, [ord('日'), ord('日')])
+        for bad in (3, -1, 1.0, None):
+            with self.assertRaises(ValueError): BitmapFont8(source, cache=bad)
+        closed = Font(str(ROOT / 'software/micropython/fonts/misaki8.kfnt'))
+        cached = BitmapFont8(closed)
+        cached.glyph('日'); closed.close()
+        with self.assertRaisesRegex(ValueError, 'closed'): cached.glyph('日')
+
+    def test_button_two_fill_border_matches_rect_reference(self):
+        from kagura.ui.render import Renderer
+        for width, height in ((40,16),(3,3),(2,5),(1,1),(9,2)):
+            for focused in (False, True):
+                for pressed in (False, True):
+                    button = Button('', width=width, height=height)
+                    button.focused, button.pressed = focused, pressed
+                    button.bounds = (5, 7, 5 + width, 7 + height)
+                    new, old = MockBackend(32, 32), MockBackend(32, 32)
+                    button.paint(Renderer(new), self.theme)
+                    ref = Renderer(old)  # previous drawing: face fill, then 1 px rect
+                    ref.fill_rect(5, 7, width, height, self.theme.pressed if pressed else self.theme.button)
+                    ref.rect(5, 7, width, height, self.theme.focus if focused else self.theme.disabled)
+                    self.assertEqual(new.pixels, old.pixels, (width, height, focused, pressed))
+
+    def test_label_text_size_cached_until_text_or_font_changes(self):
+        calls = []
+        original = self.theme.font.measure
+        with patch.object(self.theme.font, 'measure', side_effect=lambda t: calls.append(t) or original(t)):
+            label = Label('日本')
+            self.assertEqual(label.measure(self.theme.font), (16, 8))
+            label.measure(self.theme.font)
+            self.assertEqual(calls, ['日本'])
+            label.set_text('ABC')
+            self.assertEqual(label.measure(self.theme.font), (24, 8))
+            label.text = 'A\nB'  # direct assignment is a new object, so it is measured again
+            self.assertEqual(label.measure(self.theme.font), (8, 16))
+            self.assertEqual(calls, ['日本', 'ABC', 'A\nB'])
+            # Fixed size needs no text measurement at all.
+            self.assertEqual(Button('長い文字列', width=30, height=12).measure(self.theme.font), (30, 12))
+            self.assertEqual(len(calls), 3)
+        other = BitmapFont8(self.theme.font.source, cache=0)
+        self.assertEqual(label.measure(other), (8, 16))  # a different font is measured afresh
 
     def test_terminal_unknown_sequence_crlf_and_malformed_utf8(self):
         q, adapter = EventQueue(), TerminalInput()
@@ -516,12 +607,38 @@ class SDKTests(unittest.TestCase):
                         app.set_root(root)
                     with patch.object(self.app.backend.fb,'glyph8',wraps=self.app.backend.fb.glyph8) as draw:
                         reference.step(); self.app.step()
-                        if width==5 or x==315:
-                            draw.assert_not_called()
-                        else:
-                            self.assertGreater(draw.call_count,0)
+                        # Partly clipped glyphs also use glyph8, with masked rows; the
+                        # MockBackend reference draws them with independent clipped runs.
+                        self.assertGreater(draw.call_count,0)
                     self.assertEqual(decode(self.app.backend.fb.buffer),reference.backend.pixels)
                 self.assertGreater(self.app.backend.fb.kernel_counts[4],0)
+        finally:
+            reference.close()
+
+    def test_clipped_glyph_masks_every_edge_against_reference(self):
+        from kagura import framebuffer as F
+        from viper_emulator import load
+        reference = App(backend=MockBackend(),theme=self.theme)
+        try:
+            with patch.object(F, '_viper', load()):
+                self.app.start()
+                for viper in (False, True):
+                    self.app.backend.fb.set_viper(viper)
+                    # Label clips cut glyphs on each side, both sides and the screen edges.
+                    for x,y,width,height in ((3,5,13,11),(5,3,6,13),(-5,-3,18,9),(313,233,7,7),
+                                              (20,20,1,1),(9,9,15,4)):
+                        for app in (reference,self.app):
+                            root = Screen(color=4)
+                            root.add(Label('日本\nAg',x=x,y=y,width=width,height=height,color=9))
+                            app.set_root(root)
+                        reference.step(); self.app.step()
+                        self.assertEqual(decode(self.app.backend.fb.buffer),reference.backend.pixels,(viper,x,y))
+                calls = self.app.backend.fb.kernel_counts[4]
+                self.assertGreater(calls,0)
+                # Partial glyphs no longer fall back to per-run fill_rect calls.
+                with patch.object(self.app.backend,'fill_rect',wraps=self.app.backend.fill_rect) as fill:
+                    self.app.damage((0,0,320,240)); self.app.step()
+                    self.assertEqual(fill.call_count,1)  # the Screen background only
         finally:
             reference.close()
 

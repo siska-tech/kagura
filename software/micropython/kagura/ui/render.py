@@ -15,6 +15,7 @@ class Renderer:
         self.backend = backend
         self.width, self.height = backend.width, backend.height
         self.clip = (0, 0, self.width, self.height)
+        self._masked = bytearray(8)
 
     def fill_rect(self, x, y, width, height, color):
         c = self.clip
@@ -40,12 +41,29 @@ class Renderer:
         return True
 
     def glyph8(self, rows, x, y, color):
-        """Optional complete-glyph path; partial clips use the font fallback."""
-        c = self.clip
-        if x < c[0] or y < c[1] or x + 8 > c[2] or y + 8 > c[3]:
-            return False
+        """Optional transparent 8x8 path; False means the caller draws it another way.
+
+        A partly clipped glyph is passed with the bits outside the clip cleared
+        (backend glyph8 writes set bits only), so it stays one backend call.
+        """
         draw = getattr(self.backend, 'glyph8', None)
-        return draw(rows, x, y, color) if draw is not None else False
+        if draw is None:
+            return False
+        c = self.clip
+        if x >= c[0] and y >= c[1] and x + 8 <= c[2] and y + 8 <= c[3]:
+            return draw(rows, x, y, color)
+        if x >= c[2] or y >= c[3] or x + 8 <= c[0] or y + 8 <= c[1]:
+            return True  # nothing visible
+        left, right = c[0] - x, c[2] - x
+        mask = 0xff
+        if left > 0:
+            mask &= 0xff >> left
+        if right < 8:
+            mask &= (0xff << (8 - right)) & 0xff
+        masked = self._masked
+        for yy in range(8):
+            masked[yy] = rows[yy] & mask if c[1] <= y + yy < c[3] else 0
+        return draw(masked, x, y, color)
 
 
 class FramebufferBackend:
