@@ -51,6 +51,17 @@ jobs:
         run: python3 -I software/micropython/tests/test_driver.py --rp2 build/micropython-src/ports/rp2/modules/rp2.py
       - name: Tile framebuffer raster and failure recovery
         run: python3 -I software/micropython/tests/test_framebuffer.py
+      - name: KAGURA-UI ownership, input, reference pixels and recovery
+        run: |
+          python3 -I software/micropython/tests/test_ui.py
+          python3 -I software/micropython/tests/test_frozen_alignment.py
+      - name: KAGURA-UI CPython versus MicroPython v1.26 runtime
+        run: |
+          make -C build/micropython-src/mpy-cross -j4
+          make -C build/micropython-src/ports/unix VARIANT=standard MICROPY_PY_SSL=0 MICROPY_PY_BTREE=0 MICROPY_PY_FFI=0 FROZEN_MANIFEST= -j4
+          python3 software/micropython/tests/ui_runtime.py software/micropython/fonts/misaki8.kfnt > build/ui-cpython.txt
+          MICROPYPATH=software/micropython build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_runtime.py software/micropython/fonts/misaki8.kfnt > build/ui-micropython.txt
+          diff -u build/ui-cpython.txt build/ui-micropython.txt
       - name: Numerical hardware fixture contracts
         run: python3 -I software/micropython/tests/test_tile1200_accept.py
       - name: Transport benchmark stimulus contracts
@@ -73,7 +84,7 @@ jobs:
         run: |
           make -C build/micropython-src/mpy-cross -j4
           mkdir -p build/mpy
-          for file in software/micropython/kagura/*.py software/micropython/kagura_ja/*.py software/micropython/examples/*.py; do
+          for file in software/micropython/kagura/*.py software/micropython/kagura/ui/*.py software/micropython/kagura_ja/*.py software/micropython/examples/*.py; do
             build/micropython-src/mpy-cross/build/mpy-cross -march=armv6m -o "build/mpy/$(basename "$(dirname "$file")")-$(basename "$file").mpy" "$file"
           done
   firmware:
@@ -104,6 +115,7 @@ jobs:
           path: |
             build/micropython-src/ports/rp2/build-${{ matrix.board }}/firmware.uf2
             software/micropython/kagura/*.py
+            software/micropython/kagura/ui/*.py
             software/micropython/kagura_ja/*.py
             software/micropython/fonts/*
             software/micropython/examples/*.py

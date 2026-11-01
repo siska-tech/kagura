@@ -1,0 +1,11 @@
+PLATFORM CPython RegisterModel; Python raster; no FPGA, not RP2040 performance
+UI_BASELINE {"samples": 128, "frame_us_p50_p95_p99": [121, 160, 172], "flush_us_p50_p95_p99": [58, 82, 88], "tiles": 274, "pattern_payload_bytes": 8768}
+UI_BENCH {"cycle": 0, "workload": "idle", "samples": 128, "frame_us_p50_p95_p99": [1, 1, 1], "flush_us_p50_p95_p99": [0, 0, 0], "synthetic_invalidate_us_p50_p95_p99": null, "latency_samples": 0, "tiles": 0, "pattern_payload_bytes": 0}
+UI_BENCH {"cycle": 0, "workload": "label", "samples": 128, "frame_us_p50_p95_p99": [172, 225, 234], "flush_us_p50_p95_p99": [61, 91, 93], "synthetic_invalidate_us_p50_p95_p99": null, "latency_samples": 0, "tiles": 273, "pattern_payload_bytes": 8736}
+UI_BENCH {"cycle": 0, "workload": "button", "samples": 128, "frame_us_p50_p95_p99": [860, 958, 1167], "flush_us_p50_p95_p99": [245, 270, 299], "synthetic_invalidate_us_p50_p95_p99": [7, 8, 12], "latency_samples": 128, "tiles": 1085, "pattern_payload_bytes": 34720}
+UI_BENCH {"cycle": 0, "workload": "focus", "samples": 128, "frame_us_p50_p95_p99": [2649, 2786, 3036], "flush_us_p50_p95_p99": [1240, 1302, 1429], "synthetic_invalidate_us_p50_p95_p99": [10, 13, 19], "latency_samples": 128, "tiles": 5760, "pattern_payload_bytes": 184320}
+UI_BENCH {"cycle": 0, "workload": "move", "samples": 128, "frame_us_p50_p95_p99": [881, 952, 1328], "flush_us_p50_p95_p99": [562, 592, 883], "synthetic_invalidate_us_p50_p95_p99": null, "latency_samples": 0, "tiles": 2540, "pattern_payload_bytes": 81280}
+UI_BENCH {"cycle": 0, "workload": "scroll", "samples": 128, "frame_us_p50_p95_p99": [1157, 1393, 1638], "flush_us_p50_p95_p99": [638, 737, 1085], "synthetic_invalidate_us_p50_p95_p99": [7, 11, 16], "latency_samples": 128, "tiles": 3090, "pattern_payload_bytes": 98880}
+UI_BENCH {"cycle": 0, "workload": "screen", "samples": 128, "frame_us_p50_p95_p99": [46848, 88239, 103228], "flush_us_p50_p95_p99": [32665, 61684, 71186], "synthetic_invalidate_us_p50_p95_p99": null, "latency_samples": 0, "tiles": 153600, "pattern_payload_bytes": 4915200}
+UI_HEAP {"cycle": 0, "free": null, "gc_count": null, "allocation_count": null}
+UI_FINISH {"heap_start": null, "heap_end": null}
