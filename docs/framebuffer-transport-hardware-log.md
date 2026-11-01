@@ -19,12 +19,12 @@
 | 08:12:12〜08:14:58の間 | 再開用17262byteコードの一括raw upload。実行ACK前にSerialPort.Writeが再びセマフォtimeout | remaining.logは0byte。正確な送信offsetを旧runnerは記録していないため不明。USB再接続を依頼。MemoryErrorとの関連やraw buffer成長の影響は仮説であり未確認 |
 | 08:15頃 | RTL全回帰終了 | Verilator5.032、61/61 pass。SDK196件pass（2skip）、公式PIO assembler60件pass、計測器2件pass |
 | 08:25:44〜08:26:01 | ユーザーのPC再起動後に、小さいhealthコードをCOM7へ送信 | 同じSerialPort.Writeのセマフォtimeout。reboot-health.logは0byteで実行ACKなし。PC再起動だけでは復旧を確認できなかった |
-| 08:26頃 | PnP状態と限定再初期化を確認 | COM7はStatus OK、Pico USB CDC interface `USB\VID_2E8A&PID_0005&MI_00\6&1E4D8D20&0&0000`。このinterfaceだけの`pnputil /restart-device`を試行したがWindowsがAccess is deniedを返し、再初期化は未実施。他USB機器・PC・Flashは操作していない |
+| 08:26頃 | PnP状態と限定再初期化を確認 | COM7はStatus OK、Pico USB CDC interface `USB\VID_2E8A&PID_0005&MI_00\<instance-id>`。このinterfaceだけの`pnputil /restart-device`を試行したがWindowsがAccess is deniedを返し、再初期化は未実施。他USB機器・PC・Flashは操作していない |
 | 08:28頃 | ユーザーが再初期化を明示許可。UAC経由で管理者pnputilを実行 | COM7 CDC interfaceの再起動は成功、exit0。ただし後続の2文字Ctrl-C送信と小さいhealth送信は両方セマフォtimeout。PnP成功とREPL復旧を区別する |
-| 08:29:32 | Pico本体のUSB親デバイスを特定 | `USB\VID_2E8A&PID_0005\e663a837cb73512d`。このPico1件だけの管理者再起動を要求。USBハブ全体・他機器は対象外 |
+| 08:29:32 | Pico本体のUSB親デバイスを特定 | `USB\VID_2E8A&PID_0005\<pico-usb-serial>`。このPico1件だけの管理者再起動を要求。USBハブ全体・他機器は対象外 |
 | 08:30〜08:31頃 | 管理者によるPico USB親デバイス再起動が成功、exit0 | 最初のCOM7接続ではCtrl-C/CTRL-B/CTRL-Aに対してMicroPython bannerとraw REPL promptを受信。しかしポートを閉じて次のhealth接続を開くと再びWriteセマフォtimeout。1回の観測なのでport再openが原因と確定しない |
-| 08:33〜08:38頃 | ユーザーがpicotoolでのFW書換えを提案・許可。WSL既存ツールを探索 | `/home/shion/mp-v126-utf8/ports/rp2/build-KAGURA_PICO/_deps/picotool/picotool`はUSB対応v2.1.1。mainのbuild内v2.2.0はUSB非対応ビルド。WSL内にUSB機器は公開されていない |
-| 同時刻 | 元firmwareをWSLから保全 | `/home/shion/mp-v126-utf8/ports/rp2/build-KAGURA_PICO/firmware.uf2`。バナー`v1.26.0-1.g3069c562f on 2026-10-29`が実機と一致。SHA256 `0aeffbeb2851b64bfcdc6412b89e19926321570100927303afda86b526d4bc5b`。バナー一致だけではbinary完全一致とは扱わず、書込み前に現Flashとの照合を条件にした |
+| 08:33〜08:38頃 | ユーザーがpicotoolでのFW書換えを提案・許可。WSL既存ツールを探索 | `<wsl-home>/mp-v126-utf8/ports/rp2/build-KAGURA_PICO/_deps/picotool/picotool`はUSB対応v2.1.1。mainのbuild内v2.2.0はUSB非対応ビルド。WSL内にUSB機器は公開されていない |
+| 同時刻 | 元firmwareをWSLから保全 | `<wsl-home>/mp-v126-utf8/ports/rp2/build-KAGURA_PICO/firmware.uf2`。バナー`v1.26.0-1.g3069c562f on 2026-10-29`が実機と一致。SHA256 `0aeffbeb2851b64bfcdc6412b89e19926321570100927303afda86b526d4bc5b`。バナー一致だけではbinary完全一致とは扱わず、書込み前に現Flashとの照合を条件にした |
 | 同時刻 | 公式Windows picotool v2.3.1をworkspaceへ取得 | [公式release](https://github.com/raspberrypi/pico-sdk-tools/releases/tag/v2.3.1-0)。ZIP SHA256 `68730be0813f8f35be2cca147cf7f1572662d5dcf0f5ba468e02a6dd9e85db2b`がrelease API digestと一致。PicoはMicroPython deviceとして検出できたが、`reboot -u -f`ではBOOTSEL移行できず、Flash書込みなし |
 
 FW回復用に、USB親デバイス再初期化後の最初のCOM7接続を維持し、
@@ -34,7 +34,7 @@ raw REPLで`machine.bootloader()`を送り、picotoolへ引き継ぐ処理を準
 準備・起動要求と、実際のBOOTSEL移行・書換え完了は区別して記録する。
 
 08:41:09のbootloader commandでBOOTSEL移行自体は成功した。
-BOOTROMのUSB serialは`E0C9125B0D9B`で、MicroPythonの`e663a837cb73512d`とは異なったため、
+BOOTROMのUSB serialは`<bootrom-usb-serial>`で、MicroPythonの`<pico-usb-serial>`とは異なったため、
 最初の回復scriptは対象同一性チェックで停止した。書込みは行っていない。
 Pico MicroPython deviceの消失直後、同じbus2に唯一のRP2040 BOOTSEL deviceが現れたことを確認した。
 Windows picotoolはMI_01のdriver不足（RP2 Boot PnP Error）で接続不可。

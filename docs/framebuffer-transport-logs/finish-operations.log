@@ -1,7 +1,7 @@
 2026-10-30T09:26:18.8246130+09:00 START: measured resume; Flash write only after successful benchmark and differential validation
 Microsoft PnP ユーティリティ
 
-デバイスを再起動しています:         USB\VID_2E8A&PID_0005\e663a837cb73512d
+デバイスを再起動しています:         USB\VID_2E8A&PID_0005\<pico-usb-serial>
 デバイスが正常に再起動されました。
 
 2026-10-30T09:26:21.0208057+09:00 CONSOLE_RELEASED

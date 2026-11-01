@@ -2,8 +2,8 @@ Start testing: Oct 31 21:38 JST
 ----------------------------------------------------------
 1/3 Testing: deterministic_game
 1/3 Test: deterministic_game
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_test"
+Directory: <repo>/build/starfall-host
 "deterministic_game" start time: Oct 31 21:38 JST
 Output:
 ----------------------------------------------------------
@@ -19,8 +19,8 @@ Test Passed.
 
 2/3 Testing: backend_contract
 2/3 Test: backend_contract
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_backend_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_backend_test"
+Directory: <repo>/build/starfall-host
 "backend_contract" start time: Oct 31 21:38 JST
 Output:
 ----------------------------------------------------------
@@ -35,8 +35,8 @@ Test Passed.
 
 3/3 Testing: keyboard_protocol
 3/3 Test: keyboard_protocol
-Command: "/usr/bin/python3.14" "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/starfall/tests/test_keyboard.py"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "/usr/bin/python3.14" "<repo>/software/starfall/tests/test_keyboard.py"
+Directory: <repo>/build/starfall-host
 "keyboard_protocol" start time: Oct 31 21:38 JST
 Output:
 ----------------------------------------------------------

@@ -2,8 +2,8 @@ Start testing: Oct 31 21:21 JST
 ----------------------------------------------------------
 1/2 Testing: deterministic_game
 1/2 Test: deterministic_game
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_test"
+Directory: <repo>/build/starfall-host
 "deterministic_game" start time: Oct 31 21:21 JST
 Output:
 ----------------------------------------------------------
@@ -19,8 +19,8 @@ Test Passed.
 
 2/2 Testing: backend_contract
 2/2 Test: backend_contract
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_backend_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_backend_test"
+Directory: <repo>/build/starfall-host
 "backend_contract" start time: Oct 31 21:21 JST
 Output:
 ----------------------------------------------------------

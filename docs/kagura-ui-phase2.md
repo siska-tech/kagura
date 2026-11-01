@@ -58,10 +58,10 @@ UIとSDKを同じソースの凍結manifestでビルド・配置し、通常のH
 ファイルやfirmwareを書き換えない。通常のraw REPL経由でアプリのソースだけを送る。
 
 ```sh
-python tools/kagura-ui-standard.py --port COM7 --expected-serial E663A837CB73512D \
+python tools/kagura-ui-standard.py --port <PORT> --expected-serial <USB_SERIAL> \
   --samples 32 --cycles 2 --log build/ui-phase2/comparison.txt
 python tools/summarize-kagura-ui.py build/ui-phase2/comparison.txt
-python tools/kagura-ui-soak.py --port COM7 --expected-serial E663A837CB73512D \
+python tools/kagura-ui-soak.py --port <PORT> --expected-serial <USB_SERIAL> \
   --samples 32 --seconds 3600 --log build/ui-phase2/quiet-hour.txt
 ```
 
