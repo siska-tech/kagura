@@ -101,6 +101,32 @@ class UITests(unittest.TestCase):
         panel.set_visible(False); self.app.step()
         self.assertIs(self.app.focus.current, a)
 
+    def test_focus_scan_reuse_rescan_and_release(self):
+        root = VBox()
+        class Disabler(Button):
+            def handle(widget, event):
+                if event.key == 'down':
+                    b.set_enabled(False)  # tree change inside handle, then unconsumed
+                    return False
+                return super().handle(event)
+        a = root.add(Disabler('A')); b = root.add(Button('B')); c = root.add(Button('C'))
+        self.app.set_root(root); self.app.step()
+        self.assertEqual(self.app.focus.count, 3)
+        # move() must rescan after the handler's change instead of reusing repair()'s scan.
+        self.app.events.post(Event('down')); self.app.step()
+        self.assertIs(self.app.focus.current, c)
+        self.app.events.post(Event('tab', shift=True)); self.app.step()
+        self.assertIs(self.app.focus.current, a)
+        # Removed widgets are not retained by the reused result list.
+        root.remove(c); self.app.step()
+        self.assertEqual(self.app.focus.count, 1)  # b is still disabled
+        self.assertNotIn(c, self.app.focus.found)
+        root.remove(a); root.remove(b); self.app.step()
+        self.assertIsNone(self.app.focus.current)
+        self.assertEqual(self.app.focus.found, [None, None, None])
+        self.app.set_root(None); self.app.step()
+        self.assertEqual(self.app.focus.candidates(), 0)
+
     def test_queue_overflow_and_bounded_callbacks(self):
         q = EventQueue(2)
         self.assertTrue(q.post(Event('up'))); q.post(Event('down'))
