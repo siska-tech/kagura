@@ -120,7 +120,7 @@ finally:
 | `ProgressBar(value=0,maximum=100,width=120,height=12,...)`, `set_value(n)` | 0..maximumへclamp。maximumは正値 |
 | `ListView(items,on_select=None,width=120,height=64,...)`, `set_items(sequence)` | 可視行のみ描画。上下で選択/scroll、Enterでcallback(index,text)。itemsはcaller所有。set_itemsで選択範囲を補正して再描画 |
 | `Theme(font=None)` | palette 16色と描画色indexを設定。実行中のpalette変更APIは未提供 |
-| `BitmapFont8(source=None)` | sourceは既存kagura_ja.Font。height/advance/measure/glyph/drawを提供。fileを所有しない |
+| `BitmapFont8(source=None, cache=64)` | sourceは既存kagura_ja.Font。height/advance/measure/glyph/drawを提供。fileを所有しない。cacheはファイル由来の字形rowsを保持する直接マップのslot数（0か2のべき乗、0で無効）。glyphの戻り値は読取り専用として扱う |
 | `Event(key,text='',shift=False,kind='press',repeat=False)` | key: up/down/left/right/enter/escape/tab/backspace/delete/text。timestampは生成時刻 |
 | `EventQueue(capacity=32).post(event)` | 固定slot ring。満杯では最新eventを捨てFalse、dropped加算。popは空でNone |
 | `TerminalInput(stream=None).feed(bytes,queue)`, `poll(queue)` | 非blocking readinto stream、分割CSI/UTF-8、Shift+Tab、Escape 30ms timeout。OS repeatを連続pressとして配送 |
@@ -209,7 +209,8 @@ Rendererは`glyph8(rows,x,y,color)`という任意のbackend高速経路を持�
 backendの実装は描画できたらTrue、未対応の場合はFalseを返す。
 8×8全体が現在のclip内にある場合だけ呼び、FramebufferBackendはSDKの
 `TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
-fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。glyph cacheや追加framebufferは作らない。
+fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。追加framebufferは作らない。
+ファイル由来の字形rowsは`BitmapFont8`の小さな直接マップcacheに保持する（[glyph cache記録](kagura-ui-glyph-cache.md)）。
 部分clip、旧SDKでのglyph8未提供、bytes/bytearray以外の行sequence、MockBackendは
 既存のclipped run描画を使う。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
 
