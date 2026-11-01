@@ -27,7 +27,7 @@ tile trackerを複製せず、UI側は矩形のclipだけを増やした。
 
 | 項目 | 結果 |
 | --- | --- |
-| `test_ui.py` | 37件PASS（既存33＋新規4）。既存の`_damage`参照はlist形式へ更新 |
+| `test_ui.py` | 38件PASS（既存33＋新規5、うち1件は実機benchmarkのPC実行）。既存の`_damage`参照はlist形式へ更新 |
 | 新規: 離れた2 widget | 間のsentinel pixelを描き直さない。`damage_limit=1`では描き直す |
 | 新規: 結合規則 | 重なり/辺共有/角接触/上限超過/画面clipの各期待値 |
 | 新規: 40操作の乱数列 | 移動/非表示/日本語Label/Tab/List操作とflush失敗再試行で、limit 4とlimit 1の全pixelが毎step一致。最後に全画面再描画しても不変 |
@@ -58,9 +58,68 @@ register model上で実行し、SDKが転送したtile数とpattern payload byte
 Panelと空白を再描画しなくなり、tile数が約33%減った。
 label/move/screenは元々単一矩形なので変化しない。静止の転送ゼロは維持。
 
+## RP2040比較（準備済み・未実施）
+
+**実機測定はまだ行っていない。** dirty tileが減ってもframe時間が短くなるとは限らないため、merge判断は実機値で行う。
+
+### 方法
+
+`tools/kagura-ui-damage.py run`と`examples/ui_damage_benchmark.py`を使う。
+
+- 既存firmware（#51以降、glyph8あり）のまま実行する。firmware、Flash、ファイルシステムには書き込まない。
+- このcheckoutの`kagura/ui/app.py`だけを、相対importを絶対importに変えてraw REPLでsource送信する。
+  RAM上の`App`を**limit 1と4の両方**で使うため、frozenとRAMの差は比較に入らない。
+  他のUI moduleとSDKはfrozenのまま。本変更ではapp.py以外のUI/SDKは変わっていない。
+- SDKクラスへのpatchは行わない。Phase 2で停止した補助診断は、SDKクラスを一時patchする方式だった。
+- 1つのApp、1つのFramebuffer（38400 Bの確保は1回）、1つのwidget木を使う。各（round, limit, workload）は
+  同じreset状態から始める。roundごとにlimitの順を入れ替え（1,4 / 4,1）、時間経過による偏りを分散させる。
+- workload:
+
+| workload | 内容 |
+| --- | --- |
+| idle | 変更なし（転送0を確認） |
+| label | 1 Label（単一矩形の対照） |
+| button | Enterで押下し、離れたLabelを更新 |
+| focus | Tabで、x=8のButtonとx=200のListViewを往復する |
+| labels | 画面の対角にある日本語Label 2個（text-heavy、離れた矩形） |
+| glyphcut | 8 px格子からずれたbadge 2個が日本語4行のblockと重なる。limit 4では矩形境界が字形を切り、行単位描画になる |
+
+- sampleごとの測定値:
+  - frame: `App.step`全体
+  - flush: SDKの`total_us`
+  - cpu: frame − flush（入力・layout・描画を含む）
+  - tiles、pattern payload byte
+  - heap: step前後の`gc.mem_free()`差。増加したstepはGC観測として数え、差分から除く。VMのGC回数やallocation回数は取得できない。
+- 各workloadの後に落ち着くまでstepし、CRC32を取る。続けて全画面を再描画し、同じCRCであることを確認する。
+  limit 1と4のCRCも一致を確認する。最後にViperとPythonで全画面のCRC一致を確認する。
+- 終了時に`REG_ERROR_CODE`を読み、`check_errors()`、console復帰（paused=False / attached=True）を検査する。
+- PCでは`test_ui.py`がregister model上で同じmoduleを実行し、CRC一致、focus/glyphcutのtile減少、集計を検査する。
+
+### 手順
+
+Windows venvに`python -m pip install mpremote==1.29.0 pyserial`を用意する。他のUSB端末は閉じる。
+COMとUSB serialは実物と照合し、localで入力する（実値をcommitしない）。
+
+```powershell
+python -m serial.tools.list_ports -v
+$picoPort = Read-Host '実物と照合した対象PicoのCOMポート'
+$picoSerial = Read-Host '実物と照合した対象PicoのUSB serial'
+python tools/kagura-ui-damage.py run --port $picoPort --expected-serial $picoSerial --samples 32 --rounds 4 --log build/ui-damage/device.txt
+python tools/kagura-ui-damage.py summarize build/ui-damage/device.txt
+```
+
+logの`HOST_SOURCE`には、送信したapp.pyとbenchmarkのSHA256、git commitが記録される。
+run中はUSB COMとHDMIを占有する。異常時は実行中のloopを中断し、App.closeでconsoleを戻す。
+
+### merge判断の基準（提案）
+
+- 全workloadでCRC一致、`DAMAGE_FPGA_ERROR_CODE 0`、console復帰。
+- focusのframe p50が、全roundで明確に短縮していること。
+- label/button/labels/glyphcutのframe p50・p95が、limit 1に対して大きく悪化しないこと。
+  round間のp50範囲を超える悪化があれば原因を調べる。特にglyphcutは行単位描画の代償が出る候補。
+- 悪化するworkloadがあれば、既定値を下げる、または辺共有・近接矩形の結合規則を見直してから再測定する。
+
 ## 実機で未確認の事項
 
-- RP2040でのframe/CPU/flush時間。tile減少がframe時間短縮になるかは、tree走査増加との差し引きで未確定。
-- 比較は`kagura-ui-standard.py`と同条件（RP2040 125 MHz、QSPI 5 MHz、32 samples）で、
-  `app.damage_limit=1`と既定4を交互に測る想定。実施時はheap差分も別に記録する。
+- 上記RP2040比較の全項目（frame/CPU/flush時間、heap、ERROR_CODE、console復帰）。
 - 長時間soak、Pico 2/2 W、UART/HIDは本変更でも未検証。

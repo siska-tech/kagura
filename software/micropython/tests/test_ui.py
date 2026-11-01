@@ -562,6 +562,32 @@ class SDKTests(unittest.TestCase):
         self.assertLessEqual(multi, 4)
         self.assertGreater(single, multi)
 
+    def test_damage_benchmark_crc_equivalence_and_summary(self):
+        import importlib.util, json
+        import ui_damage_benchmark as B
+        spec = importlib.util.spec_from_file_location('kagura_ui_damage', ROOT / 'tools/kagura-ui-damage.py')
+        tool = importlib.util.module_from_spec(spec); spec.loader.exec_module(tool)
+        # The source sent to the RP2040 must define the same App without relative imports.
+        namespace = {}
+        exec(compile(tool.branch_app_source(), 'app.py', 'exec'), namespace)
+        self.assertTrue(hasattr(namespace['App'], '_add_damage'))
+        app, scene = B.make(namespace['App'], self.device, self.theme.font.source, exclusive=True)
+        lines = []
+        try:
+            B.run(app, scene, samples=4, rounds=2,
+                  report=lambda tag, value: lines.append(tag + ' ' + json.dumps(value)))
+        finally:
+            app.close()
+        rows = [json.loads(line.split(' ', 1)[1]) for line in lines if line.startswith('UI_DAMAGE ')]
+        self.assertEqual(len(rows), 2 * 2 * len(B.WORKLOADS))
+        tiles = {(r['workload'], r['limit']): r['tiles'] for r in rows if r['round'] == 0}
+        self.assertLess(tiles[('focus', 4)], tiles[('focus', 1)])
+        self.assertLess(tiles[('glyphcut', 4)], tiles[('glyphcut', 1)])
+        self.assertEqual(tiles[('idle', 4)], 0)
+        table = tool.summarize(lines)
+        self.assertIn('| glyphcut | 4 |', table)
+        with self.assertRaises(SystemExit): tool.summarize(lines[:-1])
+
     def test_sdk_flush_error_keeps_dirty_and_damage(self):
         self.app.set_root(Label('0')); self.app.step()
         self.app.root.set_text('1')
