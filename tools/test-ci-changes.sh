@@ -37,6 +37,7 @@ files "boot image tool" "verilator" tools/make-boot-image.py
 files "header tests" "rtl_sources" software/tests/regs_c.c tools/test-headers.sh
 files "C header" "rtl_sources pico" software/include/kagura_regs.h
 files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
+files "STARFALL C game and MicroPython oracle" "pico micropython" software/starfall/game.c software/starfall/tests/test_flow.c
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
 files "picture converter" "pico micropython" software/pico/send_image.py
 files "piano sample" "pico micropython" software/pico/piano_c4_sample.h
@@ -57,7 +58,7 @@ files "live presentation and asset generator" "micropython" tools/gen-showcase-a
     software/micropython/examples/showcase.py software/micropython/examples/showcase_assets/opening.kimg \
     software/micropython/tests/test_showcase.py
 files "STARFALL MicroPython port and original C oracle" "micropython" tools/gen-starfall-mpy-assets.py \
-    software/micropython/examples/starfall.py software/micropython/tests/starfall_oracle.c software/starfall/game.c
+    software/micropython/examples/starfall.py software/micropython/tests/starfall_oracle.c
 # PR #31 without its workflow edit: Python, font and docs only.
 files "kagura_ja and font" "micropython" software/micropython/kagura_ja/__init__.py \
     software/micropython/fonts/misaki8.kfnt software/micropython/fonts/README.md \
