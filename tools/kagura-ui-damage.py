@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """RP2040 damage_limit=1 versus 4 on the installed firmware; no flash/filesystem writes.
 
-run: the named Pico is soft-reset. kagura/ui/render.py, app.py and fonts.py from
-this checkout (or from --ref) are sent as source over raw REPL into one
-namespace (relative imports made absolute, app.py using the sent render names)
-and used for BOTH limits, so frozen-versus-RAM bytecode does not bias the
-comparison. Other UI modules and the SDK stay frozen and must match except the
+run: the named Pico is soft-reset. kagura/ui/render.py, app.py, fonts.py and
+widgets.py from this checkout (or from --ref) are sent as source over raw REPL
+into one namespace (relative imports made absolute, app.py using the sent render
+names; widgets.py after the benchmark so its Scene uses those classes) and used
+for BOTH limits, so frozen-versus-RAM bytecode does not bias the comparison.
+Other UI modules and the SDK stay frozen and must match except the
 data-only Widget/Panel.opaque attributes, which are set on older frozen classes
 and logged. --font-cache selects the BitmapFont8 glyph cache (0 disables);
 cache sizes and refs are compared in separate sessions. The HDMI console is
@@ -77,6 +78,7 @@ def run_device(args):
     render_source = branch_source('render.py', ref=args.ref)
     app_source = branch_app_source(with_render=True, ref=args.ref)
     font_source = branch_source('fonts.py', ref=args.ref)
+    widgets_source = branch_source('widgets.py', 1, ref=args.ref)
     # The benchmark itself always comes from this working tree.
     bench_source = (ROOT / 'software/micropython/examples/ui_damage_benchmark.py').read_bytes()
     args.log.parent.mkdir(parents=True, exist_ok=True)
@@ -89,10 +91,11 @@ def run_device(args):
             log.flush()
 
         emit('HOST_START %s\n' % datetime.now(timezone.utc).isoformat())
-        emit('HOST_SOURCE git=%s render_sha256=%s app_sha256=%s fonts_sha256=%s bench_sha256=%s font_cache=%s\n' % (
+        emit('HOST_SOURCE git=%s render_sha256=%s app_sha256=%s fonts_sha256=%s widgets_sha256=%s bench_sha256=%s font_cache=%s\n' % (
             git_identity(args.ref), hashlib.sha256(render_source.encode('utf8')).hexdigest(),
             hashlib.sha256(app_source.encode('utf8')).hexdigest(),
             hashlib.sha256(font_source.encode('utf8')).hexdigest(),
+            hashlib.sha256(widgets_source.encode('utf8')).hexdigest(),
             hashlib.sha256(bench_source).hexdigest(),
             'default' if args.font_cache is None else args.font_cache))
         transport = SerialTransport(args.port, timeout=0.2)
@@ -138,6 +141,8 @@ def run_device(args):
                 "assert _P.opaque and not _W.opaque")
             run(font_source + "\nDamageFont=BitmapFont8\ndel BitmapFont8\ngc.collect()\nprint('DAMAGE_FONT_LOADED',gc.mem_free())")
             run(bench_source + b"\ngc.collect()\nprint('DAMAGE_BENCH_LOADED',gc.mem_free())")
+            # After the benchmark: its Scene resolves Label/Button/ListView from these globals.
+            run(widgets_source + "\ngc.collect()\nprint('DAMAGE_WIDGETS_LOADED',gc.mem_free())")
             font_class = 'DamageFont' if args.font_cache is None else 'lambda s:DamageFont(s,cache=%d)' % args.font_cache
             run("font=Font('/fonts/misaki8.kfnt'); del _reserve; gc.collect(); "
                 "app,scene=make(DamageApp,d,font,console=kagura_console,font_class=%s); "

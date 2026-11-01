@@ -8,6 +8,16 @@ class Label(Widget):
             raise TypeError('text must be str')
         super().__init__(**kwargs)
         self.text, self.color = text, color
+        self._size_text = self._size_font = self._size = None
+
+    def _text_size(self, font):
+        # Layout measures every child on each relayout; per-character measuring
+        # dominated it on RP2040. Strings are immutable, so identity is a safe key.
+        text = self.text
+        if self._size_text is not text or self._size_font is not font:
+            self._size = font.measure(text)
+            self._size_text, self._size_font = text, font
+        return self._size
 
     def set_text(self, text):
         if not isinstance(text, str):
@@ -18,7 +28,9 @@ class Label(Widget):
             self.relayout()
 
     def measure(self, font):
-        w, h = font.measure(self.text)
+        if self.width is not None and self.height is not None:
+            return self.width, self.height
+        w, h = self._text_size(font)
         return (w if self.width is None else self.width,
                 h if self.height is None else self.height)
 
@@ -36,16 +48,20 @@ class Button(Label):
         self.pressed = False
 
     def measure(self, font):
-        w, h = font.measure(self.text)
+        if self.width is not None and self.height is not None:
+            return self.width, self.height
+        w, h = self._text_size(font)
         return (w + 8 if self.width is None else self.width,
                 h + 8 if self.height is None else self.height)
 
     def paint(self, renderer, theme):
         x, y, right, bottom = self.bounds
+        # Border colour over the whole button, then the face inside: the same
+        # pixels as fill + 4-line rect, in 2 backend calls instead of 5.
         renderer.fill_rect(x, y, right - x, bottom - y,
+                           theme.focus if self.focused else theme.disabled)
+        renderer.fill_rect(x + 1, y + 1, right - x - 2, bottom - y - 2,
                            theme.pressed if self.pressed else theme.button)
-        renderer.rect(x, y, right - x, bottom - y,
-                      theme.focus if self.focused else theme.disabled)
         theme.font.draw(renderer, self.text, x + 4, y + 4,
                         theme.foreground if self.enabled else theme.disabled)
 
