@@ -37,6 +37,7 @@ files "boot image tool" "verilator" tools/make-boot-image.py
 files "header tests" "rtl_sources" software/tests/regs_c.c tools/test-headers.sh
 files "C header" "rtl_sources pico" software/include/kagura_regs.h
 files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
+files "STARFALL C game" "pico" software/starfall/game.c software/starfall/tests/test_flow.c
 files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
 files "picture converter" "pico micropython" software/pico/send_image.py
 files "piano sample" "pico micropython" software/pico/piano_c4_sample.h

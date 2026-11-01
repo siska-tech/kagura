@@ -150,12 +150,29 @@ jobs:
         run: python3 -I software/pico/tests/test_tile_fb.py
       - name: Check the pseudo-256-colour picture quantizer
         run: python3 -I software/pico/tests/test_img_demo.py
+      - name: STARFALL host regression and SPI/QSPI builds
+        run: |
+          export PATH="$HOME/opt/$ARM_TOOLCHAIN/bin:$PATH" PICO_SDK_PATH="$HOME/opt/pico-sdk"
+          cmake -S software/starfall -B build/starfall-host-ci -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build build/starfall-host-ci -j2
+          ctest --test-dir build/starfall-host-ci --output-on-failure
+          for lane in spi qspi; do
+            qspi=OFF
+            if [ "$lane" = qspi ]; then qspi=ON; fi
+            cmake -S software/starfall -B "build/starfall-$lane-ci" \
+              -DSTARFALL_PICO=ON -DSTARFALL_QSPI="$qspi" -DCMAKE_BUILD_TYPE=Release \
+              -Dpicotool_DIR="$PWD/build/pico/_deps/picotool"
+            cmake --build "build/starfall-$lane-ci" -j2
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: pico-firmware
           path: |
             build/pico/kagura_host.uf2
             build/pico/kagura_host.elf
+            build/starfall-*-ci/starfall.uf2
+            build/starfall-*-ci/starfall.elf
   # Always reports, so it can be the required check: skipped jobs pass,
   # failed or cancelled ones (including the filter) fail it.
   result:

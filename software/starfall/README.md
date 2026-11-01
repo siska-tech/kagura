@@ -1,5 +1,7 @@
 # PROJECT STARFALL — Arcade Milestone 1 (Phase A/B)
 
+[PR提出前の最終ホスト回帰・SPI/QSPIビルド](../../docs/measurements/starfall-pr-validation-2026-11-01.md)。
+
 現在完成しているのは **Stage 1 STAR FRONTIERの短縮版**。
 6面のカタログと共通イベント/ボスinterfaceを追加したが、Stage 2〜6は未実装で選択・進行できない。
 Stage 1クリア後はタイトルへ戻る。全6面/ending完成版とは扱わない。
