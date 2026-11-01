@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 """RP2040 damage_limit=1 versus 4 on the installed firmware; no flash/filesystem writes.
 
-run: the named Pico is soft-reset, this checkout's kagura/ui/app.py is sent as
-source over raw REPL (relative imports made absolute) and used for BOTH limits,
-so frozen-versus-RAM bytecode does not bias the comparison. The rest of the UI
-and the SDK stay frozen; the frozen kagura/ui must match this checkout except
-app.py, fonts.py and the data-only Widget/Panel.opaque attributes, which are set
-on older frozen classes and logged. kagura/ui/fonts.py is sent the same way and
-its BitmapFont8 is used for both limits; --font-cache selects its glyph cache
-(0 disables), so cache on/off are separate sessions. The HDMI console is lent
-to the UI and restored; FPGA ERROR_CODE is read.
+run: the named Pico is soft-reset. kagura/ui/render.py, app.py and fonts.py from
+this checkout (or from --ref) are sent as source over raw REPL into one
+namespace (relative imports made absolute, app.py using the sent render names)
+and used for BOTH limits, so frozen-versus-RAM bytecode does not bias the
+comparison. Other UI modules and the SDK stay frozen and must match except the
+data-only Widget/Panel.opaque attributes, which are set on older frozen classes
+and logged. --font-cache selects the BitmapFont8 glyph cache (0 disables);
+cache sizes and refs are compared in separate sessions. The HDMI console is
+lent to the UI and restored; FPGA ERROR_CODE is read.
 summarize: offline table from a run log (also used by the PC tests).
 """
 import argparse
@@ -26,19 +26,37 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def branch_source(name, min_imports=0):
-    source = (ROOT / 'software/micropython/kagura/ui' / name).read_text(encoding='utf8')
+def read_source(path, ref=None):
+    """Working-tree file, or the file at git ref (A/B runs with one tool version)."""
+    if ref is None:
+        return (ROOT / path).read_text(encoding='utf8')
+    return subprocess.run(['git', '-C', str(ROOT), 'show', '%s:%s' % (ref, path)],
+                          capture_output=True, check=True).stdout.decode('utf8')
+
+
+def branch_source(name, min_imports=0, ref=None):
+    source = read_source('software/micropython/kagura/ui/' + name, ref)
     rewritten, count = re.subn(r'^from \.(\w+) import', r'from kagura.ui.\1 import', source, flags=re.M)
     if count < min_imports or '\nfrom .' in rewritten:
         raise SystemExit('unexpected imports in kagura/ui/' + name)
     return rewritten
 
 
-def branch_app_source():
-    return branch_source('app.py', 3)
+def branch_app_source(with_render=False, ref=None):
+    source = branch_source('app.py', 3, ref)
+    if with_render:
+        # render.py was executed in the same raw-REPL globals; use those names
+        # instead of the frozen kagura.ui.render.
+        source, count = re.subn(r'^from kagura\.ui\.render import [^\n]*\n', '', source, flags=re.M)
+        if count != 1:
+            raise SystemExit('unexpected render import in kagura/ui/app.py')
+    return source
 
 
-def git_identity():
+def git_identity(ref=None):
+    if ref is not None:
+        out = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', ref], capture_output=True, text=True)
+        return 'ref:%s=%s' % (ref, out.stdout.strip())
     try:
         head = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
         dirty = subprocess.run(['git', '-C', str(ROOT), 'status', '--porcelain', '--', 'software', 'tools'],
@@ -56,8 +74,10 @@ def run_device(args):
     if (len(ports) != 1 or ports[0].vid != 0x2e8a or
             (ports[0].serial_number or '').lower() != args.expected_serial.lower()):
         raise SystemExit('port/USB vendor/serial mismatch; no device action taken')
-    app_source = branch_app_source()
-    font_source = branch_source('fonts.py')
+    render_source = branch_source('render.py', ref=args.ref)
+    app_source = branch_app_source(with_render=True, ref=args.ref)
+    font_source = branch_source('fonts.py', ref=args.ref)
+    # The benchmark itself always comes from this working tree.
     bench_source = (ROOT / 'software/micropython/examples/ui_damage_benchmark.py').read_bytes()
     args.log.parent.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(encoding='utf8')
@@ -69,8 +89,9 @@ def run_device(args):
             log.flush()
 
         emit('HOST_START %s\n' % datetime.now(timezone.utc).isoformat())
-        emit('HOST_SOURCE git=%s app_sha256=%s fonts_sha256=%s bench_sha256=%s font_cache=%s\n' % (
-            git_identity(), hashlib.sha256(app_source.encode('utf8')).hexdigest(),
+        emit('HOST_SOURCE git=%s render_sha256=%s app_sha256=%s fonts_sha256=%s bench_sha256=%s font_cache=%s\n' % (
+            git_identity(args.ref), hashlib.sha256(render_source.encode('utf8')).hexdigest(),
+            hashlib.sha256(app_source.encode('utf8')).hexdigest(),
             hashlib.sha256(font_source.encode('utf8')).hexdigest(),
             hashlib.sha256(bench_source).hexdigest(),
             'default' if args.font_cache is None else args.font_cache))
@@ -107,8 +128,9 @@ def run_device(args):
                 "print('DAMAGE_RUNTIME',sys.implementation); "
                 "print('DAMAGE_PROFILE',machine.freq(),d.abi,d.caps,t.link,getattr(t,'lanes',None),getattr(t,'baudrate',None),t.acceleration.enabled); "
                 "gc.collect(); _reserve=bytearray(40000)")
-            # Branch App in RAM; it shadows nothing in kagura.ui (frozen modules unchanged).
-            run(app_source + "\nDamageApp=App\nassert hasattr(DamageApp,'_add_damage')\ndel App\ngc.collect()\nprint('DAMAGE_APP_LOADED',gc.mem_free())")
+            # Branch render.py and App in RAM; frozen kagura.ui modules are not replaced.
+            run(render_source + "\ngc.collect()\nprint('DAMAGE_RENDER_LOADED',gc.mem_free())")
+            run(app_source +"\nDamageApp=App\nassert hasattr(DamageApp,'_add_damage')\ndel App\ngc.collect()\nprint('DAMAGE_APP_LOADED',gc.mem_free())")
             # Branch widget.py adds data-only class attributes; mirror them on older frozen
             # UI classes (never on SDK classes) and log it.
             run("from kagura.ui.widget import Widget as _W, Panel as _P\n"
@@ -197,6 +219,8 @@ def main():
     device.add_argument('--rounds', type=int, default=4)
     device.add_argument('--timeout', type=int, default=1800)
     device.add_argument('--log', type=Path, default=Path('build/ui-damage/device.txt'))
+    device.add_argument('--ref', default=None,
+                        help='send kagura/ui sources from this git ref instead of the working tree')
     device.add_argument('--font-cache', type=int, default=None,
                         help='BitmapFont8 glyph cache slots (0 or a power of two); default: the branch default')
     offline = sub.add_parser('summarize')

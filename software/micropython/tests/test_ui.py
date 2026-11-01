@@ -573,12 +573,38 @@ class SDKTests(unittest.TestCase):
                         app.set_root(root)
                     with patch.object(self.app.backend.fb,'glyph8',wraps=self.app.backend.fb.glyph8) as draw:
                         reference.step(); self.app.step()
-                        if width==5 or x==315:
-                            draw.assert_not_called()
-                        else:
-                            self.assertGreater(draw.call_count,0)
+                        # Partly clipped glyphs also use glyph8, with masked rows; the
+                        # MockBackend reference draws them with independent clipped runs.
+                        self.assertGreater(draw.call_count,0)
                     self.assertEqual(decode(self.app.backend.fb.buffer),reference.backend.pixels)
                 self.assertGreater(self.app.backend.fb.kernel_counts[4],0)
+        finally:
+            reference.close()
+
+    def test_clipped_glyph_masks_every_edge_against_reference(self):
+        from kagura import framebuffer as F
+        from viper_emulator import load
+        reference = App(backend=MockBackend(),theme=self.theme)
+        try:
+            with patch.object(F, '_viper', load()):
+                self.app.start()
+                for viper in (False, True):
+                    self.app.backend.fb.set_viper(viper)
+                    # Label clips cut glyphs on each side, both sides and the screen edges.
+                    for x,y,width,height in ((3,5,13,11),(5,3,6,13),(-5,-3,18,9),(313,233,7,7),
+                                              (20,20,1,1),(9,9,15,4)):
+                        for app in (reference,self.app):
+                            root = Screen(color=4)
+                            root.add(Label('日本\nAg',x=x,y=y,width=width,height=height,color=9))
+                            app.set_root(root)
+                        reference.step(); self.app.step()
+                        self.assertEqual(decode(self.app.backend.fb.buffer),reference.backend.pixels,(viper,x,y))
+                calls = self.app.backend.fb.kernel_counts[4]
+                self.assertGreater(calls,0)
+                # Partial glyphs no longer fall back to per-run fill_rect calls.
+                with patch.object(self.app.backend,'fill_rect',wraps=self.app.backend.fill_rect) as fill:
+                    self.app.damage((0,0,320,240)); self.app.step()
+                    self.assertEqual(fill.call_count,1)  # the Screen background only
         finally:
             reference.close()
 
