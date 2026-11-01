@@ -27,6 +27,7 @@ RP2040の診断では1文字1.9 msかかっていた（[damage記録](kagura-ui-
 RP2040 125 MHz、#51のfirmware（変更なし）、QSPI 4 lanes / 5 MHz、Viper有効。
 `tools/kagura-ui-damage.py run --font-cache 0`と`--font-cache 64`を別sessionで続けて実行した。
 送信したapp.py/fonts.py/benchmarkは同一で、cache容量だけが違う。32 samples × 4 rounds。
+logの`git=`はmainへのrebase前のcommit。送信したapp.py/fonts.pyのsha256は、このbranchのファイルと一致する。
 
 | run | log |
 | --- | --- |
