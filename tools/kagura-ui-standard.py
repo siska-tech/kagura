@@ -45,6 +45,7 @@ def main():
         transport = SerialTransport(args.port, timeout=0.2)
         transport.serial.write_timeout = 5
         entered = False
+        failed = True
 
         def run(source, timeout=60):
             # Decode incremental bytes only for display. Bytewise consumption
@@ -78,9 +79,15 @@ def main():
             run("app,widgets=make(kagura_console.screen.device,font,console=kagura_console)\ntry:run(app,widgets,samples=%d,cycles=%d,seconds=%d,profile='glyph8')\nfinally:app.close()" % (args.samples,args.cycles,args.seconds), timeout=max(600,args.seconds+600))
             emit('HOST_NATIVE_ELAPSED_SECONDS %.3f\n' % (time.monotonic()-begin))
             run("kagura_console.screen.device.check_errors(); print('STANDARD_RESTORED',kagura_console.paused,kagura_console._attached); assert not kagura_console.paused and kagura_console._attached")
+            failed = False
         finally:
             try:
                 if entered:
+                    if failed:
+                        # A host timeout can leave the bounded device loop
+                        # running. Interrupt it before sending cleanup code;
+                        # preserve its globals so app.close can restore video.
+                        transport.enter_raw_repl(soft_reset=False)
                     run("\nif 'app' in globals(): app.close()\nif 'font' in globals(): font.close()\nprint('STANDARD_CLEANUP')")
                     transport.exit_raw_repl()
             finally:

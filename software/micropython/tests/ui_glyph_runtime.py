@@ -41,7 +41,9 @@ def exercise(fb):
 fb = TileFramebuffer(Device())
 fb.set_viper(False)
 expected = exercise(fb)
-fb.set_viper()
+native_required = (sys.implementation.name == 'micropython' and
+                   'RP2040' in getattr(sys.implementation,'_machine',''))
+fb.set_viper(True if native_required else None)
 if fb.viper_enabled:
     assert exercise(fb) == expected
     assert fb.kernel_counts[4] > 0

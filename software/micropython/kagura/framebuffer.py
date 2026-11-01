@@ -428,7 +428,16 @@ class TileFramebuffer:
         for ch in value:
             bitmap.fill(0)
             bitmap.text(ch, 0, 0, 1)
-            self.glyph8(bits, x, y, color)
+            if self._kernels is not None:
+                if x < 320 and x + 8 > 0 and y < 240 and y + 8 > 0:
+                    p = self._params
+                    p[0], p[1], p[2] = x, y, color
+                    self._kernels.glyph(self.buffer, self.dirty, p, self._kernel_counts, bits)
+            else:
+                for yy in range(8):
+                    for xx in range(8):
+                        if bitmap.pixel(xx, yy):
+                            self._python_put(x + xx, y + yy, color)
             x += 8
 
     def blit(self, source, x, y, width=None, height=None, key=None, sx=0, sy=0):

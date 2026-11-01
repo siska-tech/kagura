@@ -269,8 +269,84 @@ class UITests(unittest.TestCase):
         for params in (dict(samples=2.5),dict(cycles=1.5)):
             with self.assertRaises(ValueError): benchmark.run(app,widgets,**params)
 
+    def test_quiet_benchmark_retains_bounded_complete_telemetry(self):
+        import ui_benchmark as benchmark
+        from contextlib import redirect_stdout
+        summary = benchmark.Summary()
+        output = io.StringIO()
+        with patch.object(benchmark,'App',return_value=self.app):
+            app,widgets = benchmark.make(None,self.theme.font.source)
+        with redirect_stdout(output):
+            benchmark.run(app,widgets,samples=2,cycles=2,report=summary.report)
+        self.assertEqual(output.getvalue(),'')
+        self.assertEqual(summary.finish['cycles'],2)
+        self.assertEqual(summary.heap['groups'],2)
+        self.assertEqual(len(summary.workloads),7)
+        for work in summary.workloads.values():
+            self.assertEqual((work['groups'],work['samples']),(2,4))
+        self.assertEqual(summary.workloads['idle']['tiles'],0)
+        with self.assertRaises(ValueError): summary.report('UI_BENCH',dict(workload='unknown'))
+        with self.assertRaises(ValueError): summary.report('unknown',{})
+
 
 class MeasurementTests(unittest.TestCase):
+    def test_soak_requires_completion_full_counts_and_console_restore(self):
+        import copy
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ui_soak',ROOT/'tools/kagura-ui-soak.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        result = dict(done=True,error=None,console_paused=False,console_attached=True,
+                      finish=dict(elapsed_ms=3600000,cycles=10),heap=dict(groups=10),
+                      workloads={name:dict(groups=10,samples=320,tiles=0,pattern_payload_bytes=0)
+                                 for name in ('idle','label','button','focus','move','scroll','screen')})
+        module.validate_result(result,3600,32)
+        changes = (lambda r:r.update(done=False),lambda r:r.update(error='KeyboardInterrupt'),
+                   lambda r:r.update(console_paused=True),lambda r:r.update(console_attached=False),
+                   lambda r:r['finish'].update(elapsed_ms=3599999),
+                   lambda r:r['heap'].update(groups=9),lambda r:r['workloads'].pop('screen'),
+                   lambda r:r['workloads']['label'].update(samples=319),
+                   lambda r:r['workloads']['idle'].update(tiles=1,pattern_payload_bytes=32))
+        for change in changes:
+            invalid = copy.deepcopy(result)
+            change(invalid)
+            with self.assertRaises(RuntimeError): module.validate_result(invalid,3600,32)
+
+    def test_device_timeout_interrupts_before_cleanup_and_keeps_utf8_log(self):
+        import importlib.util
+        import tempfile
+        spec = importlib.util.spec_from_file_location('ui_standard',ROOT/'tools/kagura-ui-standard.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        actions = []
+        class Transport:
+            def __init__(self,*args,**kwargs):
+                self.serial = T.types.SimpleNamespace()
+                self.count = 0
+            def enter_raw_repl(self,soft_reset): actions.append(('enter',soft_reset))
+            def exec_raw(self,source,timeout,data_consumer):
+                self.count += 1
+                if self.count == 1: raise TimeoutError('simulated device timeout')
+                actions.append(('cleanup','app.close()' in source))
+                for byte in 'cleanup 日本語\n'.encode(): data_consumer(bytes((byte,)))
+                return b'',b''
+            def exit_raw_repl(self): actions.append('exit')
+            def close(self): actions.append('close')
+        class Output(io.StringIO):
+            def reconfigure(self,**kwargs): pass
+        port = T.types.SimpleNamespace(device='COM_TEST',vid=0x2e8a,serial_number='test')
+        modules = {'mpremote':T.types.ModuleType('mpremote'),
+                   'mpremote.transport_serial':T.types.SimpleNamespace(SerialTransport=Transport),
+                   'serial':T.types.ModuleType('serial'), 'serial.tools':T.types.ModuleType('serial.tools'),
+                   'serial.tools.list_ports':T.types.SimpleNamespace(comports=lambda:[port])}
+        with tempfile.TemporaryDirectory(dir=ROOT) as folder:
+            path = Path(folder)/'log.txt'
+            argv = ['ui-standard','--port','COM_TEST','--expected-serial','test','--log',str(path)]
+            with patch.dict(sys.modules,modules),patch.object(sys,'argv',argv),patch.object(sys,'stdout',Output()):
+                with self.assertRaisesRegex(TimeoutError,'simulated device timeout'): module.main()
+            self.assertIn('cleanup 日本語',path.read_text(encoding='utf8'))
+            self.assertEqual(actions,[('enter',True),('enter',False),('cleanup',True),'exit','close'])
+
     def test_summary_preserves_percentile_scope_and_detects_incomplete_run(self):
         import importlib.util
         import json
@@ -281,7 +357,8 @@ class MeasurementTests(unittest.TestCase):
         for cycle,median,free in ((0,10,100),(1,30,84)):
             value = dict(profile='glyph8',workload='label',cycle=cycle,samples=32,
                          tiles=2,pattern_payload_bytes=64,frame_us_p50_p95_p99=[median,40,50],
-                         flush_us_p50_p95_p99=[2,3,4])
+                         flush_us_p50_p95_p99=[2,3,4],latency_samples=2,
+                         synthetic_invalidate_us_p50_p95_p99=[1,2,3])
             lines.append('UI_BENCH '+json.dumps(value)+'\n')
             lines.append('UI_HEAP '+json.dumps(dict(cycle=cycle,free=free,elapsed_ms=cycle*1000))+'\n')
         summary = module.summarize(iter(lines+['UI_BENCH {']))
@@ -289,6 +366,8 @@ class MeasurementTests(unittest.TestCase):
         label = profile['workloads']['label']
         self.assertEqual(label['frame_us_percentile_ranges'],[[10,30],[40,40],[50,50]])
         self.assertEqual((label['samples'],label['tiles'],label['pattern_payload_bytes']),(64,4,128))
+        self.assertEqual(label['latency_samples'],4)
+        self.assertEqual(label['synthetic_invalidate_us_percentile_ranges'],[[1,1],[2,2],[3,3]])
         self.assertEqual((profile['heap']['first_free'],profile['heap']['last_free']),(100,84))
         self.assertIsNone(profile['finish'])
         self.assertFalse(summary['console_restored'])

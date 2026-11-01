@@ -27,16 +27,21 @@ def summarize(lines):
             profile = profiles.setdefault(current,dict(workloads={},heap=None,finish=None))
             profile['finish'] = None
             workload = profile['workloads'].setdefault(value['workload'],dict(
-                groups=0,samples=0,tiles=0,pattern_payload_bytes=0,
+                groups=0,samples=0,latency_samples=0,tiles=0,pattern_payload_bytes=0,
                 frame_us_percentile_ranges=None,flush_us_percentile_ranges=None,
+                synthetic_invalidate_us_percentile_ranges=None,
                 first=value,last=value))
             workload['groups'] += 1
             workload['samples'] += value['samples']
+            workload['latency_samples'] += value.get('latency_samples',0)
             for key in ('tiles','pattern_payload_bytes'):
                 workload[key] += value[key]
             for source,target in (('frame_us_p50_p95_p99','frame_us_percentile_ranges'),
-                                  ('flush_us_p50_p95_p99','flush_us_percentile_ranges')):
-                values = value[source]
+                                  ('flush_us_p50_p95_p99','flush_us_percentile_ranges'),
+                                  ('synthetic_invalidate_us_p50_p95_p99','synthetic_invalidate_us_percentile_ranges')):
+                values = value.get(source)
+                if values is None:
+                    continue
                 if workload[target] is None:
                     workload[target] = [[v,v] for v in values]
                 else:

@@ -191,7 +191,7 @@ PC側ではThemeへBitmapFont8と同梱KJ8FのFontを渡す。内蔵ASCIIのfram
 MicroPython CIへUI tests/ARM compilationとfirmware manifestを追加した。
 
 実測結果・実機受入状況は[検証記録](kagura-ui-validation.md)を参照。
-UART入力、Pico 2系、1時間以上の連続動作は未検証として分離している。
+UART入力、Pico 2系は未検証。1時間のbitmap UI試験は[Phase 2記録](kagura-ui-phase2.md)を参照。
 
 ## Phase 2: ビットマップ文字の描画経路
 
