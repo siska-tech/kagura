@@ -86,6 +86,7 @@ void sf_bullet_step(SfGame *g, unsigned input);
 bool sf_render(const SfGame *g, SfFrame *frame);
 void sf_start(SfGame *g);
 void sf_enemy_step(SfGame *g);
+void sf_hostile_fit(SfGame *g);
 void sf_stage_step(SfGame *g);
 void sf_stage_reset(SfGame *g);
 void sf_stage_defeat(SfGame *g,unsigned slot);

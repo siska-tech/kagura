@@ -141,6 +141,24 @@ void sf_laser_fit(SfGame *g) {
         if(!b->length)b->active=false;
     }
 }
+void sf_hostile_fit(SfGame *g) {
+    bool any=false;for(unsigned i=0;i<SF_HOSTILES;i++)any|=g->hostile[i].active;
+    if(!any)return;
+    /* Build once without rays, reserve gameplay, then admit projectiles in
+     * pool order. Collision subsequently fits rays into the remaining budget. */
+    SfFrame base;uint8_t lines[240]={0};build(g,&base,false);
+    for(unsigned i=0;i<SF_HOSTILES;i++) {
+        unsigned slot=i<3?9+i:57+i-3;memset(base.oam+slot*8,0,8);
+    }
+    for(unsigned slot=0;slot<SF_SPRITES;slot++)if(!decorative(slot))
+        count(&base,slot,g->height,lines,false);
+    for(unsigned i=0;i<SF_HOSTILES;i++)if(g->hostile[i].active) {
+        unsigned slot=i<3?9+i:57+i-3;
+        sprite(base.oam+slot*8,g->hostile[i].x/256,g->hostile[i].y/256,10,false);
+        if(!count(&base,slot,g->height,lines,true))return;
+        if(!(base.oam[slot*8+3]&4))g->hostile[i].active=false;
+    }
+}
 bool sf_render(const SfGame *g,SfFrame *f) {
     uint8_t lines[240]={0};build(g,f,true);
     /* Reserve every gameplay object and HUD first. Only decorative explosions

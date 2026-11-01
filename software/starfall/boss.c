@@ -9,7 +9,6 @@ static void fan(SfGame *g,int32_t x,int32_t y,unsigned phase) {
         if(phase==1 && (n==-1 || n==1))continue;
         for(unsigned i=0;i<SF_HOSTILES;i++)if(!g->hostile[i].active) {
             g->hostile[i]=(SfHostile){x,y,-512,(int16_t)(n*224),true};
-            SfFrame budget;if(!sf_render(g,&budget))g->hostile[i].active=false;
             break;
         }
     }

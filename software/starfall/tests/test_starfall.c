@@ -185,6 +185,9 @@ static void checks(unsigned height) {
     for(unsigned i=0;i<SF_ENEMIES;i++)a.enemies[i]=(SfEnemy){a.x,a.y,80,0,2,SF_SCOUT,0,true,false};
     for(unsigned i=0;i<3;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
     sf_explode(&a,80,80);assert(sf_render(&a,&frame));assert(frame.peak_line==16 && frame.dropped_effects==1);
+    for(unsigned i=3;i<SF_HOSTILES;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
+    sf_hostile_fit(&a);assert(sf_render(&a,&frame) && frame.peak_line<=16);
+    for(unsigned i=3;i<SF_HOSTILES;i++)assert(!a.hostile[i].active);
     for(unsigned i=0;i<16;i++)assert(frame.oam[i*8+3]&4);
     for(unsigned i=0;i<SF_SHOTS;i++)a.shots[i].active=false;
     a.beam=(SfBeam){a.x,a.y,0,0,64,true};assert(sf_render(&a,&frame) && frame.peak_line==16);
