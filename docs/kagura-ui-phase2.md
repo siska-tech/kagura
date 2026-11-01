@@ -172,4 +172,5 @@ USB応答が停止した。通常のCtrl+Cも受信できず、対象deviceのWi
 
 Pico 2/2 W、UART/HID、物理電源断からの再投入は未検証。
 glyph cache・複数damage領域・dirty gap結合は次のPhase 2候補で、Phase 3へは進んでいない。
-複数damage領域は後続の[damage rectangle記録](kagura-ui-damage.md)で実装した（PC検証のみ）。
+複数damage領域は後続の[damage rectangle記録](kagura-ui-damage.md)で実装し、RP2040で比較した（既定は1矩形）。
+glyph cacheは[glyph cache記録](kagura-ui-glyph-cache.md)で実装した。
