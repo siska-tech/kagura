@@ -47,7 +47,7 @@ print(hasattr(os, "dupterm"), hasattr(os, "dupterm_notify"))
 
 対象ソースはMicroPython **v1.26.0 / 4ce2dd2cdab6e57f3982fc899f15a2103d71b0be**、SDKはそのsubmoduleの**Pico SDK 2.1.1**。専用ボード設定はドライバをfrozen moduleとして組み込み、USB CDCと標準の`os.dupterm`・`os.dupterm_notify`を維持する。Pythonモジュールをあらかじめ同梱したい場合の配布方法であり、通常版への追加にこのビルドは必要ない。
 
-Linux/WSLでArm GNU Toolchain・CMake・make・Pythonを用意して実行する。`KAGURA_ROOT`はこのリポジトリの絶対パス:
+Linux/WSLでArm GNU Toolchain・CMake 3.19以降・make・Pythonを用意して実行する。`KAGURA_ROOT`はこのリポジトリの絶対パス:
 
 ```sh
 git clone --depth 1 --branch v1.26.0 https://github.com/micropython/micropython.git
@@ -60,6 +60,11 @@ make -C ports/rp2 BOARD=KAGURA_PICO \
 ```
 
 `ports/rp2/build-KAGURA_PICO/firmware.uf2`をBOOTSELで書き込む。Pico WはBOARDとBOARD_DIR末尾を`KAGURA_PICO_W`へ変更する。UF2への書換えは既存のPico用Cホストfirmwareを置き換える。`kagura/`は組込み済みなので、自動コンソール用のboot.pyだけを上の手順で配置する。
+
+両KAGURAボードのビルドは、生成後の凍結native配列を`align_frozen.py`で4バイト整列する。
+公式v1.26のThumb配列は2バイト整列で、配置次第でPC相対リテラル読出しがずれ、
+Viper描画が破損するため。生成コードのalignment属性だけを補正し、VM・mpy-cross・描画アルゴリズムは変更しない。
+UF2更新前には保存領域をバックアップし、更新後も照合する。
 
 参照: [MicroPython dupterm](https://docs.micropython.org/en/v1.26.0/library/os.html#os.dupterm)、[RP2 PIO](https://docs.micropython.org/en/v1.26.0/library/rp2.StateMachine.html)。
 

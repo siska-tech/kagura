@@ -3,7 +3,7 @@
 **RP2040 / USB CDCで最小UIの主要受入試験に合格。**
 main `45e490b`を基準に、専用ブランチ`feat/kagura-ui-phase1`で実装した。
 既存driver/transport/RTL/ABIの処理は変更していない。
-UARTキーボード、Pico 2系、1時間以上の連続運転は未検証。PRはレビュー用Draftとしている。
+UARTキーボード、Pico 2系、1時間以上の連続運転は未検証。通常配置の追加受入は下記に記録。
 
 ## 確認済み
 
@@ -15,7 +15,7 @@ UARTキーボード、Pico 2系、1時間以上の連続運転は未検証。PR�
 | Viper | SDK UI画面と独立linear surface、bounds-checked PCエミュレーションの一致。さらにRP2040 native/Python/PCでGallery CRC一致 |
 | 公式MicroPython v1.26.0 VM | ソース`4ce2dd2cdab6e57f3982fc899f15a2103d71b0be`からunix standardを構築。VM改変なし。CPythonと同一の日本語/入力/再試行シナリオを実行 |
 | ARM compilation | SDK/UI/既存・新デモ69モジュールを公式v1.26 mpy-cross、`-march=armv6m`でPASS |
-| Pico firmware build | KAGURA_PICO、公式v1.26、Pico SDK 2.1.1、Arm GNU 14.2。UIを含む凍結manifestでリンク成功。[サイズログ](kagura-ui-logs/pico-build.txt)。実機へ書込みなし。Pico/Pico WはCIでもビルド確認 |
+| Pico firmware build | KAGURA_PICO、公式v1.26、Pico SDK 2.1.1、Arm GNU 14.2。UIを含む凍結manifestでリンク成功。[初期サイズログ](kagura-ui-logs/pico-build.txt)。後述の通常配置試験で実機へ導入。Pico WはCIのビルド対象 |
 | 生成定義 | `tools/gen-registers.ps1 -Check` PASS。32 direct/23 EXT/10+3 audio/5 commands |
 | C回帰 | 既存STARFALL hostの6 CTestがPASS。C header compile PASS。ca65は環境にないためSKIP |
 | CI変更選択 | `tools/test-ci-changes.sh` PASS。UI runtime比較、UI tests、ARM対象、配布artifact、凍結manifestをCIへ追加 |
@@ -97,12 +97,12 @@ height: 240
 これはOS権限の拒否であり、承認reviewerの拒否ではない。
 ユーザーは外出中のため、USBの抜き差しは帰宅後となった。
 
-**Flash/UF2/boot.py/既存SDK/保存済みファイルは一切書き換えていない。**
+**この初回試行ではFlash/UF2/boot.py/既存SDK/保存済みファイルは書き換えていない。**
 その後ユーザーがUSBを再接続し、通常のHDMI REPL復帰を確認して以下の受入試験を実施した。
 旧Kaguraと新Framebufferの混在は`_link`不足として検出されたため、現在のUIでは既知の混在を
 graphics I/O前に拒否する。CAPS_RSCROLLのSDK依存も同様に事前検査する。
 
-## RP2040実機の受入・性能
+## RP2040実機の受入・性能（先行RAM試験）
 
 Raspberry Pi Pico / RP2040 125 MHz、MicroPython表示バージョン1.26.0、
 QSPI 5 MHz・4 lanes、ABI 0.6、CAPS 0x5B、320×240、pattern count 1200。
@@ -167,7 +167,7 @@ allocation回数/自動GC回数は未取得であり、allocation-freeとは主�
    同じ停止中mountの無条件再試行や、自動的なfirmware書換えは行わない。
 2. 実機の既存ファイルを保全し、配布方法を決める。通常のfilesystem SDKなら`kagura/ui`を含む
    SDK一式を既存手順で配置する。古い凍結SDKでは追加packageの探索を別途検証するか、
-   UIを含む新manifestのfirmwareをデータ保全のうえ導入する。今回作ったUF2は未書込み。
+   UIを含む新manifestのfirmwareをデータ保全のうえ導入する。下記の通常配置試験ではこの方法を使用。
 3. Fontを開き、App構築前後・start前後の`gc.mem_free()`を記録する。確保失敗時にconsoleが維持されることを確認。
 4. `ui_gallery.run(console=kagura_console)`で日本語Label、Tab/Shift+Tab、上下左右、Enter、Escape、
    ボタン押下/解除、画面切替を確認。終了後HDMI REPLへ戻り`print('UI restored')`が表示されることを確認。
@@ -205,4 +205,80 @@ interactiveはUSB GUIを実行したままCOMポートを解放する。
 別のUSB端末、または`mpremote connect COM7 resume repl`で接続して操作する。
 EscapeでGUI終了、必要ならCtrl+Bでraw REPLから通常REPLへ戻る。
 試験モジュールはRAMだけにあり、再起動すれば既存環境へ戻る。
-長時間試験・標準配置の追加確認を残すためPRはDraft。Phase 3の保存・編集機能には進んでいない。
+このRAM試験に続き、下記の通常配置試験を実施した。Phase 3の保存・編集機能には進んでいない。
+
+## 通常配置の追加受入（2026-11-01）
+
+同じRP2040へ、公式MicroPython v1.26.0、Pico SDK 2.1.1、現行manifestのSDK/UIを
+凍結したUF2を導入。`kagura.__path__ == '.frozen/kagura'`、
+`kagura.ui.__path__ == '.frozen/kagura/ui'`。通常のUSB raw REPLでアプリのソースを実行した。
+RAM VFS、SDK alias、package path変更、Framebuffer用の事前メモリ予約は使っていない。
+日本語fontは既存`/fonts/misaki8.kfnt`を使用。
+
+導入前に全2 MiBのFlashを取得し、実機SHA256と照合。
+バックアップはローカル`build/ui-normal-install/backup-20261101T103750Z/`に保持した。
+全Flash SHA256は`8e0644d88b638829decb9e6819dbf7d242c54e4c174ac9540c9ec65c181be73a`。
+最初のUF2更新直後は保存領域1408 KiBのSHA256が完全一致した。
+通常起動へ移行するため、`/boot.py`だけを`kagura1200.console`から`kagura.console`へ変更し、
+容量不足を避けるため説明コメント1行を削除した（198 B、改行LF）。保存済みの旧SDK等は削除していない。
+
+### 凍結native配置で発見した問題と修正
+
+最初の通常配置では塗りつぶしに縦筋が出た。凍結Viperの8×8色3の出力が
+`03a03533...`となり、Gallery CRCは3228509582。Python backendでは2036752175となった。
+ELF内のfill関数は`0x100349c6`で、生成native配列の属性は`aligned(2)`だった。
+ThumbのPC相対literal読出しに必要な4バイト境界とのずれを確認した。
+
+両KAGURAボードのCMakeに、生成後・コンパイル前の`align_frozen.py`を追加した。
+native配列のalignment属性を4へ変更するだけで、公式VM、mpy-cross、SDK描画処理は変更しない。
+補正後のfill関数は`0x100349c8`、出力は`33333333...`。
+Galleryは**凍結Viper / Python / PCでCRC32 2036752175が一致**した。
+`framebuffer_viper_cases.run_cases(fb,count=48)`でも162操作のbuffer/dirtyを逐次CRCへ含め、
+Pythonと凍結nativeが一致した（rolling 1771536395、buffer 2635498818、dirty 206457449）。
+これらはSDKのRAMロード試験だけでは検出できなかった配置依存の問題である。
+
+修正UF2 SHA256は`9a013426be5b699a667e626701ad2fa00216dd3b1010cf45d19077468eb21b58`。
+1665 payload blocksの書込み範囲は`0x10000000 <= address < 0x10068100`。
+保存領域開始`0x100a0000`へ書き込むpayloadがないことを全ブロック検証した。
+ビルドサイズはtext 425996 B、data 0 B、bss 5128 B。
+
+### 通常配置の結果
+
+[HDMI Gallery画像](images/kagura-ui-normal-gallery.png)、
+[USB操作とbenchmarkログ](kagura-ui-logs/normal-install.txt)、
+[凍結kernel比較](kagura-ui-logs/frozen-kernels.txt)。
+USB Enter→Tab→Shift+Tab→EnterでCount 2、drop 0。
+Second screen→BACK→Escapeも操作し、終了後はconsole paused=False、attached=True、
+FPGA ERROR_CODE=0。`machine.reset()`によるハードリセット後も凍結UI、現行console、
+bulk Link、acceleration=True、last_error=Noneを確認した。
+その後98ファイルを再列挙してSHA256とサイズを照合し、変更は既知の`/boot.py`だけ、
+残り97ファイルとファイル一覧は不変だった。
+
+通常配置では新しいbulk Linkを使用。初回Gallery stepは約1.208 s（初期化込み）、
+最後の描画flushは333 tiles / 10656 payload B、約17 ms。
+Gallery起動後GCでfree 143488 B。App構築前からのheap差分5328 Bは
+App/Theme/treeと、ホストから通常実行したGallery関数定義を含む。font/module読込みは含まない。
+
+各32 samples、2巡、計448 stepの通常配置benchmark（cycle 0）:
+
+| workload | frame µs p50 / p95 / p99 | flush µs p50 / p95 / p99 | 合計dirty tiles / payload B |
+| --- | --- | --- | --- |
+| 静止 | 437 / 448 / 459 | 0 / 0 / 0 | 0 / 0 |
+| Label変更 | 25271 / 28000 / 29116 | 1862 / 1900 / 2026 | 53 / 1696 |
+| Button | 57844 / 81092 / 88144 | 2723 / 2757 / 2789 | 287 / 9184 |
+| focus | 81770 / 97604 / 99276 | 5202 / 5293 / 5393 | 1440 / 46080 |
+| Panel移動 | 12885 / 15452 / 17669 | 3141 / 3273 / 3304 | 620 / 19840 |
+| List scroll | 44652 / 51897 / 61887 | 3135 / 3170 / 3231 | 786 / 25152 |
+| 画面切替 | 64245 / 149964 / 151348 | 29804 / 29885 / 29886 | 38400 / 1228800 |
+
+各巡GC後のfreeは96000 Bで一定。開始137328 Bは最初のstep前なので、
+遅延確保されたFramebuffer等の常駐分を含まず、終了96560 Bとの差をheap leakと扱わない。
+allocation回数とGC回数は未取得。短時間試験のため長時間安定性の証明には使わない。
+UI 26件、配置補正1件、Framebuffer既存85件を再実行しPASS。
+Framebufferの最初の再実行はWindows sandbox TEMP権限で4エラーとなったため、
+workspace内TEMPを指定して再実行した。描画のassert失敗ではない。
+
+通常配置の阻害要因は解消した。PRのDraft解除を技術的に妨げる既知のPhase 1不具合はなく、
+最新変更のCIとコードレビューを残す。mainへのmergeは行っていない。
+
+長時間試験、UART/HID、Pico 2/2 Wは引き続き未実施。物理電源断による再投入試験も未実施。

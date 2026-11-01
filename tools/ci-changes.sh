@@ -44,6 +44,7 @@ classify() {
         software/micropython/tests/test_driver.py) mark pico micropython ;;
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
+        software/micropython/align_frozen.py|software/micropython/frozen_alignment.cmake|\
         software/micropython/boards/*) mark micropython micropython_firmware ;;
         software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py|\
         tools/gen-showcase-assets.py|tools/prepare-showcase.py|tools/gen-starfall-mpy-assets.py|\

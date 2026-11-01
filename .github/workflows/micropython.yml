@@ -52,7 +52,9 @@ jobs:
       - name: Tile framebuffer raster and failure recovery
         run: python3 -I software/micropython/tests/test_framebuffer.py
       - name: KAGURA-UI ownership, input, reference pixels and recovery
-        run: python3 -I software/micropython/tests/test_ui.py
+        run: |
+          python3 -I software/micropython/tests/test_ui.py
+          python3 -I software/micropython/tests/test_frozen_alignment.py
       - name: KAGURA-UI CPython versus MicroPython v1.26 runtime
         run: |
           make -C build/micropython-src/mpy-cross -j4

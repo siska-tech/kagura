@@ -47,6 +47,7 @@ files "register model" "pico micropython" software/micropython/tests/test_driver
 files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
 files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
 files "KAGURA-UI frozen core" "micropython micropython_firmware" software/micropython/kagura/ui/app.py
+files "frozen native alignment" "micropython micropython_firmware" software/micropython/align_frozen.py software/micropython/frozen_alignment.cmake
 files "KAGURA-UI tools and tests" "micropython" tools/measure-kagura-ui.py tools/render-kagura-ui.py \
     tools/kagura-ui-device.py software/micropython/tests/test_ui.py software/micropython/tests/ui_runtime.py
 files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
