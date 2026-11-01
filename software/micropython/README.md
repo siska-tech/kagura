@@ -4,13 +4,16 @@
 
 KAGURA-9 ABI **0.6**向けのRP2040用ドライバ。Pico/Pico Wから既存と同じ配線でSPI/QSPIを使い、起動時にKAGURAを検出するとHDMIへREPL・`print()`・例外を表示する。入力はUART0（GP1 RX）、115200bps・8N1、3.3V TTL。USB REPLも利用できる。
 
-## KAGURA-UI（Phase 1受入待ち）
+## KAGURA-UI（Phase 1）
 
 `kagura.ui`にApp/Screen/Widget、Label/Button/Panel、HBox/VBox、ProgressBar/ListViewを追加。
 Framebufferを排他所有する320×240用GUIで、HDMI consoleを渡すか`exclusive=True`を明示する。
 日本語は既存美咲フォントをRAM描画へ再利用し、TextLayer/独立spriteとは同時使用できない。
 [設計・API・デモ](../../docs/kagura-ui.md)、[検証状況と実機再開手順](../../docs/kagura-ui-validation.md)。
-PCとMicroPython unixの試験は実機受入の代わりではない。実機表示・操作・メモリ・性能は未検証。
+RP2040 125 MHz / QSPI 5 MHzで日本語のHDMI表示、USB CDCキー入力、画面切替、console復帰、
+24巡・5376更新を確認した。App/Theme/Gallery treeは3984 B、Framebufferは40544 B（GC後差分）。
+USB端末には`StdinInput()`を指定する。UART入力とPico 2系、1時間以上の動作は未検証。
+旧SDKと混在させず、`kagura`一式を同じrevisionで配置する。
 
 **拡張前ABI 0.5の過去の検証（2026-10-29）**: PC上のABI/端末/通信モック・速度選択・電源投入時の待機等57テストと、MicroPython公式PIOアセンブラ＋既存FPGAタイミングモデルに合格。MicroPython v1.26.0・Pico SDK 2.1.1・Arm GNU 14.2.rel1でPico/Pico W両方のドライバ組込みUF2をビルドし、UF2ブロック構造とRP2040 family IDを確認済み。GitHub ActionsのCIも合格。実機では公式v1.26.0 UF2へ`kagura/`を追加した構成で、SPI/QSPIの1〜5MHz、480p/720p、HDMIコンソール、描画・音源・PCM、異常系を確認した（[実機の受入結果](#実機の受入結果)）。UART入力は内部ループバックでの確認で、GP1への実配線は未確認。
 

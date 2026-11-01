@@ -62,6 +62,8 @@ class Widget:
         if self.enabled != value:
             self.enabled = value
             self.invalidate()
+            if self.app is not None:
+                self.app.focus.dirty = True
 
     def set_bounds(self, x, y, width=None, height=None):
         if width is not None and width < 0 or height is not None and height < 0:

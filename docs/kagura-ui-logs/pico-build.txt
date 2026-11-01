@@ -1,5 +1,5 @@
 Module registrations not updated
 [  6%] Linking CXX executable firmware.elf
    text	   data	    bss	    dec	    hex	filename
- 425308	      0	   5128	 430436	  69164	/mnt/c/Users/Shion/Documents/Projects/Kagura/build/micropython-src/ports/rp2/build-KAGURA_PICO_PINNED/firmware.elf
+ 425940	      0	   5128	 431068	  693dc	/mnt/c/Users/Shion/Documents/Projects/Kagura/build/micropython-src/ports/rp2/build-KAGURA_PICO_PINNED/firmware.elf
 [100%] Built target firmware

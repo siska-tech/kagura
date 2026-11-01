@@ -6,11 +6,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_driver as T
 import unittest
+import io
 from unittest.mock import patch
 from kagura import Kagura, regs as R
 from kagura.ui import (App, Widget, Screen, Panel, Label, Button, ProgressBar,
                        ListView, VBox, HBox, Event, EventQueue, TerminalInput,
-                       Theme, BitmapFont8, FramebufferBackend)
+                       Theme, BitmapFont8, FramebufferBackend, StdinInput)
 from kagura.ui.mock import MockBackend
 from kagura_ja import Font
 from test_framebuffer import decode
@@ -143,7 +144,9 @@ class UITests(unittest.TestCase):
     def test_noop_damage_and_error_retention(self):
         _, label, _ = gallery(self.app); self.app.step()
         n = self.backend.flushes
-        self.assertFalse(self.app.step()); self.assertEqual(self.backend.flushes, n)
+        with patch.object(self.app.focus, 'candidates', side_effect=AssertionError('idle focus scan')):
+            self.assertFalse(self.app.step())
+        self.assertEqual(self.backend.flushes, n)
         label.set_text('1'); self.backend.fail_flush = True
         with self.assertRaises(OSError): self.app.step()
         self.assertIsNotNone(self.app._damage)
@@ -193,6 +196,22 @@ class UITests(unittest.TestCase):
         self.assertEqual(q.pop().text,'x')
         self.assertIsNone(q.pop())
 
+    def test_stdin_poll_bytes_utf8_and_read_bound(self):
+        class Poller:
+            def register(p, stream, flags): p.stream = stream
+            def poll(p, timeout):
+                return bool(p.stream.tell() < len(p.stream.getbuffer()))
+        stream = io.BytesIO('日'.encode('utf8')+b'\r\n\t\x1b[Z\x1b[3~')
+        adapter, q = StdinInput(stream=stream,poller=Poller()), EventQueue()
+        adapter.poll(q)
+        self.assertEqual(q.pop().text,'日')
+        self.assertEqual([q.pop().key for _ in range(4)],['enter','tab','tab','delete'])
+        self.assertIsNone(q.pop())
+        stream = io.BytesIO(b'a'*40)
+        adapter = StdinInput(stream=stream,poller=Poller())
+        adapter.poll(EventQueue(64))
+        self.assertEqual(stream.tell(),32)
+
     def test_damage_raised_during_paint_survives(self):
         class Animated(Widget):
             def paint(widget, renderer, theme): widget.invalidate()
@@ -218,8 +237,13 @@ class UITests(unittest.TestCase):
         for demo in (ui_gallery,ui_monitor,ui_studio_mock):
             update = demo.build(self.app)
             self.app.step()
+            if demo is ui_gallery:
+                self.app.events.post(Event('enter')); self.app.step()
+                self.assertEqual(self.app.root.children[0].children[2].text,'Count: 1')
             self.app.events.post(Event('tab')); self.app.events.post(Event('enter'))
             self.app.step()
+            if demo is ui_gallery:
+                self.assertEqual(self.app.root.children[0].children[2].text,'Count: 0')
             if update is not None: update()
 
 
@@ -320,6 +344,43 @@ class SDKTests(unittest.TestCase):
         self.assertFalse(self.app.backend.active)
         self.assertNotIn(self.device,FramebufferBackend._owners)
         self.app.start()
+
+    def test_mixed_legacy_sdk_rejected_before_graphics_io(self):
+        self.model.calls.clear()
+        with patch.object(type(self.device), '_link', None):
+            with self.assertRaisesRegex(RuntimeError, 'SDK version mismatch'):
+                self.app.start()
+        self.assertEqual(self.model.calls, [])
+        self.assertIsNone(self.app.backend.fb)
+        self.assertFalse(self.app.backend.active)
+
+    def test_sdk_raster_capability_dependency_preflight(self):
+        self.device.caps &= ~R.CAPS_RSCROLL
+        self.model.calls.clear()
+        with self.assertRaises(NotImplementedError): self.app.start()
+        self.assertEqual(self.model.calls, [])
+        self.assertIsNone(self.app.backend.fb)
+
+    def test_interrupted_console_pause_restores_owner(self):
+        class Console:
+            def __init__(c):
+                c.screen = T.types.SimpleNamespace(device=self.device)
+                c.paused,c._attached = False,True
+            def pause(c):
+                c.paused = True
+                raise KeyboardInterrupt()
+            def resume(c): c.paused = False
+            def detach(c): c._attached = False
+            def attach(c): c._attached = True
+        console = Console()
+        backend = FramebufferBackend(self.device,console)
+        self.model.calls.clear()
+        with self.assertRaises(KeyboardInterrupt): backend.start(self.theme)
+        self.assertFalse(console.paused)
+        self.assertTrue(console._attached)
+        self.assertFalse(backend.active)
+        self.assertNotIn(self.device,FramebufferBackend._owners)
+        self.assertEqual(self.model.calls,[])
 
 
 if __name__ == '__main__':

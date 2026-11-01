@@ -16,8 +16,12 @@ def build(app):
         state[0] += 1
         status.set_text('Count: %d' % state[0])
         progress.set_value(state[0] % 101)
+    def reset():
+        state[0] = 0
+        status.set_text('Count: 0')
+        progress.set_value(0)
     row.add(Button('START', on_click=increment))
-    row.add(Button('RESET', on_click=lambda: progress.set_value(0)))
+    row.add(Button('RESET', on_click=reset))
     root.add(Panel(width=272, height=24)).add(Label('Panel / HDMI', x=4, y=8))
     root.add(Button('Second screen', on_click=lambda: app.set_root(second)))
     second = Screen(color=2)

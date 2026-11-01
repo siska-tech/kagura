@@ -65,19 +65,25 @@ class FramebufferBackend:
             return
         if any(d is self.device or d.transport is self.device.transport for d in self._owners):
             raise RuntimeError('graphics device already leased')
+        if not callable(getattr(self.device, '_link', None)):
+            raise RuntimeError('SDK version mismatch: install matching kagura modules together')
+        from kagura import regs as R
+        # TileFramebuffer.initialize() calls Video.raster_scroll(()) even when
+        # no raster entries are requested; reject that SDK dependency before I/O.
+        self.device.require(R.CAPS_RSCROLL)
         from kagura.framebuffer import TileFramebuffer
         # Allocation failure leaves the console and hardware untouched.
         if self.fb is None:
             self.fb = TileFramebuffer(self.device)
         if self.console is not None and self.console.paused:
             raise RuntimeError('console already paused by another owner')
-        self._owners.append(self.device)
-        self.active = True
         try:
+            self.active = True
+            self._owners.append(self.device)
             if self.console is not None:
-                self.console.pause()
                 self._restore = True
                 self._reattach = self.console._attached
+                self.console.pause()
                 self.console.detach()
             for index, color in enumerate(theme.palette):
                 self.fb.video.palette(index, color)
@@ -105,5 +111,9 @@ class FramebufferBackend:
         if self._reattach:
             self.console.attach()
             self._reattach = False
-        self._owners.remove(self.device)
+        # append() can fail, or an interrupt can arrive just after it succeeds.
+        for index in range(len(self._owners)):
+            if self._owners[index] is self.device:
+                self._owners.pop(index)
+                break
         self.active = False

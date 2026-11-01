@@ -133,3 +133,33 @@ class TerminalInput:
             n = self.stream.readinto(self._buffer)
             if n:
                 self.feed(memoryview(self._buffer)[:n], queue)
+
+
+class StdinInput(TerminalInput):
+    """USB CDC / binary stdin, polled one available byte at a time.
+
+    readinto(1) avoids blocking for a complete UTF-8 character or a full buffer.
+    The caller must stop other stdin readers while the UI owns input.
+    """
+    def __init__(self, stream=None, poller=None, clock=now_us):
+        super().__init__(clock=clock)
+        if stream is None:
+            import sys
+            stream = getattr(sys.stdin, 'buffer', sys.stdin)
+        if not hasattr(stream, 'readinto'):
+            raise ValueError('stdin adapter requires a binary readinto stream')
+        if poller is None:
+            from select import poll
+            poller = poll()
+        self.stdin, self.poller = stream, poller
+        self._byte = bytearray(1)
+        self.poller.register(stream, 1)  # POLLIN / MP_STREAM_POLL_RD
+
+    def poll(self, queue):
+        self.expire(queue)
+        for _ in range(32):
+            if not self.poller.poll(0):
+                break
+            if not self.stdin.readinto(self._byte):
+                break
+            self.feed(self._byte, queue)

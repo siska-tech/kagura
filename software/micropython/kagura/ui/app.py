@@ -8,6 +8,7 @@ from .theme import Theme
 class FocusManager:
     def __init__(self, app):
         self.app, self.current = app, None
+        self.dirty = True
 
     def _walk(self, widget, clip):
         if widget is None or not widget.visible or not widget.enabled:
@@ -36,7 +37,9 @@ class FocusManager:
             widget.focused = True
             widget.invalidate()
 
-    def repair(self):
+    def repair(self, force=False):
+        if not force and not self.dirty:
+            return
         first = None
         found = False
         for widget in self.candidates():
@@ -46,6 +49,7 @@ class FocusManager:
                 found = True
         if not found:
             self.set(first)
+        self.dirty = False
 
     def move(self, backwards=False):
         # Navigation is infrequent; this bounded-by-tree list is not a frame buffer.
@@ -55,7 +59,7 @@ class FocusManager:
             self.set(widgets[(index + (-1 if backwards else 1)) % len(widgets)])
 
     def dispatch(self, event):
-        self.repair()
+        self.repair(force=True)
         if event.kind == 'release':
             return self.current.handle(event) if self.current is not None else False
         if event.key == 'tab':
@@ -112,6 +116,7 @@ class App:
 
     def request_layout(self):
         self._layout = True
+        self.focus.dirty = True
 
     def set_root(self, root):
         if root is self.root:
