@@ -60,10 +60,34 @@ frame p50（各roundのp50の範囲。差は範囲の中央で計算）:
 
 UGREEN 15390による1 fpsのHDMIキャプチャ。左上・右上・左下が測定中のシーン、右下が終了後のconsole復帰。字形は崩れていない。
 
+## 部分clipの字形
+
+cache導入後も、glyphcut（limit 1）は約275 msと遅かった。
+clipに一部だけ入る字形は、1のbitの横runごとに`renderer.fill_rect`を呼んでおり、
+SDK `fill_rect`は1呼出しあたり約1 msかかる。
+
+SDKの`glyph8`は、1のbitだけを書き、画素ごとに画面内かを判定し、値が変わった場合だけdirtyにする。
+そこで`Renderer.glyph8`が、clip外の行と列のbitを再利用する8 B bufferで0にし、1回の`glyph8`で描くようにした。
+`glyph8`を持たないbackend（MockBackend、旧SDK）は、従来の独立した行単位描画を使う。
+PCテストでは、この参照経路とPython/Viperの結果を、上下左右・両端・画面端・1×1のclipで比較している。
+
+同じtool版で、Aを`--ref feat/kagura-ui-glyph-cache`、Bをこの変更として、続けて測った（cache 64、32 samples × 4 rounds）。
+
+| workload | limit | 変更前 | 変更後 | heap/step p50 | GC観測 |
+| --- | --- | --- | --- | --- | --- |
+| glyphcut | 1 | 275.8〜278.2 ms | 102.7〜102.9 ms（−63%） | 30208 → 9920 B | 28 → 8 |
+| glyphcut | 4 | 65.1〜65.2 ms | 29.2 ms（−55%） | 7968 → 2448 B | 8 → 0 |
+
+- 他のworkloadの差は+0.6%以内。label/labels/idleはround間の範囲が重なる。
+  focus（26.86〜26.94 → 27.00〜27.10 ms、+0.5%）とbutton（+0.15%）は範囲がわずかに重ならない。
+  これらは部分clipの字形を描かないため、別sessionの差と見ているが、原因は確認していない。
+- tile数・payloadは同一。CRC一致、`ERROR_CODE 0`、console復帰。
+- log: [clipped-glyph-rp2040-base.txt](kagura-ui-logs/clipped-glyph-rp2040-base.txt)、
+  [clipped-glyph-rp2040-masked.txt](kagura-ui-logs/clipped-glyph-rp2040-masked.txt)
+
 ## 範囲と残る課題
 
 - 64 slotでは、多数の異なる字形を同時に表示する画面ではhit率が下がる。容量は`cache=`で選べる。
   hit率は測っておらず、benchmarkの字形は64種類未満。
-- 部分clip（glyphcut）の行単位描画は、依然として遅く（limit 1で約275 ms）、割当も多い。
 - SDK `fill_rect`の呼出しあたり約1 msの固定費は、SDK側の課題として残る。
 - 長時間soak、Pico 2/2 W、UART/HIDは未検証。

@@ -74,7 +74,8 @@ class BitmapFont8:
 
     def draw(self, renderer, text, x, y, color):
         # Reuse SDK text/Viper glyphs for fully-contained built-in ASCII runs.
-        # Custom fonts and partial clips require the clipped run surface below.
+        # Other glyphs go through renderer.glyph8 (masked when partly clipped); the
+        # clipped runs below serve backends without glyph8.
         clip = renderer.clip
         if (self.source is None and x >= clip[0] and y >= clip[1] and
                 x + len(text) * 8 <= clip[2] and y + 8 <= clip[3] and
