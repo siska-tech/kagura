@@ -119,6 +119,10 @@ finally:
 | `Button(text='',on_click=None,...)` | Enter/Space pressで引数なしcallback。次stepで押下表示解除。releaseを扱えるadapterにも対応 |
 | `ProgressBar(value=0,maximum=100,width=120,height=12,...)`, `set_value(n)` | 0..maximumへclamp。maximumは正値 |
 | `ListView(items,on_select=None,width=120,height=64,...)`, `set_items(sequence)` | 可視行のみ描画。上下で選択/scroll、Enterでcallback(index,text)。itemsはcaller所有。set_itemsで選択範囲を補正して再描画 |
+| `Canvas(columns,rows,zoom=1,...)` | `zoom`×`zoom`画素のcellの格子。focus可能、不透明。subclassが`cell(cx,cy)`で色を返す。描画はclip内のcellだけで、行内の同色の連続を1回のfillにまとめる。focus中はcursor cellに枠（zoom≥3）。上下左右でcursor移動（端で止まり、keyは消費。Tabで抜ける）。Enter/Spaceで`activate(cx,cy)`、Delete/Backspaceで`erase(cx,cy)`、その他の文字で`text(s)`を呼ぶ |
+| `cell_at(x,y)`, `cell_rect(cx,cy)`, `invalidate_cell(cx,cy)`, `set_cursor(cx,cy)` | 画面座標とcellの対応（範囲外はNone）。1 cellだけを再描画対象にする。cursorは範囲内へclamp |
+| `Sprite4(width=16,height=16,data=None)` | 4bppの画素（下記の配置）。`get/set(x,y[,color])`、`export()`、`load(data)`、`source()`。setは変化したときTrue。座標・色は厳密な`int`（boolは不可） |
+| `SpriteCanvas(sprite=None,zoom=8,color=1,backdrop=0,on_change=None,...)` | `Sprite4`をその場で編集するCanvas。Enter/Spaceで`color`を塗り、Delete/Backspaceで0（透明）、16進1文字で色を選ぶ。透明画素はUI色`backdrop`で表示。`put(x,y,color)`、`set_color(c)`、`reload(data)`。変化した画素だけ`on_change(x,y)` |
 | `Theme(font=None)` | palette 16色と描画色indexを設定。実行中のpalette変更APIは未提供 |
 | `BitmapFont8(source=None, cache=64)` | sourceは既存kagura_ja.Font。height/advance/measure/glyph/drawを提供。fileを所有しない。cacheはファイル由来の字形rowsを保持する直接マップのslot数（0か2のべき乗、0で無効）。glyphの戻り値は読取り専用として扱う |
 | `Event(key,text='',shift=False,kind='press',repeat=False)` | key: up/down/left/right/enter/escape/tab/backspace/delete/text。timestampは生成時刻 |
@@ -130,8 +134,21 @@ Font拡張は`height`, `advance(character)`, `measure(text)`, `draw(renderer,tex
 既存8×8のglyph戻り値はMSB-first 8行。12/16/24px、可変幅、変換済TTF、
 cache、AAは将来別fontのdrawへ実装できるが、現palette backendにAA機能はない。
 実行時TTF parser/IME/SKKは未実装。
-TextBox/CheckBox/Slider/Dialog/Menu/Canvas/Image/ChartはPhase 3以降。
-Mini StudioはWidgetのpaint拡張例であり、Canvasや編集・保存機能の実装ではない。
+TextBox/CheckBox/Slider/Dialog/Menu/Image/ChartはPhase 3以降。
+Mini Studio（`ui_studio_mock.py`）はWidgetのpaint拡張例であり、編集・保存機能はない。
+
+### Sprite4の配置（TILE4）
+
+`Sprite4`の`data`/`export()`は、SDKの`TILE4`と同じ配置である。
+
+- `width`と`height`は8の倍数。大きさは`width*height/2` byte（16×16で128 B）。
+- 8×8 tileを行優先で並べる。tile番号は`(y//8)*(width//8)+x//8`で、1 tileは32 B。
+- tile内は8行×4 B。1 byteに2画素を入れ、偶数x（左）がbit 7..4、奇数x（右）がbit 3..0。
+- 画素(x,y)のbyteは`tile*32+(y%8)*4+(x%8)//2`。
+- 画素値0は透明で、hardware spriteと同じ意味を持つ。1..15は不透明。
+  `TileFramebuffer.blit(sprite.source(),x,y,key=0)`で、透明を除いて描ける。
+- 16×16のdataは、16×16 hardware spriteの連続4 pattern（左上、右上、左下、右下）と同じ並びである。
+- 色は4bitの番号で、意味（RGB）はpalette次第である。SpriteCanvasは、番号をそのままUIのpalette番号として表示する。
 
 ## 更新・入力・メモリ
 

@@ -4,6 +4,7 @@ from .app import App
 from .widget import Widget, Screen, Panel
 from .layout import HBox, VBox
 from .widgets import Label, Button, ProgressBar, ListView
+from .canvas import Canvas, SpriteCanvas, Sprite4
 from .events import Event, EventQueue, TerminalInput, StdinInput
 from .fonts import BitmapFont8
 from .theme import Theme

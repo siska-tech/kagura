@@ -809,5 +809,288 @@ class SDKTests(unittest.TestCase):
         self.assertEqual(self.model.calls,[])
 
 
+def sprite_pixels(data, width, height):
+    """Independent TILE4 decoder: row-major 8x8 tiles of 32 B; left pixel in bits 7..4."""
+    image = [[0] * width for _ in range(height)]
+    for tile in range(width * height // 64):
+        ox, oy = tile % (width // 8) * 8, tile // (width // 8) * 8
+        for yy in range(8):
+            for pair in range(4):
+                value = data[tile * 32 + yy * 4 + pair]
+                image[oy + yy][ox + pair * 2] = value >> 4
+                image[oy + yy][ox + pair * 2 + 1] = value & 15
+    return image
+
+
+class RecordingBackend(MockBackend):
+    def __init__(self):
+        super().__init__()
+        self.fills = []
+
+    def fill_rect(self, x, y, width, height, color):
+        self.fills.append((x, y, x + width, y + height))
+        super().fill_rect(x, y, width, height, color)
+
+
+class CanvasTests(unittest.TestCase):
+    def setUp(self):
+        self.backend = RecordingBackend()
+        self.theme = theme()
+        self.app = App(backend=self.backend, theme=self.theme)
+
+    def tearDown(self):
+        self.app.close()
+        self.theme.font.source.close()
+
+    def editor(self, x=40, y=24, zoom=8, sprite=None, **kwargs):
+        from kagura.ui import SpriteCanvas
+        root = Screen(color=2)
+        canvas = root.add(SpriteCanvas(sprite, x=x, y=y, zoom=zoom, **kwargs))
+        self.app.set_root(root)
+        self.app.step()
+        return canvas
+
+    def expected(self, canvas, pixel):
+        """Screen colour at (px, py) from the sprite alone, cursor outline included."""
+        def at(px, py):
+            left, top, z = canvas.bounds[0], canvas.bounds[1], canvas.zoom
+            cx, cy = (px - left) // z, (py - top) // z
+            if canvas.focused and z >= 3 and (cx, cy) == canvas.cursor:
+                if (px - left) % z in (0, z - 1) or (py - top) % z in (0, z - 1):
+                    return self.theme.focus
+            return pixel(cx, cy) or canvas.backdrop
+        return at
+
+    def assert_screen(self, canvas, pixel):
+        at = self.expected(canvas, pixel)
+        left, top, right, bottom = canvas.bounds
+        for py in range(max(0, top), min(240, bottom)):
+            for px in range(max(0, left), min(320, right)):
+                self.assertEqual(self.backend.pixels[py * 320 + px], at(px, py), (px, py))
+
+    def test_sprite4_layout_matches_reference_decoder(self):
+        from kagura.ui import Sprite4
+        s = Sprite4(16, 16)
+        self.assertEqual(len(s.export()), 128)
+        # Fixed vectors: nibble order, tile order TL, TR, BL, BR (= 16x16 sprite patterns).
+        s.set(0, 0, 1); s.set(1, 0, 2)
+        self.assertEqual(s.data[0], 0x12)
+        s.set(8, 0, 3); self.assertEqual(s.data[32], 0x30)
+        s.set(0, 8, 4); self.assertEqual(s.data[64], 0x40)
+        s.set(15, 15, 5); self.assertEqual(s.data[127], 0x05)
+        s.set(7, 1, 6); self.assertEqual(s.data[4 + 3], 0x06)
+        # Pseudo-random pixels over several sizes against the independent decoder.
+        for width, height in ((8, 8), (16, 16), (24, 8), (16, 32)):
+            s = Sprite4(width, height)
+            want = [[0] * width for _ in range(height)]
+            seed = 12345
+            for _ in range(width * height * 2):
+                seed = (seed * 1103515245 + 12345) & 0x7fffffff
+                x, y, c = seed % width, (seed >> 8) % height, (seed >> 16) & 15
+                s.set(x, y, c); want[y][x] = c
+            self.assertEqual(sprite_pixels(s.export(), width, height), want)
+            self.assertEqual([[s.get(x, y) for x in range(width)] for y in range(height)], want)
+
+    def test_sprite4_validation_and_import_export(self):
+        from kagura.ui import Sprite4
+        for args in ((0, 16), (12, 16), (16, -8)):
+            with self.assertRaises(ValueError): Sprite4(*args)
+        for args in ((16.0, 16), (True, 16)):
+            with self.assertRaises(TypeError): Sprite4(*args)
+        s = Sprite4()
+        s.set(3, 4, 9)
+        before = s.export()
+        for args, error in (((16, 0, 1), IndexError), ((0, -1, 1), IndexError), ((0, 0, 16), ValueError),
+                            ((0, 0, -1), ValueError), ((0, 0, True), TypeError), ((0.0, 0, 1), TypeError)):
+            with self.assertRaises(error): s.set(*args)
+        with self.assertRaises(ValueError): s.load(bytes(127))
+        with self.assertRaises(TypeError): s.load([0] * 128)
+        self.assertEqual(s.export(), before)
+        self.assertFalse(s.set(3, 4, 9))
+        self.assertTrue(s.set(3, 4, 0))
+        data = bytes(range(128))
+        t = Sprite4(data=data)
+        self.assertEqual(t.export(), data)
+        self.assertIsNot(t.data, data)
+        u = Sprite4(); u.load(bytearray(t.export()))
+        self.assertEqual(sprite_pixels(u.export(), 16, 16), sprite_pixels(data, 16, 16))
+
+    def test_sprite4_source_blits_with_transparent_zero(self):
+        from kagura import framebuffer as F
+        from kagura.framebuffer import TileFramebuffer
+        from kagura.ui import Sprite4
+        from kagura.ui.canvas import TILE4
+        self.assertEqual(TILE4, F.TILE4)
+        model = T.RegisterModel()
+        model.ext[R.EXT_SCREEN_HEIGHT] = 240
+        model.ext[R.EXT_PATTERN_COUNT_L] = 1200 & 255
+        model.ext[R.EXT_PATTERN_COUNT_H] = 1200 >> 8
+        fb = TileFramebuffer(Kagura(model).probe())
+        s = Sprite4(data=bytes((k * 37) & 0xff for k in range(128)))
+        want = sprite_pixels(s.export(), 16, 16)
+        for x, y in ((40, 24), (43, 21), (-5, 230)):
+            fb.fill(7)
+            fb.blit(s.source(), x, y, key=0)
+            image = decode(fb.buffer)
+            for sy in range(16):
+                for sx in range(16):
+                    px, py = x + sx, y + sy
+                    if 0 <= px < 320 and 0 <= py < 240:
+                        self.assertEqual(image[py * 320 + px], want[sy][sx] or 7, (x, y, sx, sy))
+
+    def test_canvas_mapping_and_construction(self):
+        from kagura.ui import Canvas
+        for args in ((0, 4), (4, 4, 0), (4, -1)):
+            with self.assertRaises(ValueError): Canvas(*args)
+        with self.assertRaises(TypeError): Canvas(4.0, 4)
+        c = Canvas(4, 3, zoom=5, x=10, y=20)
+        self.assertEqual(c.measure(self.theme.font), (20, 15))
+        root = Screen(); root.add(c); self.app.set_root(root); self.app.step()
+        self.assertEqual(c.bounds, (10, 20, 30, 35))
+        self.assertEqual(c.cell_rect(3, 2), (25, 30, 30, 35))
+        self.assertEqual(c.cell_at(10, 20), (0, 0))
+        self.assertEqual(c.cell_at(29, 34), (3, 2))
+        for x, y in ((9, 20), (30, 20), (10, 35), (10, 19)):
+            self.assertIsNone(c.cell_at(x, y))
+
+    def test_full_paint_matches_reference_and_runs_merge(self):
+        from kagura.ui import Sprite4
+        s = Sprite4(data=bytes((k * 29) & 0xff for k in range(128)))
+        canvas = self.editor(sprite=s, backdrop=9)
+        ref = sprite_pixels(s.export(), 16, 16)
+        self.assertTrue(canvas.focused)
+        self.assertEqual(canvas.cursor, (0, 0))
+        self.assert_screen(canvas, lambda cx, cy: ref[cy][cx])
+        # A blank sprite is one fill per row (plus the cursor outline).
+        self.backend.fills.clear()
+        canvas.reload(bytes(128)); self.app.step()
+        rows = [f for f in self.backend.fills if f[2] - f[0] == 128 and f[3] - f[1] == 8]
+        self.assertEqual(len(rows), 16)
+        self.assert_screen(canvas, lambda cx, cy: 0)
+
+    def test_cursor_keys_edit_and_partial_redraw(self):
+        changes = []
+        canvas = self.editor(on_change=lambda x, y: changes.append((x, y)))
+        app = self.app
+        def press(key, text=''):
+            self.backend.fills.clear()
+            app.events.post(Event(key, text))
+            app.step()
+            return list(self.backend.fills)
+        # Cursor: clamped at the edges, keys consumed (focus stays on the canvas).
+        for key in ('left', 'up'):
+            self.assertEqual(press(key), [])
+        self.assertEqual(canvas.cursor, (0, 0))
+        self.assertTrue(canvas.focused)
+        for _ in range(20): press('right')
+        for _ in range(3): press('down')
+        self.assertEqual(canvas.cursor, (15, 3))
+        self.assertTrue(canvas.focused)
+        # Moving repaints only the old and new cursor cells (adjacent: one merged damage rect).
+        fills = press('left')
+        old, new = canvas.cell_rect(15, 3), canvas.cell_rect(14, 3)
+        both = (new[0], new[1], old[2], old[3])
+        self.assertTrue(fills)
+        for f in fills:
+            self.assertTrue(both[0] <= f[0] and both[1] <= f[1] and f[2] <= both[2] and f[3] <= both[3], f)
+        # Far apart (damage_limit=4 keeps them separate): each fill lies in one of the two cells.
+        app.damage_limit = 4
+        canvas.set_cursor(2, 9)
+        self.backend.fills.clear(); app.step()
+        cells = (canvas.cell_rect(14, 3), canvas.cell_rect(2, 9))
+        self.assertTrue(self.backend.fills)
+        for f in self.backend.fills:
+            self.assertTrue(any(c[0] <= f[0] and c[1] <= f[1] and f[2] <= c[2] and f[3] <= c[3] for c in cells), f)
+        app.damage_limit = 1
+        canvas.set_cursor(14, 3); app.step()
+        # Hex digit picks the colour; Space/Enter paint; Delete/Backspace erase.
+        press('text', 'b'); self.assertEqual(canvas.color, 11)
+        fills = press('text', ' ')
+        cell = canvas.cell_rect(14, 3)
+        self.assertTrue(fills and all(cell[0] <= f[0] and f[2] <= cell[2] and cell[1] <= f[1] and f[3] <= cell[3]
+                                      for f in fills), fills)
+        self.assertEqual(canvas.sprite.get(14, 3), 11)
+        self.assertEqual(changes, [(14, 3)])
+        # Same colour again: no change, no damage, no callback.
+        self.assertEqual(press('enter'), [])
+        self.assertEqual(changes, [(14, 3)])
+        press('right'); press('text', 'F'); press('enter')
+        press('backspace'); press('left'); press('delete')
+        self.assertEqual((canvas.sprite.get(15, 3), canvas.sprite.get(14, 3)), (0, 0))
+        self.assertEqual(changes, [(14, 3), (15, 3), (15, 3), (14, 3)])
+        # Unknown text and releases are not consumed.
+        self.assertFalse(canvas.handle(Event('text', 'g')))
+        self.assertFalse(canvas.handle(Event('text', 'ab')))
+        self.assertFalse(canvas.handle(Event('enter', kind='release')))
+        # Tab leaves the canvas.
+        root = canvas.parent
+        other = root.add(Button('OK', x=200, y=24))
+        app.step()
+        press('tab')
+        self.assertFalse(canvas.focused)
+        self.assertTrue(other.focused)
+
+    def test_partial_redraw_reads_only_visible_cells(self):
+        from kagura.ui import Canvas
+        class Counting(Canvas):
+            reads = 0
+            def cell(self, cx, cy):
+                self.reads += 1
+                return (cx + cy) & 15
+        canvas = Counting(16, 16, zoom=8, x=40, y=24)
+        root = Screen(color=2); root.add(canvas)
+        self.app.set_root(root); self.app.step()
+        self.assertEqual(canvas.reads, 256)
+        canvas.reads = 0
+        canvas.invalidate_cell(5, 7); self.app.step()
+        self.assertEqual(canvas.reads, 1)
+        canvas.reads = 0
+        self.app.damage((canvas.bounds[0] + 4, canvas.bounds[1] + 4, canvas.bounds[0] + 20, canvas.bounds[1] + 12))
+        self.app.step()
+        self.assertEqual(canvas.reads, 3 * 2)  # columns 0..2 of rows 0..1, partly covered
+
+    def test_incremental_edits_equal_full_repaint(self):
+        canvas = self.editor()
+        seed = 7
+        for _ in range(60):
+            seed = (seed * 1103515245 + 12345) & 0x7fffffff
+            canvas.set_cursor(seed % 16, (seed >> 8) % 16)
+            canvas.set_color((seed >> 16) & 15)
+            canvas.handle(Event('enter'))
+            if seed & 3 == 0:
+                self.app.step()
+        self.app.step()
+        incremental = bytes(self.backend.pixels)
+        self.app.damage((0, 0, 320, 240)); self.app.step()
+        self.assertEqual(bytes(self.backend.pixels), incremental)
+        ref = sprite_pixels(canvas.sprite.export(), 16, 16)
+        self.assert_screen(canvas, lambda cx, cy: ref[cy][cx])
+
+    def test_clipping_by_parent_and_screen_edges(self):
+        from kagura.ui import SpriteCanvas, Sprite4
+        s = Sprite4(data=bytes([0x9a] * 128))
+        root = Screen(color=2)
+        # The panel's right/bottom edges cut through cells (41 and 31 px are not multiples of 4).
+        frame = root.add(Panel(x=50, y=50, width=41, height=31, color=3))
+        inner = frame.add(SpriteCanvas(s, x=-20, y=-10, zoom=4))
+        edge = root.add(SpriteCanvas(s, x=300, y=220, zoom=4))
+        self.app.set_root(root); self.app.step()
+        px = self.backend.pixels
+        colour = lambda x: 9 if (x - inner.bounds[0]) // 4 % 2 == 0 else 10
+        # Inside the panel: sprite colours, up to the partly visible last row/column.
+        for x, y in ((50, 50), (90, 50), (50, 80), (90, 80)):
+            self.assertEqual(px[y * 320 + x], colour(x), (x, y))
+        # Outside it: untouched screen colour.
+        for x, y in ((50, 49), (49, 50), (91, 60), (60, 81)):
+            self.assertEqual(px[y * 320 + x], 2, (x, y))
+        for f in self.backend.fills:
+            self.assertTrue(0 <= f[0] and f[2] <= 320 and 0 <= f[1] and f[3] <= 240, f)
+        # Off-screen part of the edge canvas is skipped, the visible part painted.
+        self.assertIn(px[239 * 320 + 319], (9, 10))
+        before = len(self.backend.fills)
+        edge.invalidate_cell(15, 15); self.app.step()
+        self.assertEqual(len(self.backend.fills), before)
+
+
 if __name__ == '__main__':
     unittest.main()
