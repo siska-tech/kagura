@@ -87,6 +87,9 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
                     if(turret && !g->boss.parts[p])continue;
                     unsigned tile=turret?640+p*4:(e->age%72>=56?272:48)+(part/3*2+part%3)*4;
                     sprite(f->oam+slots[part]*8,e->x/256+(int)(part%3)*16,e->y/256+(int)(part/3)*16,tile,true);
+                    unsigned period=g->boss.hp>66?72:g->boss.hp>33?56:40;
+                    if(g->boss.phase && g->boss.age%period>=period-12 && (g->boss.age/3)%2)
+                        f->oam[slots[part]*8+5]|=4; /* amber salvo warning */
                     if(g->enemy_flash[i])f->oam[slots[part]*8+5]|=12;
                 }
             }else {

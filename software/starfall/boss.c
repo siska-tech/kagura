@@ -11,10 +11,15 @@ void sf_boss_step(SfGame *g) {
     SfEnemy *e=&g->enemies[b->slot];b->age++;
     if(e->x>240*256)e->x-=256;
     unsigned t=(b->age/2)%128;int dy=t<64?(int)t-32:96-(int)t;
-    e->y=(g->height/2-16+dy*3/4)*256;b->x=e->x;b->y=e->y;
+    /* Hold position during the telegraph and salvo, then reposition during
+     * recovery. The player can read a stable firing lane before committing. */
+    unsigned period=b->hp>66?72:b->hp>33?56:40;
+    unsigned cycle=b->age%period;
+    if(b->age<=80 || (cycle>=24 && cycle<period-12))
+        e->y=(g->height/2-16+dy*3/4)*256;
+    b->x=e->x;b->y=e->y;
     b->phase=b->age<=80?0:b->hp>66?1:b->hp>33?2:3;
     if(!b->phase)return;
-    unsigned period=b->phase==1?72:b->phase==2?56:40;
     if(b->age%period==0 && b->parts[0])sf_enemy_fire(g,e->x+32*256,e->y+6*256);
     if(b->age%period==8 && b->parts[1])sf_enemy_fire(g,e->x+32*256,e->y+24*256);
     if(b->age%period==16 || (!b->parts[0] && !b->parts[1] && b->age%period==0))

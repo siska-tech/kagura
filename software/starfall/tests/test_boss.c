@@ -20,6 +20,16 @@ int main(void) {
         assert(!sf_boss_hit(&g,g.enemies[0].x/256,g.enemies[0].y/256+12,8,8,50));
         for(unsigned i=0;i<80;i++) { g.invincible=2;sf_step(&g,0);assert(sf_render(&g,&f) && f.peak_line<=16); }
         assert(g.boss.phase==1);
+        SfGame saved=g;g.boss.age=131;
+        for(unsigned i=0;i<SF_HOSTILES;i++)g.hostile[i].active=false;
+        int32_t held_y=g.enemies[0].y;
+        for(unsigned i=0;i<12;i++) {
+            sf_boss_step(&g);assert(g.enemies[0].y==held_y);
+            for(unsigned j=0;j<SF_HOSTILES;j++)assert(!g.hostile[j].active);
+            assert(sf_render(&g,&f) && f.peak_line<=16);
+        }
+        sf_boss_step(&g);assert(g.hostile[0].active && g.enemies[0].y==held_y);
+        g=saved;
         int x=g.enemies[0].x/256,y=g.enemies[0].y/256;
         assert(!sf_boss_hit(&g,x,y,4,4,100));assert(g.boss.hp==100);
         assert(sf_boss_hit(&g,x+36,y+2,8,8,12) && !g.boss.parts[0] && g.boss.parts[1]==12);
