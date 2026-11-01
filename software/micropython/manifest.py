@@ -16,4 +16,13 @@ freeze("$(BOARD_DIR)/../..", (
     "kagura/audio.py",
     "kagura/terminal.py",
     "kagura/console.py",
+    "kagura/ui/__init__.py",
+    "kagura/ui/app.py",
+    "kagura/ui/widget.py",
+    "kagura/ui/widgets.py",
+    "kagura/ui/layout.py",
+    "kagura/ui/render.py",
+    "kagura/ui/events.py",
+    "kagura/ui/fonts.py",
+    "kagura/ui/theme.py",
 ))
