@@ -16,7 +16,7 @@ static uint8_t device_height=240;
 kh_status kh_set_inc(uint16_t inc) { assert(inc==128);return KH_OK; }
 kh_status kh_set_vram_addr(uint32_t addr) { vram_addr=addr;return KH_OK; }
 kh_status kh_write(uint8_t reg,bool inc,const uint8_t *data,size_t n) {
-    assert(reg==KAGURA_REG_VRAM_WRITE && !inc && n==32 && enabled && blank_waits);
+    assert(reg==KAGURA_REG_VRAM_WRITE && !inc && n==32 && enabled);
     assert(vram_addr>=KAGURA_VRAM_MAP_BASE && vram_addr<KAGURA_VRAM_MAP_BASE+128);
     unsigned col=(vram_addr-KAGURA_VRAM_MAP_BASE)/2;
     for(unsigned i=0;i<=40;i++)assert(col!=((view_tick/8+i)&63));
@@ -79,9 +79,9 @@ kh_status kh_fill(uint32_t addr,uint16_t n,uint8_t v) {
 kh_status kh_vram_write(uint32_t addr,const uint8_t *p,size_t n) {
     if(addr==KAGURA_VRAM_MAP_BASE) { assert(!enabled && n==4096);memcpy(map_image,p,n); }
     if(addr==KAGURA_VRAM_WAVE_BASE) { assert(!enabled && n==512);wave_writes++; }
-    else if(addr==KAGURA_VRAM_PALETTE_BASE+128) { assert(n==32 && blank_waits); }
+    else if(addr==KAGURA_VRAM_PALETTE_BASE+128) { assert(n==32); }
     else if(enabled) {
-        assert(blank_waits>0 && addr>=KAGURA_VRAM_OAM_BASE && addr+n<=KAGURA_VRAM_OAM_BASE+SF_SPRITES*8);
+        assert(addr>=KAGURA_VRAM_OAM_BASE && addr+n<=KAGURA_VRAM_OAM_BASE+SF_SPRITES*8);
         assert(n%8==0);if(fail_write)return KH_TIMEOUT_BUSY;oam_bytes+=(unsigned)n;
     }else assert(n<=SF_PATTERNS*32);
     return KH_OK;
@@ -110,7 +110,7 @@ int main(void) {
             fail_write=false;
         }
         assert(sf_backend_present(&g,&f)==KH_OK);
-        assert(audio_writes_at_commit==audio_writes_at_blank); /* submit video before audio */
+        assert(blank_waits==0); /* staging must not wait for another live blank */
         for(unsigned i=0;i<=40;i++) {
             unsigned world=tick/8+i;uint8_t expected[32];sf_make_column(expected,h,world);
             for(unsigned row=0;row<32;row++) {

@@ -16,7 +16,7 @@ static bool report_pending;
 static void report(void) {
     if(!report_pending)return;
     report_pending=false;
-    printf("SF frames=%lu hz100=%llu cpu_us=%llu/%lu/%lu io_us=%llu/%lu/%lu commit_us=%llu/%lu/%lu wire=%llu/%lu oam=%llu peak=%u overflow=%lu audio=%lu missed=%lu blank=%lu map=%llu load_max=%lu bgm=%s stage=%u scene=%u demo=%u\n",
+    printf("SF frames=%lu hz100=%llu cpu_us=%llu/%lu/%lu io_us=%llu/%lu/%lu commit_us=%llu/%lu/%lu wire=%llu/%lu oam=%llu peak=%u overflow=%lu audio=%lu missed=%lu active_stage=%lu map=%llu load_max=%lu bgm=%s stage=%u scene=%u demo=%u\n",
         (unsigned long)frames,(unsigned long long)(total_us?(uint64_t)frames*100000000/total_us:0),
         (unsigned long long)(cpu_profile.sum/frames),(unsigned long)sf_profile_p95(&cpu_profile),(unsigned long)cpu_profile.max,
         (unsigned long long)(io_profile.sum/frames),(unsigned long)sf_profile_p95(&io_profile),(unsigned long)io_profile.max,

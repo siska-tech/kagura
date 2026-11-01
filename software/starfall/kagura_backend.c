@@ -95,7 +95,9 @@ kh_status sf_backend_present(const SfGame *g,const SfFrame *f) {
             KAGURA_DISPLAY_CTRL_BG_ENABLE|KAGURA_DISPLAY_CTRL_SPR_ENABLE));
         sf_scene_load_us=(uint32_t)(time_us_64()-loading);
     }
-    TRY(kh_wait_status(KAGURA_STATUS_VBLANK_LIVE,KAGURA_STATUS_VBLANK_LIVE,KH_DEFAULT_TIMEOUT_US));
+    /* OAM/palette/registers are shadowed until COMMIT. Ring columns below
+     * are offscreen. Stage immediately rather than waiting a whole frame
+     * when CPU/audio work has already crossed the short live blank. */
     uint64_t start=time_us_64();
     if(layout_changed && raster) {
         TRY(kh_ext_write(KAGURA_EXT_RS_COUNT,0));TRY(kh_ext_write(KAGURA_EXT_RS_INDEX,0));
