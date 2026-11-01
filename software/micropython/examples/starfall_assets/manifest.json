@@ -1,0 +1,10 @@
+{
+  "format": "STARFALL C video: patterns22528/palette160/title4096/map1804096/map2404096",
+  "bytes": 34976,
+  "sha256": "5bac1bc124e50dc6101560b61d34df8e3e3687f81bed8f09c1425994e330c44d",
+  "sources": {
+    "software/starfall/assets.c": "9b98f1889de19af69dd5a0d3fb08133cecf7280185be276e90576da3e7052ac5",
+    "software/starfall/stage.c": "fa4f776c078e0553a7016b9307843db1839e5831937cfe213ee88ff2e2dc3287",
+    "software/starfall/music.c": "36eb2be79de5427ec272700aea18ef8750f50ba1bb9cdda416af5e0e1cb222b1"
+  }
+}

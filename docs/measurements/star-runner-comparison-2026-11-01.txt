@@ -1,0 +1,11 @@
+RUNNER_IMPORT_US 2020126
+RUNNER_READY_US 23697181
+RUNNER frames 447
+RUNNER logic_fps 29.746602
+RUNNER elapsed_us None
+RUNNER error_count 0
+RUNNER audio_errors 0
+RUNNER failure None
+RUNNER cleanup_errors []
+RUNNER pcm_enabled True
+Local directory build/showcase-live/run is mounted at /remote
