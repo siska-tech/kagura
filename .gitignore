@@ -6,3 +6,5 @@ reports/
 *.fst
 *.fs
 *.bit
+__pycache__/
+*.pyc
