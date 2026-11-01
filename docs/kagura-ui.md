@@ -142,8 +142,7 @@ UI damageは最大`damage_limit`個（既定1）の矩形で保持し、SDKのdi
 4の方が約6%遅く、字形を切る更新では4が77%速かった（[実測](kagura-ui-damage.md)）。
 不透明なroot（Screen/Panel）が覆う矩形では背景fillを省く。
 上限超過や辺共有の結合では、離れた変更の間まで再描画する場合が残る。
-奥から再合成するため重なりの残像は残さない。矩形間の境界で字形が部分clipになると
-glyph8ではなく行単位描画になる。矩形数だけtree走査が増える。
+奥から再合成するため重なりの残像は残さない。矩形数だけtree走査が増える。
 静止時にはfocus候補も再走査しない。tree/layout/有効状態の変更時と入力配送時に再検証する。
 同じeventでのTab/矢印移動は配送時の走査結果を再利用し、handlerがtree/有効状態を変えた場合だけ再走査する。
 画面が静止しているstepではflushしない。描画中の新しいinvalidateも次frameへ保持する。
@@ -207,12 +206,13 @@ UART入力、Pico 2系は未検証。1時間のbitmap UI試験は[Phase 2記録]
 
 Rendererは`glyph8(rows,x,y,color)`という任意のbackend高速経路を持つ。
 backendの実装は描画できたらTrue、未対応の場合はFalseを返す。
-8×8全体が現在のclip内にある場合だけ呼び、FramebufferBackendはSDKの
-`TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
+8×8全体が現在のclip内にあればrowsをそのまま、一部だけなら、clip外の行・列のbitを
+再利用する8 B bufferで0にしてから呼ぶ（SDKのglyph8は1のbitだけを書く透過描画）。
+FramebufferBackendはSDKの`TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
 fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。追加framebufferは作らない。
 ファイル由来の字形rowsは`BitmapFont8`の小さな直接マップcacheに保持する（[glyph cache記録](kagura-ui-glyph-cache.md)）。
-部分clip、旧SDKでのglyph8未提供、bytes/bytearray以外の行sequence、MockBackendは
-既存のclipped run描画を使う。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
+旧SDKでのglyph8未提供、clip内に収まるbytes/bytearray以外の行sequence、MockBackendは
+既存のclipped run描画を使う（[部分clipの実測](kagura-ui-glyph-cache.md#部分clipの字形)）。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
 
 `ui_benchmark.run(app,widgets,samples=32,cycles=2,seconds=3600,profile='glyph8')`は
 固定長sample配列を使い、指定巡数と指定秒数の両方を満たすまで動作する。

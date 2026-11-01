@@ -24,7 +24,8 @@ tile trackerを複製せず、UI側は矩形のclipだけを増やした。
 ### 代償
 
 - 矩形数だけ再描画passが増える。RP2040では1矩形あたり約2.4 msの固定費（rootのfillとtree走査）がある。
-- 矩形境界で字形が部分clipになると、glyph8ではなく従来の行単位描画になる。
+- 矩形境界で字形が部分clipになると、従来の行単位描画になる（測定時点）。
+  後続の変更でmaskしたrowsによる1回のglyph8になった（[glyph cache記録](kagura-ui-glyph-cache.md#部分clipの字形)）。
 - `_add_damage`は矩形tupleを生成する。allocation回数は従来どおり未計測で、allocation-freeとは主張しない。
 
 ## 検証（PC）

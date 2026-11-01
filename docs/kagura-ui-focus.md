@@ -72,6 +72,7 @@ logの`git=`はmainへのrebase前のcommit。送信したapp.pyのsha256は、�
 
 ## 残る課題
 
-- glyphcutの1回あたり32 KBの割当は、部分clipで字形を行単位描画する経路（`BitmapFont8.draw`）によるもの。focusとは別の課題として残す。
+- glyphcutの1回あたり32 KBの割当は、部分clipで字形を行単位描画する経路によるもの。
+  後続で1回のglyph8にし、9.9 KBになった（[glyph cache記録](kagura-ui-glyph-cache.md#部分clipの字形)）。
 - 字形の取得は1文字約1.9 ms、SDK `fill_rect`は1呼出し約1 msの固定費がある。いずれもframe時間の大部分を占める。
 - 長時間soak、Pico 2/2 W、UART/HIDは未検証。
