@@ -50,6 +50,7 @@ int main(void) {
         assert(sf_boss_hit(&g,x+3,y+12,8,8,34));sf_boss_step(&g);assert(g.boss.phase==3);
         x=g.enemies[0].x/256;y=g.enemies[0].y/256;
         assert(sf_boss_hit(&g,x,y+12,8,8,32) && g.boss_dead && g.boss.dying);
+        assert(sf_render(&g,&f) && (f.oam[5*8+3]&4)); /* wreck survives initial detonation */
         for(unsigned i=0;i<119;i++) { sf_step(&g,SF_FIRE);assert(g.state==SF_PLAY && sf_render(&g,&f)); }
         sf_step(&g,0);assert(g.state==SF_CLEAR && g.score>=12000 && !g.boss.active);
         for(unsigned i=0;i<300;i++)sf_step(&g,0);

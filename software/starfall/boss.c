@@ -30,6 +30,7 @@ void sf_boss_step(SfGame *g) {
     b->x=e->x;b->y=e->y;
     b->phase=b->age<=80?0:b->hp>66?1:b->hp>33?2:3;
     if(!b->phase)return;
+    if(b->hp<=33 && b->age%24==0)sf_explode(g,e->x/256+24,e->y/256+8);
     if(b->age%period==0 && b->parts[0])sf_enemy_fire(g,e->x+32*256,e->y+6*256);
     if(b->age%period==8 && b->parts[1])sf_enemy_fire(g,e->x+32*256,e->y+24*256);
     if(b->age%period==16 || (!b->parts[0] && !b->parts[1] && b->age%period==0))

@@ -52,6 +52,8 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
     if(g->state==SF_PLAY && sf_scene(g)==SF_WARNING && g->tick%30<20)label="WARNING";
     if(g->attract)label="DEMO";
     snprintf(hud,sizeof hud,"%06luL%u %s",(unsigned long)(g->score%1000000),g->lives,label);
+    if(g->boss.active && !g->attract)
+        snprintf(hud,sizeof hud,"CORE %03u PHASE %u",g->boss.hp,g->boss.phase);
     text(f,32,8,hud);
     if(g->state==SF_PLAY && ((g->stage_frame>=1120 && g->stage_frame<1440) || sf_scene(g)==SF_WARNING) && (g->tick/12)%2)
         for(unsigned i=32;i<48;i++)f->oam[i*8+5]|=1<<2;
@@ -78,6 +80,17 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
         if(!g->beam.active && !g->option_beams[0].active && !g->option_beams[1].active)
             for(unsigned i=0;i<SF_SHOTS;i++)if(g->shots[i].active)
             sprite(f->oam+(i+1)*8,g->shots[i].x/256,g->shots[i].y/256,8,false);
+        /* Keep the wreck on screen through the explosion, then let the last
+         * bursts finish alone. Reuse boss slots; no additional scanline cost. */
+        if(g->boss.dying && g->boss.death_age<96 && (g->boss.death_age/4)%2==0) {
+            static const uint8_t slots[6]={5,6,30,7,8,31};
+            for(unsigned part=0;part<6;part++) {
+                unsigned tile=part%3==2?640+(part/3)*4:48+(part/3*2+part%3)*4;
+                sprite(f->oam+slots[part]*8,g->boss.x/256+(int)(part%3)*16,
+                    g->boss.y/256+(int)(part/3)*16,tile,true);
+                f->oam[slots[part]*8+5]|=12;
+            }
+        }
         for(unsigned i=0;i<SF_ENEMIES;i++) {
             const SfEnemy *e=&g->enemies[i];if(!e->active)continue;
             if(e->type==SF_BOSS) {
@@ -85,9 +98,10 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
                 for(unsigned part=0;part<6;part++) {
                     bool turret=part==2 || part==5;unsigned p=part==5?1:0;
                     if(turret && !g->boss.parts[p])continue;
-                    unsigned tile=turret?640+p*4:(e->age%72>=56?272:48)+(part/3*2+part%3)*4;
-                    sprite(f->oam+slots[part]*8,e->x/256+(int)(part%3)*16,e->y/256+(int)(part/3)*16,tile,true);
                     unsigned period=g->boss.hp>66?72:g->boss.hp>33?56:40;
+                    bool charging=g->boss.phase && g->boss.age%period>=period-12;
+                    unsigned tile=turret?640+p*4:(charging?272:48)+(part/3*2+part%3)*4;
+                    sprite(f->oam+slots[part]*8,e->x/256+(int)(part%3)*16,e->y/256+(int)(part/3)*16,tile,true);
                     if(g->boss.phase && g->boss.age%period>=period-12 && (g->boss.age/3)%2)
                         f->oam[slots[part]*8+5]|=4; /* amber salvo warning */
                     if(g->enemy_flash[i])f->oam[slots[part]*8+5]|=12;
