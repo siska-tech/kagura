@@ -1,0 +1,15 @@
+PASS: sprite selector, 256 sprites, 278 lines, 2325 entries; signed clipping, 16 limit, overflow, priority, offscreen X, end-of-OAM hits, stalls/reset, cycles
+- sim/tests/tb_sprite_selector.sv:135: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 2ms; walltime 0.045 s; speed 41.585 ms/s
+- Verilator: cpu 0.045 s on 1 threads; alloced 121 MB
+PASS: sprite composite 138 lines x320 pixels, 1911 writes, max 1702 cycles; 8/16px, flips, transparency, priority, behind, signed clipping, overflow and stalls
+- sim/tests/tb_sprite_composite.sv:146: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 1ms; walltime 0.020 s; speed 56.821 ms/s
+- Verilator: cpu 0.020 s on 1 threads; alloced 121 MB
+PASS: register ABI package vs RTL, 223 checks; direct reset/access, EXT 4:3 and 16:9, audio indexed resets/legality
+- sim/tests/tb_register_abi.sv:180: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 24us; walltime 0.006 s; speed 9.982 ms/s
+- Verilator: cpu 0.002 s on 1 threads; alloced 121 MB

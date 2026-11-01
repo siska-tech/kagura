@@ -36,6 +36,7 @@ classify() {
         # test_sakura.py checks the piano asset against this sample.
         software/pico/piano_c4_sample.h) mark pico micropython ;;
         software/pico/*) mark pico ;;
+        software/starfall/*) mark pico ;;
         # The C TileFramebuffer test replays these Python modules and model.
         software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
         software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
