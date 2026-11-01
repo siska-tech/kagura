@@ -11,7 +11,9 @@ void sf_enemy_fire(SfGame *g,int32_t x,int32_t y) {
         int dx=(g->x-x)/256,dy=(g->y-y)/256;
         int ax=dx<0?-dx:dx,ay=dy<0?-dy:dy,scale=ax>ay?ax:ay;
         if(scale<1)scale=1;
-        g->hostile[i]=(SfHostile){x,y,(int16_t)(dx*640/scale),(int16_t)(dy*640/scale),true};break;
+            g->hostile[i]=(SfHostile){x,y,(int16_t)(dx*640/scale),(int16_t)(dy*640/scale),true};
+            SfFrame budget;if(!sf_render(g,&budget))g->hostile[i].active=false;
+            break;
     }
 }
 static void fire(SfGame *g,const SfEnemy *e) { sf_enemy_fire(g,e->x,e->y+8*256); }

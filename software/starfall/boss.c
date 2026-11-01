@@ -3,6 +3,17 @@
 static bool overlap(int x,int y,int w,int h,int bx,int by,int bw,int bh) {
     return x<bx+bw && x+w>bx && y<by+bh && y+h>by;
 }
+static void fan(SfGame *g,int32_t x,int32_t y,unsigned phase) {
+    /* Symmetric gaps remain between a slow five-way fan; no homing after launch. */
+    for(int n=-2;n<=2;n++) {
+        if(phase==1 && (n==-1 || n==1))continue;
+        for(unsigned i=0;i<SF_HOSTILES;i++)if(!g->hostile[i].active) {
+            g->hostile[i]=(SfHostile){x,y,-512,(int16_t)(n*224),true};
+            SfFrame budget;if(!sf_render(g,&budget))g->hostile[i].active=false;
+            break;
+        }
+    }
+}
 void sf_boss_begin(SfGame *g,unsigned slot) {
     g->boss=(SfBoss){.hp=100,.max_hp=100,.parts={12,12},.slot=(uint8_t)slot,.active=true};
 }
@@ -23,7 +34,7 @@ void sf_boss_step(SfGame *g) {
     if(b->age%period==0 && b->parts[0])sf_enemy_fire(g,e->x+32*256,e->y+6*256);
     if(b->age%period==8 && b->parts[1])sf_enemy_fire(g,e->x+32*256,e->y+24*256);
     if(b->age%period==16 || (!b->parts[0] && !b->parts[1] && b->age%period==0))
-        sf_enemy_fire(g,e->x,e->y+16*256);
+        fan(g,e->x,e->y+16*256,b->phase);
 }
 bool sf_boss_hit(SfGame *g,int x,int y,int w,int h,unsigned damage) {
     SfBoss *b=&g->boss;if(!b->active || !b->phase)return false;

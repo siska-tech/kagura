@@ -107,7 +107,7 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
             }
         }
         for(unsigned i=0;i<SF_HOSTILES;i++)if(g->hostile[i].active)
-            sprite(f->oam+(9+i)*8,g->hostile[i].x/256,g->hostile[i].y/256,10,false);
+            sprite(f->oam+(i<3?9+i:57+i-3)*8,g->hostile[i].x/256,g->hostile[i].y/256,10,false);
         if(g->missile.active)sprite(f->oam+12*8,g->missile.x/256,g->missile.y/256,g->missile_grounded?11:176,false);
         if(g->pickup_active)sprite(f->oam+13*8,g->pickup_x/256,g->pickup_y/256,36,true);
         for(unsigned i=0;i<g->options;i++) {

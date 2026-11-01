@@ -72,7 +72,13 @@ void sf_step(SfGame *g,unsigned input) {
     if(sf_scene(g)==SF_WARNING)goto done;
     if(g->attract)sf_demo_events(g);
     if((input&SF_EQUIP) && !g->equip_was_down)sf_equip(g);
-    sf_bullet_step(g,input);sf_enemy_step(g);sf_collision_step(g);
+    sf_bullet_step(g,input);sf_enemy_step(g);
+    /* Moving fans can converge with the player/laser. Thin newest bullets
+     * before collision so an omitted projectile can never inflict damage. */
+    sf_laser_fit(g);
+    SfFrame budget;
+    for(int i=SF_HOSTILES-1;i>=0 && !sf_render(g,&budget);i--)g->hostile[i].active=false;
+    sf_collision_step(g);
 done:
     g->start_was_down=(real&SF_FIRE)!=0;
     g->fire_was_down=(input&SF_FIRE)!=0;

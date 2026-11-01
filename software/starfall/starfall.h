@@ -5,7 +5,7 @@
 #include <stdint.h>
 #define SF_SHOTS 4
 #define SF_ENEMIES 4
-#define SF_HOSTILES 3
+#define SF_HOSTILES 10
 #define SF_EFFECTS 6
 #define SF_SPRITES 64
 #define SF_PATTERNS 704

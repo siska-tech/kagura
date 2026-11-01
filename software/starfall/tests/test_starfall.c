@@ -65,7 +65,7 @@ static void regressions(unsigned height) {
     for(unsigned i=0;i<32;i++) { a.history_x[i]=a.x;a.history_y[i]=a.y; }
     a.history_y[24]+=8*256;a.history_y[16]-=8*256;
     for(unsigned i=0;i<SF_ENEMIES;i++)a.enemies[i]=(SfEnemy){200*256,a.y,80,0,10,SF_SCOUT,0,true,false};
-    for(unsigned i=0;i<SF_HOSTILES;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
+    for(unsigned i=0;i<3;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
     a.beam=(SfBeam){a.x,a.y,0,0,64,true};
     for(unsigned i=0;i<2;i++)a.option_beams[i]=a.beam;
     sf_laser_fit(&a);assert(a.beam.length==32 && a.option_beams[0].length==16 && a.option_beams[1].length==16);
@@ -183,7 +183,7 @@ static void checks(unsigned height) {
     a.history_y[24]+=8*256;a.history_y[16]-=8*256;
     for(unsigned i=0;i<SF_SHOTS;i++)a.shots[i]=(SfShot){a.x,a.y,true};
     for(unsigned i=0;i<SF_ENEMIES;i++)a.enemies[i]=(SfEnemy){a.x,a.y,80,0,2,SF_SCOUT,0,true,false};
-    for(unsigned i=0;i<SF_HOSTILES;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
+    for(unsigned i=0;i<3;i++)a.hostile[i]=(SfHostile){a.x,a.y,0,0,true};
     sf_explode(&a,80,80);assert(sf_render(&a,&frame));assert(frame.peak_line==16 && frame.dropped_effects==1);
     for(unsigned i=0;i<16;i++)assert(frame.oam[i*8+3]&4);
     for(unsigned i=0;i<SF_SHOTS;i++)a.shots[i].active=false;

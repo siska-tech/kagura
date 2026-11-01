@@ -30,6 +30,16 @@ int main(void) {
         }
         sf_boss_step(&g);assert(g.hostile[0].active && g.enemies[0].y==held_y);
         g=saved;
+        for(unsigned phase=1;phase<=3;phase++) {
+            g=saved;g.boss.hp=phase==1?100:phase==2?66:33;
+            unsigned period=phase==1?72:phase==2?56:40;
+            g.boss.age=(uint16_t)(period*3+15);
+            for(unsigned i=0;i<SF_HOSTILES;i++)g.hostile[i].active=false;
+            sf_boss_step(&g);unsigned bullets=0;
+            for(unsigned i=0;i<SF_HOSTILES;i++)bullets+=g.hostile[i].active;
+            assert(bullets==(phase==1?3:5));assert(sf_render(&g,&f) && f.peak_line<=16);
+        }
+        g=saved;
         int x=g.enemies[0].x/256,y=g.enemies[0].y/256;
         assert(!sf_boss_hit(&g,x,y,4,4,100));assert(g.boss.hp==100);
         assert(sf_boss_hit(&g,x+36,y+2,8,8,12) && !g.boss.parts[0] && g.boss.parts[1]==12);
