@@ -172,4 +172,50 @@ USB応答が停止した。通常のCtrl+Cも受信できず、対象deviceのWi
 
 Pico 2/2 W、UART/HID、物理電源断からの再投入は未検証。
 glyph cache・複数damage領域・dirty gap結合は次のPhase 2候補で、Phase 3へは進んでいない。
-複数damage領域は後続の[damage rectangle記録](kagura-ui-damage.md)で実装した（PC検証のみ）。
+複数damage領域は後続の[damage rectangle記録](kagura-ui-damage.md)で実装し、RP2040で比較した（既定は1矩形）。
+
+## 最終UF2の1時間soak（2026-11-02）
+
+上記「最終binary自体の1時間soakは未実施」を、同じtoolで実施した。
+
+### firmwareの識別
+
+対象Picoで、XIP Flashの`0x10000000..0x10068300`（426752 B）をdevice上でSHA256した。
+この範囲は読取りのみで、書込みはしていない。
+結果は`33f2ac135e49abd9dc47c92917029035e204d146c5e511766692e3376a2ea062`で、
+最終UF2（`9ebfa459...`）のpayloadを同じ範囲で連結したSHA256と一致した。
+実ロードされているFPGA bitstreamのhashは、今回も未確認。
+
+### 結果
+
+`tools/kagura-ui-soak.py --samples 32 --seconds 3600`を実行した。
+最終UF2のfrozen SDK/UIをそのまま使い、sourceの送信やfirmwareの変更はしていない。
+
+- 結果: [全結果JSON](kagura-ui-logs/phase2-final-hour.json)、[回収log](kagura-ui-logs/phase2-final-hour.txt)
+- 時刻: 開始17:15:34 UTC、USBを閉じた時刻17:15:36 UTC、回収終了18:16:07 UTC
+- 計測値: **3601824 ms、538巡**。7 workloadそれぞれ538 group × 32 = 17216 samplesで、欠損groupはない。
+- 状態: 完了flag=True、error=None、console paused=False / attached=True。
+- heap: 各巡GC後のfree（first/last/min/max）はすべて137664 B。開始140544 B、終了137760 B。
+  これは計測用UF2での前回（同じ値）と一致する。allocation回数・自動GC回数は未取得。
+- 転送: 静止の17216 samplesは転送0 tiles / 0 B。
+- 各巡のframe p50範囲（µs、32 samplesごとのpercentileの範囲で、全期間のpercentileではない）:
+
+| workload | p50範囲 | p99範囲 |
+| --- | --- | --- |
+| label | 16744〜16882 | 17039〜17340 |
+| focus | 40160〜40481 | 44048〜47136 |
+| scroll | 23552〜23713 | 24743〜34060 |
+| move | 12748〜13452 | 13542〜16054 |
+| screen | 50800〜52845 | 84580〜95243 |
+
+Buttonは押下回数とともに文字数が増えるため、時間の範囲が広い（p50 32209〜42400）。
+
+開始中、Windowsのsleepを防ぐため、実行processだけが`SetThreadExecutionState`を要求した。
+OSの電源設定は変更しておらず、要求はprocess終了で解除される。
+
+![最終UF2の1時間soak中と終了後のHDMI](images/kagura-ui-phase2-final-soak-hdmi.png)
+
+UGREEN 15390で1分ごとに取得したHDMIのうち3枚と、終了後のconsole復帰（右下）。
+紺一色はscreen workloadの別Screen。描画途中の画面が混ざるのは、pattern RAM更新がatomicでないという既知の仕様による。
+
+物理電源断からの再投入、Pico 2/2 W、UART/HIDは未検証のまま。
