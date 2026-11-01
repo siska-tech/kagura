@@ -46,6 +46,9 @@ files "framebuffer reference" "pico micropython micropython_firmware" software/m
 files "register model" "pico micropython" software/micropython/tests/test_driver.py
 files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
 files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
+files "KAGURA-UI frozen core" "micropython micropython_firmware" software/micropython/kagura/ui/app.py
+files "KAGURA-UI tools and tests" "micropython" tools/measure-kagura-ui.py tools/render-kagura-ui.py \
+    software/micropython/tests/test_ui.py software/micropython/tests/ui_runtime.py
 files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
     software/micropython/examples/shooter.py software/micropython/examples/star_runner_assets/bgm.pcm
 files "STAR RUNNER hardware runner" "" tools/star-runner-device.ps1
