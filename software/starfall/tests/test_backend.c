@@ -11,6 +11,7 @@ static uint64_t clock_us;
 static uint8_t map_image[4096];
 static uint32_t vram_addr,view_tick;
 static unsigned column_writes;
+static unsigned audio_writes,audio_writes_at_blank,audio_writes_at_commit;
 static uint8_t device_height=240;
 kh_status kh_set_inc(uint16_t inc) { assert(inc==128);return KH_OK; }
 kh_status kh_set_vram_addr(uint32_t addr) { vram_addr=addr;return KH_OK; }
@@ -34,7 +35,7 @@ kh_status kh_read(uint8_t r,bool inc,uint8_t *p,size_t n) {
     memcpy(p,id,n);return KH_OK;
 }
 kh_status kh_wait_status(uint8_t mask,uint8_t value,uint32_t t) {
-    (void)t;if(mask==KAGURA_STATUS_VBLANK_LIVE) { assert(value==mask);blank_waits++; }return KH_OK;
+    (void)t;if(mask==KAGURA_STATUS_VBLANK_LIVE) { assert(value==mask);blank_waits++;audio_writes_at_blank=audio_writes; }return KH_OK;
 }
 kh_status kh_ext_read(uint8_t r,uint8_t *v) {
     switch(r) {
@@ -48,7 +49,7 @@ kh_status kh_ext_read(uint8_t r,uint8_t *v) {
 }
 kh_status kh_write_reg(uint8_t r,uint8_t v) {
     if(r==KAGURA_REG_DISPLAY_CTRL)enabled=v!=0;
-    else { assert(r==KAGURA_REG_COMMAND && v==KAGURA_CMD_COMMIT);commits++;pending=true; }
+    else { assert(r==KAGURA_REG_COMMAND && v==KAGURA_CMD_COMMIT);commits++;pending=true;audio_writes_at_commit=audio_writes; }
     return KH_OK;
 }
 kh_status kh_read_reg(uint8_t r,uint8_t *v) {
@@ -63,7 +64,7 @@ kh_status kh_ext_write(uint8_t r,uint8_t v) {
     return KH_OK;
 }
 kh_status kh_commit(uint32_t t) { (void)t;commits++;return KH_OK; }
-kh_status kh_audio_write(uint8_t r,uint8_t v) { audio[r]=v;return KH_OK; }
+kh_status kh_audio_write(uint8_t r,uint8_t v) { if(enabled)assert(pending);audio[r]=v;audio_writes++;return KH_OK; }
 kh_status kh_audio_commit(uint32_t t) {
     (void)t;audio_commits++;
     for(unsigned ch=0;ch<6;ch++)assert(!(audio[KAGURA_AUDIO_INDEX(ch,KAGURA_AUDIO_STEP_H)]&128));
@@ -102,13 +103,14 @@ int main(void) {
     assert(sf_blank_overruns==0 && sleeps==3 && idles==3);
     assert(audio_commits>2);
     for(unsigned tick=8;tick<=4000;tick+=8) {
-        g.stage_tick=view_tick=tick;g.scroll=(uint16_t)(tick&511);g.sound=0;
+        g.stage_frame=g.stage_tick=view_tick=tick;g.scroll=(uint16_t)(tick&511);g.sound=0;
         if(tick==8) {
             fail_write=true;unsigned count=column_writes;
             assert(sf_backend_present(&g,&f)==KH_TIMEOUT_BUSY && column_writes==count);
             fail_write=false;
         }
         assert(sf_backend_present(&g,&f)==KH_OK);
+        assert(audio_writes_at_commit==audio_writes_at_blank); /* submit video before audio */
         for(unsigned i=0;i<=40;i++) {
             unsigned world=tick/8+i;uint8_t expected[32];sf_make_column(expected,h,world);
             for(unsigned row=0;row<32;row++) {

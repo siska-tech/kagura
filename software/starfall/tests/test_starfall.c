@@ -7,6 +7,31 @@ static SfGame a,b;
 static SfFrame frame;
 static void fresh(unsigned height) { sf_init(&a,height,123);sf_start(&a);sf_begin_play(&a);a.invincible=0; }
 static void regressions(unsigned height) {
+    /* Four-member formations drop once, only after the last kill. */
+    fresh(height);a.group_remaining[0]=4;
+    for(unsigned i=0;i<4;i++) {
+        a.enemy_group[i]=1;
+        a.enemies[i]=(SfEnemy){100*256,80*256,80,0,1,SF_SCOUT,0,true,i==0};
+    }
+    for(unsigned i=0;i<4;i++) {
+        a.shots[0]=(SfShot){100*256,80*256,true};sf_collision_step(&a);
+        assert(a.pickup_active==(i==3) && !a.capsule_queue);
+    }
+    assert(a.score==900);sf_stage_defeat(&a,3);assert(!a.capsule_queue);
+    /* A fixed turret keeps the same terrain coordinate at both demo speeds. */
+    for(unsigned demo=0;demo<2;demo++) {
+        fresh(height);a.attract=demo!=0;a.event_index=6;
+        a.stage_frame=a.stage_tick=1450-(demo?2:1);
+        sf_stage_step(&a);sf_enemy_step(&a);
+        assert(a.enemies[0].active && a.enemies[0].type==SF_TURRET);
+        uint32_t anchor=a.enemy_world_x[0];int32_t turret_y=a.enemies[0].y;
+        for(unsigned t=0;t<80;t++) {
+            sf_stage_step(&a);sf_enemy_step(&a);
+            assert(a.enemies[0].x/256+(int32_t)a.stage_tick==(int32_t)anchor);
+            assert(a.enemies[0].y==turret_y);
+        }
+        int32_t x=a.enemies[0].x;sf_enemy_step(&a);assert(a.enemies[0].x==x);
+    }
     /* A real trigger starts all three independent rays on the same tick. */
     fresh(height);a.weapon=SF_LASER;a.options=2;sf_bullet_step(&a,SF_FIRE);
     assert(a.beam.active && a.option_beams[0].active && a.option_beams[1].active);
@@ -54,7 +79,7 @@ static void regressions(unsigned height) {
     fresh(height);a.enemy_group[0]=3;a.group_remaining[2]=1;
     a.enemies[0]=(SfEnemy){100*256,80*256,80,0,1,SF_DIVER,0,true,true};
     a.shots[0]=(SfShot){100*256,80*256,true};sf_collision_step(&a);
-    assert(a.score==600 && a.pickup_active && a.capsule_queue==1);
+    assert(a.score==600 && a.pickup_active && !a.capsule_queue);
     fresh(height);a.y=100*256;
     a.enemies[0]=(SfEnemy){320*256,60*256,60,31,2,SF_DIVER,0,true,false};
     sf_enemy_step(&a);assert(a.enemies[0].origin_y==100 && a.enemies[0].y>60*256);
@@ -106,11 +131,11 @@ static void weapons(unsigned height) {
     fresh(height);a.missile=(SfShot){100*256,80*256,true};
     a.enemies[0]=(SfEnemy){100*256,80*256,80,0,2,SF_TURRET,0,true,false};
     sf_collision_step(&a);assert(!a.missile.active && !a.enemies[0].active);
-    /* Entire formation earns a second capsule; one escaped member cancels it. */
+    /* Entire formation earns one capsule, never a duplicate carrier reward. */
     fresh(height);a.group_remaining[0]=1;a.enemy_group[0]=1;
     a.enemies[0]=(SfEnemy){100*256,80*256,80,0,1,SF_SCOUT,0,true,true};
     a.shots[0]=(SfShot){100*256,80*256,true};sf_collision_step(&a);
-    assert(a.pickup_active && a.capsule_queue==1 && a.score==600);
+    assert(a.pickup_active && !a.capsule_queue && a.score==600);
     fresh(height);a.group_remaining[0]=1;a.enemy_group[0]=1;sf_stage_lost(&a,0);
     a.enemies[0]=(SfEnemy){100*256,80*256,80,0,1,SF_SCOUT,0,true,false};
     a.shots[0]=(SfShot){100*256,80*256,true};sf_collision_step(&a);

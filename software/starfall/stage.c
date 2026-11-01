@@ -92,9 +92,10 @@ void sf_stage_step(SfGame *g) {
             g->enemies[slot]=(SfEnemy){x*256,y*256,(int16_t)y,0,
                 w->type==SF_BOSS?100:w->type==SF_TURRET?3:w->type==SF_METEOR?3:1,w->type,
                 w->type==SF_TURRET?(w->lane<128?1:0):w->formation,true,
-                g->wave_spawned==0 && sf_enemy_flying(w->type)};
+                g->wave_spawned==0 && w->formation==SF_FORM_CARRIER};
             g->enemy_flash[slot]=0;
             g->enemy_group[slot]=(uint8_t)(g->event_index+1);
+            g->enemy_world_x[slot]=g->stage_tick+(unsigned)x;
             if(++g->enemy_serial[slot]==0)g->enemy_serial[slot]++;
             if(w->type==SF_BOSS)sf_boss_begin(g,slot);
         }else g->group_failed|=(uint16_t)(1u<<g->event_index);

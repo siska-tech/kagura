@@ -8,7 +8,8 @@ static void damage(SfGame *g,unsigned j,unsigned amount) {
     if(e->hp>amount) { e->hp=(uint16_t)(e->hp-amount);g->enemy_flash[j]=6;return; }
     e->active=false;sf_explode(g,e->x/256,e->y/256);sf_sound(g,SF_SOUND_KILL);
     g->score+=e->type==SF_TURRET?300:e->type==SF_METEOR?200:100;
-    if(e->carrier)sf_drop_capsule(g,e->x,e->y);
+    // Scripted formations award exactly one capsule on complete destruction.
+    if(e->carrier && !g->enemy_group[j])sf_drop_capsule(g,e->x,e->y);
     sf_stage_defeat(g,j);
 }
 static bool hit(SfGame *g,unsigned slot,int x,int y,int w,int h,unsigned amount) {

@@ -18,6 +18,7 @@ void sf_clear_combat(SfGame *g) {
     memset(g->enemies,0,sizeof g->enemies);memset(g->hostile,0,sizeof g->hostile);
     memset(g->shots,0,sizeof g->shots);memset(g->effects,0,sizeof g->effects);
     memset(g->option_beams,0,sizeof g->option_beams);memset(&g->beam,0,sizeof g->beam);
+    memset(g->enemy_world_x,0,sizeof g->enemy_world_x);
     g->missile.active=false;g->pickup_active=false;g->capsule_queue=0;g->muzzle_mask=g->muzzle_timer=0;
     g->cooldown=g->missile_cooldown=0;
     memset(&g->boss,0,sizeof g->boss);

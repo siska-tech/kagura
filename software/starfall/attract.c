@@ -3,7 +3,10 @@
 #include "starfall.h"
 void sf_start_demo(SfGame *g) { sf_start(g);g->attract=true; }
 void sf_demo_events(SfGame *g) {
-    if(g->demo_frame>=180 && g->demo_frame<=960 && (g->demo_frame-180)%60==0)
+    // Showcase SPEED, LASER and one OPTION without stockpiling setup drops.
+    // Real carrier/formation rewards take precedence over demonstration drops.
+    if(g->demo_frame>=180 && g->demo_frame<=1800 && (g->demo_frame-180)%90==0 &&
+       !g->options && !g->pickup_active && !g->capsule_queue)
         sf_drop_capsule(g,g->x+20*256,g->y);
 }
 unsigned sf_demo_input(const SfGame *g) {
@@ -27,8 +30,7 @@ unsigned sf_demo_input(const SfGame *g) {
         if(g->y>y+2*256)input|=SF_UP;
     }
     bool equip=!g->power?g->gauge==SF_SPEED:g->weapon!=SF_LASER?g->gauge==SF_G_LASER:
-        !g->options?g->gauge==SF_OPTION:!g->missile_enabled?g->gauge==SF_MISSILE:
-        g->options<2?g->gauge==SF_OPTION:g->gauge==SF_SHIELD;
+        !g->options && g->gauge==SF_OPTION;
     if(equip && g->demo_frame%2==0)input|=SF_EQUIP;
     return input;
 }

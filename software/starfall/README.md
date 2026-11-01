@@ -5,6 +5,7 @@
 Stage 1クリア後はタイトルへ戻る。全6面/ending完成版とは扱わない。
 [拡張設計・Phase別計画](../../docs/starfall-arcade-plan.md)、
 [マイルストーンの検証・使用量・実機手順](../../docs/measurements/starfall-arcade-m1-2026-11-01.md)。
+[実機フィードバック修正・最新計測定義](../../docs/measurements/starfall-m1-feedback-2026-11-01.md)。
 
 設計・制約・以降の計画: [Phase 0設計](../../docs/starfall-design.md)。
 [Phase 1検証記録](../../docs/measurements/starfall-phase1-2026-10-31.md)。
@@ -130,6 +131,7 @@ GPIO入力とserial maskはOR合成。CPUは固定120MHz。
 `hz100=5994`なら平均59.94Hz。
 `cpu_us=平均/p95/最大`、`io_us=平均/p95/最大`、`commit_us=平均/p95/最大`で単位はus。
 p95は直近256frame、平均/最大は起動後累計。CPU/転送/COMMIT待ちを分離する。
+`io_us`は映像staging、`commit_us`はCOMMIT後の待ち・ログ・音源更新を含む。
 `wire=平均/最大`は状態poll込みのwire byte、`oam`はOAM payload平均、`map`はmap payload累計。
 `load_max`はmap scene交換の最大時間（表示停止のCOMMIT/FENCE待ち込み）。
 `stage`は1始まり、`scene`は0空中戦/1main/2climax/3warning/4boss/5撃破。

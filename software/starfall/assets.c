@@ -31,6 +31,7 @@ static const uint8_t letters[26][7]={
 };
 void sf_make_patterns(uint8_t *p) {
     memset(p,0,SF_PATTERNS*32);
+    for(unsigned x=2;x<6;x++)pixel(p,64+'-'-32,x,3,1);
     for(unsigned y=0;y<16;y++)for(unsigned x=0;x<16;x++) {
         unsigned c=0;
         if(x<14 && y>1 && y<14)c=x==0 || y==2?3:11;

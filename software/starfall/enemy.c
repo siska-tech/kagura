@@ -26,7 +26,10 @@ void sf_enemy_step(SfGame *g) {
             break;
         case SF_WAVE:e->x-=512;e->y=(e->origin_y+wave((e->phase&7)==SF_FORM_ARC?e->age/2:e->age/3))*256;break;
         case SF_METEOR:e->x-=384;e->y=(e->origin_y+wave(e->age/5)/4)*256;break;
-        case SF_TURRET:e->x-=256;if(e->age%80==40)fire(g,e);break;
+        case SF_TURRET:
+            e->x=((int32_t)g->enemy_world_x[i]-(int32_t)g->stage_tick)*256;
+            if(e->age%80==40)fire(g,e);
+            break;
         case SF_DIVER:
             e->x-=e->age<32?512:896;
             if(e->age==32)e->origin_y=(int16_t)(g->y/256);

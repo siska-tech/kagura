@@ -18,13 +18,17 @@ static uint8_t previous_fade;
 static void (*idle_callback)(void);
 void sf_backend_set_idle(void (*callback)(void)) { idle_callback=callback; }
 /* Pace status reads instead of saturating SPI during the 16ms COMMIT wait. */
-static kh_status commit(void) {
+static kh_status commit(const SfGame *g) {
     uint64_t start=time_us_64();
     TRY(kh_write_reg(KAGURA_REG_COMMAND,KAGURA_CMD_COMMIT));
     TRY(kh_check_errors());
     /* Logging/sorting runs only after the next frame has been submitted.
      * It cannot consume the VBlank needed for that frame's OAM staging. */
     if(idle_callback)idle_callback();
+    /* Submit video first. AUDIO_COMMIT can queue behind it and wait for the
+     * synth without delaying this frame's video COMMIT admission. Logging
+     * precedes that wait so it does not run in the following frame's blank. */
+    TRY(sf_audio_update(g));
     for(;;) {
         uint8_t status;TRY(kh_read_reg(KAGURA_REG_STATUS,&status));
         if(!(status&KAGURA_STATUS_COMMIT_BUSY))break;
@@ -132,10 +136,9 @@ kh_status sf_backend_present(const SfGame *g,const SfFrame *f) {
     }
     unsigned fade=title?g->state_age/4:15;if(fade>15)fade=15;
     if(fade!=previous_fade) { uint8_t palette[32];sf_title_palette(g,palette);TRY(kh_vram_write(KAGURA_VRAM_PALETTE_BASE+128,palette,32)); }
-    TRY(sf_audio_update(g));
     uint8_t status;TRY(kh_read_reg(KAGURA_REG_STATUS,&status));
     if(!(status&KAGURA_STATUS_VBLANK_LIVE))sf_blank_overruns++;
-    sf_transfer_us=(uint32_t)(time_us_64()-start);TRY(commit());
+    sf_transfer_us=(uint32_t)(time_us_64()-start);TRY(commit(g));
     memcpy(previous,f->oam,sizeof previous);previous_scroll=(uint16_t)scroll;previous_sky=sky;
     previous_tick=g->stage_tick;raster_active=use_raster;title_map=title;previous_fade=(uint8_t)fade;return kh_check_errors();
 }

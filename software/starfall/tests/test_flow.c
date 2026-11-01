@@ -15,6 +15,7 @@ int main(void) {
         for(unsigned t=0;t<SF_DEMO_TICKS;t++) {
             sf_step(&a,0);sf_step(&b,0);assert(!memcmp(&a,&b,sizeof a));
             assert(sf_render(&a,&f) && f.peak_line<=16);
+            assert(a.power<=1 && a.options<=1 && !a.shield && !a.missile_enabled);
             if(a.power)features|=1;
             if(a.weapon==SF_LASER)features|=2;
             if(a.options)features|=4;
@@ -45,6 +46,8 @@ int main(void) {
         sf_init(&a,h,1);uint8_t pal[32];sf_title_palette(&a,pal);
         for(unsigned i=0;i<32;i++)assert(!pal[i]);
         a.state_age=60;sf_title_palette(&a,pal);assert(pal[2] || pal[3]);
+        assert(sf_render(&a,&f) && f.peak_line<=16);
+        assert(f.oam[63*8+4]==64+'6'-32); /* full credit on two rows within the scanline limit */
         uint8_t map[4096];sf_make_title_map(map,h);
         unsigned logo=0;for(unsigned i=0;i<2048;i++) {
             unsigned word=map[i*2]|((unsigned)map[i*2+1]<<8);assert((word&1023)<SF_PATTERNS);
@@ -53,6 +56,13 @@ int main(void) {
         printf("PASS flow height=%u title/intro/40s replay/start/reset/over/logo\n",h);
     }
     for(unsigned i=0;i<SF_STAGE_COUNT;i++)assert(sf_stage_def(i) && sf_stage_def(i)->ready==(i==0));
+    sf_init(&a,180,123);sf_start_demo(&a);a.demo_frame=360;
+    a.pickup_active=true;a.pickup_x=12345;
+    sf_demo_events(&a);assert(!a.capsule_queue && a.pickup_x==12345);
+    a.pickup_active=false;a.capsule_queue=1;
+    sf_demo_events(&a);assert(!a.pickup_active && a.capsule_queue==1);
+    a.capsule_queue=0;a.options=1;
+    sf_demo_events(&a);assert(!a.pickup_active && !a.capsule_queue);
     assert(!sf_stage_def(6));
     SfProfile p={0};assert(!sf_profile_p95(&p));
     for(unsigned i=1;i<=256;i++)sf_profile_add(&p,i);

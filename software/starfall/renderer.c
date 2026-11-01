@@ -9,7 +9,7 @@ static void sprite(uint8_t *o, int x, int y, unsigned tile, bool large) {
     o[4]=(uint8_t)tile; o[5]=(uint8_t)(((tile>>8)&3u)|((tile>>4)&64u));
 }
 static void text(SfFrame *f,unsigned slot,int y,const char *s) {
-    unsigned len=(unsigned)strlen(s);if(len>16)len=16;
+    unsigned len=(unsigned)strlen(s);if(len>SF_SPRITES-slot)len=SF_SPRITES-slot;
     int x=(320-(int)len*8)/2;
     for(unsigned i=0;i<len;i++)if(s[i]!=' ')
         sprite(f->oam+(slot+i)*8,x+(int)i*8,y,64+(unsigned char)s[i]-32,false);
@@ -40,7 +40,8 @@ static void build(const SfGame *g,SfFrame *f,bool rays) {
     if(g->state==SF_BOOT)return;
     if(g->state==SF_TITLE) {
         if((g->tick/30)%2==0)text(f,0,112,"PRESS START");
-        text(f,16,128,"1 PLAYER");text(f,32,144,"FREE PLAY");text(f,48,160,"KAGURA LAB 2026");
+        text(f,16,128,"1 PLAYER");text(f,32,144,"FREE PLAY");
+        text(f,46,160,"SISKA-TECH LAB");text(f,60,172,"2026");
         sprite(f->oam+15*8,(int)(g->state_age*2%352)-16,24,(g->tick/4)%2?300:4,true);return;
     }
     if(g->state==SF_INTRO) {
