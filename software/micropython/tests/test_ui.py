@@ -246,6 +246,40 @@ class UITests(unittest.TestCase):
         cached.glyph('日'); closed.close()
         with self.assertRaisesRegex(ValueError, 'closed'): cached.glyph('日')
 
+    def test_button_two_fill_border_matches_rect_reference(self):
+        from kagura.ui.render import Renderer
+        for width, height in ((40,16),(3,3),(2,5),(1,1),(9,2)):
+            for focused in (False, True):
+                for pressed in (False, True):
+                    button = Button('', width=width, height=height)
+                    button.focused, button.pressed = focused, pressed
+                    button.bounds = (5, 7, 5 + width, 7 + height)
+                    new, old = MockBackend(32, 32), MockBackend(32, 32)
+                    button.paint(Renderer(new), self.theme)
+                    ref = Renderer(old)  # previous drawing: face fill, then 1 px rect
+                    ref.fill_rect(5, 7, width, height, self.theme.pressed if pressed else self.theme.button)
+                    ref.rect(5, 7, width, height, self.theme.focus if focused else self.theme.disabled)
+                    self.assertEqual(new.pixels, old.pixels, (width, height, focused, pressed))
+
+    def test_label_text_size_cached_until_text_or_font_changes(self):
+        calls = []
+        original = self.theme.font.measure
+        with patch.object(self.theme.font, 'measure', side_effect=lambda t: calls.append(t) or original(t)):
+            label = Label('日本')
+            self.assertEqual(label.measure(self.theme.font), (16, 8))
+            label.measure(self.theme.font)
+            self.assertEqual(calls, ['日本'])
+            label.set_text('ABC')
+            self.assertEqual(label.measure(self.theme.font), (24, 8))
+            label.text = 'A\nB'  # direct assignment is a new object, so it is measured again
+            self.assertEqual(label.measure(self.theme.font), (8, 16))
+            self.assertEqual(calls, ['日本', 'ABC', 'A\nB'])
+            # Fixed size needs no text measurement at all.
+            self.assertEqual(Button('長い文字列', width=30, height=12).measure(self.theme.font), (30, 12))
+            self.assertEqual(len(calls), 3)
+        other = BitmapFont8(self.theme.font.source, cache=0)
+        self.assertEqual(label.measure(other), (8, 16))  # a different font is measured afresh
+
     def test_terminal_unknown_sequence_crlf_and_malformed_utf8(self):
         q, adapter = EventQueue(), TerminalInput()
         adapter.feed(b'\x1b[1;5A\r\nx\xff',q)
