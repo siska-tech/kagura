@@ -230,6 +230,7 @@ class UITests(unittest.TestCase):
             return a, b
         single = App(backend=MockBackend(),theme=self.theme,damage_limit=1)
         try:
+            self.app.damage_limit = 4
             for app in (self.app, single):
                 a, b = build(app)
                 app.backend.pixels[10*320+100] = 7  # sentinel between a and b
@@ -240,6 +241,30 @@ class UITests(unittest.TestCase):
             self.assertEqual(single.backend.pixels[10*320+100], 2)
         finally:
             single.close()
+
+    def test_opaque_root_skips_duplicate_background_fill(self):
+        fills = []
+        original = self.backend.fill_rect
+        def counted(x, y, w, h, color):
+            fills.append((x, y, w, h, color)); original(x, y, w, h, color)
+        self.backend.fill_rect = counted
+        root = Screen(color=3, width=100, height=100)
+        self.app.set_root(root); self.app.step()
+        # Inside the opaque root: only the Screen's own fill, which also clears stale pixels.
+        self.backend.pixels[10*320+10] = 7
+        del fills[:]; self.app.damage((5,5,20,20)); self.app.step()
+        self.assertEqual(fills, [(5,5,15,15,3)])
+        self.assertEqual(self.backend.pixels[10*320+10], 3)
+        # Partly outside the root: the background fill is still required.
+        self.backend.pixels[120*320+120] = 7
+        del fills[:]; self.app.damage((50,50,150,150)); self.app.step()
+        self.assertEqual(fills[0], (50,50,100,100,self.theme.background))
+        self.assertEqual(self.backend.pixels[120*320+120], self.theme.background)
+        self.assertEqual(self.backend.pixels[60*320+60], 3)
+        # Non-opaque roots keep the background fill.
+        self.app.set_root(VBox()); self.app.step()
+        del fills[:]; self.app.damage((5,5,20,20)); self.app.step()
+        self.assertEqual(fills, [(5,5,15,15,self.theme.background)])
 
     def test_damage_merge_and_overflow_rules(self):
         app = App(backend=MockBackend(),theme=self.theme,damage_limit=2)
@@ -253,6 +278,7 @@ class UITests(unittest.TestCase):
         self.assertEqual(app._damage,[(0,0,20,15),(20,15,110,110)])
         app.damage((-5,-5,1000,3))  # clipped to the screen, then absorbs both
         self.assertEqual(app._damage,[(0,0,320,110)])
+        self.assertEqual(App(backend=MockBackend()).damage_limit, 1)  # default keeps one rectangle
         for bad in (0,-1,1.5,None):
             with self.assertRaises(ValueError): App(backend=MockBackend(),damage_limit=bad)
 
@@ -265,6 +291,7 @@ class UITests(unittest.TestCase):
             root.add(ListView(['一','二','三','四'],x=150,y=120,width=64,height=16))
             app.set_root(root); app.step()
             return panels, label
+        self.app.damage_limit = 4
         apps = [self.app, App(backend=MockBackend(),theme=self.theme,damage_limit=1)]
         trees = [build(app) for app in apps]
         seed = 12345

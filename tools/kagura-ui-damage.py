@@ -5,7 +5,9 @@ run: the named Pico is soft-reset, this checkout's kagura/ui/app.py is sent as
 source over raw REPL (relative imports made absolute) and used for BOTH limits,
 so frozen-versus-RAM bytecode does not bias the comparison. The rest of the UI
 and the SDK stay frozen; the frozen kagura/ui must match this checkout except
-app.py. The HDMI console is lent to the UI and restored; FPGA ERROR_CODE is read.
+app.py and the data-only Widget/Panel.opaque attributes, which are set on older
+frozen classes and logged. The HDMI console is lent to the UI and restored;
+FPGA ERROR_CODE is read.
 summarize: offline table from a run log (also used by the PC tests).
 """
 import argparse
@@ -98,6 +100,11 @@ def run_device(args):
                 "gc.collect(); _reserve=bytearray(40000)")
             # Branch App in RAM; it shadows nothing in kagura.ui (frozen modules unchanged).
             run(app_source + "\nDamageApp=App\nassert hasattr(DamageApp,'_add_damage')\ndel App\ngc.collect()\nprint('DAMAGE_APP_LOADED',gc.mem_free())")
+            # Branch widget.py adds data-only class attributes; mirror them on older frozen
+            # UI classes (never on SDK classes) and log it.
+            run("from kagura.ui.widget import Widget as _W, Panel as _P\n"
+                "if not hasattr(_W,'opaque'):\n _W.opaque=False; _P.opaque=True; print('DAMAGE_FROZEN_ATTR opaque set')\n"
+                "assert _P.opaque and not _W.opaque")
             run(bench_source + b"\ngc.collect()\nprint('DAMAGE_BENCH_LOADED',gc.mem_free())")
             run("font=Font('/fonts/misaki8.kfnt'); del _reserve; gc.collect(); "
                 "app,scene=make(DamageApp,d,font,console=kagura_console); print('DAMAGE_APP_READY',gc.mem_free())")

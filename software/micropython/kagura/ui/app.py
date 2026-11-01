@@ -91,7 +91,7 @@ class App:
     No uasyncio dependency. An external loop can call step() at its own cadence.
     """
     def __init__(self, device=None, backend=None, console=None, exclusive=False,
-                 theme=None, input_adapter=None, queue_capacity=32, damage_limit=4):
+                 theme=None, input_adapter=None, queue_capacity=32, damage_limit=1):
         if type(damage_limit) is not int or damage_limit < 1:
             raise ValueError('damage_limit must be a positive integer')
         if backend is None:
@@ -106,7 +106,8 @@ class App:
         self.events = EventQueue(queue_capacity)
         self.focus = FocusManager(self)
         self.root = None
-        # Up to damage_limit disjoint rectangles; 1 restores the single bounding rectangle.
+        # Up to damage_limit disjoint rectangles. Default 1 (one bounding rectangle): on
+        # RP2040 each extra rectangle costs a fixed repaint pass (docs/kagura-ui-damage.md).
         self.damage_limit = damage_limit
         self._damage, self._painting = [], []
         self._layout = False
@@ -217,13 +218,19 @@ class App:
         # Swap the two fixed lists; invalidations raised while painting go to the next frame.
         self._damage, self._painting = self._painting, rects
         # Preserve damage through both paint and flush exceptions. One flush covers all rects.
+        root = self.root
+        # An opaque root (Screen/Panel) repaints every pixel it covers; skip the
+        # duplicate background fill, a fixed-cost SDK call per rectangle.
+        cover = root.bounds if root is not None and root.visible and root.opaque else None
         try:
             for rect in rects:
                 self.renderer.clip = rect
-                self.renderer.fill_rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1],
-                                        self.theme.background)
-                if self.root is not None:
-                    self.root._draw(self.renderer, self.theme)
+                if (cover is None or rect[0] < cover[0] or rect[1] < cover[1] or
+                        rect[2] > cover[2] or rect[3] > cover[3]):
+                    self.renderer.fill_rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1],
+                                            self.theme.background)
+                if root is not None:
+                    root._draw(self.renderer, self.theme)
             self.last_flush = self.backend.flush()
         except BaseException:
             for rect in rects:
