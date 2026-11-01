@@ -1,7 +1,9 @@
 # KAGURA-UI
 
-MicroPython v1.26向けGUI。公開APIは`kagura.ui`。既存SDK・RTL・ABIは変更しない。
-Phase 1の実装とRP2040での受入状況を記録する。Phase 2の追加最適化、Phase 3のエディタ機能は別開発。
+MicroPython v1.26向けGUI。公開APIは`kagura.ui`。既存SDKの描画・通信処理を再利用する。
+Phase 1の実装とRP2040での受入状況を記録する。Phase 2ではSDKの公開`glyph8()`を追加し、
+既存のViper文字kernelへ日本語bitmapも渡す。RTL・ABI・既存APIの呼出し方法は変更しない。
+Phase 3のエディタ機能は別開発。
 
 ![Widget GalleryのPC参照描画](images/kagura-ui-gallery.png)
 ![Mini StudioのPC参照描画](images/kagura-ui-studio-mock.png)
@@ -190,3 +192,20 @@ MicroPython CIへUI tests/ARM compilationとfirmware manifestを追加した。
 
 実測結果・実機受入状況は[検証記録](kagura-ui-validation.md)を参照。
 UART入力、Pico 2系、1時間以上の連続動作は未検証として分離している。
+
+## Phase 2: ビットマップ文字の描画経路
+
+Rendererは`glyph8(rows,x,y,color)`という任意のbackend高速経路を持つ。
+backendの実装は描画できたらTrue、未対応の場合はFalseを返す。
+8×8全体が現在のclip内にある場合だけ呼び、FramebufferBackendはSDKの
+`TileFramebuffer.glyph8()`へ転送する。日本語fontも内蔵ASCIIと同じViper kernelを使い、
+fontの行ごとに多数のfill_rectを呼ぶ負担を減らす。glyph cacheや追加framebufferは作らない。
+部分clip、旧SDKでのglyph8未提供、bytes/bytearray以外の行sequence、MockBackendは
+既存のclipped run描画を使う。フォントの字形、改行、重なりの復元、dirty tileの責任分担は同じ。
+
+`ui_benchmark.run(app,widgets,samples=32,cycles=2,seconds=3600,profile='glyph8')`は
+固定長sample配列を使い、指定巡数と指定秒数の両方を満たすまで動作する。
+長時間の経過判定にはms tickを使い、us tickの短い周回周期と混同しない。
+heap開始値は初回stepの遅延確保後にGCして取得する。GC回数・allocation回数は未取得。
+通常配置の再現toolは`tools/kagura-ui-standard.py`。実機試験中はUSB COMを占有する。
+比較値・実行手順・検証範囲は[Phase 2記録](kagura-ui-phase2.md)を参照。

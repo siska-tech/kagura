@@ -6,6 +6,7 @@ GC-visible heap and percentile timings. Does not infer VM allocation/GC counts.
 Call after building a Gallery, or use make(console=...) for a dedicated workload.
 """
 import gc
+import time
 from array import array
 from kagura.ui import App, Screen, Label, Button, Panel, ListView, Event, Theme, BitmapFont8
 from kagura.ui.events import now_us, elapsed
@@ -14,6 +15,10 @@ from kagura.ui.events import now_us, elapsed
 def _percentiles(values):
     ordered = sorted(values)
     return [ordered[(len(ordered)-1)*p//100] for p in (50,95,99)]
+
+
+def _now_ms():
+    return time.ticks_ms() if hasattr(time,'ticks_ms') else time.monotonic_ns()//1000000
 
 
 def make(device, font, console=None, exclusive=False):
@@ -33,18 +38,26 @@ def make(device, font, console=None, exclusive=False):
     return app, (root,label,panel,listing,other,button)
 
 
-def run(app, widgets, samples=128, cycles=1):
-    if not 2 <= samples <= 512 or cycles < 1:
-        raise ValueError('samples 2..512, cycles >=1')
+def run(app, widgets, samples=128, cycles=1, seconds=0, profile=None):
+    """Run at least cycles and seconds, with a fixed-size sample workspace.
+
+    Millisecond ticks keep hour-long runs below ticks_diff's half-period.
+    seconds is bounded to one day; automatic GC/allocation counts are unknown.
+    """
+    if (type(samples) is not int or type(cycles) is not int or type(seconds) is not int or
+            not 2 <= samples <= 512 or cycles < 1 or not 0 <= seconds <= 86400):
+        raise ValueError('samples 2..512, cycles >=1, seconds integer 0..86400')
     import json
     root,label,panel,listing,other,button = widgets
     times = array('I',[0]*samples)
     flushes = array('I',[0]*samples)
     latencies = array('I',[0]*samples)
+    app.step()
     gc.collect()
     heap_start = gc.mem_free() if hasattr(gc,'mem_free') else None
-    app.step()
-    for cycle in range(cycles):
+    started = _now_ms()
+    cycle = 0
+    while cycle < cycles or elapsed(_now_ms(),started) < seconds*1000:
         for workload in ('idle','label','button','focus','move','scroll','screen'):
             total_tiles = total_bytes = 0
             latency_n = 0
@@ -70,7 +83,7 @@ def run(app, widgets, samples=128, cycles=1):
                     latency_n += 1
                 total_tiles += stats.get('tiles',0) if stats else 0
                 total_bytes += stats.get('bytes',0) if stats else 0
-            result = dict(cycle=cycle,workload=workload,samples=samples,
+            result = dict(cycle=cycle,workload=workload,samples=samples,profile=profile,
                           frame_us_p50_p95_p99=_percentiles(times),
                           flush_us_p50_p95_p99=_percentiles(flushes),
                           synthetic_invalidate_us_p50_p95_p99=_percentiles(latencies[:latency_n]) if latency_n else None,
@@ -79,10 +92,11 @@ def run(app, widgets, samples=128, cycles=1):
             print('UI_BENCH '+json.dumps(result))
             del result
         gc.collect()
-        print('UI_HEAP '+json.dumps(dict(cycle=cycle,free=gc.mem_free() if hasattr(gc,'mem_free') else None,
+        print('UI_HEAP '+json.dumps(dict(cycle=cycle,elapsed_ms=elapsed(_now_ms(),started),free=gc.mem_free() if hasattr(gc,'mem_free') else None,
                                         gc_count=None,allocation_count=None)))
+        cycle += 1
     gc.collect()
-    print('UI_FINISH '+json.dumps(dict(heap_start=heap_start,
+    print('UI_FINISH '+json.dumps(dict(heap_start=heap_start,elapsed_ms=elapsed(_now_ms(),started),cycles=cycle,
                                       heap_end=gc.mem_free() if hasattr(gc,'mem_free') else None)))
 
 

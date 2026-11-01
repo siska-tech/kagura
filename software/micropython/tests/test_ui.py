@@ -246,6 +246,56 @@ class UITests(unittest.TestCase):
                 self.assertEqual(self.app.root.children[0].children[2].text,'Count: 0')
             if update is not None: update()
 
+    def test_benchmark_one_hour_duration_uses_millisecond_wrap(self):
+        import json
+        import ui_benchmark as benchmark
+        from contextlib import redirect_stdout
+        period = 1 << 30
+        def diff(a,b): return ((a-b+period//2)%period)-period//2
+        # One hour crosses the ms tick origin. No real sleep in this PC test.
+        clock = iter((period-10,5,3600000-10,3600000-10))
+        output = io.StringIO()
+        with patch.object(benchmark,'App',return_value=self.app):
+            app, widgets = benchmark.make(None,self.theme.font.source)
+        with patch.object(benchmark,'_now_ms',side_effect=lambda:next(clock)), \
+                patch.object(benchmark,'elapsed',side_effect=diff), redirect_stdout(output):
+            benchmark.run(app,widgets,samples=2,cycles=1,seconds=3600,profile='test')
+        lines = output.getvalue().splitlines()
+        finish = json.loads(lines[-1].split(' ',1)[1])
+        self.assertEqual((finish['cycles'],finish['elapsed_ms']),(1,3600000))
+        self.assertEqual(sum(line.startswith('UI_BENCH ') for line in lines),7)
+        for seconds in (-1,86401,0.5):
+            with self.assertRaises(ValueError): benchmark.run(app,widgets,seconds=seconds)
+        for params in (dict(samples=2.5),dict(cycles=1.5)):
+            with self.assertRaises(ValueError): benchmark.run(app,widgets,**params)
+
+
+class MeasurementTests(unittest.TestCase):
+    def test_summary_preserves_percentile_scope_and_detects_incomplete_run(self):
+        import importlib.util
+        import json
+        spec = importlib.util.spec_from_file_location('ui_summary',ROOT/'tools/summarize-kagura-ui.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        lines = []
+        for cycle,median,free in ((0,10,100),(1,30,84)):
+            value = dict(profile='glyph8',workload='label',cycle=cycle,samples=32,
+                         tiles=2,pattern_payload_bytes=64,frame_us_p50_p95_p99=[median,40,50],
+                         flush_us_p50_p95_p99=[2,3,4])
+            lines.append('UI_BENCH '+json.dumps(value)+'\n')
+            lines.append('UI_HEAP '+json.dumps(dict(cycle=cycle,free=free,elapsed_ms=cycle*1000))+'\n')
+        summary = module.summarize(iter(lines+['UI_BENCH {']))
+        profile = summary['profiles']['glyph8']
+        label = profile['workloads']['label']
+        self.assertEqual(label['frame_us_percentile_ranges'],[[10,30],[40,40],[50,50]])
+        self.assertEqual((label['samples'],label['tiles'],label['pattern_payload_bytes']),(64,4,128))
+        self.assertEqual((profile['heap']['first_free'],profile['heap']['last_free']),(100,84))
+        self.assertIsNone(profile['finish'])
+        self.assertFalse(summary['console_restored'])
+        with self.assertRaises(ValueError): module.summarize(['UI_BENCH {\n'])
+        lines += ['UI_FINISH {"elapsed_ms": 3600000}\n','STANDARD_RESTORED False True\n']
+        self.assertTrue(module.summarize(lines)['console_restored'])
+
 
 class SDKTests(unittest.TestCase):
     def setUp(self):
@@ -272,6 +322,42 @@ class SDKTests(unittest.TestCase):
             for app in (reference, self.app):
                 app.root.children[0].set_text('123\n日本語'); app.step()
             self.assertEqual(decode(self.app.backend.fb.buffer), reference.backend.pixels)
+
+    def test_native_glyph_path_matches_reference_and_respects_partial_clip(self):
+        from kagura import framebuffer as F
+        from viper_emulator import load
+        reference = App(backend=MockBackend(),theme=self.theme)
+        try:
+            with patch.object(F, '_viper', load()):
+                self.app.start()
+                for x,y,width,height in ((0,0,16,16),(3,5,16,16),(-3,2,16,16),
+                                          (5,7,5,12),(315,235,16,16)):
+                    for app in (reference,self.app):
+                        root = Screen(color=4)
+                        root.add(Label('日本\nA',x=x,y=y,width=width,height=height))
+                        app.set_root(root)
+                    with patch.object(self.app.backend.fb,'glyph8',wraps=self.app.backend.fb.glyph8) as draw:
+                        reference.step(); self.app.step()
+                        if width==5 or x==315:
+                            draw.assert_not_called()
+                        else:
+                            self.assertGreater(draw.call_count,0)
+                    self.assertEqual(decode(self.app.backend.fb.buffer),reference.backend.pixels)
+                self.assertGreater(self.app.backend.fb.kernel_counts[4],0)
+        finally:
+            reference.close()
+
+    def test_glyph_path_falls_back_for_older_sdk_and_sequence_fonts(self):
+        self.app.set_root(Label('日本',width=16,height=8))
+        self.app.step()
+        expected = bytes(self.app.backend.fb.buffer)
+        with patch.object(self.app.backend.fb,'glyph8',None):
+            self.app.damage((0,0,320,240)); self.app.step()
+        self.assertEqual(bytes(self.app.backend.fb.buffer),expected)
+        original = self.theme.font.glyph
+        with patch.object(self.theme.font,'glyph',side_effect=lambda ch:list(original(ch))):
+            self.app.damage((0,0,320,240)); self.app.step()
+        self.assertEqual(bytes(self.app.backend.fb.buffer),expected)
 
     def test_exclusivity_and_mode(self):
         with self.assertRaises(ValueError): App(self.device)

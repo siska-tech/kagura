@@ -55,6 +55,7 @@ stats = fb.flush()
 | `fill_rect(x,y,width,height,color)` | clipした塗りつぶし矩形 |
 | `circle(x,y,radius,color)` | 整数midpointによる外周。radius=0は1 pixel |
 | `text(value,x,y,color)` | MicroPython built-in 8×8 printable ASCII、透明背景 |
+| `glyph8(rows,x,y,color)` | 任意の8×8 bitmap。8 Bのbytes/bytearray、各行MSBが左、bit 1を指定色で描く。bit 0は保持。入力は読取りのみ、保持しない |
 | `blit(source,x,y,width=None,height=None,key=None,sx=0,sy=0)` | 画像の(sx,sy)から幅×高さを(x,y)へ転送。`key`色の画素は書かない |
 | `ellipse(x,y,rx,ry,color,fill=False)` | 中心(x,y)・半径rx/ryの輪郭／塗りつぶし。`rx==ry`は`circle()`と全画素一致 |
 | `paint(x,y,color)` | (x,y)と同色で4近傍連結の領域を塗る。完了でTrue、作業stack不足でFalse |

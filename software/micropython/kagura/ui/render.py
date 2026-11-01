@@ -39,6 +39,14 @@ class Renderer:
         draw(text, x, y, color)
         return True
 
+    def glyph8(self, rows, x, y, color):
+        """Optional complete-glyph path; partial clips use the font fallback."""
+        c = self.clip
+        if x < c[0] or y < c[1] or x + 8 > c[2] or y + 8 > c[3]:
+            return False
+        draw = getattr(self.backend, 'glyph8', None)
+        return draw(rows, x, y, color) if draw is not None else False
+
 
 class FramebufferBackend:
     """Cooperative exclusive lease. Raw SDK users must obey this ownership too.
@@ -97,6 +105,14 @@ class FramebufferBackend:
 
     def text_ascii(self, text, x, y, color):
         self.fb.text(text, x, y, color)
+
+    def glyph8(self, rows, x, y, color):
+        # A separately installed UI may run over an older matching SDK.
+        draw = getattr(self.fb, 'glyph8', None)
+        if draw is None or not isinstance(rows, (bytes, bytearray)):
+            return False
+        draw(rows, x, y, color)
+        return True
 
     def flush(self):
         return self.fb.flush()
