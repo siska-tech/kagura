@@ -149,9 +149,9 @@ class UITests(unittest.TestCase):
         self.assertEqual(self.backend.flushes, n)
         label.set_text('1'); self.backend.fail_flush = True
         with self.assertRaises(OSError): self.app.step()
-        self.assertIsNotNone(self.app._damage)
+        self.assertTrue(self.app._damage)
         self.backend.fail_flush = False; self.app.step()
-        self.assertIsNone(self.app._damage)
+        self.assertEqual(self.app._damage, [])
         self.assertEqual(self.backend.flushes, n + 1)
 
     def test_list_scroll_and_screen_switch(self):
@@ -177,7 +177,7 @@ class UITests(unittest.TestCase):
         self.app.set_root(Button('fail',on_click=fail))
         self.app.events.post(Event('enter'))
         with self.assertRaisesRegex(RuntimeError,'callback'): self.app.step()
-        self.assertIsNotNone(self.app._damage)
+        self.assertTrue(self.app._damage)
 
     def test_ascii_fallback_and_missing_glyph(self):
         from viper_emulator import MonoFont
@@ -218,8 +218,80 @@ class UITests(unittest.TestCase):
         root = Screen()
         root.add(Animated(width=16,height=16))
         self.app.set_root(root); self.app.step()
-        self.assertEqual(self.app._damage,(0,0,16,16))
-        self.app.step(); self.assertIsNotNone(self.app._damage)
+        self.assertEqual(self.app._damage,[(0,0,16,16)])
+        self.app.step(); self.assertTrue(self.app._damage)
+
+    def test_disjoint_damage_skips_the_gap(self):
+        def build(app):
+            root = Screen(color=2)
+            a = root.add(Panel(x=4,y=4,width=20,height=20,color=4))
+            b = root.add(Panel(x=200,y=4,width=20,height=20,color=5))
+            app.set_root(root); app.step()
+            return a, b
+        single = App(backend=MockBackend(),theme=self.theme,damage_limit=1)
+        try:
+            for app in (self.app, single):
+                a, b = build(app)
+                app.backend.pixels[10*320+100] = 7  # sentinel between a and b
+                a.invalidate(); b.invalidate()
+                self.assertEqual(len(app._damage), 1 if app is single else 2)
+                app.step()
+            self.assertEqual(self.app.backend.pixels[10*320+100], 7)
+            self.assertEqual(single.backend.pixels[10*320+100], 2)
+        finally:
+            single.close()
+
+    def test_damage_merge_and_overflow_rules(self):
+        app = App(backend=MockBackend(),theme=self.theme,damage_limit=2)
+        app.damage((0,0,10,10)); app.damage((5,5,15,15))
+        self.assertEqual(app._damage,[(0,0,15,15)])
+        app.damage((15,0,20,5))  # shares an edge
+        self.assertEqual(app._damage,[(0,0,20,15)])
+        app.damage((20,15,30,30))  # corner contact only
+        self.assertEqual(app._damage,[(0,0,20,15),(20,15,30,30)])
+        app.damage((100,100,110,110))  # overflow joins the cheaper rectangle
+        self.assertEqual(app._damage,[(0,0,20,15),(20,15,110,110)])
+        app.damage((-5,-5,1000,3))  # clipped to the screen, then absorbs both
+        self.assertEqual(app._damage,[(0,0,320,110)])
+        for bad in (0,-1,1.5,None):
+            with self.assertRaises(ValueError): App(backend=MockBackend(),damage_limit=bad)
+
+    def test_multi_rect_matches_single_rect_and_full_repaint(self):
+        def build(app):
+            root = Screen(color=2)
+            panels = [root.add(Panel(x=10+i*70,y=30,width=40,height=30,color=4+i)) for i in range(3)]
+            label = root.add(Label('0',x=8,y=8,width=64,height=8))
+            root.add(Button('A',x=8,y=100)); root.add(Button('B',x=250,y=200))
+            root.add(ListView(['一','二','三','四'],x=150,y=120,width=64,height=16))
+            app.set_root(root); app.step()
+            return panels, label
+        apps = [self.app, App(backend=MockBackend(),theme=self.theme,damage_limit=1)]
+        trees = [build(app) for app in apps]
+        seed = 12345
+        try:
+            for n in range(40):
+                seed = (seed*1103515245+12345) & 0x7fffffff
+                op, value = seed % 5, (seed >> 8) % 280
+                for app, (panels, label) in zip(apps, trees):
+                    panel = panels[value % 3]
+                    if op == 0: panel.set_bounds(value, (value*7) % 200)
+                    elif op == 1: panel.set_visible(not panel.visible)
+                    elif op == 2: label.set_text(str(value) + ('\n日本' if value & 1 else ''))
+                    elif op == 3: app.events.post(Event('tab', shift=bool(value & 1)))
+                    else: app.events.post(Event('down'))
+                    if n == 20:
+                        app.backend.fail_flush = True
+                        with self.assertRaises(OSError): app.step()
+                        self.assertTrue(app._damage)
+                        app.backend.fail_flush = False
+                    app.step()
+                    self.assertEqual(app._damage, [])
+                self.assertEqual(apps[0].backend.pixels, apps[1].backend.pixels, n)
+            expected = bytes(self.app.backend.pixels)
+            self.app.damage((0,0,320,240)); self.app.step()
+            self.assertEqual(bytes(self.app.backend.pixels), expected)
+        finally:
+            apps[1].close()
 
     def test_validation_and_outside_focus(self):
         with self.assertRaises(ValueError): Widget(width=-1)
@@ -471,13 +543,32 @@ class SDKTests(unittest.TestCase):
         self.assertLessEqual(self.app.last_flush['tiles'],2)
         self.assertEqual(self.app.last_flush['bytes'],self.app.last_flush['tiles']*32)
 
+    def test_disjoint_damage_reduces_sdk_dirty_tiles(self):
+        results = []
+        for limit in (4, 1):
+            app = App(self.device,exclusive=True,theme=self.theme,damage_limit=limit)
+            try:
+                root = Screen(color=0)
+                left = root.add(Label('0',x=8,y=8,width=16,height=8))
+                root.add(Panel(x=100,y=40,width=32,height=32,color=4))
+                right = root.add(Label('0',x=280,y=200,width=16,height=8))
+                app.set_root(root); app.step()
+                left.set_text('1'); right.set_text('1'); app.step()
+                results.append((app.last_flush['tiles'], decode(app.backend.fb.buffer)))
+            finally:
+                app.close()
+        (multi, multi_pixels), (single, single_pixels) = results
+        self.assertEqual(multi_pixels, single_pixels)
+        self.assertLessEqual(multi, 4)
+        self.assertGreater(single, multi)
+
     def test_sdk_flush_error_keeps_dirty_and_damage(self):
         self.app.set_root(Label('0')); self.app.step()
         self.app.root.set_text('1')
         with patch.object(self.device,'fence',side_effect=OSError('fence')):
             with self.assertRaises(OSError): self.app.step()
         self.assertGreater(sum(self.app.backend.fb.dirty),0)
-        self.assertIsNotNone(self.app._damage)
+        self.assertTrue(self.app._damage)
         self.app.step(); self.assertEqual(sum(self.app.backend.fb.dirty),0)
 
     def test_console_pause_restore_and_retry(self):

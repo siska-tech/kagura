@@ -37,7 +37,7 @@ try:
     app.step()
     assert False
 except OSError:
-    assert app._damage is not None
+    assert app._damage
 backend.fail_flush = False
 app.step()
 print('retry', binascii.crc32(backend.pixels) & 0xffffffff)

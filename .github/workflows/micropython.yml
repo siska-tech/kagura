@@ -55,6 +55,7 @@ jobs:
         run: |
           python3 -I software/micropython/tests/test_ui.py
           python3 -I software/micropython/tests/test_frozen_alignment.py
+          python3 -I tools/compare-ui-damage.py
       - name: KAGURA-UI CPython versus MicroPython v1.26 runtime
         run: |
           make -C build/micropython-src/mpy-cross -j4

@@ -105,7 +105,7 @@ finally:
 
 | API | 動作 |
 | --- | --- |
-| `App(device=None, backend=None, console=None, exclusive=False, theme=None, input_adapter=None, queue_capacity=32)` | 一つのUI owner。backend指定時はdevice/consoleを同時指定しない |
+| `App(device=None, backend=None, console=None, exclusive=False, theme=None, input_adapter=None, queue_capacity=32, damage_limit=4)` | 一つのUI owner。backend指定時はdevice/consoleを同時指定しない。damage_limitは正の整数 |
 | `set_root(widget)` | Screenまたは任意Widgetへ画面切替。旧rootをdetach、focus再選択、全画面をinvalidate |
 | `start()`, `step()`, `run(idle_ms=10)`, `stop()`, `close()` | stepは入力→layout→再描画→最大1回flush。runはfinallyでclose。context managerも使用可能。外部loopからstepできる |
 | `Widget(x=0,y=0,width=None,height=None,visible=True,enabled=True)` | 親相対座標。子は追加順に描画し、後の子が手前。親の矩形でclip |
@@ -135,9 +135,14 @@ Mini StudioはWidgetのpaint拡張例であり、Canvasや編集・保存機能�
 
 ## 更新・入力・メモリ
 
-UIは一つのbounding damage rectangleに集約し、SDKのdirty 1200 Bを複製しない。
+UI damageは最大`damage_limit`個（既定4）の矩形で保持し、SDKのdirty 1200 Bを複製しない。
+重なる矩形と辺を共有する矩形は結合し、角だけ接する矩形は別に保つ。上限超過時は面積増加が
+最小の矩形へ結合する。各矩形をclipとして背景から木全体を再合成し、flushはframe当たり1回。
+`damage_limit=1`は従来の単一外接矩形と同じ動作で、比較測定に使える。
+上限超過や辺共有の結合では、離れた変更の間まで再描画する場合が残る。
+奥から再合成するため重なりの残像は残さない。矩形間の境界で字形が部分clipになると
+glyph8ではなく行単位描画になる。矩形数だけtree走査が増える。
 静止時にはfocus候補も再走査しない。tree/layout/有効状態の変更時と入力配送時に再検証する。
-離れた変更の間まで再描画する場合がある。奥から再合成するため重なりの残像は残さない。
 画面が静止しているstepではflushしない。描画中の新しいinvalidateも次frameへ保持する。
 flush失敗時の再試行対象はSDK dirtyとUI damageの両方に残る。
 
