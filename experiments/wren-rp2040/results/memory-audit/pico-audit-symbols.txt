@@ -1,0 +1,1212 @@
+00000000 a MEMSET
+00000000 a POPCOUNT32
+00000000 a debug
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a use_hw_div
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000004 a BITS_FUNC_COUNT
+00000004 a CLZ32
+00000004 a MEMCPY
+00000004 a MEM_FUNC_COUNT
+00000005 a next_slot_number
+00000008 a CTZ32
+00000008 a MEMSET4
+0000000c a MEMCPY4
+0000000c a REVERSE32
+00000060 a DIV_UDIVIDEND
+00000064 a DIV_UDIVISOR
+00000070 a DIV_QUOTIENT
+00000078 a DIV_CSR
+00000800 a HeapSize
+0000c000 a StackSize
+20000000 T __logical_binary_start
+20000000 T __reset_start
+20000000 T _entry_point
+20000002 t _enter_vtable_in_r0
+2000000e t _reset_handler
+20000016 t hold_non_core0_in_bootrom
+20000022 t bss_fill_loop
+20000024 t bss_fill_test
+20000028 t platform_entry
+20000038 t data_cpy_table
+20000088 0000000c t __bi_54
+20000088 T __reset_end
+20000094 0000000c t __bi_42
+200000a0 0000000c t __bi_34
+200000ac t binary_info_header
+200000c0 T __binary_info_header_end
+200000c0 T __embedded_block_end
+20000100 T __VECTOR_TABLE
+20000100 T __vectors
+200001c0 T __default_isrs_start
+200001c0 T __unhandled_user_irq
+200001c0 T __vectors_end
+200001c0 W isr_irq0
+200001c0 W isr_irq1
+200001c0 W isr_irq10
+200001c0 W isr_irq11
+200001c0 W isr_irq12
+200001c0 W isr_irq13
+200001c0 W isr_irq14
+200001c0 W isr_irq15
+200001c0 W isr_irq16
+200001c0 W isr_irq17
+200001c0 W isr_irq18
+200001c0 W isr_irq19
+200001c0 W isr_irq2
+200001c0 W isr_irq20
+200001c0 W isr_irq21
+200001c0 W isr_irq22
+200001c0 W isr_irq23
+200001c0 W isr_irq24
+200001c0 W isr_irq25
+200001c0 W isr_irq26
+200001c0 W isr_irq27
+200001c0 W isr_irq28
+200001c0 W isr_irq29
+200001c0 W isr_irq3
+200001c0 W isr_irq30
+200001c0 W isr_irq31
+200001c0 W isr_irq4
+200001c0 W isr_irq5
+200001c0 W isr_irq6
+200001c0 W isr_irq7
+200001c0 W isr_irq8
+200001c0 W isr_irq9
+200001c6 T unhandled_user_irq_num_in_r0
+200001c8 W isr_invalid
+200001ca W isr_nmi
+200001cc W isr_hardfault
+200001ce W isr_svcall
+200001d0 W isr_pendsv
+200001d2 W isr_systick
+200001d4 T __default_isrs_end
+200001d4 00000044 T mutex_try_enter
+20000218 00000054 T mutex_enter_block_until
+2000026c 0000002e T mutex_try_enter_block_until
+2000029c 0000003c T mutex_enter_timeout_ms
+200002d8 00000028 T mutex_exit
+20000300 0000003c t reset_non_control_endpoints
+2000033c 00000070 t hw_handle_buff_status
+200003ac 000001b8 t dcd_rp2040_irq
+20000564 00000068 t prepare_ep_buffer
+200005cc 00000024 t e15_is_bulkin_ep
+200005f0 00000030 t e15_is_critical_frame_period
+20000620 0000004e t sync_ep_buffer
+2000066e 00000026 t _hw_endpoint_xfer_sync
+20000694 0000000a T hw_endpoint_reset_transfer
+200006a0 00000050 T _hw_endpoint_buffer_control_update32
+200006f0 00000078 T hw_endpoint_start_next_buffer
+20000768 0000003c T hw_endpoint_xfer_continue
+200007a4 000001b4 T dcd_event_handler
+20000958 00000008 T experiment_time_us
+20000960 00000008 T experiment_tick
+20000968 00000188 T main
+20000af0 0000003a t snapshot
+20000b2c 00000050 t bind
+20000b7c 00000034 t error_output
+20000bb0 00000034 t foreign_add
+20000be4 000001fc t tracked
+20000de0 00000030 t write_output
+20000e10 00000020 t discard.constprop.0
+20000e30 00000048 t phase.constprop.0
+20000e78 0000005c t collect.constprop.0
+20000ed4 00000350 t run.constprop.0
+20001224 000002f4 T experiment_named
+20001518 0000000a T experiment
+20001522 0000000a T rp2040_chip_version
+2000152c 00000030 T panic
+2000155c 00000018 T hw_claim_lock
+20001574 00000014 T hw_claim_unlock
+20001588 00000016 T hw_is_claimed
+2000159e 0000003a T hw_claim_or_assert
+200015d8 00000052 T hw_claim_unused_from_range
+2000162c 00000018 T next_striped_spin_lock_num
+20001644 00000020 T spin_lock_claim_unused
+20001664 0000001c T spin_locks_reset
+20001680 00000028 t set_raw_irq_handler_and_unlock
+200016a8 00000024 W runtime_init_per_core_irq_priorities
+200016cc 00000028 T irq_set_enabled
+200016f4 00000018 T irq_is_enabled
+2000170c 00000010 T irq_set_pending
+2000171c 00000010 T irq_get_vtable_handler
+2000172c 0000001c T irq_has_shared_handler
+20001748 00000040 T irq_set_exclusive_handler
+20001788 0000019c T irq_add_shared_handler
+20001924 000000a0 T irq_add_tail_to_free_list
+200019c4 00000028 T user_irq_claim_unused
+200019ec 00000010 T lock_init
+200019fc 0000001a T mutex_init
+20001a16 0000001a T recursive_mutex_init
+20001a30 0000002c W runtime_init_mutex
+20001a5c 00000014 T critical_section_init_with_lock_num
+20001a70 00000014 T critical_section_init
+20001a84 00000030 t sleep_until_callback
+20001ab4 0000007c t alarm_pool_post_alloc_init
+20001b30 00000034 W runtime_init_default_alarm_pool
+20001b64 00000024 t time_reached
+20001b88 00000278 t alarm_pool_irq_handler
+20001e00 00000008 T alarm_pool_get_default
+20001e08 000000a0 T alarm_pool_add_alarm_at_force_in_context
+20001ea8 00000038 T alarm_pool_add_alarm_at
+20001ee0 00000068 T alarm_pool_cancel_alarm
+20001f48 00000004 T alarm_pool_core_num
+20001f4c 00000098 T sleep_until
+20001fe4 00000024 T sleep_us
+20002008 00000014 T sleep_ms
+2000201c 00000094 T best_effort_wfe_or_timeout
+200020b0 00000014 T timer_hardware_alarm_claim
+200020c4 00000010 T timer_time_us_64
+200020d4 00000016 T timer_busy_wait_until
+200020ea 00000030 T timer_busy_wait_us
+2000211c 00000010 T time_us_64
+2000212c 00000014 T busy_wait_us
+20002140 00000014 T busy_wait_until
+20002154 000000a8 t clock_configure_internal
+200021fc 00000024 T clock_configure_int_divider
+20002220 0000000e T clock_configure_undivided
+20002230 0000000c T clock_get_hz
+2000223c 00000060 T set_sys_clock_pll
+2000229c 00000078 T check_sys_clock_khz
+20002314 0000009c T pll_init
+200023b0 00000014 T watchdog_update
+200023c4 00000064 T _watchdog_enable
+20002428 00000018 T watchdog_enable
+20002440 00000044 T watchdog_reboot
+20002484 00000010 T tick_start
+20002494 00000010 T rom_func_lookup
+200024a4 00000010 T rom_data_lookup
+200024b4 00000024 T rom_funcs_lookup
+200024d8 00000028 T xosc_init
+20002500 00000002 t first_per_core_initializer
+20002504 0000000c W hard_assertion_failure
+20002510 0000001c T runtime_run_initializers
+2000252c 0000002c W runtime_init_early_resets
+20002558 0000001c W runtime_init_usb_power_down
+20002574 00000020 W runtime_init_post_clock_resets
+20002594 00000014 W runtime_init_rp2040_gpio_ie_disable
+200025a8 00000008 W runtime_init_spin_locks_reset
+200025b0 000000d4 W runtime_init_clocks
+20002684 00000038 T runtime_init_per_core_install_stack_guard
+200026bc t __aeabi_bits_init
+200026cc T __wrap___aeabi_idiv
+200026cc T __wrap___aeabi_idivmod
+200026cc T div_s32s32
+200026cc T divmod_s32s32
+200026d4 T divmod_s32s32_unsafe
+20002700 T divmod_s32s32_savestate
+2000271c T __wrap___aeabi_uidiv
+2000271c T __wrap___aeabi_uidivmod
+2000271c T div_u32u32
+2000271c T divmod_u32u32
+20002724 T divmod_u32u32_unsafe
+2000274c T divmod_u32u32_savestate
+20002768 T __wrap___aeabi_ldivmod
+20002768 T div_s64s64
+20002768 T divmod_s64s64
+20002778 t divmod_s64s64_savestate
+20002798 T __wrap___aeabi_uldivmod
+20002798 T div_u64u64
+20002798 T divmod_u64u64
+200027a8 T divmod_u64u64_savestate
+200027c8 T divmod_s64s64_unsafe
+200027dc t l40_1
+200027e8 t l41_1
+200027f0 t l42_1
+20002824 t l43_1
+20002830 t l44_1
+2000283a t l45_1
+20002842 t l46_1
+2000284e t l47_1
+20002850 T divmod_u64u64_unsafe
+2000287a t udiv0
+2000289c t y64
+200028f8 t y64_x32
+200029c8 t last0
+20002a22 t y64_x48
+20002b1c t last1
+20002b2c t y64_x64
+20002b8c T push_r8_r11
+20002b98 T pop_r8_r11
+20002ba4 T __wrap___aeabi_drsub
+20002baa T __wrap___aeabi_dsub
+20002bbc T __wrap___aeabi_dadd
+20002bce T __wrap___aeabi_ddiv
+20002bda t ddiv_shim_call
+20002bec t ddiv_save_state
+20002c0a T __wrap___aeabi_dmul
+20002c0a t ddiv_dsub_nan_helper
+20002c24 T __wrap___aeabi_cdrcmple
+20002c34 T __wrap___aeabi_cdcmpeq
+20002c34 T __wrap___aeabi_cdcmple
+20002c36 t __aeabi_dfcmple_guts
+20002c90 T __wrap___aeabi_dcmpeq
+20002ca0 T __wrap___aeabi_dcmplt
+20002cac T __wrap___aeabi_dcmple
+20002cbc T __wrap___aeabi_dcmpge
+20002ccc T __wrap___aeabi_dcmpgt
+20002cd6 T __wrap___aeabi_dcmpun
+20002cf0 T __wrap___aeabi_ui2d
+20002cf0 T uint2double
+20002cf8 T __wrap___aeabi_i2d
+20002cf8 T int2double
+20002d28 T __wrap___aeabi_d2iz
+20002d28 T double2int_z
+20002d70 T __wrap___aeabi_d2uiz
+20002d70 T double2uint
+20002d70 T double2uint_z
+20002d88 T fix642double
+20002da0 T __wrap___aeabi_l2d
+20002da0 T int642double
+20002db8 T __wrap___aeabi_d2lz
+20002db8 T double2int64_z
+20002de0 T double2int64
+20002df8 T double2ufix64
+20002df8 T double2ufix64_z
+20002e10 T __wrap_sqrt
+20002e28 T sincostan_remainder
+20002e3c T __wrap_cos
+20002e68 T __wrap_sin
+20002e94 T __wrap_tan
+20002e9e t dtan_in_range
+20002eaa t dtan_shim_call
+20002ebc t dtan_save_state
+20002eda t dtan_angle_out_of_range
+20002ef0 T __wrap_atan2
+20002f08 T __wrap_exp
+20002f20 T __wrap_log
+20002f38 00000064 T __aeabi_double_init
+20002f9c 0000004c t dldexp
+20002fe8 00000058 t disoddint
+20003040 0000002c t dpow_int2
+2000306c 000000dc t drem_0
+20003148 000001bc t dpow_1
+20003304 000000d0 t dpow_0
+200033d4 00000008 T __wrap_ldexp
+200033dc 00000048 T __wrap_trunc
+20003424 00000070 T __wrap_round
+20003494 00000074 T __wrap_floor
+20003508 00000080 T __wrap_ceil
+20003588 00000058 T __wrap_asin
+200035e0 00000054 T __wrap_acos
+20003634 00000040 T __wrap_atan
+20003674 00000080 T __wrap_exp2
+200036f4 00000150 T __wrap_pow
+20003844 0000005c T __wrap_cbrt
+200038a0 00000090 T __wrap_fmod
+20003930 00000154 T __wrap_remquo
+20003a84 0000000c T __wrap_drem
+20003a90 00000008 T __wrap_remainder
+20003a98 T double_table_shim_on_use_helper
+20003ac4 T drsub_shim
+20003aca T dsub_shim
+20003ad4 T dadd_shim
+20003ad6 t da_entry
+20003aec t l8_1
+20003af8 t l8_2
+20003b06 t l8_3
+20003b1c t l9_1
+20003b28 t l9_2
+20003b36 t l9_3
+20003b48 t da_xgty0
+20003b52 t da_add
+20003b56 t da_pack
+20003b74 t da_2
+20003b80 t da_1
+20003b84 t da_4
+20003b92 t da_3
+20003ba6 t da_7
+20003bae t da_6
+20003bb4 t da_5
+20003bbe t da_0
+20003bd0 t da_xrgty
+20003bee t da_ygtx
+20003bfa t da_ygtx0
+20003c06 t da_yrgtx
+20003c24 t da_ymgtx
+20003c28 t da_xmgty
+20003c30 T dmul_shim
+20003c48 t l12_1
+20003c52 t l12_2
+20003c6a t l13_1
+20003c74 t l13_2
+20003c96 t l14_1
+20003cbc t l15_1
+20003ce2 t l16_1
+20003d10 t l17_1
+20003d5e t dm_2
+20003d64 t dm_0
+20003d7e t dm_1
+20003d8c T ddiv_shim
+20003d8e t ddiv0
+20003da4 t l20_1
+20003dae t l20_2
+20003e24 t l21_1
+20003e4e t l22_1
+20003eaa t dd_0
+20003ebc t dd_1
+20003eec t l24_1
+20003f0a t dd_2
+20003f20 t dd_5
+20003f24 t dd_3
+20003f2e t dd_4
+20003f3c t dq_2
+20003f42 t dq_0
+20003f4e t dq_3
+20003f52 t dq_4
+20003f54 t dq_1
+20003f58 T dsqrt_shim
+20003fd2 t l26_1
+20004010 t l27_1
+20004080 t drsqrtapp_minus_8
+20004088 t drsqrtapp
+200040a0 t dq_5
+200040e4 T dcordic_vec_step
+200040f2 T dcordic_rot_step
+20004168 T double2uint_shim
+2000416a T double2ufix_shim
+20004176 T double2int64_shim
+20004178 T double2fix64_shim
+20004190 T double2uint64_shim
+20004192 T double2ufix64_shim
+20004196 t d2fix
+200041ac t ret_dzero
+200041b2 W d2fix_a
+20004200 T uint2double_shim
+20004202 T ufix2double_shim
+20004208 T int2double_shim
+2000420a T fix2double_shim
+20004210 T uint642double_shim
+20004212 T ufix642double_shim
+20004218 T int642double_shim
+2000421a T fix642double_shim
+20004224 t uf2d
+20004290 T dunpacks
+200042a6 t l60_1
+200042b2 t l60_2
+200042c0 t l60_3
+200042cc T dreduce
+2000434e T dtan_shim
+2000436e T dcos_shim
+2000437e T dsin_shim
+20004394 t dsincos_internal
+200043dc t dcos_finish
+200043f8 t l72_1
+20004418 t dsin_finish
+20004434 t l73_1
+2000445c t dreddata0
+2000446c T datan2_shim
+20004580 t dtab_cc
+20004680 T dexp_shim
+2000471c T dln_shim
+200047d8 t dreddata1
+200047dc t dreddata1_plus_4
+200047e8 t dtab_exp
+200048e8 T __wrap___aeabi_lmul
+2000491c 0000005c T __aeabi_float_init
+20004978 T float_table_shim_on_use_helper
+200049a4 00000020 t check_alloc
+200049c4 00000014 T __wrap_realloc
+200049d8 00000008 T __wrap_free
+200049e0 T __aeabi_mem_init
+200049f0 T __wrap_memset
+200049fc T __wrap___aeabi_memcpy
+200049fc T __wrap_memcpy
+20004a08 00000008 t _out_buffer
+20004a10 00000002 t _out_null
+20004a12 0000007a t _out_rev
+20004a8c 000000f6 t _ntoa_format
+20004b82 00000090 t _ntoa_long
+20004c12 000000bc t _ntoa_long_long
+20004cd0 000003d0 t _etoa
+200050a0 00000320 t _ftoa
+200053c0 0000000c t _out_char
+200053cc 0000000e t _out_fct
+200053dc 00000534 t _vsnprintf
+20005910 00000028 T __wrap_sprintf
+20005938 00000020 T vfctprintf
+20005958 00000034 T weak_raw_vprintf
+2000598c 00000016 T weak_raw_printf
+200059a2 00000004 W _exit
+200059a8 0000002c W _sbrk
+200059d4 00000020 W _times
+200059f4 00000024 W _read
+20005a18 00000022 W _write
+20005a3a 00000006 W _close
+20005a40 00000006 W _lseek
+20005a46 00000006 W _fstat
+20005a4c 0000000c W _isatty
+20005a58 00000006 T exit
+20005a60 00000034 W __assert_func
+20005a94 00000028 T runtime_init
+20005abc 0000000e t stdio_out_chars_no_crlf
+20005acc 00000080 t stdio_out_chars_crlf
+20005b4c 00000038 t stdio_stack_buffer_flush.part.0
+20005b84 0000001e t stdio_buffered_printer
+20005ba4 0000002c T stdout_serialize_begin
+20005bd0 00000010 T stdout_serialize_end
+20005be0 00000080 T stdio_put_string
+20005c60 00000064 T stdio_get_until
+20005cc4 00000030 T stdio_set_driver_enabled
+20005cf4 0000001c T stdio_flush
+20005d10 00000008 T stdio_init_all
+20005d18 00000038 T stdio_getchar_timeout_us
+20005d50 00000018 T __wrap_putchar
+20005d50 00000018 T stdio_putchar
+20005d68 0000001e T __wrap_puts
+20005d68 0000001e T stdio_puts
+20005d88 00000044 T __wrap_vprintf
+20005d88 00000044 T stdio_vprintf
+20005dcc 00000016 T __wrap_printf
+20005dcc 00000016 T stdio_printf
+20005de4 00000014 T stdio_usb_set_chars_available_callback
+20005df8 00000010 t usb_irq
+20005e08 00000064 t timer_task
+20005e6c 0000004c t stdio_usb_out_flush
+20005eb8 000000c4 t low_priority_worker_irq
+20005f7c 000000e0 T stdio_usb_init
+2000605c 0000000a T stdio_usb_connected
+20006068 00000088 T stdio_usb_in_chars
+200060f0 000000e8 t stdio_usb_out_chars
+200061d8 00000008 T tud_descriptor_device_cb
+200061e0 00000008 T tud_descriptor_configuration_cb
+200061e8 00000068 T tud_descriptor_string_cb
+20006250 00000014 t _retrieve_unique_id_on_boot
+20006264 0000003c T pico_get_unique_board_id_string
+200062a0 0000008c t hw_endpoint_init
+2000632c 00000030 t hw_endpoint_alloc.isra.0
+2000635c 00000068 T dcd_init
+200063c4 0000000c T dcd_int_enable
+200063d0 00000014 T dcd_set_address
+200063e4 0000001c T dcd_sof_enable
+20006400 00000018 T dcd_edpt0_status_complete
+20006418 00000060 T dcd_edpt_open
+20006478 00000008 T dcd_edpt_close_all
+20006480 00000024 T dcd_edpt_xfer
+200064a4 00000038 T dcd_edpt_stall
+200064dc 0000002c T dcd_edpt_clear_stall
+20006508 00000040 T rp2040_usb_init
+20006548 0000003c T hw_endpoint_xfer_start
+20006584 00000004 W tud_vendor_control_xfer_cb
+20006588 0000001a t invoke_class_control
+200065a4 00000070 t configuration_reset
+20006614 00000002 W tud_event_hook_cb
+20006616 00000002 W tud_sof_cb
+20006618 00000004 W tud_descriptor_bos_cb
+2000661c 00000004 W tud_descriptor_device_qualifier_cb
+20006620 00000004 W tud_descriptor_other_speed_configuration_cb
+20006624 00000002 W tud_mount_cb
+20006626 00000002 W tud_umount_cb
+20006628 00000002 W tud_suspend_cb
+2000662a 00000002 W tud_resume_cb
+2000662c 00000010 T tud_mounted
+2000663c 00000010 T tud_suspended
+2000664c 000000d4 T tud_rhport_init
+20006720 00000034 T usbd_edpt_open
+20006754 0000004c T usbd_open_edpt_pair
+200067a0 00000024 T usbd_edpt_claim
+200067c4 00000024 T usbd_edpt_release
+200067e8 00000048 T usbd_edpt_xfer
+20006830 00000038 T usbd_edpt_stall
+20006868 00000038 T usbd_edpt_clear_stall
+200068a0 0000001c T usbd_edpt_stalled
+200068bc 000005ac T tud_task_ext
+20006e68 00000058 t data_stage_xact
+20006ec0 00000012 t status_stage_xact.isra.0
+20006ed4 00000024 T tud_control_status
+20006ef8 00000050 T tud_control_xfer
+20006f48 00000014 T usbd_control_reset
+20006f5c 0000000c T usbd_control_set_complete_callback
+20006f68 0000001c T usbd_control_set_request
+20006f84 00000098 T usbd_control_xfer_cb
+2000701c 00000068 t _prep_out_transaction.isra.0
+20007084 0000002c T tud_cdc_n_connected
+200070b0 00000014 T tud_cdc_n_available
+200070c4 00000030 T tud_cdc_n_read
+200070f4 00000074 T tud_cdc_n_write_flush
+20007168 0000003c T tud_cdc_n_write
+200071a4 00000014 T tud_cdc_n_write_available
+200071b8 00000078 T cdcd_init
+20007230 0000002c T cdcd_deinit
+2000725c 00000044 T cdcd_reset
+200072a0 0000009c T cdcd_open
+2000733c 000000d8 T cdcd_control_xfer_cb
+20007414 000000ec T cdcd_xfer_cb
+20007500 00000018 T tud_vendor_n_write_flush
+20007518 00000068 T vendord_init
+20007580 0000001c T vendord_deinit
+2000759c 0000002c T vendord_reset
+200075c8 000000f8 T vendord_open
+200076c0 00000090 T vendord_xfer_cb
+20007750 00000048 T tusb_rhport_init
+20007798 00000050 T tu_edpt_claim
+200077e8 00000036 T tu_edpt_release
+20007820 00000060 T tu_edpt_validate
+20007880 00000026 T tu_edpt_bind_driver
+200078a6 00000060 T tu_edpt_stream_init
+20007906 00000004 T tu_edpt_stream_deinit
+2000790c 00000068 T tu_edpt_stream_write_zlp_if_needed
+20007974 00000064 T tu_edpt_stream_write_xfer
+200079d8 000000cc T tu_edpt_stream_read_xfer
+20007aa4 00000016 t advance_index
+20007aba 0000004c t _tu_fifo_peek
+20007b06 00000096 t _tu_fifo_peek_n.constprop.0
+20007b9c 00000064 T tu_fifo_config
+20007c00 00000028 T tu_fifo_count
+20007c28 0000000e T tu_fifo_empty
+20007c36 00000026 T tu_fifo_full
+20007c5c 00000028 T tu_fifo_remaining
+20007c84 00000042 T tu_fifo_read
+20007cc6 00000046 T tu_fifo_read_n
+20007d0c 00000064 T tu_fifo_write
+20007d70 00000110 T tu_fifo_write_n
+20007e80 0000003e T tu_fifo_clear
+20007ebe 00000046 T tu_fifo_set_overwritable
+20007f04 00000024 t closeUpvalues
+20007f28 00000014 t defaultReallocate
+20007f3c 00000180 t createClass
+200080bc 00000042 t runtimeError
+20008100 00000058 t getModuleVariable
+20008158 00000018 t getModule.isra.0
+20008170 0000002c T wrenInitConfiguration
+2000819c 00000078 T wrenNewVM
+20008214 000000aa T wrenCollectGarbage
+200082be 0000002e T wrenReallocate
+200082ec 00000040 T wrenFreeVM
+2000832c 0000005e t wrenCallFunction
+2000838c 00000034 T wrenFinalizeForeign
+200083c0 00000038 T wrenReleaseHandle
+200083f8 00000024 T wrenFindVariable
+2000841c 0000003e T wrenDeclareVariable
+2000845a 0000000e T wrenPushRoot
+20008468 0000004c T wrenMakeHandle
+200084b4 000000f0 T wrenMakeCallHandle
+200085a4 000000bc T wrenDefineVariable
+20008660 000000d0 t compileInModule
+20008730 00000d60 t runInterpreter
+20009490 00000032 T wrenCall
+200094c4 00000054 T wrenCompileSource
+20009518 0000003a T wrenInterpret
+20009552 00000008 T wrenPopRoot
+2000955a 0000003e T wrenEnsureSlots
+20009598 00000074 T wrenGetSlotType
+2000960c 0000000c T wrenGetSlotDouble
+20009618 00000012 T wrenGetSlotHandle
+2000962a 00000012 T wrenSetSlotDouble
+2000963c 00000012 T wrenSetSlotHandle
+20009650 0000005c T wrenGetVariable
+200096ac 00000006 T wrenGetUserData
+200096b2 00000016 t nextChar
+200096c8 00000016 t matchChar
+200096de 0000001a t makeToken
+200096f8 0000001c t twoCharToken
+20009714 0000001a t skipLineComment
+2000972e 0000003c t readHexDigit
+2000976c 00000028 t addLocal
+20009794 00000048 t addUpvalue
+200097dc 00000040 t signatureParameterList
+2000981c 00000006 T unarySignature
+20009824 000000a4 t readName
+200098c8 0000003c t resolveLocal
+20009904 0000005c t findUpvalue
+20009960 00000064 t printError
+200099c4 00000020 t lexError
+200099e4 00000058 t readHexEscape
+20009a3c 00000038 t readUnicodeEscape
+20009a74 00000160 t readString
+20009bd4 00000054 t makeNumber
+20009c28 00000070 t error
+20009c98 00000038 t patchJump
+20009cd0 00000094 t signatureToString
+20009d64 00000030 t emitByte
+20009d94 00000034 t emitOp
+20009dc8 0000000a t null
+20009dd2 00000016 t boolean
+20009de8 00000022 t emitShortArg
+20009e0a 00000014 t emitByteArg
+20009e20 00000040 t discardLocals
+20009e60 00000030 t popScope
+20009e90 0000001c t emitJump
+20009eac 000000d0 t addConstant
+20009f7c 00000014 t emitConstant
+20009f90 0000000e t literal
+20009fa0 000000f8 t declareVariable
+2000a098 00000026 t loadCoreVariable
+2000a0c0 00000090 t getByteCountForArguments
+2000a150 00000068 t endLoop
+2000a1b8 00000100 t addToAttributeGroup
+2000a2b8 0000008c t endCompiler
+2000a344 0000002e t resolveNonmodule
+2000a374 00000038 t methodSymbol
+2000a3ac 0000001e t signatureSymbol
+2000a3ca 0000001c t callMethod
+2000a3e8 00000104 t emitAttributes
+2000a4ec 00000024 t defineVariable
+2000a510 0000001a t loadLocal
+2000a52c 00000068 t copyAttributes
+2000a594 00000024 t loadVariable.isra.0
+2000a5b8 00000024 t loadThis
+2000a5dc 0000000c t peekNextChar.isra.0
+2000a5e8 00000098 t readNumber
+2000a680 0000001c t getEnclosingClass
+2000a69c 00000024 t this_
+2000a6c0 00000048 t callSignature
+2000a708 0000043c t nextToken.part.0
+2000ab44 0000002c t nextToken
+2000ab70 0000006c t parsePrecedence
+2000abdc 0000000a t expression
+2000abe6 00000032 t consume
+2000ac18 00000018 t grouping
+2000ac30 0000001c t declareNamedVariable
+2000ac4c 00000030 T infixSignature
+2000ac7c 00000018 t allowLineBeforeDot.isra.0
+2000ac94 00000018 t match.isra.0
+2000acac 00000050 t bareName.isra.0
+2000acfc 00000090 t staticField
+2000ad8c 0000006c t consumeLiteral.constprop.0
+2000adf8 000000b0 t field
+2000aea8 0000004c t maybeSetter
+2000aef4 00000034 T mixedSignature
+2000af28 00000020 t matchLine
+2000af48 00000040 t finishArgumentList
+2000af88 00000078 t subscript
+2000b000 00000030 t unaryOp
+2000b030 00000054 t conditional
+2000b084 00000024 t and_
+2000b0a8 00000024 t or_
+2000b0cc 00000044 T infixOp
+2000b110 00000038 t finishParameterList
+2000b148 00000090 T constructorSignature
+2000b1d8 0000002c T subscriptSignature
+2000b204 0000004c T namedSignature
+2000b250 00000098 t stringInterpolation
+2000b2e8 00000084 t map
+2000b36c 00000068 t list
+2000b3d4 00000150 t matchAttribute
+2000b524 000003a0 t method.isra.0
+2000b8c4 00000220 t classDefinition
+2000bae4 00000184 t definition
+2000bc68 00000074 t finishBlock
+2000bcdc 0000003c t finishBody
+2000bd18 00000330 t statement
+2000c048 00000198 t methodCall
+2000c1e0 00000074 t namedCall
+2000c254 00000090 t name
+2000c2e4 00000024 t call
+2000c308 00000058 t super_
+2000c360 000001cc T wrenCompile
+2000c52c 0000007c T wrenBindMethodCode
+2000c5a8 00000088 T wrenMarkCompiler
+2000c630 00000024 t prim_bool_not
+2000c654 00000014 t prim_class_name
+2000c668 00000020 t prim_class_supertype
+2000c688 0000000e t prim_class_attributes
+2000c698 00000020 t prim_fiber_abort
+2000c6b8 00000010 t prim_fiber_current
+2000c6c8 0000000e t prim_fiber_error
+2000c6d8 0000002c t prim_fiber_isDone
+2000c704 0000000a t prim_fiber_suspend
+2000c710 00000028 t prim_fiber_yield
+2000c738 0000002e t prim_fiber_yield1
+2000c766 00000016 t prim_fn_arity
+2000c77c 00000014 t prim_list_count
+2000c790 00000014 t prim_map_count
+2000c7a4 00000010 t prim_null_not
+2000c7b4 00000010 t prim_num_infinity
+2000c7c4 00000010 t prim_num_nan
+2000c7d4 00000014 t prim_num_pi
+2000c7e8 00000014 t prim_num_tau
+2000c7fc 00000014 t prim_num_largest
+2000c810 0000000e t prim_num_smallest
+2000c820 00000014 t prim_num_maxSafeInteger
+2000c834 00000014 t prim_num_minSafeInteger
+2000c848 00000010 t prim_num_abs
+2000c858 00000014 t prim_num_negate
+2000c86c 00000030 t prim_num_eqeq
+2000c89c 00000030 t prim_num_bangeq
+2000c8cc 0000001a t prim_num_bitwiseNot
+2000c8e8 00000048 t prim_num_isInfinity
+2000c930 00000028 t prim_num_isNan
+2000c958 00000044 t prim_num_sign
+2000c99c 00000010 t prim_object_not
+2000c9ac 0000000e t prim_range_from
+2000c9ba 0000000e t prim_range_to
+2000c9c8 00000020 t prim_range_isInclusive
+2000c9e8 0000000c t prim_range_iteratorValue
+2000c9f4 00000014 t prim_string_byteCount
+2000ca08 00000004 t prim_string_toString
+2000ca0c 00000020 t prim_system_writeString
+2000ca2c 00000018 t prim_system_gc
+2000ca44 00000020 t prim_system_clock
+2000ca64 00000014 t prim_num_toString
+2000ca78 0000007c t prim_range_toString
+2000caf4 00000024 t prim_object_toString
+2000cb18 000000d4 t prim_range_iterate
+2000cbec 0000001a t prim_range_max
+2000cc06 0000001a t prim_range_min
+2000cc20 0000006c t prim_list_swap
+2000cc8c 00000034 t prim_list_iteratorValue
+2000ccc0 00000038 t prim_list_subscriptSetter
+2000ccf8 00000034 t prim_string_byteAt
+2000cd2c 0000005c t prim_map_valueIteratorValue
+2000cd88 00000054 t prim_map_keyIteratorValue
+2000cddc 00000018 t prim_null_toString
+2000cdf4 00000018 t prim_fn_toString
+2000ce0c 00000088 t prim_map_iterate
+2000ce94 00000080 t prim_list_iterate
+2000cf14 00000070 t prim_string_iterateByte
+2000cf84 00000074 t prim_string_iterate
+2000cff8 0000001c t prim_map_clear
+2000d014 00000018 t prim_map_new
+2000d02c 0000001a t prim_list_indexOf
+2000d048 00000030 t prim_list_removeValue
+2000d078 00000034 t prim_list_removeAt
+2000d0ac 0000004c t prim_list_insert
+2000d0f8 0000001c t prim_list_clear
+2000d114 00000012 t prim_list_addCore
+2000d126 0000001c t prim_list_add
+2000d144 000000d0 t prim_list_subscript
+2000d214 00000018 t prim_list_new
+2000d22c 00000088 t prim_list_filled
+2000d2b4 00000034 t prim_string_iteratorValue
+2000d2e8 00000068 t prim_string_indexOf2
+2000d350 00000054 t prim_string_codePointAt
+2000d3a4 00000060 t prim_string_fromByte
+2000d404 00000060 t prim_string_fromCodePoint
+2000d464 0000001a t prim_num_truncate
+2000d47e 00000016 t prim_num_fraction
+2000d494 0000006c t prim_num_isInteger
+2000d500 00000014 t prim_num_exp
+2000d514 00000024 t prim_num_log2
+2000d538 00000014 t prim_num_log
+2000d54c 00000014 t prim_num_tan
+2000d560 00000014 t prim_num_sqrt
+2000d574 00000014 t prim_num_sin
+2000d588 00000014 t prim_num_round
+2000d59c 00000014 t prim_num_floor
+2000d5b0 00000014 t prim_num_cos
+2000d5c4 00000014 t prim_num_ceil
+2000d5d8 00000014 t prim_num_cbrt
+2000d5ec 00000014 t prim_num_atan
+2000d600 00000014 t prim_num_asin
+2000d614 00000014 t prim_num_acos
+2000d628 000000a0 t prim_num_fromString
+2000d6c8 00000050 t prim_fiber_new
+2000d718 00000028 t prim_object_same
+2000d740 00000028 t prim_object_bangeq
+2000d768 00000028 t prim_object_eqeq
+2000d790 0000001c t prim_object_type
+2000d7ac 0000004c t defineClass
+2000d7f8 00000074 t prim_num_clamp
+2000d86c 00000040 t prim_num_max
+2000d8ac 00000040 t prim_num_min
+2000d8ec 0000003c t prim_num_bitwiseRightShift
+2000d928 0000003c t prim_num_bitwiseLeftShift
+2000d964 00000038 t prim_num_bitwiseXor
+2000d99c 00000038 t prim_num_bitwiseOr
+2000d9d4 00000038 t prim_num_bitwiseAnd
+2000da0c 0000003c t prim_num_gte
+2000da48 0000003c t prim_num_lte
+2000da84 0000003c t prim_num_gt
+2000dac0 0000003c t prim_num_lt
+2000dafc 0000002c t prim_num_divide
+2000db28 0000002c t prim_num_multiply
+2000db54 0000002c t prim_num_plus
+2000db80 0000002c t prim_num_minus
+2000dbac 00000034 t prim_bool_toString
+2000dbe0 0000002a t prim_map_addCore
+2000dc0a 00000032 t prim_map_subscriptSetter
+2000dc3c 00000026 t prim_map_remove
+2000dc64 00000038 t prim_map_containsKey
+2000dc9c 00000038 t prim_map_subscript
+2000dcd4 0000003c t prim_string_plus
+2000dd10 00000044 t prim_string_startsWith
+2000dd54 00000048 t prim_string_endsWith
+2000dd9c 00000040 t prim_string_indexOf1
+2000dddc 00000038 t prim_string_contains
+2000de14 0000002c t prim_num_pow
+2000de40 0000002c t prim_num_atan2
+2000de6c 0000003c t prim_num_dotDotDot
+2000dea8 0000003c t prim_num_dotDot
+2000dee4 0000002c t prim_num_mod
+2000df10 00000024 t prim_fn_new
+2000df34 000000c8 t runFiber.isra.0
+2000dffc 0000001c t prim_fiber_call
+2000e018 0000001c t prim_fiber_call1
+2000e034 0000001c t prim_fiber_transfer
+2000e050 0000001c t prim_fiber_transfer1
+2000e06c 0000002c t prim_fiber_transferError
+2000e098 00000038 t prim_fiber_try
+2000e0d0 00000038 t prim_fiber_try1
+2000e108 00000060 t call_fn
+2000e168 0000000c t prim_fn_call16
+2000e174 0000000c t prim_fn_call15
+2000e180 0000000c t prim_fn_call14
+2000e18c 0000000c t prim_fn_call13
+2000e198 0000000c t prim_fn_call12
+2000e1a4 0000000c t prim_fn_call11
+2000e1b0 0000000c t prim_fn_call10
+2000e1bc 0000000c t prim_fn_call9
+2000e1c8 0000000c t prim_fn_call8
+2000e1d4 0000000c t prim_fn_call7
+2000e1e0 0000000c t prim_fn_call6
+2000e1ec 0000000c t prim_fn_call5
+2000e1f8 0000000c t prim_fn_call4
+2000e204 0000000c t prim_fn_call3
+2000e210 0000000c t prim_fn_call2
+2000e21c 0000000c t prim_fn_call1
+2000e228 0000000c t prim_fn_call0
+2000e234 00000014 t prim_class_toString
+2000e248 0000005c t prim_object_is
+2000e2a4 00000098 t prim_string_subscript
+2000e33c 00001a44 T wrenInitializeCore
+2000fd80 00000098 T wrenDebugPrintStackTrace
+2000fe18 00000030 T validateFn
+2000fe48 00000028 T validateNum
+2000fe70 00000038 T validateIntValue
+2000fea8 00000084 t validateIndexValue
+2000ff2c 00000022 T validateInt
+2000ff50 00000074 T validateKey
+2000ffc4 0000002a T validateIndex
+2000fff0 00000030 T validateString
+20010020 00000174 T calculateRange
+20010194 0000000a T wrenByteBufferInit
+2001019e 00000018 T wrenByteBufferClear
+200101b6 0000000a T wrenIntBufferInit
+200101c0 00000018 T wrenIntBufferClear
+200101d8 00000018 T wrenStringBufferClear
+200101f0 0000000a T wrenSymbolTableInit
+200101fa 00000008 T wrenSymbolTableClear
+20010202 00000036 T wrenSymbolTableFind
+20010238 0000002a T wrenBlackenSymbolTable
+20010262 0000002c T wrenUtf8EncodeNumBytes
+2001028e 0000007e T wrenUtf8Encode
+2001030c 00000064 T wrenUtf8Decode
+20010370 00000036 T wrenUtf8DecodeNumBytes
+200103a6 0000001a T wrenPowerOf2Ceil
+200103c0 00000042 T wrenByteBufferFill
+20010402 0000000a T wrenByteBufferWrite
+2001040c 00000044 T wrenIntBufferFill
+20010450 0000000a T wrenIntBufferWrite
+2001045a 00000044 T wrenStringBufferFill
+2001049e 0000000a T wrenStringBufferWrite
+200104a8 0000002e T wrenSymbolTableAdd
+200104d6 00000026 T wrenSymbolTableEnsure
+200104fc 00000052 t hashBits
+20010550 00000028 t hashString
+20010578 0000002a t allocateString
+200105a2 00000018 T wrenValueBufferClear
+200105ba 0000004c T wrenValueBufferFill
+20010606 0000000c T wrenValueBufferWrite
+20010612 00000018 T wrenMethodBufferClear
+2001062a 00000050 T wrenMethodBufferFill
+2001067c 0000004c T wrenNewSingleClass
+200106c8 00000040 T wrenBindMethod
+20010708 0000003a T wrenBindSuperclass
+20010742 0000003c T wrenNewClosure
+20010780 0000009c T wrenNewFiber
+2001081c 00000078 T wrenEnsureStack
+20010894 00000056 T wrenNewFunction
+200108ea 0000002c T wrenFunctionBindName
+20010918 00000044 T wrenNewInstance
+2001095c 0000003a T wrenNewList
+20010998 00000068 T wrenListInsert
+20010a00 00000088 T wrenListRemoveAt
+20010a88 00000026 T wrenNewMap
+20010aae 00000018 T wrenMapClear
+20010ac6 00000042 T wrenNewModule
+20010b08 00000044 T wrenNewRange
+20010b4c 00000030 T wrenNewStringLength
+20010b7c 00000018 T wrenNewString
+20010b94 00000078 T wrenNewStringFromRange
+20010c0c 00000090 T wrenNumToString
+20010c9c 00000030 T wrenStringFromCodePoint
+20010ccc 0000001c T wrenStringFromByte
+20010ce8 000000cc T wrenStringFormat
+20010db4 00000080 T wrenNewClass
+20010e34 0000003a T wrenStringCodePointAt
+20010e70 000000a4 T wrenStringFind
+20010f14 00000030 T wrenNewUpvalue
+20010f44 0000003c T wrenGrayObj
+20010f80 00000018 T wrenGrayValue
+20010f98 00000024 T wrenGrayBuffer
+20010fbc 0000020c T wrenBlackenObjects
+200111c8 000000a0 T wrenFreeObj
+20011268 00000038 T wrenGetClass
+200112a0 00000090 T wrenValuesEqual
+20011330 00000032 T wrenListIndexOf
+20011364 000000e4 t findEntry
+20011448 00000028 T wrenMapGet
+20011470 000000a0 t resizeMap
+20011510 000000ac T wrenMapRemoveKey
+200115bc 0000006a T wrenMapSet
+20011628 000000ac T modf
+200116d4 00000044 T fmax
+20011718 00000044 T fmin
+2001175c 00000068 T __fpclassifyd
+200117c4 00000012 T __gnu_thumb1_case_sqi
+200117d8 00000012 T __gnu_thumb1_case_uqi
+200117ec 00000014 T __gnu_thumb1_case_shi
+20011800 00000014 T __gnu_thumb1_case_uhi
+20011814 00000002 W __aeabi_idiv0
+20011814 00000002 W __aeabi_ldiv0
+20011818 00000018 T __aeabi_llsr
+20011818 00000018 T __lshrdi3
+20011830 00000018 T __aeabi_llsl
+20011830 00000018 T __ashldi3
+20011848 000000a6 T _calloc_r
+200118f0 00000014 T free
+20011904 000005cc T _malloc_r
+20011ed0 00000010 T __malloc_lock
+20011ee0 00000010 T __malloc_unlock
+20011ef0 00000014 T mallinfo
+20011f04 00000018 T realloc
+20011f1c 00000350 T _realloc_r
+2001226c 00000030 t sulp
+2001229c 00000fdc T _strtod_l
+20013278 0000001c T strtod
+20013294 000001a0 t _strtoll_l.isra.0
+20013434 00000018 T strtoll
+2001344c 0000013c T __sflush_r
+20013588 00000066 T _fflush_r
+200135f0 0000001c t stdio_exit_handler
+2001360c 0000003c t cleanup_stdio
+20013648 00000118 t global_stdio_init.part.0
+20013760 00000038 T __sinit
+20013798 00000010 T __sfp_lock_acquire
+200137a8 00000010 T __sfp_lock_release
+200137b8 000000b4 T _fputs_r
+2001386c 00000018 T fputs
+20013884 000002e8 T __sfvwrite_r
+20013b6c 00000044 T _fwalk_sglue
+20013bb0 00000028 T __sread
+20013bd8 00000040 T __swrite
+20013c18 0000002c T __sseek
+20013c44 0000000c T __sclose
+20013c50 0000003c T vsprintf
+20013c8c 000000f8 T __swsetup_r
+20013d84 00000046 T memcmp
+20013dcc 000000c4 T memmove
+20013e90 00000068 T strncmp
+20013ef8 0000005c T strncpy
+20013f54 00000028 T clock
+20013f7c 00000010 T __locale_mb_cur_max
+20013f8c 00000008 T _localeconv_r
+20013f94 00000024 T _close_r
+20013fb8 00000028 T _lseek_r
+20013fe0 00000028 T _read_r
+20014008 00000024 T _sbrk_r
+2001402c 0000000a T _times_r
+20014038 00000028 T _write_r
+20014060 0000000c T __errno
+2001406c 00000002 T __retarget_lock_init_recursive
+20014070 00000002 T __retarget_lock_close_recursive
+20014074 00000002 T __retarget_lock_acquire_recursive
+20014078 00000002 T __retarget_lock_release_recursive
+2001407c 00000014 T sbrk
+20014090 0000001a T sysconf
+200140ac T setjmp
+200140c4 T longjmp
+200140e0 00000084 T strcmp
+20014168 0000007c T memchr
+200141e4 0000005c T strlen
+20014240 0000000c T nan
+2001424c 000000b4 T _malloc_trim_r
+20014300 000001f0 T _free_r
+200144f0 000000ae t rshift
+200145a0 000005f4 T __gethex
+20014b94 0000002a T __match
+20014bc0 00000208 T __hexnan
+20014dc8 00000058 T __malloc_update_mallinfo
+20014e20 00000034 T _mallinfo_r
+20014e54 0000002c T __ascii_mbtowc
+20014e80 0000004e T _Balloc
+20014ed0 00000014 T _Bfree
+20014ee4 000000a4 T __multadd
+20014f88 000000b0 T __s2b
+20015038 0000005e T __hi0bits
+20015098 0000008e T __lo0bits
+20015128 00000060 T __i2b
+20015188 000001b0 T __multiply
+20015338 000000d8 T __pow5mult
+20015410 000000fc T __lshift
+2001550c 0000003a T __mcmp
+20015548 000001a8 T __mdiff
+200156f0 00000040 T __ulp
+20015730 000000b8 T __b2d
+200157e8 000000c4 T __d2b
+200158ac 00000068 T __ratio
+20015914 0000003e T __copybits
+20015954 0000004a T __any_on
+200159a0 0000001c T __ascii_wctomb
+200159bc 00000050 T _wcrtomb_r
+20015a0c 00000016 T _wcsrtombs_r
+20015a24 000023cc T _svfprintf_r
+20017df0 00000058 T __ssprint_r
+20017e48 000000cc T _fclose_r
+20017f14 000000d2 T __smakebuf_r
+20017fe8 00000028 T _fstat_r
+20018010 00000024 T _isatty_r
+20018034 00000068 T frexp
+2001809c 00000150 t quorem
+200181ec 00001110 T _dtoa_r
+200192fc 00000102 T _wcsnrtombs_l
+20019400 00000024 T _wcsnrtombs_r
+20019424 000000d0 T __ssputs_r
+2001e404 00000020 r phase_names
+2001e428 00000010 r gui_workload
+2001e438 000000a0 r workloads
+2001e4d8 00000008 R at_the_end_of_time
+2001e4e0 0000000c r __bi_84
+2001e4ec 0000000c r __bi_48
+2001e4f8 00000050 r pow10.0
+2001e548 00000002 r crlf_str.0
+2001e54a 0000000c r __bi_202.0
+2001e558 00000014 r usbd_desc_str
+2001e56c 0000004b r usbd_desc_cfg
+2001e5b7 00000012 r usbd_desc_device
+2001e5cc 00000040 r _usbd_driver
+2001e60c 00000134 r dispatchTable.0
+2001e740 00000108 r keywords
+2001e848 00000134 r stackEffects
+2001ec38 00000014 r fpinan.0
+2001ec4c 00000014 r fpi.1
+2001ec60 00000028 r tinytens
+2001ec88 00000101 R _ctype_
+2001ed8c 00000100 R __hexdig
+2001ee8c 0000000c r p05.0
+2001ee98 00000028 R __mprec_bigtens
+2001eec0 000000c8 R __mprec_tens
+2001f18c 00000010 r zeroes.0
+2001f19c 00000010 r blanks.1
+2001f1ac 00000004 r __bi_ptr84
+2001f1ac R __binary_info_start
+2001f1ac R __exidx_end
+2001f1ac R __exidx_start
+2001f1b0 00000004 r __bi_ptr54
+2001f1b4 00000004 r __bi_ptr48
+2001f1b8 00000004 r __bi_ptr42
+2001f1bc 00000004 r __bi_ptr34
+2001f1c0 00000004 r __bi_ptr202.2
+2001f1c4 R __binary_info_end
+2001f1d0 D __data_start__
+2001f1d0 A __etext
+2001f1d0 00000001 d striped_spin_lock_num
+2001f1d4 D irq_handler_chain_slots
+2001f204 D irq_handler_chain_first_slot
+2001f20e D irq_handler_chain_remove_tail
+2001f21c 00000018 d default_alarm_pool
+2001f240 D aeabi_bits_funcs
+2001f250 D aeabi_bits_funcs_end
+2001f250 D aeabi_mem_funcs
+2001f260 D aeabi_mem_funcs_end
+2001f260 00000018 D stdio_usb
+2001f278 0000001c D _usbd_qdef
+2001f294 00000001 d _usbd_rhport
+2001f298 00000500 D rules
+2001f798 00000004 D __malloc_sbrk_base
+2001f79c 00000004 D __malloc_trim_threshold
+2001f7a0 00000408 D __malloc_av_
+2001fba8 0000000c D __sglue
+2001fbb4 0000016c D __global_locale
+2001fd20 00000004 D _impure_ptr
+2001fd28 00000140 D _impure_data
+2001fe68 d __mutex_array_start
+2001fe68 00000008 d print_mutex
+2001fe70 d __mutex_array_end
+2001fe70 00000004 D __pre_init_runtime_init_early_resets
+2001fe70 d __preinit_array_start
+2001fe74 00000004 D __pre_init_runtime_init_usb_power_down
+2001fe88 00000004 D __pre_init_runtime_init_clocks
+2001fe8c 00000004 D __pre_init_runtime_init_post_clock_resets
+2001fe90 00000004 D __pre_init_runtime_init_rp2040_gpio_ie_disable
+2001fe94 00000004 D __pre_init_runtime_init_spin_locks_reset
+2001fe98 00000004 D __pre_init_runtime_init_mutex
+2001fe9c 00000004 D __pre_init_runtime_init_default_alarm_pool
+2001fea0 00000004 D __pre_init_first_per_core_initializer
+2001fea4 00000004 D __pre_init_runtime_init_per_core_irq_priorities
+2001fea8 d __init_array_start
+2001fea8 d __preinit_array_end
+2001feac B __bss_start__
+2001feac D __data_end__
+2001feac d __init_array_end
+2001feac D __tdata_end
+2001feac B __tls_base
+2001feac B __tls_end
+2001feb0 B __tbss_end
+2001feb0 000003a8 b context
+20020258 00000180 b default_alarm_pool_entries
+200203d8 00000008 b last_avail_time.1
+200203e0 00000001 B __lock___malloc_recursive_mutex
+200203e4 00000001 B __lock___sfp_recursive_mutex
+200203e8 00000028 B __malloc_current_mallinfo
+20020410 00000004 B __malloc_max_sbrked_mem
+20020414 00000004 B __malloc_max_total_mem
+20020418 00000004 B __malloc_top_pad
+2002041c 00000138 B __sf
+20020554 00000004 B __stdio_exit_handler
+20020558 00000004 b _app_driver
+2002055c 00000080 b _cdcd_epbuf
+200205dc 000000c8 b _cdcd_itf
+200206a4 00000040 b _ctrl_epbuf
+200206e4 00000014 b _ctrl_xfer
+200206f8 00000008 b _ubsd_mutexdef
+20020700 00000004 b _usbd_mutex
+20020704 00000004 b _usbd_q
+20020708 00000080 b _vendord_epbuf
+20020788 0000024c b _vendord_itf
+200209d4 00000004 b chars_available_callback
+200209d8 00000004 b chars_available_param
+200209dc 00000004 b claimed
+200209e0 00000028 b configured_freq
+20020a08 00000004 b drivers
+20020a0c 00000004 B e15_last_sof
+20020a10 00000004 B errno
+20020a14 00000004 b filter
+20020a18 00000004 b heap_end.0
+20020a1c 00000400 b hw_endpoints
+20020e1c 00000004 b lazy_vsnprintf
+20020e20 00000004 b load_value
+20020e24 00000004 b next_buffer_ptr
+20020e28 00000008 b one_shot_timer_crit_sec
+20020e30 00000010 b pools
+20020e40 00000100 B sd_table
+20020f40 00000004 V sf_clz_func
+20020f44 00000100 B sf_table
+20021044 00000004 b sleep_notifier
+20021048 00000008 b stdio_usb_mutex
+20021050 00000028 b desc_str.0
+20021078 00000001 b _app_driver_count
+20021079 00000001 b _cdcd_fifo_cfg
+2002107a 00000001 b _sof_enable
+2002107b 00000002 B _tusb_rhport_role
+2002107d 00000054 b _usbd_dev
+200210d1 000000c0 B _usbd_qdef_buf
+20021191 00000001 b _usbd_queued_setup
+20021192 00000001 b claimed
+20021193 00000001 b irq_handler_chain_free_slot_head
+20021194 00000001 b low_priority_irq_num
+20021195 00000001 b one_shot_timer_pending
+20021196 00000008 b retrieved_id
+2002119e 00000011 b usbd_serial_str
+200211af 00000001 b user_irq_claimed
+200211b0 B __bss_end__
+200211b0 B __end__
+200211b0 B end
+20034000 B __HeapLimit
+20034000 A __StackBottom
+20034000 B __StackLimit
+20034000 ? __scratch_y_end__
+20034000 A __scratch_y_source__
+20034000 ? __scratch_y_start__
+20040000 B __StackTop
+20040000 ? __scratch_x_end__
+20040000 A __scratch_x_source__
+20040000 ? __scratch_x_start__
+20041000 A __StackOneBottom
+20041000 B __StackOneTop
+d0000000 a IOPORT

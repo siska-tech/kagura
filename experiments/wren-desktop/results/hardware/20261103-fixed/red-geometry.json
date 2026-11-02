@@ -1,0 +1,20 @@
+{
+  "kind": "supplementary red geometry only, original colour test unchanged",
+  "sampling_dx": -1,
+  "sampling_dy": 0,
+  "rule": "R > G+40 and R > B+40",
+  "expected_pixels": 140,
+  "observed_pixels": 140,
+  "missing": 0,
+  "unexpected": 0,
+  "captured_outline_rgb_min": [
+    124,
+    0,
+    0
+  ],
+  "captured_outline_rgb_max": [
+    211,
+    0,
+    20
+  ]
+}

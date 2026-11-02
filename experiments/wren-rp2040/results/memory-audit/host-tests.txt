@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/build-host
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/build-host
+    Start 1: correctness
+1/1 Test #1: correctness ......................   Passed    0.40 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.44 sec

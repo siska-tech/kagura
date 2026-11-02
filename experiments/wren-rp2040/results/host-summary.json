@@ -1,0 +1,16 @@
+{
+  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "minimum_requested_budget_bytes": {
+    "hello": 129272,
+    "arithmetic": 128731,
+    "strings": 155948,
+    "collections": 131525,
+    "objects": 138887,
+    "fibers": 132114,
+    "foreign": 130788,
+    "sprite16": 135310,
+    "events": 133919,
+    "repeat_gc": 156423
+  },
+  "note": "Host x86-64 only; minimum excludes malloc and instrumentation metadata, native stack, static image; fixed GC policy. Timing includes automatic GC, excludes explicit GC."
+}

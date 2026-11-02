@@ -1,0 +1,545 @@
+BEFORE sha256=d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console=(True, True, True, 'None')
+PICOTOOL info -a
+Program Information
+ name:              MicroPython
+ version:           v1.26.0
+ features:          thread support
+                    USB REPL
+ frozen modules:    kagura/ui/theme, kagura/ui/fonts, kagura/ui/events, kagura/ui/render,
+                    kagura/ui/layout, kagura/ui/widgets, kagura/ui/widget, kagura/ui/app, kagura/ui,
+                    kagura/console, kagura/terminal, kagura/audio, kagura/image256,
+                    kagura/framebuffer_viper, kagura/framebuffer, kagura/video, kagura/device,
+                    kagura/link_viper, kagura/link, kagura/acceleration, kagura/dma_pack,
+                    kagura/transport_rp2, kagura/regs, kagura, neopixel, dht, ds18x20, onewire,
+                    uasyncio, asyncio/stream, asyncio/lock, asyncio/funcs, asyncio/event,
+                    asyncio/core, asyncio, _boot_fat, _boot, rp2
+ binary start:      0x10000000
+ binary end:        0x1006822c
+ embedded drive:    0x100a0000-0x10200000 (1408K): MicroPython flags 0x0003 rw
+
+Fixed Pin Information
+ none
+
+Build Information
+ sdk version:       2.1.1
+ pico_board:        pico
+ boot2_name:        boot2_w25q080
+ build date:        Nov  1 2026
+ build attributes:  MinSizeRel
+
+Device Information
+ type:              RP2040
+ revision:          B2
+ flash size:        2048K
+ flash id: [redacted]
+
+Metadata Blocks
+ none
+
+PICOTOOL save -a build\wren-desktop-hardware\run-20261103\before-bootsel.bin -t bin
+Saving file:          [                              ]  0%
+Saving file:          [                              ]  1%
+Saving file:          [                              ]  2%
+Saving file:          [                              ]  3%
+Saving file:          [=                             ]  4%
+Saving file:          [=                             ]  5%
+Saving file:          [==                            ]  7%
+Saving file:          [==                            ]  8%
+Saving file:          [==                            ]  9%
+Saving file:          [===                           ]  10%
+Saving file:          [===                           ]  11%
+Saving file:          [===                           ]  12%
+Saving file:          [====                          ]  14%
+Saving file:          [====                          ]  15%
+Saving file:          [====                          ]  16%
+Saving file:          [=====                         ]  17%
+Saving file:          [=====                         ]  18%
+Saving file:          [=====                         ]  19%
+Saving file:          [======                        ]  21%
+Saving file:          [======                        ]  22%
+Saving file:          [======                        ]  23%
+Saving file:          [=======                       ]  24%
+Saving file:          [=======                       ]  25%
+Saving file:          [=======                       ]  26%
+Saving file:          [========                      ]  28%
+Saving file:          [========                      ]  29%
+Saving file:          [=========                     ]  30%
+Saving file:          [=========                     ]  31%
+Saving file:          [=========                     ]  32%
+Saving file:          [=========                     ]  33%
+Saving file:          [==========                    ]  35%
+Saving file:          [==========                    ]  36%
+Saving file:          [===========                   ]  37%
+Saving file:          [===========                   ]  38%
+Saving file:          [===========                   ]  39%
+Saving file:          [============                  ]  41%
+Saving file:          [============                  ]  42%
+Saving file:          [============                  ]  43%
+Saving file:          [=============                 ]  44%
+Saving file:          [=============                 ]  45%
+Saving file:          [=============                 ]  46%
+Saving file:          [==============                ]  48%
+Saving file:          [==============                ]  49%
+Saving file:          [===============               ]  50%
+Saving file:          [===============               ]  51%
+Saving file:          [===============               ]  52%
+Saving file:          [===============               ]  53%
+Saving file:          [================              ]  55%
+Saving file:          [================              ]  56%
+Saving file:          [=================             ]  57%
+Saving file:          [=================             ]  58%
+Saving file:          [=================             ]  59%
+Saving file:          [==================            ]  60%
+Saving file:          [==================            ]  62%
+Saving file:          [==================            ]  63%
+Saving file:          [===================           ]  64%
+Saving file:          [===================           ]  65%
+Saving file:          [===================           ]  66%
+Saving file:          [====================          ]  67%
+Saving file:          [====================          ]  69%
+Saving file:          [=====================         ]  70%
+Saving file:          [=====================         ]  71%
+Saving file:          [=====================         ]  72%
+Saving file:          [=====================         ]  73%
+Saving file:          [======================        ]  75%
+Saving file:          [======================        ]  76%
+Saving file:          [=======================       ]  77%
+Saving file:          [=======================       ]  78%
+Saving file:          [=======================       ]  79%
+Saving file:          [========================      ]  80%
+Saving file:          [========================      ]  82%
+Saving file:          [========================      ]  83%
+Saving file:          [=========================     ]  84%
+Saving file:          [=========================     ]  85%
+Saving file:          [=========================     ]  86%
+Saving file:          [==========================    ]  87%
+Saving file:          [==========================    ]  89%
+Saving file:          [===========================   ]  90%
+Saving file:          [===========================   ]  91%
+Saving file:          [===========================   ]  92%
+Saving file:          [===========================   ]  93%
+Saving file:          [============================  ]  94%
+Saving file:          [============================  ]  96%
+Saving file:          [============================= ]  97%
+Saving file:          [============================= ]  98%
+Saving file:          [============================= ]  99%
+Saving file:          [==============================]  100%
+
+Wrote 2097152 bytes to build\wren-desktop-hardware\run-20261103\before-bootsel.bin
+
+PICOTOOL load build\wren-desktop-hardware\run-20261103\firmware-prefix.bin -t bin -o 0x10000000 -v
+Loading into Flash:   [                              ]  0%
+Loading into Flash:   [                              ]  2%
+Loading into Flash:   [=                             ]  5%
+Loading into Flash:   [==                            ]  7%
+Loading into Flash:   [===                           ]  10%
+Loading into Flash:   [===                           ]  13%
+Loading into Flash:   [====                          ]  15%
+Loading into Flash:   [=====                         ]  18%
+Loading into Flash:   [======                        ]  21%
+Loading into Flash:   [======                        ]  23%
+Loading into Flash:   [=======                       ]  26%
+Loading into Flash:   [========                      ]  28%
+Loading into Flash:   [=========                     ]  31%
+Loading into Flash:   [==========                    ]  34%
+Loading into Flash:   [==========                    ]  36%
+Loading into Flash:   [===========                   ]  39%
+Loading into Flash:   [============                  ]  42%
+Loading into Flash:   [=============                 ]  44%
+Loading into Flash:   [==============                ]  47%
+Loading into Flash:   [===============               ]  50%
+Loading into Flash:   [===============               ]  52%
+Loading into Flash:   [================              ]  55%
+Loading into Flash:   [=================             ]  57%
+Loading into Flash:   [==================            ]  60%
+Loading into Flash:   [==================            ]  63%
+Loading into Flash:   [===================           ]  65%
+Loading into Flash:   [====================          ]  68%
+Loading into Flash:   [=====================         ]  71%
+Loading into Flash:   [=====================         ]  73%
+Loading into Flash:   [======================        ]  76%
+Loading into Flash:   [=======================       ]  78%
+Loading into Flash:   [========================      ]  81%
+Loading into Flash:   [=========================     ]  84%
+Loading into Flash:   [=========================     ]  86%
+Loading into Flash:   [==========================    ]  89%
+Loading into Flash:   [===========================   ]  92%
+Loading into Flash:   [============================  ]  94%
+Loading into Flash:   [============================= ]  97%
+Loading into Flash:   [==============================]  100%
+
+Verifying Flash:      [                              ]  0%
+Verifying Flash:      [                              ]  2%
+Verifying Flash:      [=                             ]  5%
+Verifying Flash:      [==                            ]  7%
+Verifying Flash:      [===                           ]  10%
+Verifying Flash:      [===                           ]  13%
+Verifying Flash:      [====                          ]  15%
+Verifying Flash:      [=====                         ]  18%
+Verifying Flash:      [======                        ]  21%
+Verifying Flash:      [======                        ]  23%
+Verifying Flash:      [=======                       ]  26%
+Verifying Flash:      [========                      ]  28%
+Verifying Flash:      [=========                     ]  31%
+Verifying Flash:      [==========                    ]  34%
+Verifying Flash:      [==========                    ]  36%
+Verifying Flash:      [===========                   ]  39%
+Verifying Flash:      [============                  ]  42%
+Verifying Flash:      [=============                 ]  44%
+Verifying Flash:      [==============                ]  47%
+Verifying Flash:      [===============               ]  50%
+Verifying Flash:      [===============               ]  52%
+Verifying Flash:      [================              ]  55%
+Verifying Flash:      [=================             ]  57%
+Verifying Flash:      [==================            ]  60%
+Verifying Flash:      [==================            ]  63%
+Verifying Flash:      [===================           ]  65%
+Verifying Flash:      [====================          ]  68%
+Verifying Flash:      [=====================         ]  71%
+Verifying Flash:      [=====================         ]  73%
+Verifying Flash:      [======================        ]  76%
+Verifying Flash:      [=======================       ]  78%
+Verifying Flash:      [========================      ]  81%
+Verifying Flash:      [=========================     ]  84%
+Verifying Flash:      [=========================     ]  86%
+Verifying Flash:      [==========================    ]  89%
+Verifying Flash:      [===========================   ]  92%
+Verifying Flash:      [============================  ]  94%
+Verifying Flash:      [============================= ]  97%
+Verifying Flash:      [==============================]  100%
+
+  OK
+
+PICOTOOL save -a build\wren-desktop-hardware\run-20261103\programmed-full.bin -t bin
+Saving file:          [                              ]  0%
+Saving file:          [                              ]  1%
+Saving file:          [                              ]  2%
+Saving file:          [                              ]  3%
+Saving file:          [=                             ]  4%
+Saving file:          [=                             ]  5%
+Saving file:          [==                            ]  7%
+Saving file:          [==                            ]  8%
+Saving file:          [==                            ]  9%
+Saving file:          [===                           ]  10%
+Saving file:          [===                           ]  11%
+Saving file:          [===                           ]  12%
+Saving file:          [====                          ]  14%
+Saving file:          [====                          ]  15%
+Saving file:          [====                          ]  16%
+Saving file:          [=====                         ]  17%
+Saving file:          [=====                         ]  18%
+Saving file:          [=====                         ]  19%
+Saving file:          [======                        ]  21%
+Saving file:          [======                        ]  22%
+Saving file:          [======                        ]  23%
+Saving file:          [=======                       ]  24%
+Saving file:          [=======                       ]  25%
+Saving file:          [=======                       ]  26%
+Saving file:          [========                      ]  28%
+Saving file:          [========                      ]  29%
+Saving file:          [=========                     ]  30%
+Saving file:          [=========                     ]  31%
+Saving file:          [=========                     ]  32%
+Saving file:          [=========                     ]  33%
+Saving file:          [==========                    ]  35%
+Saving file:          [==========                    ]  36%
+Saving file:          [===========                   ]  37%
+Saving file:          [===========                   ]  38%
+Saving file:          [===========                   ]  39%
+Saving file:          [============                  ]  41%
+Saving file:          [============                  ]  42%
+Saving file:          [============                  ]  43%
+Saving file:          [=============                 ]  44%
+Saving file:          [=============                 ]  45%
+Saving file:          [=============                 ]  46%
+Saving file:          [==============                ]  48%
+Saving file:          [==============                ]  49%
+Saving file:          [===============               ]  50%
+Saving file:          [===============               ]  51%
+Saving file:          [===============               ]  52%
+Saving file:          [===============               ]  53%
+Saving file:          [================              ]  55%
+Saving file:          [================              ]  56%
+Saving file:          [=================             ]  57%
+Saving file:          [=================             ]  58%
+Saving file:          [=================             ]  59%
+Saving file:          [==================            ]  60%
+Saving file:          [==================            ]  62%
+Saving file:          [==================            ]  63%
+Saving file:          [===================           ]  64%
+Saving file:          [===================           ]  65%
+Saving file:          [===================           ]  66%
+Saving file:          [====================          ]  67%
+Saving file:          [====================          ]  69%
+Saving file:          [=====================         ]  70%
+Saving file:          [=====================         ]  71%
+Saving file:          [=====================         ]  72%
+Saving file:          [=====================         ]  73%
+Saving file:          [======================        ]  75%
+Saving file:          [======================        ]  76%
+Saving file:          [=======================       ]  77%
+Saving file:          [=======================       ]  78%
+Saving file:          [=======================       ]  79%
+Saving file:          [========================      ]  80%
+Saving file:          [========================      ]  82%
+Saving file:          [========================      ]  83%
+Saving file:          [=========================     ]  84%
+Saving file:          [=========================     ]  85%
+Saving file:          [=========================     ]  86%
+Saving file:          [==========================    ]  87%
+Saving file:          [==========================    ]  89%
+Saving file:          [===========================   ]  90%
+Saving file:          [===========================   ]  91%
+Saving file:          [===========================   ]  92%
+Saving file:          [===========================   ]  93%
+Saving file:          [============================  ]  94%
+Saving file:          [============================  ]  96%
+Saving file:          [============================= ]  97%
+Saving file:          [============================= ]  98%
+Saving file:          [============================= ]  99%
+Saving file:          [==============================]  100%
+
+Wrote 2097152 bytes to build\wren-desktop-hardware\run-20261103\programmed-full.bin
+
+PROGRAMMED_READBACK_SHA256 56bbdb5f4e4f66e0dd174ea62d185603960d0406faae25cb3ea0d329c2a76924 unchanged_tail_start=0x26000
+PICOTOOL reboot
+
+WD_BOOT watchdog=0 reset_reason=1 hz=125000000 heap_start=2000B1F4 heap_limit=2002C1F4 stack_bottom=20034000 stack_top=20040000 recovery_start=20032000 recovery_end=20034000
+WD_ABI id=4b39 abi=0.6 caps=5b height=240 patterns=1200 error=00 qspi_mhz=5 io0=2 sck=6 cs=7 busy=8 ready=9 irq=10
+こんにちは、神楽！
+WD_FRAME frame=0 expected=be72ff88 actual=be72ff88 mismatch=0 readback_us=2856991 dirty=0 ack_runs=25 ack_tiles=1000
+WD_FRAME frame=1 expected=c91b4078 actual=c91b4078 mismatch=0 readback_us=2859617 dirty=0 ack_runs=38 ack_tiles=1260
+WD_FRAME frame=2 expected=7017406d actual=7017406d mismatch=0 readback_us=2856923 dirty=0 ack_runs=44 ack_tiles=1278
+WD_FRAME frame=3 expected=e89d5ada actual=e89d5ada mismatch=0 readback_us=2860213 dirty=0 ack_runs=50 ack_tiles=1298
+WD_FRAME frame=4 expected=f07a198f actual=f07a198f mismatch=0 readback_us=2860149 dirty=0 ack_runs=56 ack_tiles=1314
+WD_FRAME frame=5 expected=abb5deb8 actual=abb5deb8 mismatch=0 readback_us=2861523 dirty=0 ack_runs=62 ack_tiles=1332
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+WD_FRAME frame=6 expected=be72ff88 actual=be72ff88 mismatch=0 readback_us=2862025 dirty=0 ack_runs=75 ack_tiles=1592
+WD_MEMORY name=visual status=0 init=74908 compile=84895 gc_live=88602 peak=91970 ledger_peak=111378 arena_peak=126476 used_peak=122796 live=0 blocks=0 allocs=4784 reallocs=5018 frees=4784 largest=8192 gc=52 foreign=17 completed=1 utf8=1 oom=0 fail_stage=0 owned=0
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+WD_MEMORY name=timed status=0 init=74908 compile=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126476 used_peak=122740 live=0 blocks=0 allocs=4806 reallocs=5020 frees=4806 largest=8192 gc=71 foreign=321 completed=20 utf8=1 oom=0 fail_stage=0 owned=0
+WD_LATENCY name=open count=20 min_us=61 max_us=125 total_us=1432
+WD_LATENCY name=rect count=101 min_us=50 max_us=130 total_us=6496
+WD_LATENCY name=event count=100 min_us=3 max_us=34 total_us=824
+WD_LATENCY name=present count=100 min_us=6265 max_us=22801 total_us=965984
+WD_LATENCY name=gc count=71 min_us=1279 max_us=1536 total_us=97049
+WD_LATENCY name=call count=20 min_us=49153 max_us=49789 total_us=985266
+WD_LATENCY name=init count=1 min_us=209036 max_us=209036 total_us=209036
+WD_LATENCY name=compile count=1 min_us=22321 max_us=22321 total_us=22321
+WD_MEMORY name=limit status=1 init=0 compile=0 gc_live=0 peak=32756 ledger_peak=40820 arena_peak=126476 used_peak=46180 live=0 blocks=0 allocs=1906 reallocs=2411 frees=1906 largest=4096 gc=0 foreign=0 completed=0 utf8=0 oom=1 fail_stage=1 owned=0
+こんにちは、神楽！
+WD_MEMORY name=owned_oom status=1 init=74908 compile=84895 gc_live=0 peak=85333 ledger_peak=102641 arena_peak=126476 used_peak=113420 live=0 blocks=0 allocs=3417 reallocs=4020 frees=3417 largest=8192 gc=0 foreign=3 completed=0 utf8=1 oom=3 fail_stage=3 owned=0
+こんにちは、神楽！
+*** PANIC ***
+PICOTOOL info -a
+Program Information
+ features:          USB stdin / stdout
+ binary start:      0x10000000
+ binary end:        0x100254d8
+
+Fixed Pin Information
+ none
+
+Build Information
+ sdk version:       2.2.0
+ pico_board:        pico
+ boot2_name:        boot2_w25q080
+ build date:        Nov  2 2026
+ build attributes:  Release
+
+Device Information
+ type:              RP2040
+ revision:          B2
+ flash size:        2048K
+ flash id: [redacted]
+
+Metadata Blocks
+ none
+
+PICOTOOL load build\wren-desktop-hardware\run-20261103\original-prefix.bin -t bin -o 0x10000000 -v
+Loading into Flash:   [                              ]  0%
+Loading into Flash:   [                              ]  2%
+Loading into Flash:   [=                             ]  5%
+Loading into Flash:   [==                            ]  7%
+Loading into Flash:   [===                           ]  10%
+Loading into Flash:   [===                           ]  13%
+Loading into Flash:   [====                          ]  15%
+Loading into Flash:   [=====                         ]  18%
+Loading into Flash:   [======                        ]  21%
+Loading into Flash:   [======                        ]  23%
+Loading into Flash:   [=======                       ]  26%
+Loading into Flash:   [========                      ]  28%
+Loading into Flash:   [=========                     ]  31%
+Loading into Flash:   [==========                    ]  34%
+Loading into Flash:   [==========                    ]  36%
+Loading into Flash:   [===========                   ]  39%
+Loading into Flash:   [============                  ]  42%
+Loading into Flash:   [=============                 ]  44%
+Loading into Flash:   [==============                ]  47%
+Loading into Flash:   [===============               ]  50%
+Loading into Flash:   [===============               ]  52%
+Loading into Flash:   [================              ]  55%
+Loading into Flash:   [=================             ]  57%
+Loading into Flash:   [==================            ]  60%
+Loading into Flash:   [==================            ]  63%
+Loading into Flash:   [===================           ]  65%
+Loading into Flash:   [====================          ]  68%
+Loading into Flash:   [=====================         ]  71%
+Loading into Flash:   [=====================         ]  73%
+Loading into Flash:   [======================        ]  76%
+Loading into Flash:   [=======================       ]  78%
+Loading into Flash:   [========================      ]  81%
+Loading into Flash:   [=========================     ]  84%
+Loading into Flash:   [=========================     ]  86%
+Loading into Flash:   [==========================    ]  89%
+Loading into Flash:   [===========================   ]  92%
+Loading into Flash:   [============================  ]  94%
+Loading into Flash:   [============================= ]  97%
+Loading into Flash:   [==============================]  100%
+
+Verifying Flash:      [                              ]  0%
+Verifying Flash:      [                              ]  2%
+Verifying Flash:      [=                             ]  5%
+Verifying Flash:      [==                            ]  7%
+Verifying Flash:      [===                           ]  10%
+Verifying Flash:      [===                           ]  13%
+Verifying Flash:      [====                          ]  15%
+Verifying Flash:      [=====                         ]  18%
+Verifying Flash:      [======                        ]  21%
+Verifying Flash:      [======                        ]  23%
+Verifying Flash:      [=======                       ]  26%
+Verifying Flash:      [========                      ]  28%
+Verifying Flash:      [=========                     ]  31%
+Verifying Flash:      [==========                    ]  34%
+Verifying Flash:      [==========                    ]  36%
+Verifying Flash:      [===========                   ]  39%
+Verifying Flash:      [============                  ]  42%
+Verifying Flash:      [=============                 ]  44%
+Verifying Flash:      [==============                ]  47%
+Verifying Flash:      [===============               ]  50%
+Verifying Flash:      [===============               ]  52%
+Verifying Flash:      [================              ]  55%
+Verifying Flash:      [=================             ]  57%
+Verifying Flash:      [==================            ]  60%
+Verifying Flash:      [==================            ]  63%
+Verifying Flash:      [===================           ]  65%
+Verifying Flash:      [====================          ]  68%
+Verifying Flash:      [=====================         ]  71%
+Verifying Flash:      [=====================         ]  73%
+Verifying Flash:      [======================        ]  76%
+Verifying Flash:      [=======================       ]  78%
+Verifying Flash:      [========================      ]  81%
+Verifying Flash:      [=========================     ]  84%
+Verifying Flash:      [=========================     ]  86%
+Verifying Flash:      [==========================    ]  89%
+Verifying Flash:      [===========================   ]  92%
+Verifying Flash:      [============================  ]  94%
+Verifying Flash:      [============================= ]  97%
+Verifying Flash:      [==============================]  100%
+
+  OK
+
+PICOTOOL save -a build\wren-desktop-hardware\run-20261103\restored-full.bin -t bin
+Saving file:          [                              ]  0%
+Saving file:          [                              ]  1%
+Saving file:          [                              ]  2%
+Saving file:          [                              ]  3%
+Saving file:          [=                             ]  4%
+Saving file:          [=                             ]  5%
+Saving file:          [==                            ]  7%
+Saving file:          [==                            ]  8%
+Saving file:          [==                            ]  9%
+Saving file:          [===                           ]  10%
+Saving file:          [===                           ]  11%
+Saving file:          [===                           ]  12%
+Saving file:          [====                          ]  14%
+Saving file:          [====                          ]  15%
+Saving file:          [====                          ]  16%
+Saving file:          [=====                         ]  17%
+Saving file:          [=====                         ]  18%
+Saving file:          [=====                         ]  19%
+Saving file:          [======                        ]  21%
+Saving file:          [======                        ]  22%
+Saving file:          [======                        ]  23%
+Saving file:          [=======                       ]  24%
+Saving file:          [=======                       ]  25%
+Saving file:          [=======                       ]  26%
+Saving file:          [========                      ]  28%
+Saving file:          [========                      ]  29%
+Saving file:          [=========                     ]  30%
+Saving file:          [=========                     ]  31%
+Saving file:          [=========                     ]  32%
+Saving file:          [=========                     ]  33%
+Saving file:          [==========                    ]  35%
+Saving file:          [==========                    ]  36%
+Saving file:          [===========                   ]  37%
+Saving file:          [===========                   ]  38%
+Saving file:          [===========                   ]  39%
+Saving file:          [============                  ]  41%
+Saving file:          [============                  ]  42%
+Saving file:          [============                  ]  43%
+Saving file:          [=============                 ]  44%
+Saving file:          [=============                 ]  45%
+Saving file:          [=============                 ]  46%
+Saving file:          [==============                ]  48%
+Saving file:          [==============                ]  49%
+Saving file:          [===============               ]  50%
+Saving file:          [===============               ]  51%
+Saving file:          [===============               ]  52%
+Saving file:          [===============               ]  53%
+Saving file:          [================              ]  55%
+Saving file:          [================              ]  56%
+Saving file:          [=================             ]  57%
+Saving file:          [=================             ]  58%
+Saving file:          [=================             ]  59%
+Saving file:          [==================            ]  60%
+Saving file:          [==================            ]  62%
+Saving file:          [==================            ]  63%
+Saving file:          [===================           ]  64%
+Saving file:          [===================           ]  65%
+Saving file:          [===================           ]  66%
+Saving file:          [====================          ]  67%
+Saving file:          [====================          ]  69%
+Saving file:          [=====================         ]  70%
+Saving file:          [=====================         ]  71%
+Saving file:          [=====================         ]  72%
+Saving file:          [=====================         ]  73%
+Saving file:          [======================        ]  75%
+Saving file:          [======================        ]  76%
+Saving file:          [=======================       ]  77%
+Saving file:          [=======================       ]  78%
+Saving file:          [=======================       ]  79%
+Saving file:          [========================      ]  80%
+Saving file:          [========================      ]  82%
+Saving file:          [========================      ]  83%
+Saving file:          [=========================     ]  84%
+Saving file:          [=========================     ]  85%
+Saving file:          [=========================     ]  86%
+Saving file:          [==========================    ]  87%
+Saving file:          [==========================    ]  89%
+Saving file:          [===========================   ]  90%
+Saving file:          [===========================   ]  91%
+Saving file:          [===========================   ]  92%
+Saving file:          [===========================   ]  93%
+Saving file:          [============================  ]  94%
+Saving file:          [============================  ]  96%
+Saving file:          [============================= ]  97%
+Saving file:          [============================= ]  98%
+Saving file:          [============================= ]  99%
+Saving file:          [==============================]  100%
+
+Wrote 2097152 bytes to build\wren-desktop-hardware\run-20261103\restored-full.bin
+
+RESTORED_ROM_SHA256 d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b
+PICOTOOL reboot
+
+RESTORED_MICROPYTHON_SHA256 d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console=(False, True, True, 'None')

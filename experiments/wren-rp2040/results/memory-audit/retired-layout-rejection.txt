@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/tools/check_layout.py", line 26, in <module>
+    assert top-bottom>=48*1024, 'retired 32 KiB stack image is ineligible'
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: retired 32 KiB stack image is ineligible

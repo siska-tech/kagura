@@ -1,0 +1,15 @@
+{
+  "kind": "ARMv6-M CPU emulation with newlib; NO RP2040 hardware or timing results",
+  "minimum_requested_budget_bytes": {
+    "hello": 80996,
+    "arithmetic": 80599,
+    "strings": 98239,
+    "collections": 84973,
+    "objects": 87379,
+    "fibers": 83230,
+    "foreign": 81844,
+    "sprite16": 86930,
+    "events": 86559,
+    "repeat_gc": 97911
+  }
+}

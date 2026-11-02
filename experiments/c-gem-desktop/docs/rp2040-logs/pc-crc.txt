@@ -1,0 +1,17 @@
+idle 807dbd48
+full_redraw f9331102
+full_redraw_painter f9331102
+full_export 807dbd48
+button_press f096ca86
+menu_open 42303a54
+menu_close 807dbd48
+window_activate 807dbd48
+window_move_live 807dbd48
+window_move_outline 14d83603
+window_drop_outline 807dbd48
+label_one_char 1f75b80d
+sprite_pixel be7bebce
+sprite_import fe72fae1
+recompose_overlap f9331102
+recompose_overlap_painter f9331102
+pointer_move 091eb34f

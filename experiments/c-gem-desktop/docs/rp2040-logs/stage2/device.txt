@@ -1,0 +1,245 @@
+HOST_START 2026-11-02T08:21:43.919367+00:00
+HOST_UF2 UF2 kd_rp2040_hdmi.uf2: 295 blocks, sha256 d9ae0ba7c54e62f173b05dc2f8aedf1e0764cd97768537aa7f7fb6a1eefc302c
+HOST_UF2 all blocks: magic ok, flags=familyID only, family RP2040, payload 256, numbered 0..294
+HOST_UF2 targets 0x20000000..0x20012700, all inside main SRAM 0x20000000..0x20042000; first block 0x20000000 (RAM binary)
+HOST_UF2 no target in flash (0x10000000..0x11000000) or XIP cache-as-SRAM (0x15000000..)
+HOST_UF2 payload equals the ELF load image (75452 bytes); padding is zero
+HOST_UF2 entry 0x20000001 = lowest loaded address (bootrom enters RAM binaries there)
+HOST_FLASH_BEFORE d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_FLASH_CONTROL d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+HOST_COPIED kd_rp2040_hdmi.uf2
+KDHD_PREFLIGHT status_call 0 id 4b39 abi 0.6 caps 0x5b status 0x01 error_code 0x00 display_ctrl 0x07 height 240 patterns 1200 clk_sys_khz 120000 lanes 4 sck_div 2
+HOST_PREFLIGHT accepted
+KDHD_COMPATIBLE yes
+KDHD_INIT us 71498
+KDHD_READY 0 01-desktop 0
+KDHD_FRAME 01-desktop render_cycles 53 export_us 225 transfer_us 0 fence_wait_us 0 end_to_end_us 264 tiles 0 bytes 0 runs 0
+KDHD_SCENE 01-desktop fb 6b694f80 tile4 6394c609 sent ed3de478 vram ed3de478 error_code 0x00 OK
+HOST_CAPTURED 01-desktop
+KDHD_READY 1 02-files-open 0
+KDHD_FRAME 02-files-open render_cycles 1608885 export_us 2153 transfer_us 16093 fence_wait_us 1681 end_to_end_us 33422 tiles 425 bytes 13600 runs 17
+KDHD_SCENE 02-files-open fb 58e7e4ee tile4 d7e9c7a9 sent a4d1dca9 vram a4d1dca9 error_code 0x00 OK
+HOST_CAPTURED 02-files-open
+KDHD_READY 2 03-files-closed 0
+KDHD_FRAME 03-files-closed render_cycles 963481 export_us 2175 transfer_us 16422 fence_wait_us 1978 end_to_end_us 28698 tiles 429 bytes 13728 runs 20
+KDHD_SCENE 03-files-closed fb 469e9cb8 tile4 75e04322 sent f7d51e03 vram f7d51e03 error_code 0x00 OK
+HOST_CAPTURED 03-files-closed
+KDHD_READY 3 04-overlap 0
+KDHD_FRAME 04-overlap render_cycles 2927445 export_us 2173 transfer_us 16440 fence_wait_us 1977 end_to_end_us 45082 tiles 430 bytes 13760 runs 20
+KDHD_SCENE 04-overlap fb b13c385b tile4 94a7ca0e sent 49e609d0 vram 49e609d0 error_code 0x00 OK
+HOST_CAPTURED 04-overlap
+KDHD_READY 4 05-activate 1
+KDHD_FRAME 05-activate render_cycles 888553 export_us 1367 transfer_us 9511 fence_wait_us 1977 end_to_end_us 20353 tiles 234 bytes 7488 runs 20
+KDHD_SCENE 05-activate fb 9ad70324 tile4 d58dd208 sent bd7dc617 vram bd7dc617 error_code 0x00 OK
+HOST_CAPTURED 05-activate
+KDHD_READY 5 06-menu 0
+KDHD_FRAME 06-menu render_cycles 224444 export_us 614 transfer_us 2248 fence_wait_us 593 end_to_end_us 5376 tiles 53 bytes 1696 runs 6
+KDHD_SCENE 06-menu fb 317618a0 tile4 25116149 sent 8cc7ad92 vram 8cc7ad92 error_code 0x00 OK
+HOST_CAPTURED 06-menu
+KDHD_READY 6 07-menu-closed 1
+KDHD_FRAME 07-menu-closed render_cycles 527241 export_us 990 transfer_us 5530 fence_wait_us 692 end_to_end_us 11662 tiles 144 bytes 4608 runs 7
+KDHD_SCENE 07-menu-closed fb 0db05d43 tile4 c11f7cce sent 341a1666 vram 341a1666 error_code 0x00 OK
+HOST_CAPTURED 07-menu-closed
+KDHD_READY 7 08-about 0
+KDHD_FRAME 08-about render_cycles 1552157 export_us 1961 transfer_us 15178 fence_wait_us 3559 end_to_end_us 33761 tiles 366 bytes 11712 runs 36
+KDHD_SCENE 08-about fb 1c57451f tile4 265bb750 sent a8a8ee22 vram a8a8ee22 error_code 0x00 OK
+HOST_CAPTURED 08-about
+KDHD_READY 8 09-about-closed 0
+KDHD_FRAME 09-about-closed render_cycles 1386824 export_us 1499 transfer_us 11246 fence_wait_us 3264 end_to_end_us 27681 tiles 260 bytes 8320 runs 33
+KDHD_SCENE 09-about-closed fb fc219feb tile4 676cc671 sent edbac9cd vram edbac9cd error_code 0x00 OK
+HOST_CAPTURED 09-about-closed
+KDHD_READY 9 10-move-live 0
+KDHD_FRAME 10-move-live render_cycles 53 export_us 226 transfer_us 0 fence_wait_us 0 end_to_end_us 263 tiles 0 bytes 0 runs 0
+KDHD_SCENE 10-move-live fb 1b9a76ad tile4 90b84d58 sent d49e224f vram d49e224f error_code 0x00 OK
+HOST_CAPTURED 10-move-live
+KDHD_READY 10 11-outline-drag 0
+KDHD_FRAME 11-outline-drag render_cycles 53 export_us 226 transfer_us 0 fence_wait_us 0 end_to_end_us 264 tiles 0 bytes 0 runs 0
+KDHD_SCENE 11-outline-drag fb 7289e36a tile4 f94ea71d sent 7bdbc746 vram 7bdbc746 error_code 0x00 OK
+HOST_CAPTURED 11-outline-drag
+KDHD_READY 11 12-outline-drop 1
+KDHD_FRAME 12-outline-drop render_cycles 4870492 export_us 2581 transfer_us 20107 fence_wait_us 1877 end_to_end_us 65243 tiles 535 bytes 17120 runs 19
+KDHD_SCENE 12-outline-drop fb 3dc9b7e4 tile4 1deecb18 sent 035d7707 vram 035d7707 error_code 0x00 OK
+HOST_CAPTURED 12-outline-drop
+KDHD_READY 12 13-sprite-draw 0
+KDHD_FRAME 13-sprite-draw render_cycles 53 export_us 226 transfer_us 0 fence_wait_us 0 end_to_end_us 264 tiles 0 bytes 0 runs 0
+KDHD_SCENE 13-sprite-draw fb d88dd688 tile4 fa57af9b sent ef8adb4c vram ef8adb4c error_code 0x00 OK
+HOST_CAPTURED 13-sprite-draw
+KDHD_TIME idle render_cycles n 64 p50 53 p95 53 p99 53 max 53
+KDHD_TIME idle export_us n 64 p50 226 p95 226 p99 226 max 226
+KDHD_TIME idle transfer_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME idle fence_wait_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME idle flush_us n 64 p50 37 p95 38 p99 38 max 38
+KDHD_TIME idle end_to_end_us n 64 p50 264 p95 264 p99 264 max 264
+KDHD_TIME idle tiles n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME idle bytes n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME idle runs n 64 p50 0 p95 0 p99 0 max 0
+KDHD_VERIFY idle fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME full_redraw render_cycles n 64 p50 3533726 p95 3533726 p99 3533726 max 3533726
+KDHD_TIME full_redraw export_us n 64 p50 226 p95 226 p99 226 max 226
+KDHD_TIME full_redraw transfer_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw fence_wait_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw flush_us n 64 p50 37 p95 38 p99 38 max 38
+KDHD_TIME full_redraw end_to_end_us n 64 p50 29711 p95 29712 p99 29712 max 29712
+KDHD_TIME full_redraw tiles n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw bytes n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw runs n 64 p50 0 p95 0 p99 0 max 0
+KDHD_VERIFY full_redraw fb 35b27d7f tile4 95af0915 sent 1208a153 vram 1208a153 error_code 0x00 OK
+KDHD_TIME full_redraw_painter render_cycles n 64 p50 6364629 p95 6364629 p99 6364629 max 6364629
+KDHD_TIME full_redraw_painter export_us n 64 p50 226 p95 226 p99 226 max 226
+KDHD_TIME full_redraw_painter transfer_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw_painter fence_wait_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw_painter flush_us n 64 p50 37 p95 38 p99 38 max 38
+KDHD_TIME full_redraw_painter end_to_end_us n 64 p50 53302 p95 53302 p99 53302 max 53302
+KDHD_TIME full_redraw_painter tiles n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw_painter bytes n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME full_redraw_painter runs n 64 p50 0 p95 0 p99 0 max 0
+KDHD_VERIFY full_redraw_painter fb 35b27d7f tile4 95af0915 sent 1208a153 vram 1208a153 error_code 0x00 OK
+KDHD_TIME full_export render_cycles n 64 p50 53 p95 53 p99 53 max 53
+KDHD_TIME full_export export_us n 64 p50 4535 p95 4536 p99 4536 max 4536
+KDHD_TIME full_export transfer_us n 64 p50 35424 p95 35425 p99 35425 max 35425
+KDHD_TIME full_export fence_wait_us n 64 p50 99 p95 99 p99 99 max 99
+KDHD_TIME full_export flush_us n 64 p50 35567 p95 35567 p99 35567 max 35567
+KDHD_TIME full_export end_to_end_us n 64 p50 40103 p95 40103 p99 40103 max 40103
+KDHD_TIME full_export tiles n 64 p50 1000 p95 1000 p99 1000 max 1000
+KDHD_TIME full_export bytes n 64 p50 32000 p95 32000 p99 32000 max 32000
+KDHD_TIME full_export runs n 64 p50 1 p95 1 p99 1 max 1
+KDHD_VERIFY full_export fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME button_press render_cycles n 64 p50 69094 p95 69094 p99 69094 max 69094
+KDHD_TIME button_press export_us n 64 p50 340 p95 340 p99 340 max 340
+KDHD_TIME button_press transfer_us n 64 p50 548 p95 548 p99 548 max 548
+KDHD_TIME button_press fence_wait_us n 64 p50 198 p95 198 p99 198 max 198
+KDHD_TIME button_press flush_us n 64 p50 788 p95 788 p99 788 max 788
+KDHD_TIME button_press end_to_end_us n 64 p50 1703 p95 1704 p99 1704 max 1704
+KDHD_TIME button_press tiles n 64 p50 12 p95 12 p99 12 max 12
+KDHD_TIME button_press bytes n 64 p50 384 p95 384 p99 384 max 384
+KDHD_TIME button_press runs n 64 p50 2 p95 2 p99 2 max 2
+KDHD_VERIFY button_press fb 0d2ced1f tile4 950c33a8 sent 6e002fa2 vram 6e002fa2 error_code 0x00 OK
+KDHD_TIME menu_open render_cycles n 64 p50 493234 p95 493234 p99 493234 max 493234
+KDHD_TIME menu_open export_us n 64 p50 1078 p95 1078 p99 1078 max 1078
+KDHD_TIME menu_open transfer_us n 64 p50 6595 p95 6595 p99 6595 max 6595
+KDHD_TIME menu_open fence_wait_us n 64 p50 1384 p95 1384 p99 1384 max 1384
+KDHD_TIME menu_open flush_us n 64 p50 8052 p95 8052 p99 8052 max 8052
+KDHD_TIME menu_open end_to_end_us n 64 p50 13240 p95 13240 p99 13240 max 13240
+KDHD_TIME menu_open tiles n 64 p50 162 p95 162 p99 162 max 162
+KDHD_TIME menu_open bytes n 64 p50 5184 p95 5184 p99 5184 max 5184
+KDHD_TIME menu_open runs n 64 p50 14 p95 14 p99 14 max 14
+KDHD_VERIFY menu_open fb c3852949 tile4 ac8db303 sent a6e59975 vram a6e59975 error_code 0x00 OK
+KDHD_TIME menu_close render_cycles n 64 p50 588869 p95 588869 p99 588869 max 588869
+KDHD_TIME menu_close export_us n 64 p50 1078 p95 1078 p99 1078 max 1078
+KDHD_TIME menu_close transfer_us n 64 p50 6593 p95 6596 p99 6596 max 6596
+KDHD_TIME menu_close fence_wait_us n 64 p50 1384 p95 1386 p99 1386 max 1386
+KDHD_TIME menu_close flush_us n 64 p50 8052 p95 8053 p99 8053 max 8053
+KDHD_TIME menu_close end_to_end_us n 64 p50 14037 p95 14038 p99 14038 max 14038
+KDHD_TIME menu_close tiles n 64 p50 162 p95 162 p99 162 max 162
+KDHD_TIME menu_close bytes n 64 p50 5184 p95 5184 p99 5184 max 5184
+KDHD_TIME menu_close runs n 64 p50 14 p95 14 p99 14 max 14
+KDHD_VERIFY menu_close fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME window_activate render_cycles n 64 p50 1707431 p95 1707431 p99 1707431 max 1707431
+KDHD_TIME window_activate export_us n 64 p50 1332 p95 1332 p99 1332 max 1332
+KDHD_TIME window_activate transfer_us n 64 p50 9079 p95 9080 p99 9081 max 9081
+KDHD_TIME window_activate fence_wait_us n 64 p50 1680 p95 1682 p99 1683 max 1683
+KDHD_TIME window_activate flush_us n 64 p50 10841 p95 10842 p99 10842 max 10842
+KDHD_TIME window_activate end_to_end_us n 64 p50 26401 p95 26402 p99 26402 max 26402
+KDHD_TIME window_activate tiles n 64 p50 227 p95 227 p99 227 max 227
+KDHD_TIME window_activate bytes n 64 p50 7264 p95 7264 p99 7264 max 7264
+KDHD_TIME window_activate runs n 64 p50 17 p95 17 p99 17 max 17
+KDHD_VERIFY window_activate fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME window_move_live render_cycles n 64 p50 5646737 p95 5646737 p99 5646737 max 5646737
+KDHD_TIME window_move_live export_us n 64 p50 2176 p95 2176 p99 2176 max 2176
+KDHD_TIME window_move_live transfer_us n 64 p50 16781 p95 16782 p99 16782 max 16782
+KDHD_TIME window_move_live fence_wait_us n 64 p50 2273 p95 2276 p99 2277 max 2277
+KDHD_TIME window_move_live flush_us n 64 p50 19156 p95 19157 p99 19157 max 19157
+KDHD_TIME window_move_live end_to_end_us n 64 p50 68388 p95 68389 p99 68389 max 68389
+KDHD_TIME window_move_live tiles n 64 p50 434 p95 434 p99 434 max 434
+KDHD_TIME window_move_live bytes n 64 p50 13888 p95 13888 p99 13888 max 13888
+KDHD_TIME window_move_live runs n 64 p50 23 p95 23 p99 23 max 23
+KDHD_VERIFY window_move_live fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME window_move_outline render_cycles n 64 p50 433744 p95 433744 p99 433744 max 433744
+KDHD_TIME window_move_outline export_us n 64 p50 1041 p95 1042 p99 1042 max 1042
+KDHD_TIME window_move_outline transfer_us n 64 p50 7421 p95 7425 p99 7425 max 7425
+KDHD_TIME window_move_outline fence_wait_us n 64 p50 3164 p95 3167 p99 3168 max 3168
+KDHD_TIME window_move_outline flush_us n 64 p50 10698 p95 10698 p99 10698 max 10698
+KDHD_TIME window_move_outline end_to_end_us n 64 p50 15353 p95 15354 p99 15354 max 15354
+KDHD_TIME window_move_outline tiles n 64 p50 154 p95 154 p99 154 max 154
+KDHD_TIME window_move_outline bytes n 64 p50 4928 p95 4928 p99 4928 max 4928
+KDHD_TIME window_move_outline runs n 64 p50 32 p95 32 p99 32 max 32
+KDHD_VERIFY window_move_outline fb 4f5cc8d1 tile4 ff69822b sent f9ef219d vram f9ef219d error_code 0x00 OK
+KDHD_TIME window_drop_outline render_cycles n 64 p50 5644115 p95 5644115 p99 5644115 max 5644115
+KDHD_TIME window_drop_outline export_us n 64 p50 2176 p95 2176 p99 2176 max 2176
+KDHD_TIME window_drop_outline transfer_us n 64 p50 16781 p95 16782 p99 16782 max 16782
+KDHD_TIME window_drop_outline fence_wait_us n 64 p50 2273 p95 2276 p99 2277 max 2277
+KDHD_TIME window_drop_outline flush_us n 64 p50 19156 p95 19157 p99 19157 max 19157
+KDHD_TIME window_drop_outline end_to_end_us n 64 p50 68366 p95 68367 p99 68367 max 68367
+KDHD_TIME window_drop_outline tiles n 64 p50 434 p95 434 p99 434 max 434
+KDHD_TIME window_drop_outline bytes n 64 p50 13888 p95 13888 p99 13888 max 13888
+KDHD_TIME window_drop_outline runs n 64 p50 23 p95 23 p99 23 max 23
+KDHD_VERIFY window_drop_outline fb f564ae73 tile4 350eb2e4 sent 8ac23364 vram 8ac23364 error_code 0x00 OK
+KDHD_TIME label_one_char render_cycles n 64 p50 30374 p95 30374 p99 30374 max 30374
+KDHD_TIME label_one_char export_us n 64 p50 281 p95 282 p99 282 max 282
+KDHD_TIME label_one_char transfer_us n 64 p50 230 p95 231 p99 231 max 231
+KDHD_TIME label_one_char fence_wait_us n 64 p50 198 p95 198 p99 198 max 198
+KDHD_TIME label_one_char flush_us n 64 p50 470 p95 470 p99 470 max 470
+KDHD_TIME label_one_char end_to_end_us n 64 p50 1004 p95 1005 p99 1005 max 1005
+KDHD_TIME label_one_char tiles n 64 p50 3 p95 3 p99 3 max 3
+KDHD_TIME label_one_char bytes n 64 p50 96 p95 96 p99 96 max 96
+KDHD_TIME label_one_char runs n 64 p50 2 p95 2 p99 2 max 2
+KDHD_VERIFY label_one_char fb 04ee68b9 tile4 7c232dbf sent 9c457e40 vram 9c457e40 error_code 0x00 OK
+KDHD_TIME sprite_pixel render_cycles n 64 p50 75828 p95 75828 p99 75828 max 75828
+KDHD_TIME sprite_pixel export_us n 64 p50 334 p95 335 p99 335 max 335
+KDHD_TIME sprite_pixel transfer_us n 64 p50 294 p95 294 p99 294 max 294
+KDHD_TIME sprite_pixel fence_wait_us n 64 p50 297 p95 297 p99 297 max 297
+KDHD_TIME sprite_pixel flush_us n 64 p50 635 p95 635 p99 635 max 635
+KDHD_TIME sprite_pixel end_to_end_us n 64 p50 1601 p95 1602 p99 1602 max 1602
+KDHD_TIME sprite_pixel tiles n 64 p50 3 p95 3 p99 3 max 3
+KDHD_TIME sprite_pixel bytes n 64 p50 96 p95 96 p99 96 max 96
+KDHD_TIME sprite_pixel runs n 64 p50 3 p95 3 p99 3 max 3
+KDHD_VERIFY sprite_pixel fb 0ff83adf tile4 04e9cb00 sent 9dff1916 vram 9dff1916 error_code 0x00 OK
+KDHD_TIME sprite_import render_cycles n 64 p50 1906468 p95 1906468 p99 1906468 max 1906468
+KDHD_TIME sprite_import export_us n 64 p50 958 p95 958 p99 958 max 958
+KDHD_TIME sprite_import transfer_us n 64 p50 6217 p95 6219 p99 6220 max 6220
+KDHD_TIME sprite_import fence_wait_us n 64 p50 1680 p95 1682 p99 1683 max 1683
+KDHD_TIME sprite_import flush_us n 64 p50 7977 p95 7977 p99 7977 max 7977
+KDHD_TIME sprite_import end_to_end_us n 64 p50 24821 p95 24822 p99 24822 max 24822
+KDHD_TIME sprite_import tiles n 64 p50 146 p95 146 p99 146 max 146
+KDHD_TIME sprite_import bytes n 64 p50 4672 p95 4672 p99 4672 max 4672
+KDHD_TIME sprite_import runs n 64 p50 17 p95 17 p99 17 max 17
+KDHD_VERIFY sprite_import fb 315878a0 tile4 4898f5a9 sent a62bc8ea vram a62bc8ea error_code 0x00 OK
+KDHD_TIME recompose_overlap render_cycles n 64 p50 1129109 p95 1129109 p99 1129109 max 1129109
+KDHD_TIME recompose_overlap export_us n 64 p50 226 p95 226 p99 226 max 226
+KDHD_TIME recompose_overlap transfer_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap fence_wait_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap flush_us n 64 p50 37 p95 38 p99 38 max 38
+KDHD_TIME recompose_overlap end_to_end_us n 64 p50 9673 p95 9673 p99 9673 max 9673
+KDHD_TIME recompose_overlap tiles n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap bytes n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap runs n 64 p50 0 p95 0 p99 0 max 0
+KDHD_VERIFY recompose_overlap fb 35b27d7f tile4 95af0915 sent 1208a153 vram 1208a153 error_code 0x00 OK
+KDHD_TIME recompose_overlap_painter render_cycles n 64 p50 3665621 p95 3665621 p99 3665621 max 3665621
+KDHD_TIME recompose_overlap_painter export_us n 64 p50 226 p95 226 p99 226 max 226
+KDHD_TIME recompose_overlap_painter transfer_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap_painter fence_wait_us n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap_painter flush_us n 64 p50 37 p95 38 p99 38 max 38
+KDHD_TIME recompose_overlap_painter end_to_end_us n 64 p50 30810 p95 30811 p99 30811 max 30811
+KDHD_TIME recompose_overlap_painter tiles n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap_painter bytes n 64 p50 0 p95 0 p99 0 max 0
+KDHD_TIME recompose_overlap_painter runs n 64 p50 0 p95 0 p99 0 max 0
+KDHD_VERIFY recompose_overlap_painter fb 35b27d7f tile4 95af0915 sent 1208a153 vram 1208a153 error_code 0x00 OK
+KDHD_TIME pointer_move render_cycles n 64 p50 90384 p95 90384 p99 90384 max 90384
+KDHD_TIME pointer_move export_us n 64 p50 314 p95 314 p99 314 max 314
+KDHD_TIME pointer_move transfer_us n 64 p50 399 p95 400 p99 400 max 400
+KDHD_TIME pointer_move fence_wait_us n 64 p50 297 p95 297 p99 297 max 297
+KDHD_TIME pointer_move flush_us n 64 p50 740 p95 741 p99 741 max 741
+KDHD_TIME pointer_move end_to_end_us n 64 p50 1807 p95 1808 p99 1808 max 1808
+KDHD_TIME pointer_move tiles n 64 p50 6 p95 6 p99 6 max 6
+KDHD_TIME pointer_move bytes n 64 p50 192 p95 192 p99 192 max 192
+KDHD_TIME pointer_move runs n 64 p50 3 p95 3 p99 3 max 3
+KDHD_VERIFY pointer_move fb c2c26c6d tile4 74ea4ba3 sent e80a2236 vram e80a2236 error_code 0x00 OK
+KDHD_MEM stack_peak_bytes 1908 stack_size 4096
+KDHD_DONE
+HOST_CAPTURED 14-console-after
+HOST_FLASH_AFTER d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_FLASH_UNCHANGED yes
+HOST_CONSOLE_RESTORED yes
+HOST_FINAL_REBOOT ok
+HOST_END 2026-11-02T08:24:23.743800+00:00 OK

@@ -1,0 +1,3 @@
+INFO CPU emulation only; mock external FPGA, no hardware timing
+MEM cycle=0 status=1 init=0 compiled=0 gc_live=0 peak=0 ledger_peak=0 arena_peak=0 used_peak=0 live=0 blocks=0 allocs=0 reallocs=0 frees=0 largest=184 collections=0 foreign=0 completed=0 oom=1 fail_stage=1 init_peak=0 compile_peak=0 run_peak=0
+ARENA capacity=135168 high_water=3096 current_break=3096 in_use=1032 free=2064 sbrk_failures=0 stack_painted_upper=800

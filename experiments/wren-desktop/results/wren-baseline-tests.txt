@@ -1,0 +1,7 @@
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-desktop-worktree/experiments/wren-desktop/build-wren-baseline
+    Start 1: correctness
+1/1 Test #1: correctness ......................   Passed    0.43 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.47 sec
