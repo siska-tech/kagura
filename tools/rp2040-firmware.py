@@ -4,8 +4,9 @@
   check     REPL alive, firmware build, flash and filesystem hashes, FPGA ABI
   uf2-info  firmware UF2: blocks, family, address range (must end below the
             filesystem), payload SHA-256
-  flash     --uf2 F --backup-sha S [--approved]
-            1. the whole flash must equal the verified backup (SHA-256);
+  flash     --uf2 F (--backup-sha S | --current-uf2 C) [--approved]
+            1. the whole flash must equal the verified backup (SHA-256), or the
+               flash must hold exactly the UF2 C flashed before (reflashing);
             2. the UF2 must be RP2040 flash blocks that end below the
                filesystem (KAGURA_PICO: 0x100A0000, 1,408 KB at the end);
             3. machine.bootloader(), copy the UF2, wait for the REPL;
@@ -138,6 +139,8 @@ def cmd_check(args):
 def cmd_flash(args):
     if not args.approved:
         raise SystemExit('refusing to flash without --approved')
+    if not args.backup_sha and not args.current_uf2:
+        raise SystemExit('give --backup-sha or --current-uf2')
     u = uf2_info(args.uf2, below=FS_START)
     print('UF2 %s: %d blocks 0x%08x..0x%08x (filesystem at 0x%08x), sha256 %s'
           % (Path(args.uf2).name, u['blocks'], u['lo'], u['hi'], FS_START, u['sha256']))
@@ -145,7 +148,15 @@ def cmd_flash(args):
     fs = (FS_START, FLASH + FLASH_BYTES - FS_START)
     before = hashes(args.port, [(FLASH, FLASH_BYTES), fs])
     print('FLASH_BEFORE', before[(FLASH, FLASH_BYTES)])
-    if before[(FLASH, FLASH_BYTES)] != args.backup_sha:
+    if args.current_uf2:
+        c = uf2_info(args.current_uf2)
+        region = (c['lo'], c['hi'] - c['lo'])
+        held = hashes(args.port, [region])[region]
+        print('CURRENT_FIRMWARE', 'matches %s' % Path(args.current_uf2).name
+              if held == hashlib.sha256(c['image']).hexdigest() else 'DIFFERS')
+        if held != hashlib.sha256(c['image']).hexdigest():
+            raise SystemExit('the flash does not hold --current-uf2. Nothing written.')
+    elif before[(FLASH, FLASH_BYTES)] != args.backup_sha:
         raise SystemExit('flash differs from the verified backup; take a new backup first. Nothing written.')
     copy_uf2(args, args.uf2)
     print(info(args.port).strip())
@@ -192,8 +203,10 @@ def main():
         s.add_argument('--expected-serial')
         if name != 'check':
             s.add_argument('--uf2', required=True)
-            s.add_argument('--backup-sha', required=True)
+            s.add_argument('--backup-sha', required=name == 'rollback')
             s.add_argument('--approved', action='store_true')
+            if name == 'flash':
+                s.add_argument('--current-uf2')
     s = sub.add_parser('uf2-info')
     s.add_argument('uf2')
     s = sub.add_parser('rollback-uf2')

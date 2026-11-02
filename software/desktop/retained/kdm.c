@@ -674,10 +674,14 @@ static bool discard(void *ctx, unsigned first, unsigned count, const uint8_t *da
 bool kdm_render(kdm *m) { return kd_desktop_render(&m->desk); }
 
 int kdm_present(kdm *m, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st) {
+    return kdm_present_gap(m, 0, sink, ctx, st);
+}
+
+int kdm_present_gap(kdm *m, unsigned max_gap, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st) {
     kd_tile4_stats local;
     if (!st) st = &local;
     kd_desktop_render(&m->desk);
-    bool ok = kd_tile4_flush(&m->desk.fb, 0, m->staging, KD_TILE_COLS, sink ? sink : discard, ctx, st);
+    bool ok = kd_tile4_flush(&m->desk.fb, max_gap, m->staging, KD_TILE_COLS, sink ? sink : discard, ctx, st);
     m->stats.presents++;
     m->stats.tiles += st->tiles;
     m->stats.runs += st->runs;

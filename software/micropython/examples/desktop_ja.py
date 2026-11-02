@@ -14,6 +14,8 @@ On a PC (unix port with kagura_desktop), without hardware:
 Every scene of the tour prints `SCENE <n> <name> <framebuffer crc32>`; the
 host run prints the same CRCs, which the hardware test compares.
 """
+import binascii
+
 import kagura_desktop as kd
 
 MENUS = (('ファイル', ('開く', '情報…', '-', '終了')),
@@ -218,7 +220,9 @@ def main(script=True, desk=None, out=print, dump=None):
     def step(name):
         scenes[0] += 1
         tiles = desk.present()
-        out('SCENE %d %s %08x %d' % (scenes[0], name, desk.crc(), tiles))
+        mirror = getattr(desk, 'mirror', None)   # host: CRC of the exported TILE4 image too
+        out('SCENE %d %s %08x %d%s' % (scenes[0], name, desk.crc(), tiles,
+                                       ' tile4 %08x' % binascii.crc32(mirror) if mirror else ''))
         if dump:   # host only: raw 4bpp snapshots for reference pictures
             buf = bytearray(32000)
             desk.snapshot(buf)

@@ -186,6 +186,9 @@ void kdm_drop(kdm *m);    // removes the event kdm_peek returned
 // Composition and export. sink may be NULL (tiles are marked exported).
 bool kdm_render(kdm *m);
 int kdm_present(kdm *m, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st);
+// As kdm_present; clean gaps of at most max_gap tiles between dirty runs are sent
+// too, so a transport with a high cost per run makes fewer, longer transfers.
+int kdm_present_gap(kdm *m, unsigned max_gap, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st);
 
 uint32_t kdm_crc32(uint32_t crc, const uint8_t *p, size_t n);
 

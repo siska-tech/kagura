@@ -37,6 +37,9 @@ PALETTE = (0x0A5, 0x000, 0xFFF, 0xBBB, 0x666, 0x23C, 0xD22, 0xEC2,
            0x063, 0x2BC, 0xC4C, 0x842, 0x8AF, 0x8E8, 0xF82, 0xFFC)
 BLANK = 1000
 SCROLL_Y = 236
+# Runs separated by at most this many clean tiles are sent as one: on the
+# accelerated link a run costs about 1.1 ms and an extra tile about 24 us.
+MAX_GAP = 32
 
 
 def _console():
@@ -65,6 +68,7 @@ class Desktop:
         self.device, self.video, self.console, self.palette = device, Video(device), console, palette
         self._row = bytearray(128)
         self._open = False
+        self._sink = self._write_run   # one bound method, not one per present()
         if console is not None:
             console.pause()
         try:
@@ -99,25 +103,35 @@ class Desktop:
             v.raster_scroll(())
             d.ext_write(R.EXT_BACKDROP, self.palette * 16)
             d.fence()
-            self._kd.present(self._sink)                # every tile: the first frame
+            self._kd.present(self._sink, MAX_GAP)       # every tile: the first frame
             d.write_reg(R.REG_DISPLAY_CTRL, 3)          # display + BG, no sprites
             d.commit()
             d.check_errors()
         finally:
             d.busy -= 1
 
-    def _sink(self, first, data):
-        # One run of consecutive changed patterns; data is valid during the call.
-        self.video.tiles(first, data)
-        self.device.fence()
-        self.device.check_errors()
+    def _write_run(self, first, data):
+        # One run of consecutive patterns (0..999, below the 1024 split), valid
+        # during the call. FENCE per run, as TileFramebuffer; ERROR_CODE is
+        # checked once per present().
+        d = self.device
+        link = d._link()
+        if link is not None:
+            link.write_memory(first * 32, data, d.timeout_us)
+            link.fence(d.timeout_us)
+        else:
+            d.write_memory(first * 32, data)
+            d.fence()
 
     def present(self):
         """Compose all damage and send the changed patterns. Returns the tile count."""
         d = self.device
         d.busy += 1
         try:
-            return self._kd.present(self._sink)
+            tiles = self._kd.present(self._sink, MAX_GAP)
+            if tiles:
+                d.check_errors()
+            return tiles
         finally:
             d.busy -= 1
 

@@ -20,6 +20,10 @@ failed = 0
 
 class FakeDevice:
     abi, height, caps = (0, 6), 240, 0x5B
+    timeout_us = 0
+
+    def _link(self):
+        return None
 
     def require(self, mask):
         assert self.caps & mask == mask

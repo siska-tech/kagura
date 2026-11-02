@@ -5,8 +5,8 @@ Runs software/micropython/examples/desktop_ja.py on the board from the raw
 REPL (code in RAM, no filesystem writes) through kagura.desktop, the
 firmware's frozen hardware session, and checks every scene three ways:
   * framebuffer CRC32 equal to the host run (unix port, same native code);
-  * the patterns read back from the FPGA equal the desktop's TILE4 packing
-    (the transport delivered every byte);
+  * the patterns read back from the FPGA have the CRC32 of the host run's
+    TILE4 image (the transport delivered every byte);
   * an HDMI still (UGREEN 15390, 1280x960) for tools' hdmi_compare.py.
 Then it measures the binding on the RP2040 (heap, call cost, update latency,
 GC, a long update loop), closes the desktop, checks that the console came
@@ -43,18 +43,19 @@ print('HEAP before', _h0, 'after_desktop', gc.mem_free(), 'alloc', gc.mem_alloc(
 app = App(desk)
 gc.collect()
 print('HEAP after_app', gc.mem_free())
-_v = bytearray(32000)
-_p = bytearray(32000)
+_c = bytearray(1000)   # VRAM readback in chunks: no 32 KB heap block needed
 _n = [0]
 def step(name):
     _n[0] += 1
     t0 = time.ticks_us()
     tiles = desk.present()
     dt = time.ticks_diff(time.ticks_us(), t0)
-    desk.tile4(_p)
-    desk.device.read_memory_into(0, _v)
-    print('SCENE %d %s %08x %d %d %08x %08x %d' % (_n[0], name, desk.crc(), tiles, dt,
-          binascii.crc32(_p), binascii.crc32(_v), desk.device.read_reg(_R.REG_ERROR_CODE)))
+    vcrc = 0
+    for off in range(0, 32000, 1000):
+        desk.device.read_memory_into(off, _c)
+        vcrc = binascii.crc32(_c, vcrc)
+    print('SCENE %d %s %08x %d %d %08x %d %d' % (_n[0], name, desk.crc(), tiles, dt, vcrc,
+          desk.device.read_reg(_R.REG_ERROR_CODE), gc.mem_free()))
     time.sleep_ms(%(hold)d)
 tour(app, step)
 
