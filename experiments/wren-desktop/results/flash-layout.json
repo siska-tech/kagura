@@ -1,0 +1,137 @@
+{
+  "kind": "static FLASH-resident RP2040 link, NOT hardware execution",
+  "elf_sha256": "91d63f885e10160b95b0fecd2fd1bbc33a2aa97d939c17e5058fc2b0769e4d81",
+  "entry": "0x100001e9",
+  "headers": [
+    {
+      "vaddr": "0x10000000",
+      "paddr": "0x10000000",
+      "filesz": 143856,
+      "memsz": 143856,
+      "flags": 5
+    },
+    {
+      "vaddr": "0x200000c0",
+      "paddr": "0x100231f0",
+      "filesz": 6208,
+      "memsz": 45168,
+      "flags": 7
+    },
+    {
+      "vaddr": "0x2000b130",
+      "paddr": "0x10024a30",
+      "filesz": 0,
+      "memsz": 2048,
+      "flags": 4
+    },
+    {
+      "vaddr": "0x20000000",
+      "paddr": "0x20000000",
+      "filesz": 0,
+      "memsz": 192,
+      "flags": 6
+    },
+    {
+      "vaddr": "0x20032000",
+      "paddr": "0x20032000",
+      "filesz": 0,
+      "memsz": 8192,
+      "flags": 6
+    },
+    {
+      "vaddr": "0x20034000",
+      "paddr": "0x20034000",
+      "filesz": 0,
+      "memsz": 49152,
+      "flags": 4
+    }
+  ],
+  "sections": [
+    {
+      "name": ".boot2",
+      "address": "0x10000000",
+      "size": 256,
+      "noload": false
+    },
+    {
+      "name": ".text",
+      "address": "0x10000100",
+      "size": 119348,
+      "noload": false
+    },
+    {
+      "name": ".rodata",
+      "address": "0x1001d338",
+      "size": 24220,
+      "noload": false
+    },
+    {
+      "name": ".binary_info",
+      "address": "0x100231d4",
+      "size": 28,
+      "noload": false
+    },
+    {
+      "name": ".ram_vector_table",
+      "address": "0x20000000",
+      "size": 192,
+      "noload": true
+    },
+    {
+      "name": ".data",
+      "address": "0x200000c0",
+      "size": 6208,
+      "noload": false
+    },
+    {
+      "name": ".bss",
+      "address": "0x20001900",
+      "size": 38960,
+      "noload": true
+    },
+    {
+      "name": ".heap",
+      "address": "0x2000b130",
+      "size": 2048,
+      "noload": true
+    },
+    {
+      "name": ".stack_dummy",
+      "address": "0x20034000",
+      "size": 49152,
+      "noload": true
+    },
+    {
+      "name": ".recovery_reserve",
+      "address": "0x20032000",
+      "size": 8192,
+      "noload": true
+    }
+  ],
+  "static_sram": 45360,
+  "desktop_state": {
+    "address": 536879904,
+    "size": 34284,
+    "type": 1
+  },
+  "runtime": {
+    "address": 536877712,
+    "size": 280,
+    "type": 1
+  },
+  "heap_start": "0x2000b130",
+  "heap_limit": "0x2002c130",
+  "allocator_capacity": 135168,
+  "stack_bottom": "0x20034000",
+  "stack_top": "0x20040000",
+  "stack_reserved": 49152,
+  "recovery_start": "0x20032000",
+  "recovery_end": "0x20034000",
+  "recovery_reserved": 8192,
+  "unassigned_main_ram": 24272,
+  "unused_scratch": 8192,
+  "total_unassigned": 32464,
+  "estimated_native_integration": 241284,
+  "linked_reserved": 237872,
+  "difference_from_estimate": -3412
+}

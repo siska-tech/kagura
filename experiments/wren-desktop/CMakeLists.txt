@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.13)
+project(wren_desktop_host C)
+set(CMAKE_C_STANDARD 11)
+include(core.cmake)
+add_executable(integration_tests tests/main.c tests/mock_hal.c)
+target_link_libraries(integration_tests PRIVATE integration)
+target_compile_options(integration_tests PRIVATE -Wall -Wextra -Werror)
+enable_testing()
+add_test(NAME integration COMMAND integration_tests)
+# Run the original, unmodified Desktop correctness/mutation tests as well.
+set(KD_SDL OFF CACHE BOOL "" FORCE)
+add_subdirectory(../c-gem-desktop native-desktop)

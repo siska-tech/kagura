@@ -1,0 +1,58 @@
+{
+  "normal": {
+    "peak": 91970,
+    "ledger_peak": 111378,
+    "arena": {
+      "capacity": "135168",
+      "high_water": "126376",
+      "current_break": "126376",
+      "in_use": "1032",
+      "free": "125344",
+      "sbrk_failures": "0",
+      "stack_painted_upper": "33528"
+    }
+  },
+  "cover": {
+    "peak": 91970,
+    "ledger_peak": 111378,
+    "arena": {
+      "capacity": "135168",
+      "high_water": "126376",
+      "current_break": "126376",
+      "in_use": "1032",
+      "free": "125344",
+      "sbrk_failures": "0",
+      "stack_painted_upper": "33528"
+    }
+  },
+  "malloc-recovery": {
+    "peak": 91970,
+    "ledger_peak": 111378,
+    "arena": {
+      "capacity": "135168",
+      "high_water": "126376",
+      "current_break": "126376",
+      "in_use": "1032",
+      "free": "125344",
+      "sbrk_failures": "1",
+      "stack_painted_upper": "33528"
+    }
+  },
+  "budget-recovery": {
+    "peak": 91970,
+    "ledger_peak": 111378,
+    "arena": {
+      "capacity": "135168",
+      "high_water": "126376",
+      "current_break": "126376",
+      "in_use": "1032",
+      "free": "125344",
+      "sbrk_failures": "0",
+      "stack_painted_upper": "33528"
+    }
+  },
+  "minimum_fixed_binary": {
+    "budget": 91970,
+    "capacity": 126376
+  }
+}
