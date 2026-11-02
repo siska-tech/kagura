@@ -194,8 +194,9 @@ RP2040実測ではApp/Theme/Gallery treeが3984 B、Framebuffer constructorが40
 
 ## デモと検証
 
-`examples/ui_gallery.py`, `ui_monitor.py`, `ui_studio_mock.py`と`ui_demo_common.py`をコピー。
+`examples/ui_gallery.py`, `ui_monitor.py`, `ui_studio_mock.py`, `ui_sprite_editor.py`と`ui_demo_common.py`をコピー。
 美咲fontと`kagura_ja`も既存手順で導入する。
+`ui_sprite_editor.py`は`kagura.ui.canvas`を使うため、Canvas（#64）を含むSDK/UIが必要である。
 
 ```python
 import ui_gallery
@@ -203,6 +204,7 @@ from kagura.ui import StdinInput
 ui_gallery.run(console=kagura_console, input_adapter=StdinInput())
 # ui_monitor.run(console=kagura_console, input_adapter=StdinInput())
 # ui_studio_mock.run(console=kagura_console, input_adapter=StdinInput())
+# ui_sprite_editor.run(console=kagura_console, input_adapter=StdinInput())  # 詳細は kagura-studio-sprite-editor.md
 ```
 
 USBシリアル端末のREPLから起動し、Tab/Shift+Tab/矢印、Enter/Space、Escapeで操作する。

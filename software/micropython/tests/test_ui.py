@@ -1099,5 +1099,161 @@ class CanvasTests(unittest.TestCase):
         self.assertEqual(len(self.backend.fills), before)
 
 
+class SpriteEditorTests(unittest.TestCase):
+    GRID, PREVIEW, PALETTE = (8, 20), (152, 20), (152, 48)
+
+    def setUp(self):
+        import ui_sprite_editor
+        self.module = ui_sprite_editor
+        self.backend = RecordingBackend()
+        self.theme = theme()
+        self.app = App(backend=self.backend, theme=self.theme)
+
+    def tearDown(self):
+        self.app.close()
+        self.theme.font.source.close()
+
+    def build(self, data=None):
+        self.module.build(self.app, data)
+        self.app.step()
+        return self.module.editor
+
+    def press(self, key, text=''):
+        self.backend.fills.clear()
+        self.app.events.post(Event(key, text))
+        self.app.step()
+        return list(self.backend.fills)
+
+    def assert_sprite_on_screen(self, editor):
+        """Grid (8x, cursor cell excepted) and 1:1 preview both show the TILE4 data."""
+        want = sprite_pixels(editor.sprite.export(), 16, 16)
+        px = self.backend.pixels
+        gx, gy = self.GRID
+        px0, py0 = self.PREVIEW
+        for y in range(16):
+            for x in range(16):
+                shown = want[y][x] or 0
+                self.assertEqual(px[(py0 + y) * 320 + px0 + x], shown, ('preview', x, y))
+                if (x, y) != editor.grid.cursor:
+                    self.assertEqual(px[(gy + y * 8 + 4) * 320 + gx + x * 8 + 4], shown, ('grid', x, y))
+
+    def test_layout_initial_render_and_palette(self):
+        data = bytes((k * 41) & 0xff for k in range(128))
+        e = self.build(data)
+        self.assertIs(self.app.focus.current, e.grid)
+        self.assertEqual(self.app.damage_limit, 4)
+        self.assertEqual((e.grid.zoom, e.grid.columns, e.grid.rows), (8, 16, 16))
+        self.assertEqual(e.grid.bounds, (8, 20, 136, 148))
+        self.assertIs(e.preview.sprite, e.sprite)
+        self.assertIs(e.grid.sprite, e.sprite)
+        self.assertFalse(e.preview.focusable)
+        self.assert_sprite_on_screen(e)
+        bx, by = self.PALETTE
+        for c in range(16):
+            self.assertEqual(self.backend.pixels[(by + c // 4 * 16 + 8) * 320 + bx + c % 4 * 16 + 8], c)
+        self.assertEqual(self.backend.pixels[60 * 320 + 236], 1)  # swatch = colour 1
+        self.assertEqual((e.color_label.text, e.cursor_label.text), ('Color 1', 'X 0 Y 0'))
+
+    def test_keyboard_paint_erase_select_and_indicators(self):
+        e = self.build()
+        self.press('text', 'c')
+        self.assertEqual((e.grid.color, e.color_label.text, e.swatch.color, e.palette.cursor), (12, 'Color 12', 12, (0, 3)))
+        self.press('enter'); self.press('right'); self.press('text', ' ')
+        self.press('down'); self.press('text', '0'); self.press('enter')  # colour 0 paints transparent
+        self.assertEqual(e.color_label.text, 'Color 0 (clear)')
+        self.assertEqual([e.sprite.get(0, 0), e.sprite.get(1, 0), e.sprite.get(1, 1)], [12, 12, 0])
+        self.assertEqual(e.cursor_label.text, 'X 1 Y 1')
+        self.press('up'); self.press('delete')
+        self.assertEqual(e.sprite.get(1, 0), 0)
+        # Palette: Tab focuses it, arrows move, Enter selects; the grid keeps its cursor.
+        self.press('tab')
+        self.assertIs(self.app.focus.current, e.palette)
+        self.press('right'); self.press('down'); self.press('enter')
+        self.assertEqual(e.grid.color, 5)
+        self.press('text', 'F')
+        self.assertEqual((e.grid.color, e.palette.cursor), (15, (3, 3)))
+        self.press('tab'); self.press('enter')
+        self.assertEqual(e.sprite.get(1, 0), 15)
+        self.assert_sprite_on_screen(e)
+        self.assertFalse(e.grid.handle(Event('text', 'g')))
+
+    def test_one_level_undo_and_redo(self):
+        e = self.build()
+        self.press('text', 'u')
+        self.assertEqual(e.status.text, 'Nothing to undo')
+        self.press('text', '3'); self.press('enter'); self.press('right'); self.press('enter')
+        before = e.sprite.export()
+        self.press('delete'); self.press('delete')  # second delete changes nothing: undo keeps the first
+        self.press('text', 'U')
+        self.assertEqual(e.sprite.export(), before)
+        self.assertEqual(e.status.text, 'Undo')
+        self.press('text', 'u')  # one level: undo again redoes
+        self.assertEqual(e.sprite.get(1, 0), 0)
+        self.press('text', 'u')
+        self.assertEqual((e.sprite.get(0, 0), e.sprite.get(1, 0)), (3, 3))
+        self.assert_sprite_on_screen(e)
+
+    def test_hex_export_import_and_print(self):
+        import binascii, io
+        from contextlib import redirect_stdout
+        e = self.build()
+        for x, y, c in ((0, 0, 1), (1, 0, 2), (8, 0, 3), (0, 8, 4), (15, 15, 5)):
+            e.grid.put(x, y, c)
+        text = e.export_hex()
+        self.assertEqual(len(text), 256)
+        self.assertEqual(text, binascii.hexlify(e.sprite.export()).decode())
+        raw = binascii.unhexlify(text)  # TILE4: (0,0)(1,0) in byte 0; tiles TL, TR, BL, BR
+        self.assertEqual((raw[0], raw[32], raw[64], raw[127]), (0x12, 0x30, 0x40, 0x05))
+        image = bytes(range(128))
+        before = e.sprite.export()
+        for bad in (text[:-1], 'zz' + text[2:], text + '00', 7):
+            with self.assertRaises((ValueError, TypeError)): e.import_hex(bad)
+        self.assertEqual(e.sprite.export(), before)
+        spaced = ' '.join(binascii.hexlify(image).decode()[i:i + 32] for i in range(0, 256, 32)) + '\n'
+        e.import_hex(spaced.upper()); self.app.step()
+        self.assertEqual(e.sprite.export(), image)
+        self.assertEqual(e.status.text, 'Imported')
+        self.assert_sprite_on_screen(e)
+        e.undo(); self.app.step()
+        self.assertEqual(e.sprite.export(), before)
+        self.assert_sprite_on_screen(e)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.press('text', 'p')
+        self.assertEqual(out.getvalue(), 'SPRITE_HEX %s\n' % e.export_hex())
+        # run(data_hex=...) preloads the same data.
+        self.assertEqual(self.module.SpriteEditor(App(backend=MockBackend(), theme=self.theme), image).sprite.export(), image)
+
+    def test_editing_redraws_only_small_regions(self):
+        e = self.build()
+        def area(fills):
+            return sum((f[2] - f[0]) * (f[3] - f[1]) for f in fills)
+        steps = {
+            'paint': lambda: self.press('enter'),
+            'erase': lambda: self.press('delete'),
+            'move': lambda: self.press('right'),
+            'select': lambda: self.press('text', '9'),
+            'undo': lambda: self.press('text', 'u'),
+        }
+        for name, step in steps.items():
+            fills = step()
+            self.assertTrue(fills, name)
+            # A cell is 64 px; labels are 8 px high. Full screen would be 76800 px.
+            self.assertLess(area(fills), 4000, (name, fills))
+            for f in fills:
+                self.assertLess((f[2] - f[0]) * (f[3] - f[1]), 3000, (name, f))
+        self.backend.fills.clear()
+        text = e.export_hex()
+        e.import_hex(text[:-1] + ('0' if text[-1] != '0' else 'f')); self.app.step()  # one changed pixel
+        self.assertLess(area(self.backend.fills), 4000)
+        # (15,15) changed; (14,15) shares its byte but did not change, so it is not repainted.
+        n = e.grid.cell_rect(14, 15)
+        for f in self.backend.fills:
+            self.assertFalse(f[0] < n[2] and n[0] < f[2] and f[1] < n[3] and n[1] < f[3], f)
+        incremental = bytes(self.backend.pixels)
+        self.app.damage((0, 0, 320, 240)); self.app.step()
+        self.assertEqual(bytes(self.backend.pixels), incremental)
+
+
 if __name__ == '__main__':
     unittest.main()

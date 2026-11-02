@@ -74,4 +74,4 @@ log: [run1](kagura-ui-logs/canvas-rp2040-run1.txt)、[run2](kagura-ui-logs/canva
 ## 既知の制約
 
 - unix MicroPython（x86-64）では、Viperの`blit`が、8 px境界にない描画先で異常終了する。mainでも再現し、このPRとは無関係である。RP2040のnativeは上記のとおり正しく動く。
-- sprite editorの画面（palette、1:1 preview、undo、hex export/import）は次のPRで作る。
+- sprite editorの画面（palette、1:1 preview、undo、hex export/import）は、[sprite editor](kagura-studio-sprite-editor.md)に記載。

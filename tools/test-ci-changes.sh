@@ -51,7 +51,9 @@ files "frozen native alignment" "micropython micropython_firmware" software/micr
 files "KAGURA-UI tools and tests" "micropython" tools/measure-kagura-ui.py tools/render-kagura-ui.py \
     tools/kagura-ui-device.py tools/kagura-ui-standard.py tools/kagura-ui-soak.py tools/summarize-kagura-ui.py \
     tools/compare-ui-damage.py tools/kagura-ui-damage.py tools/kagura-ui-canvas.py software/micropython/tests/test_ui.py \
-    software/micropython/tests/ui_runtime.py software/micropython/tests/ui_canvas_runtime.py
+    software/micropython/tests/ui_runtime.py software/micropython/tests/ui_canvas_runtime.py \
+    tools/kagura-ui-sprite-editor.py software/micropython/tests/ui_sprite_editor_runtime.py \
+    software/micropython/examples/ui_sprite_editor.py
 files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
     software/micropython/examples/shooter.py software/micropython/examples/star_runner_assets/bgm.pcm
 files "STAR RUNNER hardware runner" "" tools/star-runner-device.ps1
