@@ -1,0 +1,13 @@
+FLASH_BEFORE d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+FREQ 125000000
+LOOPS 6759 23755 37234 17567
+LOOPS 6502 23670 37121 17548
+LOOPS 6496 23800 37030 17547
+LOOPS 6672 23604 37143 17547
+LOOPS 6502 23658 37107 17533
+FLASH_AFTER d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+FLASH_UNCHANGED yes
+BEST empty loop: 6496 us for 2000 iterations = 3.248 us/iteration
+BEST Python call, 2 args: 23604 us for 2000 iterations = 11.802 us/iteration
+BEST str.find('g', 1, 8): 37030 us for 2000 iterations = 18.515 us/iteration
+BEST bytearray store: 17533 us for 2000 iterations = 8.767 us/iteration

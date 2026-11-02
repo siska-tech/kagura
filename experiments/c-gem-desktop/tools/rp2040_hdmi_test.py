@@ -15,6 +15,9 @@ copy of the verified RAM-only UF2. Then:
     scenes marked for recording also get a 320x240 point-sampled video
     taken while the scene is applied, for intermediate-frame analysis;
   * timing lines are logged;
+  * with --video FILE, the stills and per-scene recordings are replaced by one
+    continuous 640x480 H.264 recording from the first FPGA write to KDHD_DONE,
+    with a pause before each scene so every state stays on screen;
   * after the program reboots into flash, the MicroPython console is
     captured, the flash hash and console state are checked, and a final
     normal reboot leaves the device as found.
@@ -50,6 +53,21 @@ def start_recording(folder, seconds=4):
     folder.mkdir(parents=True, exist_ok=True)
     return subprocess.Popen([FFMPEG, '-y'] + INPUT + ['-t', str(seconds), '-vf', 'scale=320:240:flags=neighbor',
                             str(folder / '%04d.png')], stdin=subprocess.DEVNULL)
+
+
+def start_video(path):
+    """The whole run as one viewable 640x480 H.264 file (2x2 blocks per logical pixel)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return subprocess.Popen([FFMPEG, '-y'] + INPUT + ['-vf', 'scale=640:480:flags=neighbor', '-c:v', 'libx264',
+                            '-preset', 'ultrafast', '-crf', '18', '-pix_fmt', 'yuv420p', str(path)],
+                            stdin=subprocess.PIPE)
+
+
+def stop_video(proc):
+    if proc and proc.poll() is None:
+        proc.stdin.write(b'q')
+        proc.stdin.flush()
+        proc.wait(timeout=30)
 
 
 def preflight_ok(line):
@@ -115,7 +133,7 @@ def run(args):
             time.sleep(0.5)
             s.write(b'g')
             deadline = time.time() + args.timeout
-            recorder = None
+            recorder = video = None
             while time.time() < deadline and not done and not failed:
                 line = s.readline().decode('utf8', 'replace').rstrip()
                 if not line:
@@ -124,11 +142,17 @@ def run(args):
                 if line.startswith('KDHD_PREFLIGHT'):
                     good = preflight_ok(line)
                     emit('HOST_PREFLIGHT %s' % ('accepted' if good else 'REJECTED'))
+                    if good and args.video:
+                        video = start_video(args.video)
+                        time.sleep(2)   # recording running before the first write
+                        emit('HOST_VIDEO started %s' % args.video.name)
                     s.write(b'w' if good else b'x')
                     failed = not good
                 elif line.startswith('KDHD_READY'):
                     _, index, name, record = line.split()
-                    if record == '1':
+                    if video:
+                        time.sleep(args.scene_pause)
+                    elif record == '1':
                         recorder = start_recording(videos / name)
                         for _ in range(40):   # wait for the first recorded frame
                             if any((videos / name).glob('*.png')):
@@ -143,17 +167,24 @@ def run(args):
                     if recorder:
                         recorder.wait(timeout=30)
                         recorder = None
-                    capture_still(stills / ('%s.png' % name))
-                    emit('HOST_CAPTURED %s' % name)
+                    if not video:
+                        capture_still(stills / ('%s.png' % name))
+                        emit('HOST_CAPTURED %s' % name)
                     if not failed:
                         s.write(b'n')
                 elif line.startswith(('KDHD_ERROR', 'KDHD_VERIFY')) and not line.endswith(' OK'):
                     failed = True
                 elif line == 'KDHD_DONE':
                     done = True
+                    if video:
+                        time.sleep(2)
+                        stop_video(video)
+                        video = None
+                        emit('HOST_VIDEO stopped')
                     s.write(b'r')
             if recorder:
                 recorder.wait(timeout=30)
+            stop_video(video)
             if failed:
                 emit('HOST_STOP device reported an error or mismatch')
                 s.write(b'x')
@@ -194,6 +225,8 @@ def main():
     r.add_argument('--approved', action='store_true')
     r.add_argument('--timeout', type=int, default=1200)
     r.add_argument('--out', type=Path, default=Path('build/c-gem-hdmi/run'))
+    r.add_argument('--video', type=Path, help='record the whole run as one MP4 instead of stills')
+    r.add_argument('--scene-pause', type=float, default=2.0, help='seconds before each scene (--video)')
     args = p.parse_args()
     run(args)
 

@@ -52,7 +52,7 @@ Other tools:
 | | |
 |---|---|
 | `tools/run_bench.sh` | host benchmarks: C through kdm, MicroPython + binding, KAGURA-UI (3 runs each) |
-| `tools/m0count/count.sh` | Cortex-M0+ instruction counts of the same workloads with and without MicroPython (qemu-arm) |
+| `tools/rp2040_vm_calibrate.py` | times interpreter loops on the RP2040 (installed firmware, RAM only) |
 | `tools/build_rp2.sh` | builds (never flashes) KAGURA_PICO firmware without and with the module, for the memory report |
 | `tools/fb_to_png.py DIR` | PNGs and a montage from `demo.py --dump DIR` snapshots |
 

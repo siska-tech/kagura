@@ -2,9 +2,8 @@
 """Stage 3A workloads driven through the kagura_desktop binding.
 
 The scene and operations of bench_native.c, written once for MicroPython:
-bench_binding.py times them on the unix port and tools/m0count counts their
-Cortex-M0+ instructions under qemu-arm. Uses only modules that a minimal
-embedded build also has (array, kagura_desktop).
+bench_binding.py times them on the unix port. Uses only array and
+kagura_desktop, so the same file runs on an embedded build.
 """
 from array import array
 
