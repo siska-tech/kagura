@@ -1,5 +1,10 @@
 # Stage 5 validation and memory comparison
 
+This is the PR #73 build-boundary baseline report. Current source-relocation
+measurements are in [native-ownership.md](native-ownership.md); `results/` now
+contains that follow-up's freshly regenerated evidence. PR #73 retains the
+original evidence in Git history.
+
 ## Scope and provenance
 
 This stage used host GCC, sanitizers, Cortex-M0+ CPU emulation/newlib and a

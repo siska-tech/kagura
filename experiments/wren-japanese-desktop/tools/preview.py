@@ -4,7 +4,7 @@ import re
 import sys
 from PIL import Image
 r=Path(__file__).resolve().parents[1]
-gfx=(r/'../c-gem-desktop/src/kd_gfx.c').read_text()
+gfx=(r/'../../software/desktop/gfx/kd_gfx.c').read_text()
 part=gfx.split('kd_palette_rgb444[16]',1)[1].split('};',1)[0]
 colors=[int(s,16) for s in re.findall(r'0x[0-9a-fA-F]+',part)]
 assert len(colors)==16

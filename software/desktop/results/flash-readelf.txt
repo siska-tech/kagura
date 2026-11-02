@@ -1,4 +1,4 @@
-There are 30 section headers, starting at offset 0x155930:
+There are 30 section headers, starting at offset 0x1557c8:
 
 Section Headers:
   [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
@@ -25,13 +25,13 @@ Section Headers:
   [20] .debug_loclists   PROGBITS        00000000 0b27d4 02f4d4 00      0   0  1
   [21] .debug_aranges    PROGBITS        00000000 0e1ca8 002f48 00      0   0  8
   [22] .debug_rnglists   PROGBITS        00000000 0e4bf0 005dd4 00      0   0  1
-  [23] .debug_line       PROGBITS        00000000 0ea9c4 03d4b1 00      0   0  1
-  [24] .debug_str        PROGBITS        00000000 127e75 00fa8e 01  MS  0   0  1
-  [25] .debug_frame      PROGBITS        00000000 137904 0090cc 00      0   0  4
-  [26] .debug_line_str   PROGBITS        00000000 1409d0 000458 01  MS  0   0  1
-  [27] .symtab           SYMTAB          00000000 140e28 00eb50 10     28 2937  4
-  [28] .strtab           STRTAB          00000000 14f978 005e6a 00      0   0  1
-  [29] .shstrtab         STRTAB          00000000 1557e2 00014c 00      0   0  1
+  [23] .debug_line       PROGBITS        00000000 0ea9c4 03d449 00      0   0  1
+  [24] .debug_str        PROGBITS        00000000 127e0d 00f992 01  MS  0   0  1
+  [25] .debug_frame      PROGBITS        00000000 1377a0 0090cc 00      0   0  4
+  [26] .debug_line_str   PROGBITS        00000000 14086c 000451 01  MS  0   0  1
+  [27] .symtab           SYMTAB          00000000 140cc0 00eb50 10     28 2937  4
+  [28] .strtab           STRTAB          00000000 14f810 005e6a 00      0   0  1
+  [29] .shstrtab         STRTAB          00000000 15567a 00014c 00      0   0  1
 Key to Flags:
   W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
   L (link order), O (extra OS processing required), G (group), T (TLS),

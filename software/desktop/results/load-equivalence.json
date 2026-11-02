@@ -1,7 +1,7 @@
 {
   "kind": "fresh reference versus consolidated static load image; not hardware execution",
   "reference": {
-    "elf_sha256": "5c70b36198974e7bb06902d4a70b31ad2d8a085c52aa346e9b820438754975c4",
+    "elf_sha256": "9744d3165412605c9a7bb5e7ddd53528de10cf9137234be72b2780744593188a",
     "entry": "0x100001e9",
     "segments": [
       {
@@ -61,6 +61,67 @@
     ]
   },
   "consolidated": {
+    "elf_sha256": "3a7a578ecfd9c475c0a052b7560ddb2ceeb9641b8d88f5bc615fc8c84976f055",
+    "entry": "0x100001e9",
+    "segments": [
+      {
+        "vaddr": "0x10000000",
+        "paddr": "0x10000000",
+        "filesz": 221272,
+        "memsz": 221272,
+        "flags": 5,
+        "alignment": 4096,
+        "sha256": "47ecc4a9c8ddff1ddf14dc4d09aeb34c79542234b336ad93386a7a14deeee6a5"
+      },
+      {
+        "vaddr": "0x200000c0",
+        "paddr": "0x10036058",
+        "filesz": 6208,
+        "memsz": 45404,
+        "flags": 7,
+        "alignment": 4096,
+        "sha256": "e77b415ace84444998e6bb58708656e118c6b3318b411bc6a01c547e40590de0"
+      },
+      {
+        "vaddr": "0x2000b21c",
+        "paddr": "0x10037898",
+        "filesz": 0,
+        "memsz": 2048,
+        "flags": 4,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20000000",
+        "paddr": "0x20000000",
+        "filesz": 0,
+        "memsz": 192,
+        "flags": 6,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20032000",
+        "paddr": "0x20032000",
+        "filesz": 0,
+        "memsz": 8192,
+        "flags": 6,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20034000",
+        "paddr": "0x20034000",
+        "filesz": 0,
+        "memsz": 49152,
+        "flags": 4,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "load_images_equal": true,
+  "baseline_PR73": {
     "elf_sha256": "3a756660250a006e4df3a1317835cd2ec8eec29c1a4328e559c2086d5e64f6be",
     "entry": "0x100001e9",
     "segments": [
@@ -120,5 +181,6 @@
       }
     ]
   },
-  "load_images_equal": true
+  "baseline_PR73_commit": "0214429bd0cde433fab111e7acb78bc1b3f22a3a",
+  "baseline_PR73_matches": true
 }

@@ -1,8 +1,8 @@
-# Transitional source ownership: no renderer/runtime source is copied or rewritten.
+# Native GUI sources are canonical here; runtime/text sources migrate separately.
 get_filename_component(KD_REPO "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 option(KAGURA_DESKTOP_WITH_WREN "Build the bounded Wren adapter" ON)
 set(KD_EXP "${KD_REPO}/experiments")
-set(KD_CORE "${KD_EXP}/c-gem-desktop")
+set(KD_NATIVE "${KD_REPO}/software/desktop")
 set(KD_TEXT "${KD_EXP}/native-text")
 set(KD_WD "${KD_EXP}/wren-desktop")
 set(KD_JP "${KD_EXP}/wren-japanese-desktop")
@@ -23,19 +23,19 @@ add_library(Kagura::Text ALIAS desktop_text)
 # archive, with the reference firmware's archive member order preserved.
 function(desktop_module target)
   add_library(${target} OBJECT ${ARGN})
-  target_include_directories(${target} PUBLIC ${KD_CORE}/src ${KD_TEXT}/include
+  target_include_directories(${target} PUBLIC ${KD_NATIVE}/core ${KD_NATIVE}/gfx ${KD_TEXT}/include
     ${KD_WD}/src ${KD_JP}/src ${KD_REPO}/software/pico ${KD_REPO}/software/include)
   target_compile_definitions(${target} PRIVATE KD_NATIVE_TEXT=1 WD_JAPANESE=1)
   target_compile_options(${target} PRIVATE -Os -Wall -Wextra -Werror
     -ffunction-sections -fdata-sections -fstack-usage)
 endfunction()
 desktop_module(desktop_core
-  ${KD_CORE}/src/kd_fb.c ${KD_CORE}/src/kd_region.c ${KD_CORE}/src/kd_tile4.c
-  ${KD_CORE}/src/kd_font.c ${KD_CORE}/src/kd_font_data.c ${KD_CORE}/src/kd_sprite.c
-  ${KD_CORE}/src/kd_gfx.c ${KD_CORE}/src/kd_app.c ${KD_CORE}/src/kd_desktop.c)
+  ${KD_NATIVE}/gfx/kd_fb.c ${KD_NATIVE}/gfx/kd_region.c ${KD_NATIVE}/gfx/kd_tile4.c
+  ${KD_NATIVE}/gfx/kd_font.c ${KD_NATIVE}/gfx/kd_font_data.c ${KD_NATIVE}/gfx/kd_sprite.c
+  ${KD_NATIVE}/gfx/kd_gfx.c ${KD_NATIVE}/core/kd_app.c ${KD_NATIVE}/core/kd_desktop.c)
 desktop_module(desktop_text_bridge ${KD_TEXT}/src/kj_desktop.c)
 add_library(desktop_native STATIC $<TARGET_OBJECTS:desktop_core> $<TARGET_OBJECTS:desktop_text_bridge>)
-target_include_directories(desktop_native PUBLIC ${KD_CORE}/src ${KD_TEXT}/include)
+target_include_directories(desktop_native PUBLIC ${KD_NATIVE}/core ${KD_NATIVE}/gfx ${KD_TEXT}/include)
 target_link_libraries(desktop_native PUBLIC desktop_text)
 add_library(Kagura::Native ALIAS desktop_native)
 
@@ -70,7 +70,7 @@ if(KAGURA_DESKTOP_WITH_WREN)
     $<TARGET_OBJECTS:desktop_wren> $<TARGET_OBJECTS:desktop_metrics>
     $<TARGET_OBJECTS:desktop_core> $<TARGET_OBJECTS:desktop_title_policy>
     $<TARGET_OBJECTS:desktop_text_bridge>)
-  target_include_directories(desktop_integration PUBLIC ${KD_WD}/src ${KD_CORE}/src
+  target_include_directories(desktop_integration PUBLIC ${KD_WD}/src ${KD_NATIVE}/core ${KD_NATIVE}/gfx
     ${KD_REPO}/software/pico ${KD_REPO}/software/include ${KD_JP}/src ${KD_TEXT}/include)
   target_compile_definitions(desktop_integration INTERFACE WD_JAPANESE=1)
   target_link_libraries(desktop_integration PUBLIC wren_vm m desktop_text)

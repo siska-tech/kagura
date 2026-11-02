@@ -1,5 +1,10 @@
 # Stage 5 architecture audit
 
+This audit records the PR #73 starting architecture. Native GUI ownership has
+since moved, unchanged, to `core/` and `gfx/`; see
+[the follow-up report](native-ownership.md). Historical diagrams below retain
+the original dependency paths so the migration remains reviewable.
+
 ## Verified starting point
 
 Inspected source, interfaces, CMake/scripts, linker generation and checked-in

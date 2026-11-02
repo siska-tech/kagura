@@ -37,5 +37,7 @@
   },
   "native_demo_files": 3,
   "native_without_runtime_or_allocator": true,
-  "generated_app_identical": true
+  "generated_app_identical": true,
+  "baseline_PR73": "0214429bd0cde433fab111e7acb78bc1b3f22a3a",
+  "baseline_PR73_matches": true
 }

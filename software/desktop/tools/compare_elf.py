@@ -23,7 +23,12 @@ def load(path):
 reference, consolidated = map(load, paths)
 assert reference['entry'] == consolidated['entry']
 assert reference['segments'] == consolidated['segments'], (reference, consolidated)
+baseline = json.loads((r / 'tests/pr73-baseline.json').read_text())
+assert baseline['load_image']['entry'] == consolidated['entry']
+assert baseline['load_image']['segments'] == consolidated['segments'], 'PT_LOAD differs from PR #73'
 result = dict(kind='fresh reference versus consolidated static load image; not hardware execution',
-              reference=reference, consolidated=consolidated, load_images_equal=True)
+              reference=reference, consolidated=consolidated, load_images_equal=True,
+              baseline_PR73=baseline['load_image'], baseline_PR73_commit=baseline['commit'],
+              baseline_PR73_matches=True)
 (r / 'results/load-equivalence.json').write_text(json.dumps(result, indent=2) + '\n')
 print('Every PT_LOAD address, reservation size and initialized byte matches the fresh reference')
