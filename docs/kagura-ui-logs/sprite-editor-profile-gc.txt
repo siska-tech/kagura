@@ -1,0 +1,24 @@
+HOST_START 2026-11-02T03:26:58.529671+00:00
+HOST_SOURCE git=8954340e270c0a2583616bfea7be4e5f6c36fd51 render_sha256=6d718c1c5c43fdb28e02d356a8798b0de3d8eb7de4ed4e07f8f8cac2b2077e50 app_sha256=166e8cd3c87a36561e70f2fc5ddd39093c42ef3ee96300293a28e088505dc5a3 canvas_sha256=3a817f6fa7e606b755cbf4b3cf62ec421f1010ee0d10aadb6e5d9e2654417a4b editor_sha256=522d39ecb2e8b70fdc8d75e300583aa146eecd4aaf919a44ee3c670c7d66b551
+EDITOR_RUNTIME KAGURA Raspberry Pi Pico with RP2040 125000000 (0, 6) .frozen/kagura/ui
+EDITOR_RENDER_LOADED 159856
+EDITOR_APP_LOADED 155488
+EDITOR_FROZEN_ATTR opaque set
+EDITOR_CANVAS_LOADED 150320
+EDITOR_LOADED 176736
+GC_COLLECT_US 8510 FREE 128128
+OOM import_all free 127712
+stack: 748 out of 7936
+GC: total: 246336, used: 118624, free: 127712
+ No. of 1-blocks: 718, 2-blocks: 162, max blk sz: 2400, max free sz: 3779
+GCPROF cursor_move n=32 act_p50=453 step_p50=49458 total_p50=49911 samples_with_gc=0 avg_alloc_no_gc=6149
+GCPROF select_hex n=32 act_p50=539 step_p50=60090 total_p50=60629 samples_with_gc=0 avg_alloc_no_gc=4336
+GCPROF paint n=32 act_p50=445 step_p50=32205 total_p50=32650 samples_with_gc=0 avg_alloc_no_gc=2672
+ALLOC_PER_OP cursor_move 3712
+ALLOC_PER_OP select_hex 4336
+ALLOC_PER_OP paint 2672
+ALLOC_IMPORT replace 1152 step 2256 free_start 127760
+EDITOR_FPGA_ERROR_CODE 0
+EDITOR_RESTORED False True
+EDITOR_CLEANUP
+HOST_END 2026-11-02T03:27:14.253085+00:00 OK

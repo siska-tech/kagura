@@ -1254,6 +1254,104 @@ class SpriteEditorTests(unittest.TestCase):
         self.app.damage((0, 0, 320, 240)); self.app.step()
         self.assertEqual(bytes(self.backend.pixels), incremental)
 
+    def test_sdk_backend_with_preview_blit_matches_reference(self):
+        # The SDK framebuffer (preview drawn by one blit) must equal the Mock reference screen.
+        import binascii
+        model = T.RegisterModel()
+        model.ext[R.EXT_SCREEN_HEIGHT] = 240
+        model.ext[R.EXT_PATTERN_COUNT_L] = 1200 & 255
+        model.ext[R.EXT_PATTERN_COUNT_H] = 1200 >> 8
+        sdk = App(Kagura(model).probe(), exclusive=True, theme=self.theme)
+        try:
+            editors = []
+            for app in (self.app, sdk):
+                self.module.build(app, bytes((k * 41) & 0xff for k in range(128)))
+                editors.append(self.module.editor)
+                app.step()
+            blits = []
+            fb = sdk.backend.fb
+            original = fb.blit
+            fb.blit = lambda *a, **k: (blits.append(a[1:3]), original(*a, **k))
+            pattern = binascii.hexlify(bytes((k * 73) & 0xff for k in range(128))).decode()
+            script = [('event', 'text', 'c'), ('event', 'enter', ''), ('event', 'right', ''), ('event', 'delete', ''),
+                      ('import', pattern), ('event', 'text', 'u'), ('event', 'down', ''), ('event', 'text', '5'),
+                      ('event', 'enter', ''), ('event', 'tab', ''), ('event', 'right', ''), ('event', 'enter', ''),
+                      ('import', '00' * 128), ('event', 'text', 'u'), ('event', 'tab', ''), ('full',)]
+            for step in script:
+                for app, e in ((self.app, editors[0]), (sdk, editors[1])):
+                    if step[0] == 'event':
+                        app.events.post(Event(step[1], step[2]))
+                    elif step[0] == 'import':
+                        e.import_hex(step[1])
+                    else:
+                        app.damage((0, 0, 320, 240))
+                    app.step()
+                self.assertEqual(decode(fb.buffer), self.backend.pixels, step)
+            self.assertEqual(editors[0].export_hex(), editors[1].export_hex())
+            self.assertGreaterEqual(blits.count((152, 20)), 3)
+            # A single-pixel edit repaints that preview pixel only, without a blit.
+            before = len(blits)
+            for app, e in ((self.app, editors[0]), (sdk, editors[1])):
+                e.grid.put(3, 4, 15 - e.sprite.get(3, 4)); app.step()
+            self.assertEqual(len(blits), before)
+            self.assertEqual(decode(fb.buffer), self.backend.pixels)
+        finally:
+            sdk.close()
+
+    def test_no_layout_pass_or_hidden_palette_repaint_while_editing(self):
+        e = self.build()
+        layouts = []
+        original = self.app.request_layout
+        self.app.request_layout = lambda: (layouts.append(1), original())
+        palette = e.palette.bounds
+        for key, text in (('right', ''), ('down', ''), ('text', 'c'), ('enter', ''), ('delete', ''),
+                          ('text', 'u'), ('text', '0'), ('text', 'p')):
+            fills = self.press(key, text) if key != 'text' or text != 'p' else None
+            if fills is None:
+                import io
+                from contextlib import redirect_stdout
+                with redirect_stdout(io.StringIO()):
+                    fills = self.press(key, text)
+            for f in fills:
+                inside = palette[0] <= f[0] and f[2] <= palette[2] and palette[1] <= f[1] and f[3] <= palette[3]
+                self.assertFalse(inside, (key, text, f))
+        e.import_hex('11' * 128); self.app.step()
+        self.assertEqual(layouts, [])
+        self.assertEqual((e.cursor_label.text, e.color_label.text, e.status.text), ('X 1 Y 1', 'Color 0 (clear)', 'Imported'))
+        # The palette cursor followed the selection while hidden; focusing shows it there.
+        self.assertEqual(e.palette.cursor, (0, 0))
+        self.press('text', '9'); self.press('tab')
+        x, y = e.palette.cell_rect(1, 2)[:2]
+        self.assertEqual(self.backend.pixels[y * 320 + x], self.theme.focus)
+        self.assertEqual(self.backend.pixels[(y + 8) * 320 + x + 8], 9)
+
+    def test_bulk_import_invalidates_grid_and_preview_once(self):
+        e = self.build()
+        damage = []
+        original = self.app.damage
+        self.app.damage = lambda rect: (damage.append(rect), original(rect))
+        e.import_hex('12' * 128)  # 256 changed pixels
+        self.assertEqual(sorted(damage), sorted([e.grid.bounds, e.preview.bounds, e.status.bounds]))
+        self.app.step()
+        self.assert_sprite_on_screen(e)
+        damage.clear()
+        text = e.export_hex()
+        e.import_hex('34' + text[2:])  # 2 changed pixels: per pixel, as before
+        self.assertEqual(len(damage), 2 * 2)  # status already reads 'Imported': not repainted
+        self.app.step()
+        self.assert_sprite_on_screen(e)
+        # The threshold counts pixels, not bytes: 16 pixels (8 bytes) stay per pixel, 17 (9 bytes) go bulk.
+        for pixels, bulk in ((16, False), (17, True)):
+            base = e.export_hex()
+            digits = list(base)
+            for k in range(pixels):
+                digits[k] = '0' if digits[k] != '0' else '7'
+            damage.clear()
+            e.import_hex(''.join(digits))
+            self.assertEqual(len(damage), 2 if bulk else 2 * pixels, pixels)
+            self.app.step()
+            self.assert_sprite_on_screen(e)
+
 
 if __name__ == '__main__':
     unittest.main()
