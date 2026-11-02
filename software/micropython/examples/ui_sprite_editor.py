@@ -41,6 +41,34 @@ class _Grid(SpriteCanvas):
         return self.owner._key(text) or super().text(text)
 
 
+class _Preview(SpriteCanvas):
+    """1:1 view of the same Sprite4. When the whole preview is repainted and the
+    backend exposes its TileFramebuffer, the TILE4 data is drawn with one blit
+    (pixel value 0 shows colour 0, as backdrop 0 does); single pixels and other
+    backends use the Canvas paint."""
+    focusable = False
+
+    def paint(self, renderer, theme):
+        fb = getattr(renderer.backend, 'fb', None)
+        b, c = self.bounds, renderer.clip
+        if (fb is not None and self.backdrop == 0 and
+                c[0] <= b[0] and c[1] <= b[1] and b[2] <= c[2] and b[3] <= c[3]):
+            fb.blit(self.sprite.source(), b[0], b[1])
+        else:
+            super().paint(renderer, theme)
+
+
+def _set_label(label, text):
+    # The editor's labels have a fixed size: new text needs a repaint, not a layout pass.
+    if label.text != text:
+        label.text = text
+        label.invalidate()
+
+
+# Above this many changed pixels, repaint the grid and preview whole instead of per pixel.
+_BULK = 16
+
+
 class _Palette(Canvas):
     """The 16 colours as a 4x4 grid; Enter/Space selects the colour under the cursor."""
 
@@ -75,8 +103,7 @@ class SpriteEditor:
         root = self.root = Screen(color=2)
         root.add(Label('KAGURA Studio / Sprite 16x16', x=8, y=4, width=304, height=8))
         self.grid = root.add(_Grid(self, self.sprite, x=8, y=20))
-        self.preview = root.add(SpriteCanvas(self.sprite, zoom=1, x=152, y=20))
-        self.preview.focusable = False
+        self.preview = root.add(_Preview(self.sprite, zoom=1, x=152, y=20))
         root.add(Label('1:1', x=176, y=24, width=24, height=8))
         self.palette = root.add(_Palette(self, x=152, y=48))
         self.swatch = root.add(Panel(x=224, y=48, width=24, height=24))
@@ -95,13 +122,17 @@ class SpriteEditor:
         color = self.grid.color
         self.swatch.color = color
         self.swatch.invalidate()
-        self.color_label.set_text('Color %d%s' % (color, ' (clear)' if color == 0 else ''))
+        _set_label(self.color_label, 'Color %d%s' % (color, ' (clear)' if color == 0 else ''))
         cx, cy = color % 4, color // 4
         if self.palette.cursor != (cx, cy):
-            self.palette.set_cursor(cx, cy)
+            if self.palette.focused:
+                self.palette.set_cursor(cx, cy)
+            else:
+                # The cursor is drawn only while focused; gaining focus repaints the palette.
+                self.palette.cursor = (cx, cy)
 
     def _show_cursor(self):
-        self.cursor_label.set_text('X %d Y %d' % self.grid.cursor)
+        _set_label(self.cursor_label, 'X %d Y %d' % self.grid.cursor)
 
     def _changed(self, x, y):
         self.preview.invalidate_cell(x, y)
@@ -112,7 +143,7 @@ class SpriteEditor:
             return True
         if text in ('p', 'P'):
             print('SPRITE_HEX', self.export_hex())
-            self.status.set_text('Printed hex to the REPL')
+            _set_label(self.status, 'Printed hex to the REPL')
             return True
         return False
 
@@ -128,23 +159,34 @@ class SpriteEditor:
         old = self.sprite.export()
         self.sprite.load(data)
         new = self.sprite.data
+        # One pass: collect changed bytes; past _BULK changed pixels, repaint whole.
+        changed, count = [], 0
         for i in range(128):
-            if old[i] != new[i]:
-                tile, rest = i >> 5, i & 31
-                x, y = (tile & 1) * 8 + (rest & 3) * 2, (tile >> 1) * 8 + (rest >> 2)
-                for dx in (0, 1):
-                    if (old[i] ^ new[i]) & (0xf0 >> dx * 4):
-                        self.grid.invalidate_cell(x + dx, y)
-                        self.preview.invalidate_cell(x + dx, y)
+            d = old[i] ^ new[i]
+            if d:
+                count += (d > 15) + (d & 15 != 0)
+                if count > _BULK:
+                    self.grid.invalidate()
+                    self.preview.invalidate()
+                    return old
+                changed.append(i)
+        for i in changed:
+            d = old[i] ^ new[i]
+            tile, rest = i >> 5, i & 31
+            x, y = (tile & 1) * 8 + (rest & 3) * 2, (tile >> 1) * 8 + (rest >> 2)
+            for dx in (0, 1):
+                if d & (0xf0 >> dx * 4):
+                    self.grid.invalidate_cell(x + dx, y)
+                    self.preview.invalidate_cell(x + dx, y)
         return old
 
     def undo(self):
         """One level; a second undo redoes."""
         if self._undo is None:
-            self.status.set_text('Nothing to undo')
+            _set_label(self.status, 'Nothing to undo')
             return False
         self._undo = self._replace(self._undo)
-        self.status.set_text('Undo')
+        _set_label(self.status, 'Undo')
         return True
 
     def export_hex(self):
@@ -162,7 +204,7 @@ class SpriteEditor:
         except Exception:
             raise ValueError('sprite hex must be 256 digits')
         self._undo = self._replace(data)
-        self.status.set_text('Imported')
+        _set_label(self.status, 'Imported')
 
 
 def build(app, data=None):

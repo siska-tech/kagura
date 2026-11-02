@@ -7,7 +7,8 @@ over raw REPL (as in kagura-ui-canvas.py); other UI modules and the SDK stay
 frozen. The HDMI console is lent to the UI and restored; ERROR_CODE is read.
 Reports: the sprite from the event sequence of tests/ui_sprite_editor_runtime.py
 (must match the PC), incremental versus full-repaint CRC, grid and 1:1 preview
-pixels against the TILE4 data, the hex round trip, and frame/cpu/flush times.
+pixels against the TILE4 data, the hex round trip, and frame/cpu/flush times
+(imports include the import_hex() call; a 32-import stress counts MemoryError).
 """
 import argparse
 import codecs
@@ -41,6 +42,10 @@ def report(name,values):
           sorted(x[0]-x[1] for x in values)[n//2],sorted(x[1] for x in values)[n//2]))
 def key(k,t=''):
     app.events.post(Event(k,t));return frame()
+def imported(text):
+    # import_hex() runs outside App.step(); time both, as a REPL user waits for both.
+    a=time.ticks_us();e.import_hex(text);t,f=frame()
+    return time.ticks_diff(time.ticks_us(),a),f
 def check_pixels():
     bad=0
     for y in range(16):
@@ -89,15 +94,21 @@ try:
         e.preview.invalidate();values.append(frame())
     report('preview_full',values)
     a=text;b=binascii.hexlify(bytes((k*73)&0xff for k in range(128))).decode()
-    values=[]
-    for i in range(8):
-        e.import_hex(b if i&1==0 else a);values.append(frame())
-    report('import_all_pixels',values)
+    report('import_all_pixels',[imported(b if i&1==0 else a) for i in range(8)])
     print('EDITOR_IMPORT_PIXEL_MISMATCH',check_pixels())
     values=[]
     for i in range(16):
-        t=e.export_hex();e.import_hex(t[:-1]+('0' if t[-1]!='0' else 'f'));values.append(frame())
+        t=e.export_hex();values.append(imported(t[:-1]+('0' if t[-1]!='0' else 'f')))
     report('import_one_pixel',values)
+    # Repeated full imports: any MemoryError is reported, not raised.
+    oom=0;gc.collect();low_import=gc.mem_free()
+    for i in range(32):
+        try:
+            imported(b if i&1==0 else a)
+        except MemoryError:
+            oom+=1;gc.collect();app.damage((0,0,320,240));frame()
+        low_import=min(low_import,gc.mem_free())
+    print('EDITOR_IMPORT_STRESS n=32 memory_errors',oom,'min_free',low_import,'PIXEL_MISMATCH',check_pixels())
     values=[]
     for i in range(8):
         app.damage((0,0,320,240));values.append(frame())
