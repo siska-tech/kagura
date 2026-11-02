@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "kd_desktop.h"
+#ifdef KD_NATIVE_TEXT
+#include "kj_desktop.h"
+#endif
 
 #include <string.h>
 
@@ -126,7 +129,11 @@ kd_window *kd_window_open(kd_desktop *d, const kd_window_class *cls, void *user,
     w->frame = frame;
     w->flags = (uint16_t)flags;
     w->open = true;
+#ifdef KD_NATIVE_TEXT
+    kj_desktop_copy_title(w->title,sizeof w->title,title);
+#else
     strncpy(w->title, title ? title : "", KD_TITLE_MAX - 1);
+#endif
     d->z[d->zn++] = (int8_t)slot;
     damage_from(d, frame, d->zn - 1);
     if (old) {
@@ -174,8 +181,12 @@ void kd_window_invalidate_all(kd_desktop *d, kd_window *w) {
 }
 
 void kd_window_set_title(kd_desktop *d, kd_window *w, const char *title) {
+#ifdef KD_NATIVE_TEXT
+    kj_desktop_copy_title(w->title,sizeof w->title,title);
+#else
     memset(w->title, 0, sizeof w->title);
     strncpy(w->title, title, KD_TITLE_MAX - 1);
+#endif
     damage_title(d, w);
 }
 

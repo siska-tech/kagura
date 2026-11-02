@@ -1,0 +1,4 @@
+         U __aeabi_uidiv
+         U __aeabi_uidivmod
+         U memcmp
+         U memset

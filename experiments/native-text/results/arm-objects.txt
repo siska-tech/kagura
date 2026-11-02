@@ -1,0 +1,70 @@
+build-arm/kj_text.o  :
+section                 size   addr
+.text                      0      0
+.data                      0      0
+.bss                       0      0
+.text.valid_font         104      0
+.text.find                96      0
+.text.put4                58      0
+.text.kj_utf8_next       196      0
+.text.kj_utf8_prefix      50      0
+.text.kj_font_open       156      0
+.text.kj_font_ascii       62      0
+.text.kj_lookup          116      0
+.text.kj_measure         240      0
+.text.kj_draw            666      0
+.text.kj_draw4           296      0
+.rodata.box.0              8      0
+.rodata                    7      0
+.debug_info             4514      0
+.debug_abbrev            805      0
+.debug_loclists         5148      0
+.debug_aranges           112      0
+.debug_rnglists          252      0
+.debug_line             3415      0
+.debug_str              1072      0
+.comment                  70      0
+.debug_frame             376      0
+.ARM.attributes           44      0
+Total                  17863
+
+
+build-arm/font_data.o  :
+section               size   addr
+.text                    0      0
+.data                    0      0
+.bss                     0      0
+.rodata.kj_misaki8      24      0
+.rodata.font_bytes   71718      0
+.debug_info            354      0
+.debug_abbrev          171      0
+.debug_aranges          24      0
+.debug_line            408      0
+.debug_str             536      0
+.comment                70      0
+.ARM.attributes         44      0
+Total                73349
+
+
+build-arm/kj_desktop.o  :
+section                                size   addr
+.text                                     0      0
+.data                                     0      0
+.bss                                      0      0
+.text.plot                                8      0
+.text.kj_desktop_font                    60      0
+.text.kj_desktop_text                   128      0
+.rodata.kj_desktop_copy_title.str1.1      1      0
+.text.kj_desktop_copy_title              68      0
+.text.kj_desktop_title_fit               82      0
+.debug_info                            2381      0
+.debug_abbrev                           581      0
+.debug_loclists                         729      0
+.debug_aranges                           64      0
+.debug_rnglists                          44      0
+.debug_line                            1016      0
+.debug_str                             1037      0
+.comment                                 70      0
+.debug_frame                            168      0
+.ARM.attributes                          44      0
+Total                                  6481

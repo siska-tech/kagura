@@ -1,0 +1,135 @@
+{
+  "result": "ASCII_GUI_BYTE_EXACT",
+  "files": [
+    {
+      "file": "scenario/01-desktop.png",
+      "bytes": 576768,
+      "sha256": "a54c72eaadca28fee0f1a71d0c9166b9e3cce6663849975a2d535ba95df29eb0"
+    },
+    {
+      "file": "scenario/02-desk-menu.png",
+      "bytes": 576768,
+      "sha256": "fc2b9b29573df61a338b6fdab7e9c3ca02d90ffd8788bdd4daaf5c85e755a858"
+    },
+    {
+      "file": "scenario/03-about-pressed.png",
+      "bytes": 576768,
+      "sha256": "6559d28ec1be91867ada6cc4963644ab7c5163c6814f60e250578abb62188fe1"
+    },
+    {
+      "file": "scenario/04-outline-drag.png",
+      "bytes": 576768,
+      "sha256": "9e9037701aacdf832dcd2cf4224cecec8b4d9a060c0468a538edb43e9344d290"
+    },
+    {
+      "file": "scenario/05-dropped.png",
+      "bytes": 576768,
+      "sha256": "f70243bc307ee1c30802499814e14b66133db379f376b234d82dff887bcd7fde"
+    },
+    {
+      "file": "scenario/06-studio-import.png",
+      "bytes": 576768,
+      "sha256": "53dd19af3f32902c490c67bb3b0b3b1a87daf42eee8c10599367004ba4520ee4"
+    },
+    {
+      "file": "scenario/07-studio-edit.png",
+      "bytes": 576768,
+      "sha256": "69c1141645b49198e7224fbf7bbc2b7d020ef6116f0723ca6a48a0b0fac0d6de"
+    },
+    {
+      "file": "scenario/08-filemgr-sprites.png",
+      "bytes": 576768,
+      "sha256": "fd283eb78918594624551b19e8c90433775985ef28796c40bc8220a73154875f"
+    },
+    {
+      "file": "scenario/09-viewer.png",
+      "bytes": 576768,
+      "sha256": "bb4311bad1a2c72ac5c6d9009839185914a120945fe015713a6b1a3786bb5527"
+    },
+    {
+      "file": "scenario/10-kagura-320x240.png",
+      "bytes": 307828,
+      "sha256": "76121c61af0beeb1ff5d3384d715eb9028535c51d6690935fe03033e74ded6b5"
+    },
+    {
+      "file": "scenario/desktop-1x.png",
+      "bytes": 64328,
+      "sha256": "26c8a8190e6161e4b95876c4727766f36c03d54d158e2a4311fcec09fb68d728"
+    },
+    {
+      "file": "scenario/desktop.linear4",
+      "bytes": 32000,
+      "sha256": "0aafdbae505f183ce6730efee73f92e8c1d2901f05a95ebeef01ec43a3fb0ee5"
+    },
+    {
+      "file": "scenario/desktop.tile4",
+      "bytes": 32000,
+      "sha256": "5c3a21f5604c9bb2b5902c25f12de4ed3d6fd057e0ec52f258a9e6d011735090"
+    },
+    {
+      "file": "hdmi-ref/01-desktop.png",
+      "bytes": 77173,
+      "sha256": "2c7e96176fee2277b39e4eb381d7571c2a71214ea5e09852cd536261cda042b3"
+    },
+    {
+      "file": "hdmi-ref/02-files-open.png",
+      "bytes": 77173,
+      "sha256": "8b4f0c9840d3f104a0c39082df2214ba7a63c3bf39f5468bb5f39b32fdb281c8"
+    },
+    {
+      "file": "hdmi-ref/03-files-closed.png",
+      "bytes": 77173,
+      "sha256": "82ee366aa8ce1b66611a63056504fd5e7bbaa6b3916e513113a80ffb540d0a7f"
+    },
+    {
+      "file": "hdmi-ref/04-overlap.png",
+      "bytes": 77173,
+      "sha256": "84f65789e31759dcb74d45e0d81e23907230779ead0bc31f1fd18d8f0d048ac7"
+    },
+    {
+      "file": "hdmi-ref/05-activate.png",
+      "bytes": 77173,
+      "sha256": "93d2a0fa098ba3eae37faf8f9df4cd6f0faa6cac6b3e1ad7bea652f403fac3ef"
+    },
+    {
+      "file": "hdmi-ref/06-menu.png",
+      "bytes": 77173,
+      "sha256": "fe2ac04a8af0a07efabf05aae31efde38c3d84c65b61aa1defd44282dab383dd"
+    },
+    {
+      "file": "hdmi-ref/07-menu-closed.png",
+      "bytes": 77173,
+      "sha256": "f1f55d8bb72cc5bafb90fe4f20f1fd0dc0597331c1fdb52f82566077aa9d8966"
+    },
+    {
+      "file": "hdmi-ref/08-about.png",
+      "bytes": 77173,
+      "sha256": "98c795ae03e4018c06b1eb7718f7c357bd887253137f70db296d07af6d264352"
+    },
+    {
+      "file": "hdmi-ref/09-about-closed.png",
+      "bytes": 77173,
+      "sha256": "e94c29eee85d33a91e82cc0d8d40a6886d2b6d1e78fc3a6a72125bc072dcea7f"
+    },
+    {
+      "file": "hdmi-ref/10-move-live.png",
+      "bytes": 77173,
+      "sha256": "5662815bd3565dbd4f2a34083afe347c877944d9c5280340c3e955231bd2ed0b"
+    },
+    {
+      "file": "hdmi-ref/11-outline-drag.png",
+      "bytes": 77173,
+      "sha256": "57e666165298a6cadc61580ca64818a77061e67a6697bd3daff8f972634daf73"
+    },
+    {
+      "file": "hdmi-ref/12-outline-drop.png",
+      "bytes": 77173,
+      "sha256": "81acd2a8df9029e30f0176059d443c00bea1bf8d66ff44ed5bef21efd4311b98"
+    },
+    {
+      "file": "hdmi-ref/13-sprite-draw.png",
+      "bytes": 77173,
+      "sha256": "eff8e0c014ee4ef5fa594b456604ec83df927fd9b4e1e8c306fa9eb79831c943"
+    }
+  ]
+}
