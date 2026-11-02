@@ -1,0 +1,59 @@
+HOST_START 2026-11-03T07:03:20
+BUILD v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel)
+SIZES [('desktop', 34352), ('events', 896), ('framebuffer', 32000), ('items', 5760), ('max_items', 320), ('menus', 584), ('sprites', 1088), ('staging', 1280), ('text', 2048), ('total', 46152)]
+HEAP before 141584 after_desktop 141216 alloc 60000
+HEAP after_app 141088
+SCENE 1 desktop 1a27e331 312 37282 855b9d6c 0 130944
+SCENE 2 files 851ad4ee 400 48839 c90e901f 0 121424
+SCENE 3 menu 67a04804 42 14362 f6d8dc42 0 112544
+SCENE 4 about 3da90048 313 40099 34b04fb7 0 103232
+SCENE 5 ok-pressed 7ec40e9d 21 11311 d76f1925 0 94160
+SCENE 6 about-closed 7600c8b4 271 34447 d74143ad 0 85040
+SCENE 7 studio 3986f03e 459 57870 0efa16d3 0 75648
+SCENE 8 paint 4ece6c58 44 16397 c413de4e 0 65648
+SCENE 9 import 597865ff 311 37214 89cfe118 0 56672
+SCENE 10 move 8b36e887 576 111426 abfa985e 0 47360
+SCENE 11 closed c21f8d5b 443 46988 2285aec6 0 37984
+CALL lambda 10.3 us
+CALL is_open 15.1 us
+CALL set_text_same 33.4 us
+CALL set_color_same 30.2 us
+FRAME label 5514 us
+FRAME sprite_pixel 433 us
+FRAME window_activate 12861 us
+FRAME window_move 36177 us
+FRAME full_redraw 28080 us
+LOOP 2000 updates in 11082 ms, heap growth 111696 B, free 27664
+GC collect 12363 us
+SOAK progress 2000 updates, 0 failed, free 139248
+SOAK progress 4000 updates, 0 failed, free 139248
+SOAK progress 6000 updates, 0 failed, free 139248
+SOAK progress 8000 updates, 0 failed, free 139248
+SOAK progress 10000 updates, 0 failed, free 139248
+SOAK progress 12000 updates, 0 failed, free 139248
+SOAK progress 14000 updates, 0 failed, free 139248
+SOAK progress 16000 updates, 0 failed, free 139248
+SOAK progress 18000 updates, 0 failed, free 139248
+SOAK progress 20000 updates, 0 failed, free 139248
+SOAK progress 22000 updates, 0 failed, free 139248
+SOAK progress 24000 updates, 0 failed, free 139248
+SOAK progress 26000 updates, 0 failed, free 139248
+SOAK progress 28000 updates, 0 failed, free 139248
+SOAK progress 30000 updates, 0 failed, free 139248
+SOAK progress 32000 updates, 0 failed, free 139248
+SOAK progress 34000 updates, 0 failed, free 139248
+SOAK progress 36000 updates, 0 failed, free 139248
+SOAK progress 38000 updates, 0 failed, free 139248
+SOAK progress 40000 updates, 0 failed, free 139248
+SOAK progress 42000 updates, 0 failed, free 139248
+SOAK progress 44000 updates, 0 failed, free 139248
+SOAK progress 46000 updates, 0 failed, free 139248
+SOAK progress 48000 updates, 0 failed, free 139248
+SOAK 48346 updates, 241 checks, 0 failed, lowest free heap 139104 B
+CONSISTENT True error_code 0
+STATS {'last_tiles': 1000, 'tiles': 3339848, 'items': 13, 'items_peak': 32, 'layers': 306925, 'last_area': 64000, 'text': 190, 'text_peak': 288, 'compactions': 77, 'pending': 0, 'renders': 35156, 'dropped': 8, 'presents': 50745, 'runs': 216075}
+CLOSED console paused False last_error None
+DONE
+SOFT_RESET ALIVE True None 90128
+HARD_RESET ALIVE True None 89040
+HOST_END 2026-11-03T07:22:41
