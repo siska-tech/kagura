@@ -6,6 +6,7 @@
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x); exit(2); } } while (0)
 #ifndef WD_ARM_TESTS
 void wd_platform_tick(void) {}
+uint64_t wd_platform_us(void) { return 0; }
 #endif
 static uint32_t frames[16],reference[16];
 static unsigned frame_count;
@@ -46,6 +47,7 @@ static void crc_equivalence(void) {
         CHECK(wd_run(262144,1,cover!=0,false,0,0)==0); balanced();
         CHECK(frame_count==count); /* includes revealing script-updated content */
         printf("CRC_EQ cover=%d frames=%u final=%08x\n",cover,count,reference[count-1]);
+        for (unsigned i=0;i<count;i++) printf("CRC_REFERENCE cover=%d frame=%u crc=%08x\n",cover,i,reference[i]);
     }
     compare=false; wd_ui_observer(NULL);
 }

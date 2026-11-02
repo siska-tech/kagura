@@ -1,6 +1,6 @@
 # Minimal flash-resident Wren Desktop experiment
 
-Status: host and CPU-emulated validation complete; **no physical hardware execution or flashing**. See [REPORT.md](REPORT.md) for measured limits and the actual SRAM map. This is a separate experiment, not a replacement for MicroPython or the native desktop.
+Status: host and CPU-emulated validation complete. Physical flash validation is now authorized, but requires all recovery gates to pass; see [HARDWARE.md](HARDWARE.md) for current preflight status. No Wren image has yet been flashed. See [REPORT.md](REPORT.md) for measured limits and the actual SRAM map. This is a separate experiment, not a replacement for MicroPython or the native desktop.
 
 Inputs are pinned to PR #68 `be344f5c742101f0cff170a29f63d09c0a17c441` and PR #69 `d03912b4339495379302b286383eb40cf8a6d53e`. Their source directories and `software/` remain unchanged. `tools/verify_inputs.py` checks this. Wren revision `99d2f0b8fc2686134b32b18166e037639f7e9f2c` is MIT licensed; acquisition, manifest and license are inherited from `../wren-rp2040`.
 
@@ -44,4 +44,6 @@ OOM discards the entire interrupted VM through the allocator boundary, closes it
 
 ## Hardware boundary
 
-This flash-resident image reserves 48 KiB native stack and 8 KiB recovery storage. It starts at 125 MHz with USB serial and watchdog recovery. Physical execution remains unapproved. A future deployment needs explicit approval, a full-flash backup/hash and a reviewed restoration procedure: watchdog reset restarts **this flash image**, not MicroPython. The previous SRAM-only loading procedure cannot be used for this flash-addressed ELF. No erase/program implementation or loader is provided here.
+This flash-resident image reserves 48 KiB native stack and 8 KiB recovery storage. It starts at 125 MHz with USB serial and an 8-second watchdog. A timeout, test failure or normal completion explicitly enters ROM BOOTSEL for restoration; an unexpected watchdog reboot is reported and stops the test. USB automatic reset interfaces remain disabled. Watchdog reset alone restarts **this flash image**, not MicroPython.
+
+The authorized hardware procedure requires a full-flash backup/hash, proven BOOTSEL readback and a known-good MicroPython image before programming. `tools/hardware_run.py` writes only the ELF's sector-aligned flash prefix, checks the complete flash including the untouched tail, captures metrics and HDMI, then restores the original prefix and verifies all 2 MiB against the backup before rebooting MicroPython. Exact hashes, recovery log and `--approved` are required. Backups remain outside Git. The previous SRAM-only loading procedure cannot be used for this flash-addressed ELF. The firmware itself contains no erase/program routine.

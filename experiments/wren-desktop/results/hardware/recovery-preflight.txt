@@ -1,0 +1,10 @@
+CONTROL hash=d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console=(False, True, True, 'None')
+BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+No accessible RP-series devices in BOOTSEL mode were found.
+
+but:
+
+RP2040 device at bus 2, address 5 appears to be in BOOTSEL mode, but picotool was unable to connect.
+    You may need to install a driver via Zadig. See Zadig in the README
+    (https://github.com/raspberrypi/picotool#zadig) for more information
+

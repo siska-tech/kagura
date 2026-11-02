@@ -5,5 +5,5 @@ WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=0 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126376 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
-ARENA capacity=135168 high_water=126376 current_break=126376 in_use=1032 free=125344 sbrk_failures=0 stack_painted_upper=33528
+MEM cycle=0 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+ARENA capacity=135168 high_water=126032 current_break=126032 in_use=1032 free=125000 sbrk_failures=0 stack_painted_upper=33552

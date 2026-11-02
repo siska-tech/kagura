@@ -1,7 +1,7 @@
 set(DESKTOP ${CMAKE_CURRENT_LIST_DIR}/../c-gem-desktop)
 set(WREN_EXPERIMENT ${CMAKE_CURRENT_LIST_DIR}/../wren-rp2040)
 include(${WREN_EXPERIMENT}/wren.cmake)
-add_library(integration STATIC ${CMAKE_CURRENT_LIST_DIR}/src/ui.c ${CMAKE_CURRENT_LIST_DIR}/src/transport.c ${CMAKE_CURRENT_LIST_DIR}/src/runtime.c
+add_library(integration STATIC ${CMAKE_CURRENT_LIST_DIR}/src/ui.c ${CMAKE_CURRENT_LIST_DIR}/src/transport.c ${CMAKE_CURRENT_LIST_DIR}/src/runtime.c ${CMAKE_CURRENT_LIST_DIR}/src/diagnostics.c
   ${DESKTOP}/src/kd_fb.c ${DESKTOP}/src/kd_region.c ${DESKTOP}/src/kd_tile4.c
   ${DESKTOP}/src/kd_font.c ${DESKTOP}/src/kd_font_data.c ${DESKTOP}/src/kd_sprite.c
   ${DESKTOP}/src/kd_gfx.c ${DESKTOP}/src/kd_app.c ${DESKTOP}/src/kd_desktop.c)

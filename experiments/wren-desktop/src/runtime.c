@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "runtime.h"
+#include "diagnostics.h"
 #include "wren.h"
 #include <setjmp.h>
 #include <stdalign.h>
@@ -94,26 +95,31 @@ static void rectangle(WrenVM *vm) {
 }
 static void next_event(WrenVM *vm) { count(vm); wrenSetSlotDouble(vm,0,wd_ui_event()); }
 static void present(WrenVM *vm) { count(vm); wrenSetSlotBool(vm,0,wd_ui_present()); }
+#define TIMED(name,kind) static void timed_##name(WrenVM *vm) { uint64_t start=wd_platform_us(); name(vm); wd_diag_add(kind,start); }
+TIMED(open_window,WD_OPEN)
+TIMED(rectangle,WD_RECT)
+TIMED(next_event,WD_EVENT)
+TIMED(present,WD_PRESENT)
 static WrenForeignMethodFn bind(WrenVM *vm,const char *module,const char *cls,bool is_static,const char *sig) {
     (void)vm;
     if (strcmp(module,"integration") || strcmp(cls,"Desktop") || !is_static) return NULL;
-    if (!strcmp(sig,"open(_)")) return open_window;
-    if (!strcmp(sig,"rect(_,_,_,_,_)")) return rectangle;
-    if (!strcmp(sig,"nextEvent()")) return next_event;
-    if (!strcmp(sig,"present()")) return present;
+    if (!strcmp(sig,"open(_)")) return timed_open_window;
+    if (!strcmp(sig,"rect(_,_,_,_,_)")) return timed_rectangle;
+    if (!strcmp(sig,"nextEvent()")) return timed_next_event;
+    if (!strcmp(sig,"present()")) return timed_present;
     return NULL;
 }
 static void collect(WrenVM *vm) {
-    runtime.m.stage=GC; wrenCollectGarbage(vm); runtime.m.collections++;
+    runtime.m.stage=GC; uint64_t start=wd_platform_us(); wrenCollectGarbage(vm); wd_diag_add(WD_GC,start); runtime.m.collections++;
     runtime.m.gc_live=runtime.m.live; runtime.m.stage=RUN;
 }
 static int execute(unsigned rounds,bool cover,bool check_errors) {
     Runtime *r=&runtime; WrenConfiguration cfg; wrenInitConfiguration(&cfg);
     cfg.reallocateFn=tracked; cfg.userData=r; cfg.writeFn=output; cfg.errorFn=error; cfg.bindForeignMethodFn=bind;
     cfg.initialHeapSize=16384; cfg.minHeapSize=8192; cfg.heapGrowthPercent=25;
-    r->m.stage=INIT; WrenVM *vm=wrenNewVM(&cfg); r->m.init_live=r->m.live;
+    r->m.stage=INIT; uint64_t start=wd_platform_us(); WrenVM *vm=wrenNewVM(&cfg); wd_diag_add(WD_INIT,start); r->m.init_live=r->m.live;
     r->m.stage=COMPILE;
-    bool ok=wrenInterpret(vm,"integration",app_source)==WREN_RESULT_SUCCESS;
+    start=wd_platform_us(); bool ok=wrenInterpret(vm,"integration",app_source)==WREN_RESULT_SUCCESS; wd_diag_add(WD_COMPILE,start);
     r->m.compile_live=r->m.live;
     if (ok && r->injection==6) {
         wd_ui_prepare(false);
@@ -131,7 +137,7 @@ static int execute(unsigned rounds,bool cover,bool check_errors) {
         wd_platform_tick(); wd_ui_prepare(cover);
         if (!wd_ui_start()) { ok=false; break; }
         r->m.stage=RUN; wrenEnsureSlots(vm,1); wrenSetSlotHandle(vm,0,receiver);
-        WrenInterpretResult status=wrenCall(vm,method);
+        start=wd_platform_us(); WrenInterpretResult status=wrenCall(vm,method); wd_diag_add(WD_CALL,start);
         ok=status==WREN_RESULT_SUCCESS && wrenGetSlotType(vm,0)==WREN_TYPE_NUM &&
             wrenGetSlotDouble(vm,0)==1406 && wd_ui_events()==4;
         if (ok && cover) { wd_ui_cover(false); ok=wd_ui_present(); }

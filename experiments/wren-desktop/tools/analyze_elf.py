@@ -34,7 +34,9 @@ for s in sh:
             if sn and index:symbols[name(strings,sn)]=dict(address=value,size=sz,type=si&15)
 for forbidden in ('flash_range_erase','flash_range_program','mock_device_vram','tfb','tile_staging'):
     assert forbidden not in symbols, forbidden
-assert not any(n.startswith(('mock_','multicore_launch_core1','rom_reset_usb_boot')) for n in symbols)
+assert not any(n.startswith(('mock_','multicore_launch_core1')) for n in symbols)
+# Hardware validation explicitly returns to ROM BOOTSEL for restoration.
+# This recovery entry is not a flash erase/program implementation.
 addr=lambda n:symbols[n]['address']
 heap_start,heap_limit=addr('__end__'),addr('__HeapLimit')
 bottom,top=addr('__StackBottom'),addr('__StackTop')
