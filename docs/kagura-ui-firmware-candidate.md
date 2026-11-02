@@ -49,7 +49,10 @@ make -C build/micropython-src/ports/rp2 BOARD=KAGURA_PICO \
   - `kagura/framebuffer.py`（#57）
   - `kagura/ui/app.py`、`fonts.py`、`render.py`、`widget.py`、`widgets.py`（#53〜#59）
   - board定義、manifest、整列scriptは同じである。
-- **含まれないもの:** #62（`fill_rect`/`glyph8`の高速経路）は未mergeのため含まれていない。
+- **含まれないもの:** `d219778`より後の変更。#62（`fill_rect`/`glyph8`の高速経路）と#64（Canvas）は含まれない。
+- **固定:** このUF2（`a5166d79…`）は、source commit `d219778`に恒久的に対応する。
+  - 後のmainから作り直さない。置き換えない。名前を付け替えない。
+  - 実機検証は、このUF2と、上記の手順で`d219778`から再現した同一のUF2だけを対象にする。
 
 ## 実機検証計画（書込みには明示的な許可が必要）
 
@@ -125,4 +128,7 @@ make -C build/micropython-src/ports/rp2 BOARD=KAGURA_PICO \
 
 ### 次の候補
 
-#62をmergeした後に、同じ手順で次の候補を作る。
+後のmain（#62、#64など）から作るUF2は、別の候補として扱う。
+
+- source commit・sha256・名前は、別に記録する。
+- この`d219778`候補は置き換えない。
