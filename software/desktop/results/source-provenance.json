@@ -1,0 +1,210 @@
+{
+  "base": "e2ff7ead9144136e95096a92e0d024ee051b3f66",
+  "files": {
+    "experiments/c-gem-desktop/src/kd_app.c": {
+      "git_blob": "929f9190efb0e05a405b8e48e52f216363ff91b6",
+      "checkout_sha256": "cd73d8dfef4ae8d1c5b383f1aa6388a1436959a45ffe1a9a49086f2d1402b53d",
+      "reference_sha256": "cd73d8dfef4ae8d1c5b383f1aa6388a1436959a45ffe1a9a49086f2d1402b53d"
+    },
+    "experiments/c-gem-desktop/src/kd_app.h": {
+      "git_blob": "f100425efc6fff2e572a2d2ad6f4a821f6f5192a",
+      "checkout_sha256": "ebccbebd06b5ecd5647789a16b1da15fb9dcb9bac3f0871e7e6bd39da5abce4e",
+      "reference_sha256": "ebccbebd06b5ecd5647789a16b1da15fb9dcb9bac3f0871e7e6bd39da5abce4e"
+    },
+    "experiments/c-gem-desktop/src/kd_desktop.c": {
+      "git_blob": "89b7ba6643b8bf839503cef848fcdadbd99181fc",
+      "checkout_sha256": "d6dfc43fa7ac965f6b1b5e6a193bdd1bae555e4da7642ab2010f182a9f531f15",
+      "reference_sha256": "d6dfc43fa7ac965f6b1b5e6a193bdd1bae555e4da7642ab2010f182a9f531f15"
+    },
+    "experiments/c-gem-desktop/src/kd_desktop.h": {
+      "git_blob": "c2f2dc634c14d8092499aa15fa763bbb75b3e250",
+      "checkout_sha256": "31a3eb3d3f4c2ca6ce81961ab9164c724a756bbc6ae4c417c2a5bf6b62615e7b",
+      "reference_sha256": "31a3eb3d3f4c2ca6ce81961ab9164c724a756bbc6ae4c417c2a5bf6b62615e7b"
+    },
+    "experiments/c-gem-desktop/src/kd_fault.h": {
+      "git_blob": "e3f05d115279378f81e3e92e3b4e9b3af6602314",
+      "checkout_sha256": "a82ef339b8595aec5feb6c16ba2970869c6c093ce8663e708371b80e5072b228",
+      "reference_sha256": "a82ef339b8595aec5feb6c16ba2970869c6c093ce8663e708371b80e5072b228"
+    },
+    "experiments/c-gem-desktop/src/kd_fb.c": {
+      "git_blob": "12aac2abc151c1b7743bc7f6438fa0779f3dea27",
+      "checkout_sha256": "982fb5e15a73ae0094047655006735868ea44e7cd243e905bbe679f962f36b8c",
+      "reference_sha256": "982fb5e15a73ae0094047655006735868ea44e7cd243e905bbe679f962f36b8c"
+    },
+    "experiments/c-gem-desktop/src/kd_fb.h": {
+      "git_blob": "7fcc022ba0af2ab59af9d692b001ebe2a384bfb0",
+      "checkout_sha256": "7f164ae2ebab499987f7c1ceabc8fc4b5051d2f1b4c1c76d22c88d0d70f08c22",
+      "reference_sha256": "7f164ae2ebab499987f7c1ceabc8fc4b5051d2f1b4c1c76d22c88d0d70f08c22"
+    },
+    "experiments/c-gem-desktop/src/kd_font.c": {
+      "git_blob": "e8191b89d2313e70390221dc1dfba4ee0eded2a7",
+      "checkout_sha256": "cbcb323268881dc2dc616bb15da7fb5786b7e79799d1a2af99033cd94989ae6f",
+      "reference_sha256": "cbcb323268881dc2dc616bb15da7fb5786b7e79799d1a2af99033cd94989ae6f"
+    },
+    "experiments/c-gem-desktop/src/kd_font.h": {
+      "git_blob": "c3f8f2ae7e033db81a7edd294e35db2a6dd903a1",
+      "checkout_sha256": "912ec0ee71faf42a40a99febe6ac2fd7e1e7506da02b5ed547699e29d8707473",
+      "reference_sha256": "912ec0ee71faf42a40a99febe6ac2fd7e1e7506da02b5ed547699e29d8707473"
+    },
+    "experiments/c-gem-desktop/src/kd_font_data.c": {
+      "git_blob": "54df78240a42522fe7ed24529bbc5f779e661de6",
+      "checkout_sha256": "8a5452ac530c9e8fdec4c5c7b998b70cc572799d4fa2895bb83e5a9d86315c6b",
+      "reference_sha256": "8a5452ac530c9e8fdec4c5c7b998b70cc572799d4fa2895bb83e5a9d86315c6b"
+    },
+    "experiments/c-gem-desktop/src/kd_gfx.c": {
+      "git_blob": "1bd311eed6e4ec7fc01092df000566f9fc5c28a8",
+      "checkout_sha256": "033cce15acefc81ee9980a72e4454c179c32caacede8a0689b3959ce607329b5",
+      "reference_sha256": "033cce15acefc81ee9980a72e4454c179c32caacede8a0689b3959ce607329b5"
+    },
+    "experiments/c-gem-desktop/src/kd_gfx.h": {
+      "git_blob": "53c75057126caafc1d32ac56654a79763c8ed66c",
+      "checkout_sha256": "7c4c9b061a19f0593a9143e1bb150f5cc78b72c09eb7b7172daf12d39c55cef8",
+      "reference_sha256": "7c4c9b061a19f0593a9143e1bb150f5cc78b72c09eb7b7172daf12d39c55cef8"
+    },
+    "experiments/c-gem-desktop/src/kd_region.c": {
+      "git_blob": "17f7aaae1ae86d0347fe6960f94d343f38a8b77c",
+      "checkout_sha256": "b0b6c87f63f65a886de29a2b1034c59fe8aa2ada98f44e8d31fda8d1d60a659f",
+      "reference_sha256": "b0b6c87f63f65a886de29a2b1034c59fe8aa2ada98f44e8d31fda8d1d60a659f"
+    },
+    "experiments/c-gem-desktop/src/kd_region.h": {
+      "git_blob": "d1142a4ea9bc11e8ef63915d0f6c366521d87cc5",
+      "checkout_sha256": "77cc07ad5252c037ba50ac36f7e71a5ccbf21a641a25f5ca167957b85ad06282",
+      "reference_sha256": "77cc07ad5252c037ba50ac36f7e71a5ccbf21a641a25f5ca167957b85ad06282"
+    },
+    "experiments/c-gem-desktop/src/kd_sprite.c": {
+      "git_blob": "c147906f75ef8c6437b20d145c278b175fa61a7f",
+      "checkout_sha256": "ad99c16fc77ae0b0dd3a639815e7eba7210381ade798542d966367f937cfe0e2",
+      "reference_sha256": "ad99c16fc77ae0b0dd3a639815e7eba7210381ade798542d966367f937cfe0e2"
+    },
+    "experiments/c-gem-desktop/src/kd_sprite.h": {
+      "git_blob": "34f2e1d41c3db31148bc6dea3864a2510398b600",
+      "checkout_sha256": "7ba6563b22c2edfd5011f9d47f534726048e5bb05a76888f6abc8865ae438df6",
+      "reference_sha256": "7ba6563b22c2edfd5011f9d47f534726048e5bb05a76888f6abc8865ae438df6"
+    },
+    "experiments/c-gem-desktop/src/kd_tile4.c": {
+      "git_blob": "ff0aa77cf9a4f46c938bc5b294072c2f30646fa5",
+      "checkout_sha256": "440a9c79d3e8abb6ee5df744c3eeb533b2bc7ee00c42202756982155f8fc2d1c",
+      "reference_sha256": "440a9c79d3e8abb6ee5df744c3eeb533b2bc7ee00c42202756982155f8fc2d1c"
+    },
+    "experiments/c-gem-desktop/src/kd_tile4.h": {
+      "git_blob": "4986f1903192f42d839b96b522a7f3fa71deeb75",
+      "checkout_sha256": "f37151ded73cc0150cdb7dbaee59ef32f458f5abd0acdbbe6e68f754080357e9",
+      "reference_sha256": "f37151ded73cc0150cdb7dbaee59ef32f458f5abd0acdbbe6e68f754080357e9"
+    },
+    "experiments/native-text/include/kj_desktop.h": {
+      "git_blob": "2aa28389da9cee850827dbc62f1bf8601f3e04be",
+      "checkout_sha256": "86eefdf2900a79b38875ae525dff4aca7c46f40f9621079e1e428452932afce9",
+      "reference_sha256": "86eefdf2900a79b38875ae525dff4aca7c46f40f9621079e1e428452932afce9"
+    },
+    "experiments/native-text/include/kj_text.h": {
+      "git_blob": "1e6dce150d4fbb1ec7d12d8c9caca38ba10e9ebe",
+      "checkout_sha256": "ce8bc7fdf2e435f7fbf51b9aa4bae295982607410a282abdb47a96cf10ea78e9",
+      "reference_sha256": "ce8bc7fdf2e435f7fbf51b9aa4bae295982607410a282abdb47a96cf10ea78e9"
+    },
+    "experiments/native-text/src/kj_desktop.c": {
+      "git_blob": "edd6ae04ed70991640db83e7e9efaaa8443fd6e2",
+      "checkout_sha256": "62c57635e63bf64ab870ca2193415529d337d7dbe184bc57731847b3ccd871a7",
+      "reference_sha256": "62c57635e63bf64ab870ca2193415529d337d7dbe184bc57731847b3ccd871a7"
+    },
+    "experiments/native-text/src/kj_text.c": {
+      "git_blob": "7c3bc515c0c22ec494e6746236ebaf56a3a5bbcd",
+      "checkout_sha256": "4720351e3d5b86cda4ee358352ba7c31ba3707243bb6e50d1cfd8e5b80929544",
+      "reference_sha256": "4720351e3d5b86cda4ee358352ba7c31ba3707243bb6e50d1cfd8e5b80929544"
+    },
+    "experiments/wren-desktop/pico/main.c": {
+      "git_blob": "0136e53a41babe1463bf9eabc66807538aba99cc",
+      "checkout_sha256": "ba31fbbe31a101d3711fa4740b040418b68e468464a499d3ffe310e14198e03f",
+      "reference_sha256": "ba31fbbe31a101d3711fa4740b040418b68e468464a499d3ffe310e14198e03f"
+    },
+    "experiments/wren-desktop/src/app.wren": {
+      "git_blob": "aac2c602679f0dc9dba76358729e0f830d277e23",
+      "checkout_sha256": "37462369637cdea14bd4dd4988d59824a5f70a534b22486e07019835585bd4bf",
+      "reference_sha256": "37462369637cdea14bd4dd4988d59824a5f70a534b22486e07019835585bd4bf"
+    },
+    "experiments/wren-desktop/src/app_source.h": {
+      "git_blob": "d9f2a64b26b37514b15830ab305a52b3fa9ab71c",
+      "checkout_sha256": "bbe77ac59a00ec9f8d7f6240891ff27f3fe5f82177ab6245160dc9acfc4b97cb",
+      "reference_sha256": "bbe77ac59a00ec9f8d7f6240891ff27f3fe5f82177ab6245160dc9acfc4b97cb"
+    },
+    "experiments/wren-desktop/src/diagnostics.c": {
+      "git_blob": "728555919d7f7f7c9126ca01fb3d05324af49d62",
+      "checkout_sha256": "354bd99978e1d11e2633a27ed1a7857824c0749858b779104c0314ac3d7d572e",
+      "reference_sha256": "354bd99978e1d11e2633a27ed1a7857824c0749858b779104c0314ac3d7d572e"
+    },
+    "experiments/wren-desktop/src/diagnostics.h": {
+      "git_blob": "0c63393f261d99d2a2086388ee3fa371365c4675",
+      "checkout_sha256": "69138de17eb1c143c17ac326f498da46cec57238a62cbe4a97c34f0aad06b4b4",
+      "reference_sha256": "69138de17eb1c143c17ac326f498da46cec57238a62cbe4a97c34f0aad06b4b4"
+    },
+    "experiments/wren-desktop/src/runtime.c": {
+      "git_blob": "c1426e9d0a034acdd3a26da7e40145069d530cac",
+      "checkout_sha256": "741b291b2bcc9d2ff5807cfa827e86413c3a8bf4776d92f1cc24f90109e77a70",
+      "reference_sha256": "741b291b2bcc9d2ff5807cfa827e86413c3a8bf4776d92f1cc24f90109e77a70"
+    },
+    "experiments/wren-desktop/src/runtime.h": {
+      "git_blob": "ec29d65fce160f497a1c3df8200a42f61054d25a",
+      "checkout_sha256": "246be9215b4793a2408c3134ecee8ca8d260a4c4cc039bc8824534050a65a7ff",
+      "reference_sha256": "246be9215b4793a2408c3134ecee8ca8d260a4c4cc039bc8824534050a65a7ff"
+    },
+    "experiments/wren-desktop/src/transport.c": {
+      "git_blob": "bdf6f43fa1683cdea929ceae50906eb1a348cb53",
+      "checkout_sha256": "dbc03aed0a12de7b64e55e71421f797bc71ceda44d918bcb5d5fcf2c1fb5fc0b",
+      "reference_sha256": "dbc03aed0a12de7b64e55e71421f797bc71ceda44d918bcb5d5fcf2c1fb5fc0b"
+    },
+    "experiments/wren-desktop/src/transport.h": {
+      "git_blob": "e7f61cab74ab93ba8391b62609e31ce0d38a63ee",
+      "checkout_sha256": "58379ffcf5c5bb4411e0cd7ec80ddd0a0249c54b807d889b98725f5dcfe88e1c",
+      "reference_sha256": "58379ffcf5c5bb4411e0cd7ec80ddd0a0249c54b807d889b98725f5dcfe88e1c"
+    },
+    "experiments/wren-desktop/src/ui.c": {
+      "git_blob": "29ce2cfea5f48206ad6c32771f06c6378a6d0a3e",
+      "checkout_sha256": "f6404fbcf70b3a0da51a24e849940188a28e4b9fd7efd2641614a32b59ba1da6",
+      "reference_sha256": "f6404fbcf70b3a0da51a24e849940188a28e4b9fd7efd2641614a32b59ba1da6"
+    },
+    "experiments/wren-desktop/src/ui.h": {
+      "git_blob": "b7f78518ea6dd6123a70126df05cbc3662c78778",
+      "checkout_sha256": "886dc1f57f301ffc208bb62c9bcc7f7202efdbd5c2bdb6d12cf90a81c4135ee5",
+      "reference_sha256": "886dc1f57f301ffc208bb62c9bcc7f7202efdbd5c2bdb6d12cf90a81c4135ee5"
+    },
+    "experiments/wren-japanese-desktop/src/app.wren": {
+      "git_blob": "95f7f7fa09edd9c5467c1f576bdd385964cb7990",
+      "checkout_sha256": "044fc76faacddf9bb525bb3b887d821d054402ec99cc337484eb53e8f98ee881",
+      "reference_sha256": "044fc76faacddf9bb525bb3b887d821d054402ec99cc337484eb53e8f98ee881"
+    },
+    "experiments/wren-japanese-desktop/src/japanese_app_source.h": {
+      "git_blob": "80a6a30792ba672cb60a7ff508838466d8702128",
+      "checkout_sha256": "f0d747d19dd4d61ed6b4eb2a53dfd939707f2ca74ee8be8cfab83843c54f4657",
+      "reference_sha256": "f0d747d19dd4d61ed6b4eb2a53dfd939707f2ca74ee8be8cfab83843c54f4657"
+    },
+    "experiments/wren-japanese-desktop/src/wj_title.c": {
+      "git_blob": "99c8873d2cf36739469d47181463476f6e346783",
+      "checkout_sha256": "6438b0cdf37ee1b983fd4459c28abf667844fac4fa787aa20e75721488dcca2a",
+      "reference_sha256": "6438b0cdf37ee1b983fd4459c28abf667844fac4fa787aa20e75721488dcca2a"
+    },
+    "experiments/wren-japanese-desktop/src/wj_title.h": {
+      "git_blob": "026fda085a97c3f6ab90a068e38222482d3b3e9c",
+      "checkout_sha256": "00b714f227fb48b00edf1aa260ef995cd40455ef7331ee260d5fbdd078bbd1ca",
+      "reference_sha256": "00b714f227fb48b00edf1aa260ef995cd40455ef7331ee260d5fbdd078bbd1ca"
+    },
+    "software/micropython/fonts/misaki8.kfnt": {
+      "git_blob": "8c48b65dc192fd423a5dcb43e65cd00fff6b963c",
+      "checkout_sha256": "cbfb1071801f7ed3b6637bb6763219e59d86c13bd149169bbbab5bca753d9238",
+      "reference_sha256": "cbfb1071801f7ed3b6637bb6763219e59d86c13bd149169bbbab5bca753d9238"
+    },
+    "software/pico/kagura_host.c": {
+      "git_blob": "d58fab436ba7bcb933eeb67f191feabf6d3444eb",
+      "checkout_sha256": "5e3e653d6f11216a40b03d1ef1e665c6680b76a83c25f409dfdf26425a917a33",
+      "reference_sha256": "5e3e653d6f11216a40b03d1ef1e665c6680b76a83c25f409dfdf26425a917a33"
+    },
+    "software/pico/kagura_host.h": {
+      "git_blob": "4a066abd81ce7f2dca555c1f48ea079e3cbc0f68",
+      "checkout_sha256": "0bc9cda7080db734acadd1abf734b54eb98fb09eb1b37f1bb87280177eb0e9c0",
+      "reference_sha256": "0bc9cda7080db734acadd1abf734b54eb98fb09eb1b37f1bb87280177eb0e9c0"
+    },
+    "software/pico/kagura_host.pio": {
+      "git_blob": "148718cf6c9090a44f8b86c4fb2cdcb88d6fb282",
+      "checkout_sha256": "4c89410848f1618a99c34c036e0bb58cae0a65f0dd44e555f8755e21b271dab3",
+      "reference_sha256": "4c89410848f1618a99c34c036e0bb58cae0a65f0dd44e555f8755e21b271dab3"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.desktop-consolidation-worktree/software/desktop/build-Debug
+    Start 1: text_core
+1/8 Test #1: text_core ........................   Passed    0.06 sec
+    Start 2: unicode_font_oracle
+2/8 Test #2: unicode_font_oracle ..............   Passed    0.29 sec
+    Start 3: text_desktop
+3/8 Test #3: text_desktop .....................   Passed    0.64 sec
+    Start 4: japanese_titles_demo
+4/8 Test #4: japanese_titles_demo .............   Passed    0.12 sec
+    Start 5: runtime_free_application
+5/8 Test #5: runtime_free_application .........   Passed    0.02 sec
+    Start 6: japanese_integration
+6/8 Test #6: japanese_integration .............   Passed    0.78 sec
+    Start 7: japanese_wren_demo
+7/8 Test #7: japanese_wren_demo ...............   Passed    0.18 sec
+    Start 8: japanese_native_demo
+8/8 Test #8: japanese_native_demo .............   Passed    0.21 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Total Test time (real) =   2.48 sec

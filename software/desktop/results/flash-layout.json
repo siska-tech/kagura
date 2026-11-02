@@ -1,0 +1,728 @@
+{
+  "kind": "static FLASH-resident RP2040 link, NOT hardware execution",
+  "elf_sha256": "3a756660250a006e4df3a1317835cd2ec8eec29c1a4328e559c2086d5e64f6be",
+  "entry": "0x100001e9",
+  "headers": [
+    {
+      "vaddr": "0x10000000",
+      "paddr": "0x10000000",
+      "filesz": 221272,
+      "memsz": 221272,
+      "flags": 5
+    },
+    {
+      "vaddr": "0x200000c0",
+      "paddr": "0x10036058",
+      "filesz": 6208,
+      "memsz": 45404,
+      "flags": 7
+    },
+    {
+      "vaddr": "0x2000b21c",
+      "paddr": "0x10037898",
+      "filesz": 0,
+      "memsz": 2048,
+      "flags": 4
+    },
+    {
+      "vaddr": "0x20000000",
+      "paddr": "0x20000000",
+      "filesz": 0,
+      "memsz": 192,
+      "flags": 6
+    },
+    {
+      "vaddr": "0x20032000",
+      "paddr": "0x20032000",
+      "filesz": 0,
+      "memsz": 8192,
+      "flags": 6
+    },
+    {
+      "vaddr": "0x20034000",
+      "paddr": "0x20034000",
+      "filesz": 0,
+      "memsz": 49152,
+      "flags": 4
+    }
+  ],
+  "sections": [
+    {
+      "name": ".boot2",
+      "address": "0x10000000",
+      "size": 256,
+      "noload": false
+    },
+    {
+      "name": ".text",
+      "address": "0x10000100",
+      "size": 123756,
+      "noload": false
+    },
+    {
+      "name": ".rodata",
+      "address": "0x1001e470",
+      "size": 97228,
+      "noload": false
+    },
+    {
+      "name": ".binary_info",
+      "address": "0x1003603c",
+      "size": 28,
+      "noload": false
+    },
+    {
+      "name": ".ram_vector_table",
+      "address": "0x20000000",
+      "size": 192,
+      "noload": true
+    },
+    {
+      "name": ".data",
+      "address": "0x200000c0",
+      "size": 6208,
+      "noload": false
+    },
+    {
+      "name": ".bss",
+      "address": "0x20001900",
+      "size": 39196,
+      "noload": true
+    },
+    {
+      "name": ".heap",
+      "address": "0x2000b21c",
+      "size": 2048,
+      "noload": true
+    },
+    {
+      "name": ".stack_dummy",
+      "address": "0x20034000",
+      "size": 49152,
+      "noload": true
+    },
+    {
+      "name": ".recovery_reserve",
+      "address": "0x20032000",
+      "size": 8192,
+      "noload": true
+    }
+  ],
+  "static_sram": 45596,
+  "desktop_state": {
+    "address": 536880136,
+    "size": 34284,
+    "type": 1
+  },
+  "runtime": {
+    "address": 536877720,
+    "size": 312,
+    "type": 1
+  },
+  "heap_start": "0x2000b21c",
+  "heap_limit": "0x2002c21c",
+  "allocator_capacity": 135168,
+  "stack_bottom": "0x20034000",
+  "stack_top": "0x20040000",
+  "stack_reserved": 49152,
+  "recovery_start": "0x20032000",
+  "recovery_end": "0x20034000",
+  "recovery_reserved": 8192,
+  "unassigned_main_ram": 24036,
+  "unused_scratch": 8192,
+  "total_unassigned": 32228,
+  "linked_reserved": 238108,
+  "ROM_bytes": 227480,
+  "font_flash": {
+    "address": 268582896,
+    "size": 71718,
+    "type": 1
+  },
+  "font_descriptor_flash": {
+    "address": 268582872,
+    "size": 24,
+    "type": 1
+  },
+  "baseline_PR72": {
+    "ROM_bytes": 227480,
+    "static_sram": 45596,
+    "total_unassigned": 32228
+  },
+  "delta_PR72": {
+    "ROM_bytes": 0,
+    "static_sram": 0,
+    "total_unassigned": 0
+  },
+  "estimate_stage5_delta": {
+    "ROM_bytes": 0,
+    "static_sram": 0,
+    "reserved_arena": 0,
+    "reserved_stack": 0,
+    "recovery": 0
+  },
+  "main_word_interleaved_banks": [
+    {
+      "bank": 0,
+      "unassigned": 6008
+    },
+    {
+      "bank": 1,
+      "unassigned": 6008
+    },
+    {
+      "bank": 2,
+      "unassigned": 6008
+    },
+    {
+      "bank": 3,
+      "unassigned": 6012
+    }
+  ],
+  "static_objects": [
+    {
+      "name": "ram_vector_table",
+      "address": 536870912,
+      "size": 192,
+      "type": 1
+    },
+    {
+      "name": "striped_spin_lock_num",
+      "address": 536874088,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "default_alarm_pool",
+      "address": 536874164,
+      "size": 24,
+      "type": 1
+    },
+    {
+      "name": "stdio_usb",
+      "address": 536874224,
+      "size": 24,
+      "type": 1
+    },
+    {
+      "name": "_usbd_qdef",
+      "address": 536874248,
+      "size": 28,
+      "type": 1
+    },
+    {
+      "name": "_usbd_rhport",
+      "address": 536874276,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "rules",
+      "address": 536874280,
+      "size": 1280,
+      "type": 1
+    },
+    {
+      "name": "__malloc_sbrk_base",
+      "address": 536875560,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "__malloc_trim_threshold",
+      "address": 536875564,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "__malloc_av_",
+      "address": 536875568,
+      "size": 1032,
+      "type": 1
+    },
+    {
+      "name": "__sglue",
+      "address": 536876600,
+      "size": 12,
+      "type": 1
+    },
+    {
+      "name": "__global_locale",
+      "address": 536876612,
+      "size": 364,
+      "type": 1
+    },
+    {
+      "name": "_impure_ptr",
+      "address": 536876976,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "_impure_data",
+      "address": 536876984,
+      "size": 320,
+      "type": 1
+    },
+    {
+      "name": "print_mutex",
+      "address": 536877304,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "busy_irq_since",
+      "address": 536877312,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "default_alarm_pool_entries",
+      "address": 536877320,
+      "size": 384,
+      "type": 1
+    },
+    {
+      "name": "last_avail_time.1",
+      "address": 536877704,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "next_session",
+      "address": 536877712,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "runtime",
+      "address": 536877720,
+      "size": 312,
+      "type": 1
+    },
+    {
+      "name": "stats",
+      "address": 536878032,
+      "size": 32,
+      "type": 1
+    },
+    {
+      "name": "wd_spans",
+      "address": 536878064,
+      "size": 192,
+      "type": 1
+    },
+    {
+      "name": "__lock___malloc_recursive_mutex",
+      "address": 536878256,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "__lock___sfp_recursive_mutex",
+      "address": 536878260,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "__malloc_current_mallinfo",
+      "address": 536878264,
+      "size": 40,
+      "type": 1
+    },
+    {
+      "name": "__malloc_max_sbrked_mem",
+      "address": 536878304,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "__malloc_max_total_mem",
+      "address": 536878308,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "__malloc_top_pad",
+      "address": 536878312,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "__sf",
+      "address": 536878316,
+      "size": 312,
+      "type": 1
+    },
+    {
+      "name": "__stdio_exit_handler",
+      "address": 536878628,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "_app_driver",
+      "address": 536878632,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "_cdcd_epbuf",
+      "address": 536878636,
+      "size": 128,
+      "type": 1
+    },
+    {
+      "name": "_cdcd_itf",
+      "address": 536878764,
+      "size": 200,
+      "type": 1
+    },
+    {
+      "name": "_ctrl_epbuf",
+      "address": 536878964,
+      "size": 64,
+      "type": 1
+    },
+    {
+      "name": "_ctrl_xfer",
+      "address": 536879028,
+      "size": 20,
+      "type": 1
+    },
+    {
+      "name": "_ubsd_mutexdef",
+      "address": 536879048,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "_usbd_mutex",
+      "address": 536879056,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "_usbd_q",
+      "address": 536879060,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "_used_instruction_space",
+      "address": 536879064,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "_vendord_epbuf",
+      "address": 536879072,
+      "size": 128,
+      "type": 1
+    },
+    {
+      "name": "_vendord_itf",
+      "address": 536879200,
+      "size": 588,
+      "type": 1
+    },
+    {
+      "name": "boot2_copyout",
+      "address": 536879788,
+      "size": 256,
+      "type": 1
+    },
+    {
+      "name": "callbacks",
+      "address": 536880044,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "cfg",
+      "address": 536880052,
+      "size": 32,
+      "type": 1
+    },
+    {
+      "name": "chars_available_callback",
+      "address": 536880084,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "chars_available_param",
+      "address": 536880088,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "configured_freq",
+      "address": 536880096,
+      "size": 40,
+      "type": 1
+    },
+    {
+      "name": "desktop_state",
+      "address": 536880136,
+      "size": 34284,
+      "type": 1
+    },
+    {
+      "name": "drivers",
+      "address": 536914420,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "e15_last_sof",
+      "address": 536914424,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "errno",
+      "address": 536914428,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "filter",
+      "address": 536914432,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "heap_end.0",
+      "address": 536914436,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "hw_endpoints",
+      "address": 536914440,
+      "size": 1024,
+      "type": 1
+    },
+    {
+      "name": "lazy_vsnprintf",
+      "address": 536915464,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "load_value",
+      "address": 536915468,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "loaded_program",
+      "address": 536915472,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "next_buffer_ptr",
+      "address": 536915480,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "one_shot_timer_crit_sec",
+      "address": 536915508,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "pools",
+      "address": 536915516,
+      "size": 16,
+      "type": 1
+    },
+    {
+      "name": "prog_offset",
+      "address": 536915532,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "pull_pc",
+      "address": 536915536,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "raw_irq_mask",
+      "address": 536915540,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "sd_table",
+      "address": 536915548,
+      "size": 256,
+      "type": 1
+    },
+    {
+      "name": "sf_clz_func",
+      "address": 536915804,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "sf_table",
+      "address": 536915808,
+      "size": 256,
+      "type": 1
+    },
+    {
+      "name": "sleep_notifier",
+      "address": 536916064,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "sm",
+      "address": 536916068,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "stdio_usb_mutex",
+      "address": 536916072,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "visual_frame",
+      "address": 536916080,
+      "size": 4,
+      "type": 1
+    },
+    {
+      "name": "desc_str.0",
+      "address": 536916084,
+      "size": 40,
+      "type": 1
+    },
+    {
+      "name": "program_buf",
+      "address": 536916124,
+      "size": 64,
+      "type": 1
+    },
+    {
+      "name": "_app_driver_count",
+      "address": 536916188,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "_cdcd_fifo_cfg",
+      "address": 536916189,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "_sof_enable",
+      "address": 536916190,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "_tusb_rhport_role",
+      "address": 536916191,
+      "size": 2,
+      "type": 1
+    },
+    {
+      "name": "_usbd_dev",
+      "address": 536916193,
+      "size": 84,
+      "type": 1
+    },
+    {
+      "name": "_usbd_qdef_buf",
+      "address": 536916277,
+      "size": 192,
+      "type": 1
+    },
+    {
+      "name": "_usbd_queued_setup",
+      "address": 536916469,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "boot2_copyout_valid",
+      "address": 536916470,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "busy_irq_active",
+      "address": 536916471,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "claimed",
+      "address": 536916473,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "irq_handler_chain_free_slot_head",
+      "address": 536916474,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "last_error",
+      "address": 536916475,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "last_fifo_status",
+      "address": 536916476,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "low_priority_irq_num",
+      "address": 536916477,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "one_shot_timer_pending",
+      "address": 536916478,
+      "size": 1,
+      "type": 1
+    },
+    {
+      "name": "retrieved_id",
+      "address": 536916479,
+      "size": 8,
+      "type": 1
+    },
+    {
+      "name": "usbd_serial_str",
+      "address": 536916487,
+      "size": 17,
+      "type": 1
+    },
+    {
+      "name": "user_irq_claimed",
+      "address": 536916504,
+      "size": 1,
+      "type": 1
+    }
+  ],
+  "expected_protected_baseline": {
+    "allocator_capacity": 135168,
+    "stack_reserved": 49152,
+    "recovery_reserved": 8192
+  }
+}
