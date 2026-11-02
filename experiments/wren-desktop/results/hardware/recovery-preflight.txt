@@ -7,4 +7,3 @@ but:
 RP2040 device at bus 2, address 5 appears to be in BOOTSEL mode, but picotool was unable to connect.
     You may need to install a driver via Zadig. See Zadig in the README
     (https://github.com/raspberrypi/picotool#zadig) for more information
-

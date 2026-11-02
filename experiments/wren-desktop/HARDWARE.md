@@ -19,7 +19,7 @@ The official [picotool Windows instructions](https://github.com/raspberrypi/pico
 
 After adding instrumentation: host Release **18/18**, ASan/UBSan **18/18**, unchanged Wren baseline **1/1**, and ARM CPU-emulated correctness, cap sweeps and native OOM recovery pass. Updated ARM emulation still peaks at 91,970 B requested payload; arena break is 126,032 B and painted stack upper bound 33,552 B. None of these are physical measurements.
 
-The detailed linker map and program headers are regenerated for the measurement image. Its static SRAM is **45,556 B**, bounded arena **135,168 B**, stack **49,152 B**, recovery reserve **8,192 B**, and unassigned SRAM **32,268 B (31.51 KiB)**. Instrumentation adds **196 B static SRAM** over the initial PR #70 link; stack and heap reservations are unchanged. Current exact ELF hash is in `results/flash-layout.json`. The source commit used for a real run will be recorded with that hash in its manifest before programming.
+The detailed linker map and program headers are regenerated for the measurement image. Its static SRAM is **45,556 B**, bounded arena **135,168 B**, stack **49,152 B**, recovery reserve **8,192 B**, and unassigned SRAM **32,268 B (31.51 KiB)**. Instrumentation adds **196 B static SRAM** over the initial PR #70 link; stack and heap reservations are unchanged. Firmware source is pinned at **`fdd45fbfc31453032d22930e3dcde2ea79c42a25`**, ELF SHA-256 **`1b90d5d63f8775e49724651bfffa6b906fcb5bd8d39d075af77f0ace8611bb39`**. The offline plan passed and limits programming/restoration to **`0x10000000–0x10026000`** (155,648 bytes), with the remainder of the 2 MiB compared unchanged. No programming command has been run.
 
 Prepared sequence, requiring the exact artifact/backup hashes and explicit `--approved`:
 
@@ -30,6 +30,8 @@ Prepared sequence, requiring the exact artifact/backup hashes and explicit `--ap
 5. Reset latency counters, run twenty compiled callbacks without capture/readback delays, and report open/rect/event/present foreign-body time, GC, compiled-call, initialization and compilation time. Present includes actual blocking render/transport/FENCE work. These measurements do not isolate VM dispatch overhead from the foreign body.
 6. Exercise requested-limit OOM, live-window injected OOM and real native malloc failure; each must have zero live ledger blocks and no native owner. Then run twenty fresh VMs in the same bounded arena. Check stack bottom canaries and the independent 8 KiB reserve.
 7. Enter ROM BOOTSEL explicitly. Restore only the original affected flash prefix, read all 2 MiB and require exact backup equality/hash. Boot MicroPython, hash all flash again and confirm the healthy KAGURA console before reporting restoration. Retain raw failure logs if anything stops early. Physical BOOTSEL remains the fallback if the image crashes.
+
+For the visible frame comparison, build the host `hdmi_reference` target and run it in an empty reference directory; `tools/compare_hdmi.py REFERENCE_DIR HARDWARE_RUN_DIR` reuses the unchanged native Desktop capture classifier. This target is host-only and does not alter the pinned firmware. Interface 1 was independently observed with Windows PnP **Code 28**, while Interface 0 continued to use Microsoft's normal USB mass-storage driver.
 
 Host frame CRC goldens for the single-window workload: `be72ff88`, `c91b4078`, `7017406d`, `e89d5ada`, `f07a198f`, `abb5deb8`, `be72ff88`. No Japanese font rendering or expanded foreign API is part of the run.
 

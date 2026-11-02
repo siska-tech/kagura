@@ -36,7 +36,8 @@ try:
     log('BOOTSEL_BACKUP_READBACK_SHA256 '+digest)
 finally:
     # A failed recovery prerequisite forbids flashing; return to original code.
-    subprocess.run([a.picotool,'reboot'],capture_output=True,timeout=30)
+    reboot=subprocess.run([a.picotool,'reboot'],capture_output=True,text=True,timeout=30)
+    log('RECOVERY_REBOOT returncode='+str(reboot.returncode)+'\n'+reboot.stdout+reboot.stderr)
 port=base.wait_port(a.expected_serial); assert port; time.sleep(4)
 h,console=base.flash_hash(port,True); log('RETURN hash='+h+' console='+console)
 assert h==digest and console==base.CONSOLE_OK

@@ -71,4 +71,4 @@ The smallest useful acceptance application is exactly the committed `src/app.wre
 
 RP2040 viability is realistically plausible for this minimal flash-resident application. It still requires approved physical verification of USB/interrupt stack use, transport acknowledgements, watchdog behavior and allocator headroom before any reliability claim. The 31.51 KiB free space is finite growth capacity, not permission to add arbitrary GUI/application state. RP2350 has more SRAM, but this RP2040 binary/layout is not an RP2350 build and no RP2350 measurement is claimed.
 
-No physical execution, flash write, firmware replacement or PR merge occurred. Any future flash-resident test must separately approve deployment and validate backup/hash/restore of MicroPython; a watchdog reset alone cannot restore the previous flash image.
+No Wren physical execution, flash write, firmware replacement or PR merge has occurred. Flash-resident execution is now authorized, conditional on passing the recovery prerequisites in HARDWARE.md; a watchdog reset alone cannot restore the previous flash image.
