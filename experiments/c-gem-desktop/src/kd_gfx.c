@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "kd_gfx.h"
+#ifdef KD_NATIVE_TEXT
+#include "kj_desktop.h"
+#endif
 
 #include <string.h>
 
@@ -275,12 +278,23 @@ void kd_gfx_frame(kd_fb *fb, kd_rect f, const char *title, bool active, bool clo
     kd_fb_fill_rect(fb, left, t.y, avail, t.h, KD_C_WHITE);
     // Rows y+2, y+4 .. y+8 are black: the GEM "lines" of an active window.
     if (active) kd_fb_pattern_rect(fb, left + 1, t.y + 1, avail - 2, t.h - 2, stripes, KD_C_WHITE, KD_C_BLACK);
+#ifdef KD_NATIVE_TEXT
+    int tw;
+    size_t n=kj_desktop_title_fit(title,avail-8,&tw);
+    if (!n) return;
+    int tx=left+(avail-tw)/2;
+#else
     int n = (int)strlen(title), maxn = (avail - 8) / 8;
     if (n > maxn) n = maxn < 0 ? 0 : maxn;
     if (n == 0) return;
     int tw = n * 8, tx = left + (avail - tw) / 2;
+#endif
     kd_fb_fill_rect(fb, tx - 4, t.y, tw + 8, t.h, KD_C_WHITE);
+#ifdef KD_NATIVE_TEXT
+    (void)kj_desktop_text(fb,&kd_font_system,tx,t.y+1,title,n,active?KD_C_BLACK:KD_C_DGREY,KD_NO_KEY,NULL);
+#else
     kd_text_n(fb, &kd_font_system, tx, t.y + 1, title, n, active ? KD_C_BLACK : KD_C_DGREY, KD_NO_KEY);
+#endif
 }
 
 void kd_gfx_outline(kd_fb *fb, kd_rect r) {

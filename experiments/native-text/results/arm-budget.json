@@ -1,0 +1,64 @@
+{
+  "kind": "Cortex-M0+ compile/link analysis ONLY; no hardware execution; no SDK/USB in probes",
+  "core": {
+    "ROM_bytes": 74438,
+    "static_RAM_bytes": 36,
+    "sizes": {
+      "font": 24,
+      "glyph": 8,
+      "metrics": 28,
+      "target": 24,
+      "surface4": 44,
+      "decoded": 8,
+      "desktop": 0
+    },
+    "font_blob_bytes": 71718
+  },
+  "baseline": {
+    "ROM_bytes": 12088,
+    "static_RAM_bytes": 34164,
+    "sizes": {
+      "font": 24,
+      "glyph": 8,
+      "metrics": 28,
+      "target": 24,
+      "surface4": 44,
+      "decoded": 8,
+      "desktop": 34160
+    },
+    "font_blob_bytes": 0
+  },
+  "japanese": {
+    "ROM_bytes": 85792,
+    "static_RAM_bytes": 34164,
+    "sizes": {
+      "font": 24,
+      "glyph": 8,
+      "metrics": 28,
+      "target": 24,
+      "surface4": 44,
+      "decoded": 8,
+      "desktop": 34160
+    },
+    "font_blob_bytes": 71718
+  },
+  "native_increment_ROM": 73704,
+  "native_increment_static_RAM": 0,
+  "objects": {
+    "kj_text": {
+      "readonly_bytes": 2055,
+      "initialized_RAM_bytes": 0,
+      "zeroed_RAM_bytes": 0
+    },
+    "font_data": {
+      "readonly_bytes": 71742,
+      "initialized_RAM_bytes": 0,
+      "zeroed_RAM_bytes": 0
+    },
+    "kj_desktop": {
+      "readonly_bytes": 347,
+      "initialized_RAM_bytes": 0,
+      "zeroed_RAM_bytes": 0
+    }
+  }
+}

@@ -1,0 +1,15 @@
+build-arm/japanese/analysis.elf  :
+section             size        addr
+.text              85792   268435456
+.bss               34164   536870912
+.ARM.attributes       42           0
+.debug_info        54164           0
+.debug_abbrev       8544           0
+.debug_loclists    32330           0
+.debug_aranges      1384           0
+.debug_rnglists     3487           0
+.debug_line        29348           0
+.debug_str          5739           0
+.debug_frame        4588           0
+.debug_line_str      410           0
+Total             259992

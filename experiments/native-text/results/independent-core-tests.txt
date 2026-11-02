@@ -1,0 +1,36 @@
+Start testing: Nov 03 02:38 JST
+----------------------------------------------------------
+1/21 Testing: text_core
+1/21 Test: text_core
+Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/.native-text-worktree/experiments/native-text/build-host/kj_tests"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/.native-text-worktree/experiments/native-text/build-host
+"text_core" start time: Nov 03 02:38 JST
+Output:
+----------------------------------------------------------
+Unicode scalar roundtrips: 1112064
+TEXT_CORE_PASS strict UTF8 font validation metrics clipping packed4 guards
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"text_core" end time: Nov 03 02:38 JST
+"text_core" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/21 Testing: unicode_font_oracle
+2/21 Test: unicode_font_oracle
+Command: "/usr/bin/python3" "/mnt/c/Users/Shion/Documents/Projects/Kagura/.native-text-worktree/experiments/native-text/tests/oracle.py" "/mnt/c/Users/Shion/Documents/Projects/Kagura/.native-text-worktree/experiments/native-text/build-host/kj_oracle"
+Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/.native-text-worktree/experiments/native-text/build-host
+"unicode_font_oracle" start time: Nov 03 02:38 JST
+Output:
+----------------------------------------------------------
+ORACLE_PASS 85547 strict UTF8 cases; all 7171 source glyphs byte-exact
+<end of output>
+Test time =   0.25 sec
+----------------------------------------------------------
+Test Passed.
+"unicode_font_oracle" end time: Nov 03 02:38 JST
+"unicode_font_oracle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 03 02:38 JST

@@ -1,0 +1,16 @@
+src/kj_desktop.c:9:13:plot	8	static
+src/kj_desktop.c:4:9:kj_desktop_font	48	static
+src/kj_desktop.c:12:11:kj_desktop_text	96	static
+src/kj_desktop.c:19:6:kj_desktop_copy_title	24	static
+src/kj_desktop.c:25:8:kj_desktop_title_fit	40	static
+src/kj_text.c:52:13:valid_font	24	static
+src/kj_text.c:63:23:find	20	static
+src/kj_text.c:131:13:put4	24	static
+src/kj_text.c:6:12:kj_utf8_next	20	static
+src/kj_text.c:26:8:kj_utf8_prefix	32	static
+src/kj_text.c:37:6:kj_font_open	32	static
+src/kj_text.c:57:6:kj_font_ascii	24	static
+src/kj_text.c:74:10:kj_lookup	16	static
+src/kj_text.c:90:11:kj_measure	72	static
+src/kj_text.c:105:11:kj_draw	200	static
+src/kj_text.c:136:11:kj_draw4	112	static

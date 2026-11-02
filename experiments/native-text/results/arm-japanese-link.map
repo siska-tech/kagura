@@ -1,0 +1,865 @@
+Archive member included to satisfy reference by file (symbol)
+
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+                              build-arm/kj_text.o (memcmp)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+                              build-arm/kj_desktop.o (memmove)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+                              build-arm/japanese/probe.o (memset)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+                              build-arm/japanese/kd_app.o (strncpy)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+                              build-arm/japanese/kd_gfx.o (strcmp)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+                              build-arm/japanese/kd_region.o (memcpy)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+                              build-arm/kj_desktop.o (strlen)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+                              build-arm/japanese/kd_desktop.o (__gnu_thumb1_case_shi)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+                              build-arm/japanese/kd_desktop.o (__gnu_thumb1_case_uhi)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                              build-arm/kj_text.o (__aeabi_uidiv)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+                              build-arm/japanese/kd_fb.o (__aeabi_idiv)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                              /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o) (__aeabi_idiv0)
+
+Discarded input sections
+
+ .text          0x00000000        0x0 build-arm/japanese/probe.o
+ .data          0x00000000        0x0 build-arm/japanese/probe.o
+ .bss           0x00000000        0x0 build-arm/japanese/probe.o
+ .comment       0x00000000       0x46 build-arm/japanese/probe.o
+ .text          0x00000000        0x0 build-arm/kj_text.o
+ .data          0x00000000        0x0 build-arm/kj_text.o
+ .bss           0x00000000        0x0 build-arm/kj_text.o
+ .text.put4     0x00000000       0x3a build-arm/kj_text.o
+ .text.kj_font_open
+                0x00000000       0x9c build-arm/kj_text.o
+ .text.kj_draw4
+                0x00000000      0x128 build-arm/kj_text.o
+ .rodata        0x00000000        0x7 build-arm/kj_text.o
+ .comment       0x00000000       0x46 build-arm/kj_text.o
+ .text          0x00000000        0x0 build-arm/font_data.o
+ .data          0x00000000        0x0 build-arm/font_data.o
+ .bss           0x00000000        0x0 build-arm/font_data.o
+ .comment       0x00000000       0x46 build-arm/font_data.o
+ .text          0x00000000        0x0 build-arm/kj_desktop.o
+ .data          0x00000000        0x0 build-arm/kj_desktop.o
+ .bss           0x00000000        0x0 build-arm/kj_desktop.o
+ .comment       0x00000000       0x46 build-arm/kj_desktop.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_fb.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_fb.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_fb.o
+ .text.kd_rect_has_point
+                0x00000000       0x38 build-arm/japanese/kd_fb.o
+ .text.kd_fb_get
+                0x00000000       0x2a build-arm/japanese/kd_fb.o
+ .text.kd_fb_line
+                0x00000000       0xe0 build-arm/japanese/kd_fb.o
+ .text.kd_fb_blit_tile4
+                0x00000000       0xec build-arm/japanese/kd_fb.o
+ .text.kd_fb_clear_dirty
+                0x00000000       0x12 build-arm/japanese/kd_fb.o
+ .text.kd_fb_dirty_count
+                0x00000000       0x28 build-arm/japanese/kd_fb.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_fb.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_region.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_region.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_region.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_region.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_tile4.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_tile4.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_tile4.o
+ .text.kd_tile4_pack_all
+                0x00000000       0x20 build-arm/japanese/kd_tile4.o
+ .text.kd_tile4_unpack_tile
+                0x00000000       0x68 build-arm/japanese/kd_tile4.o
+ .text.kd_tile4_ref_get
+                0x00000000       0x54 build-arm/japanese/kd_tile4.o
+ .text.kd_tile4_flush
+                0x00000000      0x17c build-arm/japanese/kd_tile4.o
+ .text.kd_kagura_scroll_y
+                0x00000000        0xc build-arm/japanese/kd_tile4.o
+ .text.kd_kagura_map_pattern
+                0x00000000       0x16 build-arm/japanese/kd_tile4.o
+ .text.kd_kagura_line_to_desktop
+                0x00000000       0x1a build-arm/japanese/kd_tile4.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_tile4.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_font.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_font.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_font.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_font.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_font_data.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_font_data.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_font_data.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_font_data.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_sprite.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_sprite.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_sprite.o
+ .text.nibble   0x00000000       0x2a build-arm/japanese/kd_sprite.o
+ .text.kd_sprite_get
+                0x00000000       0x36 build-arm/japanese/kd_sprite.o
+ .text.kd_sprite_set
+                0x00000000       0x4e build-arm/japanese/kd_sprite.o
+ .text.kd_sprite_export_hex
+                0x00000000       0x30 build-arm/japanese/kd_sprite.o
+ .text.kd_sprite_import_hex
+                0x00000000       0x80 build-arm/japanese/kd_sprite.o
+ .rodata.digits.0
+                0x00000000       0x11 build-arm/japanese/kd_sprite.o
+ .debug_info    0x00000000      0x489 build-arm/japanese/kd_sprite.o
+ .debug_abbrev  0x00000000      0x1b1 build-arm/japanese/kd_sprite.o
+ .debug_loclists
+                0x00000000      0x3ac build-arm/japanese/kd_sprite.o
+ .debug_aranges
+                0x00000000       0x40 build-arm/japanese/kd_sprite.o
+ .debug_rnglists
+                0x00000000       0x68 build-arm/japanese/kd_sprite.o
+ .debug_line    0x00000000      0x408 build-arm/japanese/kd_sprite.o
+ .debug_str     0x00000000      0x343 build-arm/japanese/kd_sprite.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_sprite.o
+ .debug_frame   0x00000000       0x94 build-arm/japanese/kd_sprite.o
+ .ARM.attributes
+                0x00000000       0x2c build-arm/japanese/kd_sprite.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_gfx.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_gfx.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_gfx.o
+ .text.kd_frame_close
+                0x00000000       0x16 build-arm/japanese/kd_gfx.o
+ .text.kd_gfx_button
+                0x00000000      0x160 build-arm/japanese/kd_gfx.o
+ .rodata.dots.0
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_studio
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_studio_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_trash
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_trash_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_drive
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_drive_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_app
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_app_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_text
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_text_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_file
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_file_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_folder
+                0x00000000        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_folder_rows
+                0x00000000       0x40 build-arm/japanese/kd_gfx.o
+ .rodata.kd_palette_rgb444
+                0x00000000       0x20 build-arm/japanese/kd_gfx.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_gfx.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_app.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_app.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_app.o
+ .text.label_char
+                0x00000000       0x24 build-arm/japanese/kd_app.o
+ .text.kd_draw_visible
+                0x00000000       0x3c build-arm/japanese/kd_app.o
+ .text.kd_draw_rect
+                0x00000000       0x20 build-arm/japanese/kd_app.o
+ .text.kd_draw_hline
+                0x00000000       0x1c build-arm/japanese/kd_app.o
+ .text.kd_draw_vline
+                0x00000000       0x1c build-arm/japanese/kd_app.o
+ .text.kd_draw_text
+                0x00000000       0x30 build-arm/japanese/kd_app.o
+ .text.kd_draw_art
+                0x00000000       0x22 build-arm/japanese/kd_app.o
+ .text.kd_draw_icon
+                0x00000000       0x50 build-arm/japanese/kd_app.o
+ .text.kd_draw_button
+                0x00000000       0x38 build-arm/japanese/kd_app.o
+ .text.kd_draw_pattern
+                0x00000000       0x2e build-arm/japanese/kd_app.o
+ .text.kd_draw_sprite
+                0x00000000       0x28 build-arm/japanese/kd_app.o
+ .text.kd_label_init
+                0x00000000       0x28 build-arm/japanese/kd_app.o
+ .text.kd_label_set
+                0x00000000       0xc2 build-arm/japanese/kd_app.o
+ .text.kd_draw_label
+                0x00000000       0x4c build-arm/japanese/kd_app.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_app.o
+ .text          0x00000000        0x0 build-arm/japanese/kd_desktop.o
+ .data          0x00000000        0x0 build-arm/japanese/kd_desktop.o
+ .bss           0x00000000        0x0 build-arm/japanese/kd_desktop.o
+ .text.click_count
+                0x00000000       0x74 build-arm/japanese/kd_desktop.o
+ .text.damage_outline
+                0x00000000       0x7c build-arm/japanese/kd_desktop.o
+ .text.set_pointer
+                0x00000000       0x74 build-arm/japanese/kd_desktop.o
+ .text.title_box
+                0x00000000       0x38 build-arm/japanese/kd_desktop.o
+ .text.dropdown_item_at
+                0x00000000       0x7c build-arm/japanese/kd_desktop.o
+ .rodata.item_usable.str1.1
+                0x00000000        0x2 build-arm/japanese/kd_desktop.o
+ .text.item_usable
+                0x00000000       0x48 build-arm/japanese/kd_desktop.o
+ .text.step_item
+                0x00000000       0x64 build-arm/japanese/kd_desktop.o
+ .text.start_drag
+                0x00000000       0x70 build-arm/japanese/kd_desktop.o
+ .text.send_local.isra.0
+                0x00000000       0x3e build-arm/japanese/kd_desktop.o
+ .text.menu_count.isra.0
+                0x00000000       0x14 build-arm/japanese/kd_desktop.o
+ .text.title_at
+                0x00000000       0x48 build-arm/japanese/kd_desktop.o
+ .text.set_hot  0x00000000       0xac build-arm/japanese/kd_desktop.o
+ .text.kd_cursor_rect
+                0x00000000       0x20 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_invalidate
+                0x00000000       0x10 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_window_at
+                0x00000000       0x50 build-arm/japanese/kd_desktop.o
+ .text.kd_window_close
+                0x00000000       0xc4 build-arm/japanese/kd_desktop.o
+ .text.kd_window_invalidate
+                0x00000000       0x64 build-arm/japanese/kd_desktop.o
+ .text.kd_window_invalidate_all
+                0x00000000       0x22 build-arm/japanese/kd_desktop.o
+ .text.kd_window_set_title
+                0x00000000       0x1a build-arm/japanese/kd_desktop.o
+ .text.kd_window_user
+                0x00000000        0x4 build-arm/japanese/kd_desktop.o
+ .text.kd_window_desktop
+                0x00000000        0x4 build-arm/japanese/kd_desktop.o
+ .text.kd_window_frame
+                0x00000000       0x10 build-arm/japanese/kd_desktop.o
+ .text.kd_window_work
+                0x00000000       0x12 build-arm/japanese/kd_desktop.o
+ .text.kd_window_is_active
+                0x00000000       0x1e build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_activate
+                0x00000000       0xc4 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_move
+                0x00000000       0x80 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_close_menu
+                0x00000000       0x54 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_open_menu
+                0x00000000       0x70 build-arm/japanese/kd_desktop.o
+ .text.choose   0x00000000       0x44 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_menu_changed
+                0x00000000       0x30 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_select_icon
+                0x00000000       0x90 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_set_cursor
+                0x00000000       0x2c build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_event
+                0x00000000      0x5d8 build-arm/japanese/kd_desktop.o
+ .comment       0x00000000       0x46 build-arm/japanese/kd_desktop.o
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .text.strncpy  0x00000000       0x5c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .debug_frame   0x00000000       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .ARM.attributes
+                0x00000000       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strncpy.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+ .text          0x00000000       0x14 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .debug_line_str
+                0x00000000       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .ARM.attributes
+                0x00000000       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .text          0x00000000       0x14 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+ .debug_line_str
+                0x00000000       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+ .ARM.attributes
+                0x00000000       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_uhi.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x10000000         0x00200000         xr
+RAM              0x20000000         0x00042000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x10000000    0x14f20
+ *(.text*)
+ .text.draw     0x10000000       0x1c build-arm/japanese/probe.o
+ .text._start   0x1000001c       0x6c build-arm/japanese/probe.o
+                0x1000001c                _start
+ .text.valid_font
+                0x10000088       0x68 build-arm/kj_text.o
+ .text.find     0x100000f0       0x60 build-arm/kj_text.o
+ .text.kj_utf8_next
+                0x10000150       0xc4 build-arm/kj_text.o
+                0x10000150                kj_utf8_next
+ .text.kj_utf8_prefix
+                0x10000214       0x32 build-arm/kj_text.o
+                0x10000214                kj_utf8_prefix
+ .text.kj_font_ascii
+                0x10000246       0x3e build-arm/kj_text.o
+                0x10000246                kj_font_ascii
+ .text.kj_lookup
+                0x10000284       0x74 build-arm/kj_text.o
+                0x10000284                kj_lookup
+ .text.kj_measure
+                0x100002f8       0xf0 build-arm/kj_text.o
+                0x100002f8                kj_measure
+ .text.kj_draw  0x100003e8      0x29a build-arm/kj_text.o
+                0x100003e8                kj_draw
+ .text.plot     0x10000682        0x8 build-arm/kj_desktop.o
+ *fill*         0x1000068a        0x2
+ .text.kj_desktop_font
+                0x1000068c       0x3c build-arm/kj_desktop.o
+                0x1000068c                kj_desktop_font
+ .text.kj_desktop_text
+                0x100006c8       0x80 build-arm/kj_desktop.o
+                0x100006c8                kj_desktop_text
+ .text.kj_desktop_copy_title
+                0x10000748       0x44 build-arm/kj_desktop.o
+                0x10000748                kj_desktop_copy_title
+ .text.kj_desktop_title_fit
+                0x1000078c       0x52 build-arm/kj_desktop.o
+                0x1000078c                kj_desktop_title_fit
+ *fill*         0x100007de        0x2
+ .text.put      0x100007e0       0x5c build-arm/japanese/kd_fb.o
+ .text.clip_box
+                0x1000083c       0xe8 build-arm/japanese/kd_fb.o
+ .text.span     0x10000924       0xb8 build-arm/japanese/kd_fb.o
+ .text.kd_rect_intersect
+                0x100009dc       0x9a build-arm/japanese/kd_fb.o
+                0x100009dc                kd_rect_intersect
+ .text.kd_rect_union
+                0x10000a76       0xa0 build-arm/japanese/kd_fb.o
+                0x10000a76                kd_rect_union
+ .text.kd_rect_overlaps
+                0x10000b16       0x32 build-arm/japanese/kd_fb.o
+                0x10000b16                kd_rect_overlaps
+ .text.kd_rect_contains
+                0x10000b48       0x5e build-arm/japanese/kd_fb.o
+                0x10000b48                kd_rect_contains
+ *fill*         0x10000ba6        0x2
+ .text.kd_fb_set_clip
+                0x10000ba8       0x1c build-arm/japanese/kd_fb.o
+                0x10000ba8                kd_fb_set_clip
+ .text.kd_fb_reset_clip
+                0x10000bc4       0x20 build-arm/japanese/kd_fb.o
+                0x10000bc4                kd_fb_reset_clip
+ .text.kd_fb_pixel
+                0x10000be4       0x60 build-arm/japanese/kd_fb.o
+                0x10000be4                kd_fb_pixel
+ .text.kd_fb_fill_rect
+                0x10000c44       0x58 build-arm/japanese/kd_fb.o
+                0x10000c44                kd_fb_fill_rect
+ .text.kd_fb_hline
+                0x10000c9c       0x12 build-arm/japanese/kd_fb.o
+                0x10000c9c                kd_fb_hline
+ .text.kd_fb_vline
+                0x10000cae       0x12 build-arm/japanese/kd_fb.o
+                0x10000cae                kd_fb_vline
+ .text.kd_fb_rect
+                0x10000cc0       0x66 build-arm/japanese/kd_fb.o
+                0x10000cc0                kd_fb_rect
+ *fill*         0x10000d26        0x2
+ .text.kd_fb_pattern_rect
+                0x10000d28       0xc4 build-arm/japanese/kd_fb.o
+                0x10000d28                kd_fb_pattern_rect
+ .text.kd_fb_mono
+                0x10000dec       0xbc build-arm/japanese/kd_fb.o
+                0x10000dec                kd_fb_mono
+ .text.kd_fb_mark_dirty_all
+                0x10000ea8       0x12 build-arm/japanese/kd_fb.o
+                0x10000ea8                kd_fb_mark_dirty_all
+ *fill*         0x10000eba        0x2
+ .text.kd_fb_init
+                0x10000ebc       0x48 build-arm/japanese/kd_fb.o
+                0x10000ebc                kd_fb_init
+ .text.kd_damage_clear
+                0x10000f04        0x8 build-arm/japanese/kd_region.o
+                0x10000f04                kd_damage_clear
+ .text.kd_damage_add
+                0x10000f0c      0x308 build-arm/japanese/kd_region.o
+                0x10000f0c                kd_damage_add
+ .text.kd_damage_area
+                0x10001214       0x32 build-arm/japanese/kd_region.o
+                0x10001214                kd_damage_area
+ .text.kd_damage_tiles
+                0x10001246       0x98 build-arm/japanese/kd_region.o
+                0x10001246                kd_damage_tiles
+ .text.kd_region_init
+                0x100012de       0x2c build-arm/japanese/kd_region.o
+                0x100012de                kd_region_init
+ .text.kd_region_subtract
+                0x1000130a      0x170 build-arm/japanese/kd_region.o
+                0x1000130a                kd_region_subtract
+ .text.kd_tile4_pack_tile
+                0x1000147a       0x3c build-arm/japanese/kd_tile4.o
+                0x1000147a                kd_tile4_pack_tile
+ *fill*         0x100014b6        0x2
+ .text.kd_text_n
+                0x100014b8       0xa0 build-arm/japanese/kd_font.o
+                0x100014b8                kd_text_n
+ .text.kd_text  0x10001558       0x32 build-arm/japanese/kd_font.o
+                0x10001558                kd_text
+ .text.kd_text_width
+                0x1000158a       0x10 build-arm/japanese/kd_font.o
+                0x1000158a                kd_text_width
+ *fill*         0x1000159a        0x2
+ .text.kd_gfx_art
+                0x1000159c       0xcc build-arm/japanese/kd_gfx.o
+                0x1000159c                kd_gfx_art
+ .text.kd_gfx_desktop
+                0x10001668       0x1c build-arm/japanese/kd_gfx.o
+                0x10001668                kd_gfx_desktop
+ .text.kd_menu_title_x
+                0x10001684       0x24 build-arm/japanese/kd_gfx.o
+                0x10001684                kd_menu_title_x
+ .text.kd_menu_title_w
+                0x100016a8        0xe build-arm/japanese/kd_gfx.o
+                0x100016a8                kd_menu_title_w
+ .text.kd_menu_item_count
+                0x100016b6       0x12 build-arm/japanese/kd_gfx.o
+                0x100016b6                kd_menu_item_count
+ .text.kd_menu_dropdown_rect
+                0x100016c8       0x62 build-arm/japanese/kd_gfx.o
+                0x100016c8                kd_menu_dropdown_rect
+ *fill*         0x1000172a        0x2
+ .text.kd_gfx_menubar
+                0x1000172c       0x94 build-arm/japanese/kd_gfx.o
+                0x1000172c                kd_gfx_menubar
+ .text.kd_gfx_dropdown
+                0x100017c0      0x134 build-arm/japanese/kd_gfx.o
+                0x100017c0                kd_gfx_dropdown
+ .text.kd_frame_title
+                0x100018f4       0x18 build-arm/japanese/kd_gfx.o
+                0x100018f4                kd_frame_title
+ .text.kd_frame_work
+                0x1000190c       0x1a build-arm/japanese/kd_gfx.o
+                0x1000190c                kd_frame_work
+ *fill*         0x10001926        0x2
+ .text.kd_gfx_frame
+                0x10001928      0x134 build-arm/japanese/kd_gfx.o
+                0x10001928                kd_gfx_frame
+ .text.kd_gfx_outline
+                0x10001a5c       0x98 build-arm/japanese/kd_gfx.o
+                0x10001a5c                kd_gfx_outline
+ .text.kd_icon_box
+                0x10001af4       0x50 build-arm/japanese/kd_gfx.o
+                0x10001af4                kd_icon_box
+ .text.kd_gfx_icon
+                0x10001b44       0x78 build-arm/japanese/kd_gfx.o
+                0x10001b44                kd_gfx_icon
+ .text.kd_draw_fill
+                0x10001bbc       0x20 build-arm/japanese/kd_app.o
+                0x10001bbc                kd_draw_fill
+ .text.damage_from
+                0x10001bdc       0xdc build-arm/japanese/kd_desktop.o
+ .text.collect_layers
+                0x10001cb8       0x9c build-arm/japanese/kd_desktop.o
+ .text.draw_desktop
+                0x10001d54       0x8c build-arm/japanese/kd_desktop.o
+ .text.draw_overlays
+                0x10001de0       0x88 build-arm/japanese/kd_desktop.o
+ .text.send.isra.0
+                0x10001e68       0x16 build-arm/japanese/kd_desktop.o
+ .text.send_simple
+                0x10001e7e       0x22 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_z_index
+                0x10001ea0       0x38 build-arm/japanese/kd_desktop.o
+                0x10001ea0                kd_desktop_z_index
+ .text.damage_title
+                0x10001ed8       0x28 build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_top
+                0x10001f00       0x2c build-arm/japanese/kd_desktop.o
+                0x10001f00                kd_desktop_top
+ .text.draw_layer
+                0x10001f2c       0xdc build-arm/japanese/kd_desktop.o
+ .text.compose_painter
+                0x10002008       0x6c build-arm/japanese/kd_desktop.o
+ .text.kd_desktop_init
+                0x10002074       0xbc build-arm/japanese/kd_desktop.o
+                0x10002074                kd_desktop_init
+ .text.kd_window_open
+                0x10002130       0xf0 build-arm/japanese/kd_desktop.o
+                0x10002130                kd_window_open
+ .text.kd_desktop_render
+                0x10002220      0x378 build-arm/japanese/kd_desktop.o
+                0x10002220                kd_desktop_render
+ .text.memcmp   0x10002598       0x48 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+                0x10002598                memcmp
+ .text.memmove  0x100025e0       0xc4 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+                0x100025e0                memmove
+ .text.memset   0x100026a4       0x94 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+                0x100026a4                memset
+ .text          0x10002738       0x88 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+                0x10002738                strcmp
+ .text.memcpy   0x100027c0       0xac /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+                0x100027c0                memcpy
+ .text.strlen   0x1000286c       0x5c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+                0x1000286c                strlen
+ .text          0x100028c8      0x114 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                0x100028c8                __udivsi3
+                0x100028c8                __aeabi_uidiv
+                0x100029d4                __aeabi_uidivmod
+ .text          0x100029dc      0x1d4 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+                0x100029dc                __aeabi_idiv
+                0x100029dc                __divsi3
+                0x10002ba8                __aeabi_idivmod
+ .text          0x10002bb0        0x4 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                0x10002bb0                __aeabi_ldiv0
+                0x10002bb0                __aeabi_idiv0
+ *(.rodata*)
+ .rodata._start.str1.1
+                0x10002bb4      0x473 build-arm/japanese/probe.o
+                                  0xf (size before relaxing)
+ *fill*         0x10003027        0x1
+ .rodata.kj_type_sizes
+                0x10003028       0x1c build-arm/japanese/probe.o
+                0x10003028                kj_type_sizes
+ .rodata.cls    0x10003044        0xc build-arm/japanese/probe.o
+ .rodata.menus  0x10003050        0x8 build-arm/japanese/probe.o
+ .rodata.box.0  0x10003058        0x8 build-arm/kj_text.o
+ .rodata.kj_misaki8
+                0x10003060       0x18 build-arm/font_data.o
+                0x10003060                kj_misaki8
+ .rodata.font_bytes
+                0x10003078    0x11826 build-arm/font_data.o
+ .rodata.kj_desktop_copy_title.str1.1
+                0x1001489e        0x1 build-arm/kj_desktop.o
+ *fill*         0x1001489e        0x2
+ .rodata.kd_font_small
+                0x100148a0        0x8 build-arm/japanese/kd_font_data.o
+                0x100148a0                kd_font_small
+ .rodata.kd_font_system
+                0x100148a8        0x8 build-arm/japanese/kd_font_data.o
+                0x100148a8                kd_font_system
+ .rodata.small_rows
+                0x100148b0      0x2f8 build-arm/japanese/kd_font_data.o
+ .rodata.system_rows
+                0x10014ba8      0x2f8 build-arm/japanese/kd_font_data.o
+ .rodata.kd_gfx_dropdown.str1.1
+                0x10014ea0        0x2 build-arm/japanese/kd_gfx.o
+ .rodata.checker.1
+                0x10014ea0        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.stripes.2
+                0x10014ea8        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.dots.3
+                0x10014eb0        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.check_art
+                0x10014eb8        0x8 build-arm/japanese/kd_gfx.o
+ .rodata.str1.1
+                0x10014ec0      0x464 build-arm/japanese/kd_gfx.o
+ .rodata.check_rows
+                0x10014ec0       0x18 build-arm/japanese/kd_gfx.o
+ .rodata.kd_art_cursor
+                0x10014ed8        0x8 build-arm/japanese/kd_gfx.o
+                0x10014ed8                kd_art_cursor
+ .rodata.kd_art_cursor_rows
+                0x10014ee0       0x40 build-arm/japanese/kd_gfx.o
+
+.glue_7         0x10014f20        0x0
+ .glue_7        0x10014f20        0x0 linker stubs
+
+.glue_7t        0x10014f20        0x0
+ .glue_7t       0x10014f20        0x0 linker stubs
+
+.vfp11_veneer   0x10014f20        0x0
+ .vfp11_veneer  0x10014f20        0x0 linker stubs
+
+.v4_bx          0x10014f20        0x0
+ .v4_bx         0x10014f20        0x0 linker stubs
+
+.iplt           0x10014f20        0x0
+ .iplt          0x10014f20        0x0 build-arm/japanese/probe.o
+
+.rel.dyn        0x10014f20        0x0
+ .rel.iplt      0x10014f20        0x0 build-arm/japanese/probe.o
+
+.ARM.exidx
+ *(.ARM.exidx*)
+
+.data
+ *(.data*)
+
+.igot.plt       0x20000000        0x0 load address 0x10014f20
+ .igot.plt      0x20000000        0x0 build-arm/japanese/probe.o
+
+.bss            0x20000000     0x8574 load address 0x10014f20
+ *(.bss*)
+ .bss.result    0x20000000        0x4 build-arm/japanese/probe.o
+ .bss.desktop   0x20000004     0x8570 build-arm/japanese/probe.o
+ *(COMMON)
+
+/DISCARD/
+ *(.comment)
+ *(.note*)
+LOAD build-arm/japanese/probe.o
+LOAD build-arm/kj_text.o
+LOAD build-arm/font_data.o
+LOAD build-arm/kj_desktop.o
+LOAD build-arm/japanese/kd_fb.o
+LOAD build-arm/japanese/kd_region.o
+LOAD build-arm/japanese/kd_tile4.o
+LOAD build-arm/japanese/kd_font.o
+LOAD build-arm/japanese/kd_font_data.o
+LOAD build-arm/japanese/kd_sprite.o
+LOAD build-arm/japanese/kd_gfx.o
+LOAD build-arm/japanese/kd_app.o
+LOAD build-arm/japanese/kd_desktop.o
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+START GROUP
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+END GROUP
+START GROUP
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a
+END GROUP
+OUTPUT(build-arm/japanese/analysis.elf elf32-littlearm)
+LOAD linker stubs
+
+.ARM.attributes
+                0x00000000       0x2a
+ .ARM.attributes
+                0x00000000       0x2c build-arm/japanese/probe.o
+ .ARM.attributes
+                0x0000002c       0x2c build-arm/kj_text.o
+ .ARM.attributes
+                0x00000058       0x2c build-arm/font_data.o
+ .ARM.attributes
+                0x00000084       0x2c build-arm/kj_desktop.o
+ .ARM.attributes
+                0x000000b0       0x2c build-arm/japanese/kd_fb.o
+ .ARM.attributes
+                0x000000dc       0x2c build-arm/japanese/kd_region.o
+ .ARM.attributes
+                0x00000108       0x2c build-arm/japanese/kd_tile4.o
+ .ARM.attributes
+                0x00000134       0x2c build-arm/japanese/kd_font.o
+ .ARM.attributes
+                0x00000160       0x2c build-arm/japanese/kd_font_data.o
+ .ARM.attributes
+                0x0000018c       0x2c build-arm/japanese/kd_gfx.o
+ .ARM.attributes
+                0x000001b8       0x2c build-arm/japanese/kd_app.o
+ .ARM.attributes
+                0x000001e4       0x2c build-arm/japanese/kd_desktop.o
+ .ARM.attributes
+                0x00000210       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .ARM.attributes
+                0x0000023c       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+ .ARM.attributes
+                0x00000268       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .ARM.attributes
+                0x00000294       0x1b /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+ .ARM.attributes
+                0x000002af       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+ .ARM.attributes
+                0x000002db       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+ .ARM.attributes
+                0x00000307       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .ARM.attributes
+                0x00000325       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .ARM.attributes
+                0x00000343       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+
+.debug_info     0x00000000     0xd394
+ .debug_info    0x00000000      0xbab build-arm/japanese/probe.o
+ .debug_info    0x00000bab     0x11a2 build-arm/kj_text.o
+ .debug_info    0x00001d4d      0x162 build-arm/font_data.o
+ .debug_info    0x00001eaf      0x94d build-arm/kj_desktop.o
+ .debug_info    0x000027fc     0x1b8c build-arm/japanese/kd_fb.o
+ .debug_info    0x00004388      0xc63 build-arm/japanese/kd_region.o
+ .debug_info    0x00004feb      0x98f build-arm/japanese/kd_tile4.o
+ .debug_info    0x0000597a      0x489 build-arm/japanese/kd_font.o
+ .debug_info    0x00005e03      0x129 build-arm/japanese/kd_font_data.o
+ .debug_info    0x00005f2c     0x1f29 build-arm/japanese/kd_gfx.o
+ .debug_info    0x00007e55     0x10fd build-arm/japanese/kd_app.o
+ .debug_info    0x00008f52     0x4442 build-arm/japanese/kd_desktop.o
+
+.debug_abbrev   0x00000000     0x2160
+ .debug_abbrev  0x00000000      0x273 build-arm/japanese/probe.o
+ .debug_abbrev  0x00000273      0x325 build-arm/kj_text.o
+ .debug_abbrev  0x00000598       0xab build-arm/font_data.o
+ .debug_abbrev  0x00000643      0x245 build-arm/kj_desktop.o
+ .debug_abbrev  0x00000888      0x38e build-arm/japanese/kd_fb.o
+ .debug_abbrev  0x00000c16      0x2ae build-arm/japanese/kd_region.o
+ .debug_abbrev  0x00000ec4      0x319 build-arm/japanese/kd_tile4.o
+ .debug_abbrev  0x000011dd      0x18f build-arm/japanese/kd_font.o
+ .debug_abbrev  0x0000136c       0xb1 build-arm/japanese/kd_font_data.o
+ .debug_abbrev  0x0000141d      0x446 build-arm/japanese/kd_gfx.o
+ .debug_abbrev  0x00001863      0x29d build-arm/japanese/kd_app.o
+ .debug_abbrev  0x00001b00      0x660 build-arm/japanese/kd_desktop.o
+
+.debug_loclists
+                0x00000000     0x7e4a
+ .debug_loclists
+                0x00000000       0x7f build-arm/japanese/probe.o
+ .debug_loclists
+                0x0000007f     0x141c build-arm/kj_text.o
+ .debug_loclists
+                0x0000149b      0x2d9 build-arm/kj_desktop.o
+ .debug_loclists
+                0x00001774     0x1350 build-arm/japanese/kd_fb.o
+ .debug_loclists
+                0x00002ac4      0xb65 build-arm/japanese/kd_region.o
+ .debug_loclists
+                0x00003629      0x804 build-arm/japanese/kd_tile4.o
+ .debug_loclists
+                0x00003e2d      0x214 build-arm/japanese/kd_font.o
+ .debug_loclists
+                0x00004041      0xd3c build-arm/japanese/kd_gfx.o
+ .debug_loclists
+                0x00004d7d      0xacf build-arm/japanese/kd_app.o
+ .debug_loclists
+                0x0000584c     0x25fe build-arm/japanese/kd_desktop.o
+
+.debug_aranges  0x00000000      0x568
+ .debug_aranges
+                0x00000000       0x28 build-arm/japanese/probe.o
+ .debug_aranges
+                0x00000028       0x70 build-arm/kj_text.o
+ .debug_aranges
+                0x00000098       0x18 build-arm/font_data.o
+ .debug_aranges
+                0x000000b0       0x40 build-arm/kj_desktop.o
+ .debug_aranges
+                0x000000f0       0xd8 build-arm/japanese/kd_fb.o
+ .debug_aranges
+                0x000001c8       0x48 build-arm/japanese/kd_region.o
+ .debug_aranges
+                0x00000210       0x58 build-arm/japanese/kd_tile4.o
+ .debug_aranges
+                0x00000268       0x30 build-arm/japanese/kd_font.o
+ .debug_aranges
+                0x00000298       0x18 build-arm/japanese/kd_font_data.o
+ .debug_aranges
+                0x000002b0       0x98 build-arm/japanese/kd_gfx.o
+ .debug_aranges
+                0x00000348       0x90 build-arm/japanese/kd_app.o
+ .debug_aranges
+                0x000003d8      0x190 build-arm/japanese/kd_desktop.o
+
+.debug_rnglists
+                0x00000000      0xd9f
+ .debug_rnglists
+                0x00000000       0x2b build-arm/japanese/probe.o
+ .debug_rnglists
+                0x0000002b       0xfc build-arm/kj_text.o
+ .debug_rnglists
+                0x00000127       0x2c build-arm/kj_desktop.o
+ .debug_rnglists
+                0x00000153      0x256 build-arm/japanese/kd_fb.o
+ .debug_rnglists
+                0x000003a9      0x211 build-arm/japanese/kd_region.o
+ .debug_rnglists
+                0x000005ba       0xb7 build-arm/japanese/kd_tile4.o
+ .debug_rnglists
+                0x00000671       0x33 build-arm/japanese/kd_font.o
+ .debug_rnglists
+                0x000006a4      0x16b build-arm/japanese/kd_gfx.o
+ .debug_rnglists
+                0x0000080f       0xa5 build-arm/japanese/kd_app.o
+ .debug_rnglists
+                0x000008b4      0x4eb build-arm/japanese/kd_desktop.o
+
+.debug_line     0x00000000     0x72a4
+ .debug_line    0x00000000      0x221 build-arm/japanese/probe.o
+ .debug_line    0x00000221      0xd57 build-arm/kj_text.o
+ .debug_line    0x00000f78      0x198 build-arm/font_data.o
+ .debug_line    0x00001110      0x3f8 build-arm/kj_desktop.o
+ .debug_line    0x00001508     0x1083 build-arm/japanese/kd_fb.o
+ .debug_line    0x0000258b      0xa6f build-arm/japanese/kd_region.o
+ .debug_line    0x00002ffa      0x684 build-arm/japanese/kd_tile4.o
+ .debug_line    0x0000367e      0x341 build-arm/japanese/kd_font.o
+ .debug_line    0x000039bf      0x12c build-arm/japanese/kd_font_data.o
+ .debug_line    0x00003aeb      0xc8c build-arm/japanese/kd_gfx.o
+ .debug_line    0x00004777      0x64e build-arm/japanese/kd_app.o
+ .debug_line    0x00004dc5     0x24df build-arm/japanese/kd_desktop.o
+
+.debug_str      0x00000000     0x166b
+ .debug_str     0x00000000     0x166b build-arm/japanese/probe.o
+                                0x5de (size before relaxing)
+ .debug_str     0x0000166b      0x430 build-arm/kj_text.o
+ .debug_str     0x0000166b      0x218 build-arm/font_data.o
+ .debug_str     0x0000166b      0x40d build-arm/kj_desktop.o
+ .debug_str     0x0000166b      0x531 build-arm/japanese/kd_fb.o
+ .debug_str     0x0000166b      0x450 build-arm/japanese/kd_region.o
+ .debug_str     0x0000166b      0x4e3 build-arm/japanese/kd_tile4.o
+ .debug_str     0x0000166b      0x271 build-arm/japanese/kd_font.o
+ .debug_str     0x0000166b      0x1fa build-arm/japanese/kd_font_data.o
+ .debug_str     0x0000166b      0x785 build-arm/japanese/kd_gfx.o
+ .debug_str     0x0000166b      0x481 build-arm/japanese/kd_app.o
+ .debug_str     0x0000166b      0xec5 build-arm/japanese/kd_desktop.o
+
+.debug_frame    0x00000000     0x11ec
+ .debug_frame   0x00000000       0x4c build-arm/japanese/probe.o
+ .debug_frame   0x0000004c      0x178 build-arm/kj_text.o
+ .debug_frame   0x000001c4       0xa8 build-arm/kj_desktop.o
+ .debug_frame   0x0000026c      0x2d8 build-arm/japanese/kd_fb.o
+ .debug_frame   0x00000544       0xc0 build-arm/japanese/kd_region.o
+ .debug_frame   0x00000604       0xe0 build-arm/japanese/kd_tile4.o
+ .debug_frame   0x000006e4       0x68 build-arm/japanese/kd_font.o
+ .debug_frame   0x0000074c      0x1dc build-arm/japanese/kd_gfx.o
+ .debug_frame   0x00000928      0x1ec build-arm/japanese/kd_app.o
+ .debug_frame   0x00000b14      0x58c build-arm/japanese/kd_desktop.o
+ .debug_frame   0x000010a0       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .debug_frame   0x000010cc       0x34 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+ .debug_frame   0x00001100       0x30 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .debug_frame   0x00001130       0x20 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+ .debug_frame   0x00001150       0x34 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcpy-stub.o)
+ .debug_frame   0x00001184       0x28 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+ .debug_frame   0x000011ac       0x20 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .debug_frame   0x000011cc       0x20 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+
+.debug_line_str
+                0x00000000      0x19a
+ .debug_line_str
+                0x00000000      0x19a /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strcmp.o)
+                                 0xd8 (size before relaxing)
+ .debug_line_str
+                0x0000019a       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .debug_line_str
+                0x0000019a       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .debug_line_str
+                0x0000019a       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)

@@ -1,0 +1,231 @@
+Archive member included to satisfy reference by file (symbol)
+
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+                              build-arm/kj_text.o (memcmp)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+                              build-arm/kj_text.o (memset)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                              build-arm/kj_text.o (__aeabi_uidiv)
+/home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                              /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o) (__aeabi_idiv0)
+
+Discarded input sections
+
+ .text          0x00000000        0x0 build-arm/core/probe.o
+ .data          0x00000000        0x0 build-arm/core/probe.o
+ .bss           0x00000000        0x0 build-arm/core/probe.o
+ .comment       0x00000000       0x46 build-arm/core/probe.o
+ .text          0x00000000        0x0 build-arm/kj_text.o
+ .data          0x00000000        0x0 build-arm/kj_text.o
+ .bss           0x00000000        0x0 build-arm/kj_text.o
+ .text.kj_font_ascii
+                0x00000000       0x3e build-arm/kj_text.o
+ .comment       0x00000000       0x46 build-arm/kj_text.o
+ .text          0x00000000        0x0 build-arm/font_data.o
+ .data          0x00000000        0x0 build-arm/font_data.o
+ .bss           0x00000000        0x0 build-arm/font_data.o
+ .comment       0x00000000       0x46 build-arm/font_data.o
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .text          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .data          0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+ .bss           0x00000000        0x0 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x10000000         0x00200000         xr
+RAM              0x20000000         0x00042000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x10000000    0x122c6
+ *(.text*)
+ .text._start   0x10000000       0x70 build-arm/core/probe.o
+                0x10000000                _start
+ .text.valid_font
+                0x10000070       0x68 build-arm/kj_text.o
+ .text.find     0x100000d8       0x60 build-arm/kj_text.o
+ .text.put4     0x10000138       0x3a build-arm/kj_text.o
+ *fill*         0x10000172        0x2
+ .text.kj_utf8_next
+                0x10000174       0xc4 build-arm/kj_text.o
+                0x10000174                kj_utf8_next
+ .text.kj_utf8_prefix
+                0x10000238       0x32 build-arm/kj_text.o
+                0x10000238                kj_utf8_prefix
+ *fill*         0x1000026a        0x2
+ .text.kj_font_open
+                0x1000026c       0x9c build-arm/kj_text.o
+                0x1000026c                kj_font_open
+ .text.kj_lookup
+                0x10000308       0x74 build-arm/kj_text.o
+                0x10000308                kj_lookup
+ .text.kj_measure
+                0x1000037c       0xf0 build-arm/kj_text.o
+                0x1000037c                kj_measure
+ .text.kj_draw  0x1000046c      0x29a build-arm/kj_text.o
+                0x1000046c                kj_draw
+ *fill*         0x10000706        0x2
+ .text.kj_draw4
+                0x10000708      0x128 build-arm/kj_text.o
+                0x10000708                kj_draw4
+ .text.memcmp   0x10000830       0x48 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+                0x10000830                memcmp
+ .text.memset   0x10000878       0x94 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+                0x10000878                memset
+ .text          0x1000090c      0x114 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                0x1000090c                __udivsi3
+                0x1000090c                __aeabi_uidiv
+                0x10000a18                __aeabi_uidivmod
+ .text          0x10000a20        0x4 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                0x10000a20                __aeabi_ldiv0
+                0x10000a20                __aeabi_idiv0
+ *(.rodata*)
+ .rodata._start.str1.1
+                0x10000a24        0xa build-arm/core/probe.o
+ *fill*         0x10000a2e        0x2
+ .rodata.kj_type_sizes
+                0x10000a30       0x1c build-arm/core/probe.o
+                0x10000a30                kj_type_sizes
+ .rodata        0x10000a4c       0x2c build-arm/core/probe.o
+ .rodata.box.0  0x10000a78        0x8 build-arm/kj_text.o
+ .rodata        0x10000a80        0x7 build-arm/kj_text.o
+ *fill*         0x10000a87        0x1
+ .rodata.kj_misaki8
+                0x10000a88       0x18 build-arm/font_data.o
+                0x10000a88                kj_misaki8
+ .rodata.font_bytes
+                0x10000aa0    0x11826 build-arm/font_data.o
+
+.glue_7         0x100122c8        0x0
+ .glue_7        0x100122c8        0x0 linker stubs
+
+.glue_7t        0x100122c8        0x0
+ .glue_7t       0x100122c8        0x0 linker stubs
+
+.vfp11_veneer   0x100122c8        0x0
+ .vfp11_veneer  0x100122c8        0x0 linker stubs
+
+.v4_bx          0x100122c8        0x0
+ .v4_bx         0x100122c8        0x0 linker stubs
+
+.iplt           0x100122c8        0x0
+ .iplt          0x100122c8        0x0 build-arm/core/probe.o
+
+.rel.dyn        0x100122c8        0x0
+ .rel.iplt      0x100122c8        0x0 build-arm/core/probe.o
+
+.ARM.exidx
+ *(.ARM.exidx*)
+
+.data
+ *(.data*)
+
+.igot.plt       0x20000000        0x0 load address 0x100122c6
+ .igot.plt      0x20000000        0x0 build-arm/core/probe.o
+
+.bss            0x20000000       0x24 load address 0x100122c6
+ *(.bss*)
+ .bss.pixels.0  0x20000000       0x20 build-arm/core/probe.o
+ .bss.result    0x20000020        0x4 build-arm/core/probe.o
+ *(COMMON)
+
+/DISCARD/
+ *(.comment)
+ *(.note*)
+LOAD build-arm/core/probe.o
+LOAD build-arm/kj_text.o
+LOAD build-arm/font_data.o
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+START GROUP
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+END GROUP
+START GROUP
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+LOAD /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a
+END GROUP
+OUTPUT(build-arm/core/analysis.elf elf32-littlearm)
+LOAD linker stubs
+
+.ARM.attributes
+                0x00000000       0x2c
+ .ARM.attributes
+                0x00000000       0x2c build-arm/core/probe.o
+ .ARM.attributes
+                0x0000002c       0x2c build-arm/kj_text.o
+ .ARM.attributes
+                0x00000058       0x2c build-arm/font_data.o
+ .ARM.attributes
+                0x00000084       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .ARM.attributes
+                0x000000b0       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .ARM.attributes
+                0x000000dc       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .ARM.attributes
+                0x000000fa       0x1e /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+
+.debug_info     0x00000000     0x177f
+ .debug_info    0x00000000      0x47b build-arm/core/probe.o
+ .debug_info    0x0000047b     0x11a2 build-arm/kj_text.o
+ .debug_info    0x0000161d      0x162 build-arm/font_data.o
+
+.debug_abbrev   0x00000000      0x542
+ .debug_abbrev  0x00000000      0x172 build-arm/core/probe.o
+ .debug_abbrev  0x00000172      0x325 build-arm/kj_text.o
+ .debug_abbrev  0x00000497       0xab build-arm/font_data.o
+
+.debug_aranges  0x00000000       0xa8
+ .debug_aranges
+                0x00000000       0x20 build-arm/core/probe.o
+ .debug_aranges
+                0x00000020       0x70 build-arm/kj_text.o
+ .debug_aranges
+                0x00000090       0x18 build-arm/font_data.o
+
+.debug_rnglists
+                0x00000000      0x10f
+ .debug_rnglists
+                0x00000000       0x13 build-arm/core/probe.o
+ .debug_rnglists
+                0x00000013       0xfc build-arm/kj_text.o
+
+.debug_line     0x00000000     0x10f8
+ .debug_line    0x00000000      0x209 build-arm/core/probe.o
+ .debug_line    0x00000209      0xd57 build-arm/kj_text.o
+ .debug_line    0x00000f60      0x198 build-arm/font_data.o
+
+.debug_str      0x00000000      0x3f5
+ .debug_str     0x00000000      0x3f5 build-arm/core/probe.o
+                                0x319 (size before relaxing)
+ .debug_str     0x000003f5      0x430 build-arm/kj_text.o
+ .debug_str     0x000003f5      0x218 build-arm/font_data.o
+
+.debug_frame    0x00000000      0x224
+ .debug_frame   0x00000000       0x30 build-arm/core/probe.o
+ .debug_frame   0x00000030      0x178 build-arm/kj_text.o
+ .debug_frame   0x000001a8       0x2c /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memcmp.o)
+ .debug_frame   0x000001d4       0x30 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memset.o)
+ .debug_frame   0x00000204       0x20 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+
+.debug_loclists
+                0x00000000     0x141c
+ .debug_loclists
+                0x00000000     0x141c build-arm/kj_text.o
+
+.debug_line_str
+                0x00000000       0xc2
+ .debug_line_str
+                0x00000000       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .debug_line_str
+                0x000000c2       0xc2 /home/shion/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)

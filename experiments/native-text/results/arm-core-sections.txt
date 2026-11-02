@@ -1,0 +1,15 @@
+build-arm/core/analysis.elf  :
+section            size        addr
+.text             74438   268435456
+.bss                 36   536870912
+.ARM.attributes      44           0
+.debug_info        6015           0
+.debug_abbrev      1346           0
+.debug_aranges      168           0
+.debug_rnglists     271           0
+.debug_line        4344           0
+.debug_str         1013           0
+.debug_frame        548           0
+.debug_loclists    5148           0
+.debug_line_str     194           0
+Total             93565
