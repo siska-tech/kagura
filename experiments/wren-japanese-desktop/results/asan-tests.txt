@@ -1,0 +1,15 @@
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-japanese-worktree/experiments/wren-japanese-desktop/build-asan
+    Start 1: japanese_integration
+1/5 Test #1: japanese_integration .............   Passed    0.71 sec
+    Start 2: japanese_wren_demo
+2/5 Test #2: japanese_wren_demo ...............   Passed    0.14 sec
+    Start 3: japanese_native_demo
+3/5 Test #3: japanese_native_demo .............   Passed    0.12 sec
+    Start 4: text_core
+4/5 Test #4: text_core ........................   Passed    0.06 sec
+    Start 5: unicode_font_oracle
+5/5 Test #5: unicode_font_oracle ..............   Passed    0.30 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   1.43 sec
