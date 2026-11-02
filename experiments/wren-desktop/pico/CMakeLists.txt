@@ -33,6 +33,10 @@ target_link_libraries(wren_desktop_flash PRIVATE integration pico_stdlib hardwar
 target_link_options(wren_desktop_flash PRIVATE "-Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/wren_desktop_flash.map,--cref")
 target_compile_options(wren_desktop_flash PRIVATE -Os -Wall -Wextra -Werror -fstack-usage)
 target_compile_definitions(wren_desktop_flash PRIVATE
+  # Expected malloc/realloc failure must reach Wren's whole-VM discard path.
+  # sbrk remains hard bounded by __StackLimit == __HeapLimit; successful Wren
+  # allocations also get an explicit range check in the platform hook.
+  PICO_MALLOC_PANIC=0
   PICO_STACK_SIZE=49152 PICO_USE_STACK_GUARDS=1
   PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=0
   PICO_STDIO_USB_STDOUT_TIMEOUT_US=500000

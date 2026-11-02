@@ -5,6 +5,7 @@
 #include <stdlib.h>
 static unsigned frame;
 void wd_platform_tick(void) {}
+void wd_platform_check_allocation(void *ptr,size_t size) { (void)ptr; (void)size; }
 uint64_t wd_platform_us(void) { return 0; }
 static void save(void) {
     char name[32]; snprintf(name,sizeof name,"frame-%u.pgm",frame++);

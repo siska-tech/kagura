@@ -17,4 +17,7 @@ typedef struct {
 int wd_run(size_t budget,unsigned rounds,bool cover,bool errors,unsigned injection,size_t nth);
 const wd_metrics *wd_last_metrics(void);
 void wd_platform_tick(void);
+/* Successful native allocations must stay inside the platform arena.
+   This is independent of returning NULL for an expected malloc failure. */
+void wd_platform_check_allocation(void *ptr,size_t size);
 #endif

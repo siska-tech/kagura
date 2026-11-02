@@ -9,6 +9,10 @@
 #include <stdio.h>
 extern char __StackBottom,__StackTop,__end__,__HeapLimit,__recovery_start,__recovery_end;
 void wd_platform_tick(void) { watchdog_update(); }
+void wd_platform_check_allocation(void *ptr,size_t size) {
+    uintptr_t p=(uintptr_t)ptr,lo=(uintptr_t)&__end__,hi=(uintptr_t)&__HeapLimit;
+    if (p<lo || p>hi || size>hi-p) panic("allocation outside bounded arena");
+}
 uint64_t wd_platform_us(void) { return time_us_64(); }
 static const kh_config config={KH_QSPI,2,2,6,7,8,9,10};
 static unsigned visual_frame;

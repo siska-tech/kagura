@@ -83,6 +83,7 @@ def main():
                 line=s.readline().decode('utf-8','replace').strip()
                 if not line:continue
                 log(line)
+                if '*** PANIC ***' in line: raise RuntimeError('Firmware panic: stop workloads and restore')
                 if line.startswith('WD_BOOT '):
                     boot=fields(line); assert boot['watchdog']=='0' and boot['hz']=='125000000'
                     for k,v in (('heap_start','heap_start'),('heap_limit','heap_limit'),('stack_bottom','stack_bottom'),('stack_top','stack_top'),('recovery_start','recovery_start'),('recovery_end','recovery_end')): assert int(boot[k],16)==int(layout[v],16)
@@ -111,6 +112,9 @@ def main():
         for name,kind in (('limit','1'),('owned_oom','3'),('native_oom','2')):
             m=next(m for m in memories if m['name']==name); assert m['status']=='1' and m['oom']==kind
         (a.out/'measurements.json').write_text(json.dumps(dict(boot=boot,abi=abi,frames=frames,memories=memories,latencies=latencies,guards=guards),indent=2)+'\n')
+    except BaseException as failure:
+        log('HOST_FAILURE '+type(failure).__name__+': '+str(failure))
+        raise
     finally:
         if programmed:
             # A normally completing harness enters ROM BOOTSEL itself. A

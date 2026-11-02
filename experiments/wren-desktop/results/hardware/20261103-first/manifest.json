@@ -1,0 +1,147 @@
+{
+  "firmware_commit": "fdd45fbfc31453032d22930e3dcde2ea79c42a25",
+  "elf_sha256": "1b90d5d63f8775e49724651bfffa6b906fcb5bd8d39d075af77f0ace8611bb39",
+  "backup_sha256": "d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b",
+  "firmware_region": [
+    "0x10000000",
+    "0x10026000"
+  ],
+  "programmed_full_flash_sha256": "56bbdb5f4e4f66e0dd174ea62d185603960d0406faae25cb3ea0d329c2a76924",
+  "layout": {
+    "kind": "static FLASH-resident RP2040 link, NOT hardware execution",
+    "elf_sha256": "1b90d5d63f8775e49724651bfffa6b906fcb5bd8d39d075af77f0ace8611bb39",
+    "entry": "0x100001e9",
+    "headers": [
+      {
+        "vaddr": "0x10000000",
+        "paddr": "0x10000000",
+        "filesz": 146584,
+        "memsz": 146584,
+        "flags": 5
+      },
+      {
+        "vaddr": "0x200000c0",
+        "paddr": "0x10023c98",
+        "filesz": 6208,
+        "memsz": 45364,
+        "flags": 7
+      },
+      {
+        "vaddr": "0x2000b1f4",
+        "paddr": "0x100254d8",
+        "filesz": 0,
+        "memsz": 2048,
+        "flags": 4
+      },
+      {
+        "vaddr": "0x20000000",
+        "paddr": "0x20000000",
+        "filesz": 0,
+        "memsz": 192,
+        "flags": 6
+      },
+      {
+        "vaddr": "0x20032000",
+        "paddr": "0x20032000",
+        "filesz": 0,
+        "memsz": 8192,
+        "flags": 6
+      },
+      {
+        "vaddr": "0x20034000",
+        "paddr": "0x20034000",
+        "filesz": 0,
+        "memsz": 49152,
+        "flags": 4
+      }
+    ],
+    "sections": [
+      {
+        "name": ".boot2",
+        "address": "0x10000000",
+        "size": 256,
+        "noload": false
+      },
+      {
+        "name": ".text",
+        "address": "0x10000100",
+        "size": 121060,
+        "noload": false
+      },
+      {
+        "name": ".rodata",
+        "address": "0x1001d9e8",
+        "size": 25236,
+        "noload": false
+      },
+      {
+        "name": ".binary_info",
+        "address": "0x10023c7c",
+        "size": 28,
+        "noload": false
+      },
+      {
+        "name": ".ram_vector_table",
+        "address": "0x20000000",
+        "size": 192,
+        "noload": true
+      },
+      {
+        "name": ".data",
+        "address": "0x200000c0",
+        "size": 6208,
+        "noload": false
+      },
+      {
+        "name": ".bss",
+        "address": "0x20001900",
+        "size": 39156,
+        "noload": true
+      },
+      {
+        "name": ".heap",
+        "address": "0x2000b1f4",
+        "size": 2048,
+        "noload": true
+      },
+      {
+        "name": ".stack_dummy",
+        "address": "0x20034000",
+        "size": 49152,
+        "noload": true
+      },
+      {
+        "name": ".recovery_reserve",
+        "address": "0x20032000",
+        "size": 8192,
+        "noload": true
+      }
+    ],
+    "static_sram": 45556,
+    "desktop_state": {
+      "address": 536880096,
+      "size": 34284,
+      "type": 1
+    },
+    "runtime": {
+      "address": 536877712,
+      "size": 280,
+      "type": 1
+    },
+    "heap_start": "0x2000b1f4",
+    "heap_limit": "0x2002c1f4",
+    "allocator_capacity": 135168,
+    "stack_bottom": "0x20034000",
+    "stack_top": "0x20040000",
+    "stack_reserved": 49152,
+    "recovery_start": "0x20032000",
+    "recovery_end": "0x20034000",
+    "recovery_reserved": 8192,
+    "unassigned_main_ram": 24076,
+    "unused_scratch": 8192,
+    "total_unassigned": 32268,
+    "estimated_native_integration": 241284,
+    "linked_reserved": 238068,
+    "difference_from_estimate": -3216
+  }
+}

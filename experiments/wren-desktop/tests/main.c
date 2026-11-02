@@ -6,6 +6,7 @@
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x); exit(2); } } while (0)
 #ifndef WD_ARM_TESTS
 void wd_platform_tick(void) {}
+void wd_platform_check_allocation(void *ptr,size_t size) { (void)ptr; (void)size; }
 uint64_t wd_platform_us(void) { return 0; }
 #endif
 static uint32_t frames[16],reference[16];

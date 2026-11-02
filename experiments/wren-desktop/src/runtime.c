@@ -58,6 +58,7 @@ static void *tracked(void *ptr,size_t size,void *data) {
     bool existed=b!=NULL;
     Block *n=realloc(b,sizeof(Block)+size);
     if (!n) exhausted(r,2);
+    wd_platform_check_allocation(n,sizeof(Block)+size);
     if (existed) r->m.reallocations++;
     else { r->m.allocations++; r->m.blocks++; n->h.prev=NULL; n->h.next=r->head; }
     if (n->h.prev) n->h.prev->h.next=n; else r->head=n;

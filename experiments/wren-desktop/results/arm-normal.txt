@@ -5,138 +5,138 @@ WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=0 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=0 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=1 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=1 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=2 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=2 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=3 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=3 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=4 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=4 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=5 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=5 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=6 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=6 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=7 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=7 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=8 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=8 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=9 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=9 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=10 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=10 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=11 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=11 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=12 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=12 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=13 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=13 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=14 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=14 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=15 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=15 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=16 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=16 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=17 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=17 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=18 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+MEM cycle=18 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
 こんにちは、神楽！
 WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
 WREN_ERROR type=1 module=? line=-1 expected error
 WREN_ERROR type=2 module=error line=1 (script)
 WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
 WREN_ERROR type=2 module=badargs line=2 (script)
-MEM cycle=19 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=126032 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
-ARENA capacity=135168 high_water=126032 current_break=126032 in_use=1032 free=125000 sbrk_failures=0 stack_painted_upper=33552
+MEM cycle=19 status=0 init=74908 compiled=84895 gc_live=88666 peak=91970 ledger_peak=111378 arena_peak=125976 used_peak=122752 live=0 blocks=0 allocs=4796 reallocs=5020 frees=4796 largest=8192 collections=61 foreign=161 completed=10 oom=0 fail_stage=0 init_peak=74908 compile_peak=85213 run_peak=91970
+ARENA capacity=135168 high_water=125976 current_break=125976 in_use=1032 free=124944 sbrk_failures=0 stack_painted_upper=33560

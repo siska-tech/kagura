@@ -14,6 +14,10 @@
 static alignas(max_align_t) unsigned char arena[512*1024];
 static size_t used,high_water,limit=135168,failures;
 void wd_platform_tick(void) {}
+void wd_platform_check_allocation(void *ptr,size_t size) {
+    uintptr_t p=(uintptr_t)ptr,lo=(uintptr_t)arena;
+    if (p<lo || p>lo+limit || size>lo+limit-p) __builtin_trap();
+}
 uint64_t wd_platform_us(void) { return 0; }
 void *_sbrk(ptrdiff_t n) {
     void *p=arena+used;
