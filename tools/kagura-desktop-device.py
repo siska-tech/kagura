@@ -12,7 +12,7 @@ Then it measures the binding on the RP2040 (heap, call cost, update latency,
 GC, a long update loop), closes the desktop, checks that the console came
 back, and does a soft reset and a hard reset (machine.reset).
 
-  python tools/kagura-desktop-device.py --out DIR [--ffmpeg PATH] [--loops 2000]
+  python tools/kagura-desktop-device.py --out DIR [--ffmpeg PATH] [--loops 2000] [--soak 600]
 
 Uses mpremote/pyserial (Windows: uv CPython with
 build/transport-analysis/python-deps). Never prints the USB serial.
@@ -96,6 +96,39 @@ t1 = time.ticks_ms()
 print('LOOP %d updates in %d ms, heap growth %d B, free %d' % (%(loops)d, time.ticks_diff(t1, t0),
       gc.mem_alloc() - a0, gc.mem_free()))
 t0 = time.ticks_us(); gc.collect(); print('GC collect %d us' % time.ticks_diff(time.ticks_us(), t0))
+# Soak: mixed updates for %(soak)d s; every 200 updates a full recomposition must
+# change nothing and ERROR_CODE must be 0.
+end = time.ticks_add(time.ticks_ms(), %(soak)d * 1000)
+n = checks = bad = 0
+lo = gc.mem_free()
+while time.ticks_diff(end, time.ticks_ms()) > 0:
+    k = n %% 7
+    if k == 0:
+        w.set_text(st, labels[n %% 10])
+    elif k == 1:
+        app.sprite.set(n & 15, (n >> 4) & 15, (n >> 8) & 15)
+    elif k == 2:
+        (app.files if n & 8 else app.welcome).activate()
+    elif k == 3:
+        app.files.move(10 + (n & 24), 100 + (n & 16))
+    elif k == 4:
+        app.ev(2, 12, 4); app.ev(3, 12, 4)          # open and close ファイル by a click
+    elif k == 5:
+        app.ev(1, 40 + (n & 127), 30 + (n & 63))    # pointer move: the cursor
+    else:
+        app.handle()
+    while desk.poll_into(lst):
+        pass
+    desk.present()
+    n += 1
+    if n %% 200 == 0:
+        desk.invalidate(0, 0, 320, 200)
+        ok = desk.present() == 0 and desk.device.read_reg(_R.REG_ERROR_CODE) == 0
+        checks += 1
+        bad += not ok
+        gc.collect()
+        lo = min(lo, gc.mem_free())
+print('SOAK %d updates, %d checks, %d failed, lowest free heap %d B' % (n, checks, bad, lo))
 desk.invalidate(0, 0, 320, 200)
 print('CONSISTENT', desk.present() == 0, 'error_code', desk.device.read_reg(_R.REG_ERROR_CODE))
 print('STATS', desk.stats())
@@ -109,7 +142,7 @@ def capture(ffmpeg, path):
     subprocess.run([ffmpeg, '-y'] + INPUT + ['-frames:v', '20', '-update', '1', str(path)], check=True, timeout=60)
 
 
-def stream(port, source, on_line, timeout=900):
+def stream(port, source, on_line, timeout=3600):
     from mpremote.transport_serial import SerialTransport
     t = SerialTransport(port, timeout=0.2)
     try:
@@ -152,6 +185,7 @@ def main():
     p.add_argument('--no-capture', action='store_true')
     p.add_argument('--hold', type=int, default=2500, help='ms each scene stays on screen')
     p.add_argument('--loops', type=int, default=2000)
+    p.add_argument('--soak', type=int, default=600, help='seconds of mixed updates')
     p.add_argument('--port')
     p.add_argument('--expected-serial')
     args = p.parse_args()
@@ -182,7 +216,8 @@ def main():
 
     demo = (ROOT / 'software/micropython/examples/desktop_ja.py').read_text(encoding='utf8')
     demo = demo.split("\nif __name__ == '__main__':")[0]
-    source = demo + DRIVER.replace('%(hold)d', str(args.hold)).replace('%(loops)d', str(args.loops)).replace('%%', '%')
+    source = demo + (DRIVER.replace('%(hold)d', str(args.hold)).replace('%(loops)d', str(args.loops))
+                     .replace('%(soak)d', str(args.soak)).replace('%%', '%'))
     out, err = stream(args.port, source.encode('utf8'), on_line)
     if err:
         emit('DEVICE_EXCEPTION ' + err.replace('\n', ' | '))
