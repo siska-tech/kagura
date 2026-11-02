@@ -1,0 +1,112 @@
+=================================================================
+==454==ERROR: AddressSanitizer: heap-use-after-free on address 0x77d3325fb944 at pc 0x5da045aeff34 bp 0x7fff64b55020 sp 0x7fff64b55010
+READ of size 1 at 0x77d3325fb944 thread T0
+    #0 0x5da045aeff33 in wrenGrayObj build-rejected/wren/src/vm/wren_value.c:981
+    #1 0x5da045ac8e3a in wrenMarkCompiler build-rejected/wren/src/vm/wren_compiler.c:3912
+    #2 0x5da045af754c in wrenCollectGarbage build-rejected/wren/src/vm/wren_vm.c:166
+    #3 0x5da045af7dd8 in wrenReallocate build-rejected/wren/src/vm/wren_vm.c:233
+    #4 0x5da045aed26b in wrenNewMap build-rejected/wren/src/vm/wren_value.c:365
+    #5 0x5da045ab4867 in initCompiler build-rejected/wren/src/vm/wren_compiler.c:584
+    #6 0x5da045ac2178 in method build-rejected/wren/src/vm/wren_compiler.c:3449
+    #7 0x5da045ac3d9c in classDefinition build-rejected/wren/src/vm/wren_compiler.c:3588
+    #8 0x5da045ac48e1 in definition build-rejected/wren/src/vm/wren_compiler.c:3732
+    #9 0x5da045ac7888 in wrenCompile build-rejected/wren/src/vm/wren_compiler.c:3805
+    #10 0x5da045afa456 in compileInModule build-rejected/wren/src/vm/wren_vm.c:484
+    #11 0x5da045b09bf1 in wrenCompileSource build-rejected/wren/src/vm/wren_vm.c:1537
+    #12 0x5da045b09c14 in wrenInterpret build-rejected/wren/src/vm/wren_vm.c:1516
+    #13 0x5da045ad8c36 in wrenInitializeCore build-rejected/wren/src/vm/wren_core.c:1299
+    #14 0x5da045af6ecb in wrenNewVM build-rejected/wren/src/vm/wren_vm.c:95
+    #15 0x5da045aafb09 in new_vm src/experiment.c:94
+    #16 0x5da045aafb09 in run_body src/experiment.c:104
+    #17 0x5da045aafb09 in run src/experiment.c:163
+    #18 0x5da045ab17da in experiment src/experiment.c:171
+    #19 0x5da045aade03 in main src/main.c:17
+    #20 0x7b633362a600  (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a600) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #21 0x7b633362a717 in __libc_start_main (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a717) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #22 0x5da045aada44 in _start (/mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/build-rejected/host+0xa5a44) (BuildId: 1ff00fc6716dcf6d1bff37fe3fbfcf421195d73c)
+
+0x77d3325fb944 is located 36 bytes inside of 72-byte region [0x77d3325fb920,0x77d3325fb968)
+freed by thread T0 here:
+    #0 0x7b633432a3ff in free ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:51
+    #1 0x5da045aae2dc in tracked src/experiment.c:44
+    #2 0x5da045af7d45 in wrenReallocate build-rejected/wren/src/vm/wren_vm.c:236
+    #3 0x5da045af28ec in wrenFreeObj build-rejected/wren/src/vm/wren_value.c:1284
+    #4 0x5da045af78ec in wrenCollectGarbage build-rejected/wren/src/vm/wren_vm.c:184
+    #5 0x5da045af7dd8 in wrenReallocate build-rejected/wren/src/vm/wren_vm.c:233
+    #6 0x5da045aebcb0 in wrenNewFunction build-rejected/wren/src/vm/wren_value.c:250
+    #7 0x5da045ab4945 in initCompiler build-rejected/wren/src/vm/wren_compiler.c:585
+    #8 0x5da045ac2178 in method build-rejected/wren/src/vm/wren_compiler.c:3449
+    #9 0x5da045ac3d9c in classDefinition build-rejected/wren/src/vm/wren_compiler.c:3588
+    #10 0x5da045ac48e1 in definition build-rejected/wren/src/vm/wren_compiler.c:3732
+    #11 0x5da045ac7888 in wrenCompile build-rejected/wren/src/vm/wren_compiler.c:3805
+    #12 0x5da045afa456 in compileInModule build-rejected/wren/src/vm/wren_vm.c:484
+    #13 0x5da045b09bf1 in wrenCompileSource build-rejected/wren/src/vm/wren_vm.c:1537
+    #14 0x5da045b09c14 in wrenInterpret build-rejected/wren/src/vm/wren_vm.c:1516
+    #15 0x5da045ad8c36 in wrenInitializeCore build-rejected/wren/src/vm/wren_core.c:1299
+    #16 0x5da045af6ecb in wrenNewVM build-rejected/wren/src/vm/wren_vm.c:95
+    #17 0x5da045aafb09 in new_vm src/experiment.c:94
+    #18 0x5da045aafb09 in run_body src/experiment.c:104
+    #19 0x5da045aafb09 in run src/experiment.c:163
+    #20 0x5da045ab17da in experiment src/experiment.c:171
+    #21 0x5da045aade03 in main src/main.c:17
+    #22 0x7b633362a600  (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a600) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #23 0x7b633362a717 in __libc_start_main (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a717) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #24 0x5da045aada44 in _start (/mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/build-rejected/host+0xa5a44) (BuildId: 1ff00fc6716dcf6d1bff37fe3fbfcf421195d73c)
+
+previously allocated by thread T0 here:
+    #0 0x7b633432a6cf in realloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:81
+    #1 0x5da045aaf050 in tracked src/experiment.c:52
+    #2 0x5da045af7d45 in wrenReallocate build-rejected/wren/src/vm/wren_vm.c:236
+    #3 0x5da045aed26b in wrenNewMap build-rejected/wren/src/vm/wren_value.c:365
+    #4 0x5da045ab4867 in initCompiler build-rejected/wren/src/vm/wren_compiler.c:584
+    #5 0x5da045ac2178 in method build-rejected/wren/src/vm/wren_compiler.c:3449
+    #6 0x5da045ac3d9c in classDefinition build-rejected/wren/src/vm/wren_compiler.c:3588
+    #7 0x5da045ac48e1 in definition build-rejected/wren/src/vm/wren_compiler.c:3732
+    #8 0x5da045ac7888 in wrenCompile build-rejected/wren/src/vm/wren_compiler.c:3805
+    #9 0x5da045afa456 in compileInModule build-rejected/wren/src/vm/wren_vm.c:484
+    #10 0x5da045b09bf1 in wrenCompileSource build-rejected/wren/src/vm/wren_vm.c:1537
+    #11 0x5da045b09c14 in wrenInterpret build-rejected/wren/src/vm/wren_vm.c:1516
+    #12 0x5da045ad8c36 in wrenInitializeCore build-rejected/wren/src/vm/wren_core.c:1299
+    #13 0x5da045af6ecb in wrenNewVM build-rejected/wren/src/vm/wren_vm.c:95
+    #14 0x5da045aafb09 in new_vm src/experiment.c:94
+    #15 0x5da045aafb09 in run_body src/experiment.c:104
+    #16 0x5da045aafb09 in run src/experiment.c:163
+    #17 0x5da045ab17da in experiment src/experiment.c:171
+    #18 0x5da045aade03 in main src/main.c:17
+    #19 0x7b633362a600  (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a600) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #20 0x7b633362a717 in __libc_start_main (/usr/lib/x86_64-linux-gnu/libc.so.6+0x2a717) (BuildId: 066527e430a32768d82741e00b81eebb1a872294)
+    #21 0x5da045aada44 in _start (/mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/build-rejected/host+0xa5a44) (BuildId: 1ff00fc6716dcf6d1bff37fe3fbfcf421195d73c)
+
+SUMMARY: AddressSanitizer: heap-use-after-free build-rejected/wren/src/vm/wren_value.c:981 in wrenGrayObj
+Shadow bytes around the buggy address:
+  0x77d3325fb680: fd fd fd fd fd fd fd fd fd fa fa fa fa fa fd fd
+  0x77d3325fb700: fd fd fd fd fd fd fd fa fa fa fa fa fd fd fd fd
+  0x77d3325fb780: fd fd fd fd fd fa fa fa fa fa fd fd fd fd fd fd
+  0x77d3325fb800: fd fd fd fd fa fa fa fa fd fd fd fd fd fd fd fd
+  0x77d3325fb880: fd fa fa fa fa fa fd fd fd fd fd fd fd fd fd fa
+=>0x77d3325fb900: fa fa fa fa fd fd fd fd[fd]fd fd fd fd fa fa fa
+  0x77d3325fb980: fa fa fd fd fd fd fd fd fd fd fd fa fa fa fa fa
+  0x77d3325fba00: fd fd fd fd fd fd fd fd fd fa fa fa fa fa fd fd
+  0x77d3325fba80: fd fd fd fd fd fd fd fa fa fa fa fa fd fd fd fd
+  0x77d3325fbb00: fd fd fd fd fd fd fa fa fa fa fd fd fd fd fd fd
+  0x77d3325fbb80: fd fd fd fa fa fa fa fa fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==454==ABORTING
