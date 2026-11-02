@@ -16,6 +16,7 @@ freeze("$(BOARD_DIR)/../..", (
     "kagura/audio.py",
     "kagura/terminal.py",
     "kagura/console.py",
+    "kagura/desktop.py",
     "kagura/ui/__init__.py",
     "kagura/ui/app.py",
     "kagura/ui/widget.py",
