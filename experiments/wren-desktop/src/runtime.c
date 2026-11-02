@@ -11,7 +11,11 @@
 #ifdef WD_MEMORY_DETAIL
 #include <malloc.h>
 #endif
+#ifdef WD_JAPANESE
+#include "japanese_app_source.h"
+#else
 #include "app_source.h"
+#endif
 typedef union Block Block;
 union Block { struct { size_t size; Block *prev,*next; } h; max_align_t align; };
 typedef struct {
@@ -20,8 +24,26 @@ typedef struct {
     wd_metrics m;
     size_t budget,calls,nth;
     unsigned injection;
+#ifdef WD_JAPANESE
+    const char *program;
+    WrenVM *active_vm;
+    WrenHandle *receiver,*method;
+    uint64_t session;
+#endif
 } Runtime;
 static Runtime runtime;
+#ifdef WD_JAPANESE
+static uint64_t next_session;
+typedef struct { WrenVM *vm; WrenHandle *receiver,*method; uint64_t session; } CallTicket;
+static bool current_ticket(const CallTicket *t) {
+    Runtime *r=&runtime;
+    bool valid=t->vm && t->receiver && t->method && t->vm==r->active_vm && t->receiver==r->receiver && t->method==r->method && t->session==r->session;
+    if (!valid) r->m.handle_rejections++;
+    return valid;
+}
+static void clear_handles(void) { runtime.active_vm=NULL; runtime.receiver=NULL; runtime.method=NULL; }
+bool wd_handles_idle(void) { return !runtime.active_vm && !runtime.receiver && !runtime.method && !runtime.program; }
+#endif
 enum { INIT=1,COMPILE,RUN,GC,SHUTDOWN };
 static void measure(Runtime *r) {
     size_t physical=r->m.live+r->m.blocks*sizeof(Block);
@@ -81,8 +103,16 @@ static void open_window(WrenVM *vm) {
     count(vm);
     if (wrenGetSlotType(vm,1)!=WREN_TYPE_STRING) { fail(vm,"title must be a string"); return; }
     int length; const char *title=wrenGetSlotBytes(vm,1,&length);
+#ifdef WD_JAPANESE
+    if (length<0) { fail(vm,"negative title byte length"); return; }
+    wj_title_status policy;
+    bool opened=wd_ui_open_utf8(title,(size_t)length,&policy);
+    if (policy!=WJ_TITLE_OK) { fail(vm,wj_title_error(policy)); return; }
+    wrenSetSlotBool(vm,0,opened);
+#else
     if (length>=KD_TITLE_MAX || memchr(title,0,(size_t)length)) { fail(vm,"invalid title length"); return; }
     wrenSetSlotBool(vm,0,wd_ui_open(title)); /* copies before VM can collect */
+#endif
 }
 static void rectangle(WrenVM *vm) {
     count(vm); int a[5];
@@ -119,8 +149,16 @@ static int execute(unsigned rounds,bool cover,bool check_errors) {
     cfg.reallocateFn=tracked; cfg.userData=r; cfg.writeFn=output; cfg.errorFn=error; cfg.bindForeignMethodFn=bind;
     cfg.initialHeapSize=16384; cfg.minHeapSize=8192; cfg.heapGrowthPercent=25;
     r->m.stage=INIT; uint64_t start=wd_platform_us(); WrenVM *vm=wrenNewVM(&cfg); wd_diag_add(WD_INIT,start); r->m.init_live=r->m.live;
+#ifdef WD_JAPANESE
+    r->active_vm=vm;
+#endif
     r->m.stage=COMPILE;
-    start=wd_platform_us(); bool ok=wrenInterpret(vm,"integration",app_source)==WREN_RESULT_SUCCESS; wd_diag_add(WD_COMPILE,start);
+#ifdef WD_JAPANESE
+    const char *program=r->program;
+#else
+    const char *program=app_source;
+#endif
+    start=wd_platform_us(); bool ok=wrenInterpret(vm,"integration",program)==WREN_RESULT_SUCCESS; wd_diag_add(WD_COMPILE,start);
     r->m.compile_live=r->m.live;
     if (ok && r->injection==6) {
         wd_ui_prepare(false);
@@ -130,18 +168,42 @@ static int execute(unsigned rounds,bool cover,bool check_errors) {
         ok=false; /* probe must reach the normal whole-VM OOM boundary */
     }
     WrenHandle *receiver=NULL,*method=NULL;
+#ifdef WD_JAPANESE
+    CallTicket ticket={0};
+#endif
     if (ok) {
         wrenEnsureSlots(vm,1); wrenGetVariable(vm,"integration","App",0);
         receiver=wrenGetSlotHandle(vm,0); method=wrenMakeCallHandle(vm,"run()");
+#ifdef WD_JAPANESE
+        r->receiver=receiver; r->method=method;
+        ticket=(CallTicket){vm,receiver,method,r->session};
+        if (check_errors) {
+            CallTicket stale=ticket; stale.session--;
+            ok=!current_ticket(&stale);
+            stale=ticket; stale.receiver=NULL; ok=ok && !current_ticket(&stale);
+            stale=ticket; stale.method=NULL; ok=ok && !current_ticket(&stale);
+            stale=ticket; stale.vm=NULL; ok=ok && !current_ticket(&stale);
+        }
+#endif
     }
     for (unsigned i=0;ok && i<rounds;i++) {
         wd_platform_tick(); wd_ui_prepare(cover);
         if (!wd_ui_start()) { ok=false; break; }
-        r->m.stage=RUN; wrenEnsureSlots(vm,1); wrenSetSlotHandle(vm,0,receiver);
+        r->m.stage=RUN;
+#ifdef WD_JAPANESE
+        if (!current_ticket(&ticket)) { ok=false; break; }
+#endif
+        wrenEnsureSlots(vm,1); wrenSetSlotHandle(vm,0,receiver);
         start=wd_platform_us(); WrenInterpretResult status=wrenCall(vm,method); wd_diag_add(WD_CALL,start);
         ok=status==WREN_RESULT_SUCCESS && wrenGetSlotType(vm,0)==WREN_TYPE_NUM &&
             wrenGetSlotDouble(vm,0)==1406 && wd_ui_events()==4;
-        if (ok && cover) { wd_ui_cover(false); ok=wd_ui_present(); }
+        if (ok && cover) {
+            wd_ui_cover(false); ok=wd_ui_present();
+#ifdef WD_JAPANESE
+            if (ok) ok=wd_ui_move(-100,18) && wd_ui_present(); /* title partly off-screen */
+            if (ok) ok=wd_ui_move(16,24) && wd_ui_present();
+#endif
+        }
         if (ok) r->m.completed++;
         collect(vm);
         if (ok && check_errors && i==0) {
@@ -159,20 +221,46 @@ static int execute(unsigned rounds,bool cover,bool check_errors) {
     }
     wd_ui_abort();
     if (wd_ui_transport()->ready && !wd_ui_present()) ok=false;
+#ifdef WD_JAPANESE
+    clear_handles();
+    if (check_errors && receiver && current_ticket(&ticket)) ok=false;
+#endif
     if (method) wrenReleaseHandle(vm,method);
     if (receiver) wrenReleaseHandle(vm,receiver);
     collect(vm); r->m.stage=SHUTDOWN; wrenFreeVM(vm);
     return ok && !r->m.live && !r->m.blocks && !r->head?0:2;
 }
+#ifdef WD_JAPANESE
+int wd_run_script(size_t budget,unsigned rounds,bool cover,bool errors,unsigned injection,size_t nth,const char *source) {
+#else
 int wd_run(size_t budget,unsigned rounds,bool cover,bool errors,unsigned injection,size_t nth) {
+#endif
     wd_ui_abort();
     Runtime *r=&runtime; memset(r,0,sizeof(*r)); r->budget=budget; r->injection=injection; r->nth=nth;
+#ifdef WD_JAPANESE
+    if (!source) { r->m.status=2; return 2; }
+    r->program=source;
+    if (++next_session==0) ++next_session;
+    r->session=next_session;
+#endif
     if (setjmp(r->escape)) {
         wd_ui_abort(); /* invalidate native owner before any fresh VM is allowed */
+#ifdef WD_JAPANESE
+        clear_handles(); r->program=NULL;
+#endif
         while (r->head) tracked(r->head+1,0,r);
         r->m.status=(!r->m.live && !r->m.blocks && r->m.allocations==r->m.frees)?1:2;
         return r->m.status;
     }
-    r->m.status=execute(rounds,cover,errors); return r->m.status;
+    r->m.status=execute(rounds,cover,errors);
+#ifdef WD_JAPANESE
+    r->program=NULL;
+#endif
+    return r->m.status;
 }
+#ifdef WD_JAPANESE
+int wd_run(size_t budget,unsigned rounds,bool cover,bool errors,unsigned injection,size_t nth) {
+    return wd_run_script(budget,rounds,cover,errors,injection,nth,app_source);
+}
+#endif
 const wd_metrics *wd_last_metrics(void) { return &runtime.m; }

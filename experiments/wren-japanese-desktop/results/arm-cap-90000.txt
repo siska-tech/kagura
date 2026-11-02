@@ -1,0 +1,9 @@
+INFO CPU emulation only; mock external FPGA, no hardware timing
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+MEM cycle=0 status=1 init=74908 compiled=84919 gc_live=84110 peak=89997 ledger_peak=108797 arena_peak=124552 used_peak=119840 live=0 blocks=0 allocs=3582 reallocs=4131 frees=3582 largest=8192 collections=1 foreign=17 completed=1 oom=1 fail_stage=3 init_peak=74908 compile_peak=85237 run_peak=89997
+ARENA capacity=135168 high_water=124552 current_break=124552 in_use=1032 free=123520 sbrk_failures=0 stack_painted_upper=33648

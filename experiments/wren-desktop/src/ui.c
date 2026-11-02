@@ -56,18 +56,42 @@ bool wd_ui_start(void) {
 void wd_ui_cover(bool show) {
     if (desktop_state.busy) return;
     if (show && !desktop_state.cover)
-        desktop_state.cover=kd_window_open(&desktop_state.desktop,&cover_class,NULL,"Native cover",kd_rect_make(48,40,96,80),KD_WF_CLOSE|KD_WF_MOVE);
+        desktop_state.cover=kd_window_open(&desktop_state.desktop,&cover_class,NULL,"Native cover",kd_rect_make(48,
+#ifdef WD_JAPANESE
+            24, /* Stage 4 cover crosses the Japanese title itself. */
+#else
+            40,
+#endif
+            96,80),KD_WF_CLOSE|KD_WF_MOVE);
     if (!show && desktop_state.cover) {
         kd_window_close(&desktop_state.desktop,desktop_state.cover); desktop_state.cover=NULL;
     }
 }
-bool wd_ui_open(const char *title) {
-    if (desktop_state.busy || desktop_state.window || strlen(title)>=KD_TITLE_MAX) return false;
-    for (const unsigned char *p=(const unsigned char *)title;*p;p++) if (*p<32 || *p>126) return false;
+static bool open_model(const char *title) {
+    if (desktop_state.busy || desktop_state.window) return false;
     desktop_state.window=kd_window_open(&desktop_state.desktop,&window_class,NULL,title,kd_rect_make(16,24,160,104),KD_WF_CLOSE|KD_WF_MOVE);
     if (desktop_state.want_cover) wd_ui_cover(true);
     return desktop_state.window!=NULL;
 }
+bool wd_ui_open(const char *title) {
+    if (!title || strlen(title)>=KD_TITLE_MAX) return false;
+    for (const unsigned char *p=(const unsigned char *)title;*p;p++) if (*p<32 || *p>126) return false;
+    return open_model(title);
+}
+#ifdef WD_JAPANESE
+_Static_assert(KD_TITLE_MAX==WJ_TITLE_CAPACITY,"native title capacity unchanged");
+bool wd_ui_open_utf8(const char *title,size_t bytes,wj_title_status *status) {
+    char owned[WJ_TITLE_CAPACITY];
+    wj_title_status result=wj_title_copy(owned,title,bytes);
+    if (status) *status=result;
+    return result==WJ_TITLE_OK && open_model(owned);
+}
+const char *wd_ui_title(void) { return desktop_state.window?desktop_state.window->title:NULL; }
+bool wd_ui_move(int x,int y) {
+    if (desktop_state.busy || !desktop_state.window || x<INT16_MIN || x>INT16_MAX || y<INT16_MIN || y>INT16_MAX) return false;
+    kd_desktop_move(&desktop_state.desktop,desktop_state.window,x,y); return true;
+}
+#endif
 bool wd_ui_rect(int x,int y,int w,int h,int color) {
     if (desktop_state.busy || !desktop_state.window || x < -32768 || x>32767 || y < -32768 || y>32767 || w<0 || w>32767 || h<0 || h>32767 || color<0 || color>15) return false;
     desktop_state.rectangle=kd_rect_make(x,y,w,h); desktop_state.color=(uint8_t)color; desktop_state.has_rectangle=true;

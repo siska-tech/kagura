@@ -1,0 +1,26 @@
+{
+  "kind": "native C = Wren = ARM emulation, all frames",
+  "cases": {
+    "0": [
+      "be72ff88",
+      "32f7ed69",
+      "8bfbed7c",
+      "1371f7cb",
+      "0b96b49e",
+      "505973a9",
+      "be72ff88"
+    ],
+    "1": [
+      "be72ff88",
+      "c2d8e339",
+      "22da35e9",
+      "eb92ef92",
+      "6aa32e3b",
+      "f1c2e304",
+      "505973a9",
+      "c2d7919e",
+      "505973a9",
+      "be72ff88"
+    ]
+  }
+}

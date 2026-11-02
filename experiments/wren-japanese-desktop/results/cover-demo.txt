@@ -1,0 +1,2 @@
+こんにちは、神楽！
+JAPANESE_HOST_DEMO mode=wren-cover status=0 frames=10 one_desktop=1 framebuffer=32000
