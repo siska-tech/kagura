@@ -1,0 +1,134 @@
+CONTROL hash=d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console=(False, True, True, 'None')
+BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+Program Information
+ name:              MicroPython
+ version:           v1.26.0
+ features:          thread support
+                    USB REPL
+ frozen modules:    kagura/ui/theme, kagura/ui/fonts, kagura/ui/events, kagura/ui/render,
+                    kagura/ui/layout, kagura/ui/widgets, kagura/ui/widget, kagura/ui/app, kagura/ui,
+                    kagura/console, kagura/terminal, kagura/audio, kagura/image256,
+                    kagura/framebuffer_viper, kagura/framebuffer, kagura/video, kagura/device,
+                    kagura/link_viper, kagura/link, kagura/acceleration, kagura/dma_pack,
+                    kagura/transport_rp2, kagura/regs, kagura, neopixel, dht, ds18x20, onewire,
+                    uasyncio, asyncio/stream, asyncio/lock, asyncio/funcs, asyncio/event,
+                    asyncio/core, asyncio, _boot_fat, _boot, rp2
+ binary start:      0x10000000
+ binary end:        0x1006822c
+ embedded drive:    0x100a0000-0x10200000 (1408K): MicroPython flags 0x0003 rw
+
+Fixed Pin Information
+ none
+
+Build Information
+ sdk version:       2.1.1
+ pico_board:        pico
+ boot2_name:        boot2_w25q080
+ build date:        Nov  1 2026
+ build attributes:  MinSizeRel
+
+Device Information
+ type:              RP2040
+ revision:          B2
+ flash size:        2048K
+ flash id: [redacted]
+
+Metadata Blocks
+ none
+
+Saving file:          [                              ]  0%
+Saving file:          [                              ]  1%
+Saving file:          [                              ]  2%
+Saving file:          [                              ]  3%
+Saving file:          [=                             ]  4%
+Saving file:          [=                             ]  5%
+Saving file:          [==                            ]  7%
+Saving file:          [==                            ]  8%
+Saving file:          [==                            ]  9%
+Saving file:          [===                           ]  10%
+Saving file:          [===                           ]  11%
+Saving file:          [===                           ]  12%
+Saving file:          [====                          ]  14%
+Saving file:          [====                          ]  15%
+Saving file:          [====                          ]  16%
+Saving file:          [=====                         ]  17%
+Saving file:          [=====                         ]  18%
+Saving file:          [=====                         ]  19%
+Saving file:          [======                        ]  21%
+Saving file:          [======                        ]  22%
+Saving file:          [======                        ]  23%
+Saving file:          [=======                       ]  24%
+Saving file:          [=======                       ]  25%
+Saving file:          [=======                       ]  26%
+Saving file:          [========                      ]  28%
+Saving file:          [========                      ]  29%
+Saving file:          [=========                     ]  30%
+Saving file:          [=========                     ]  31%
+Saving file:          [=========                     ]  32%
+Saving file:          [=========                     ]  33%
+Saving file:          [==========                    ]  35%
+Saving file:          [==========                    ]  36%
+Saving file:          [===========                   ]  37%
+Saving file:          [===========                   ]  38%
+Saving file:          [===========                   ]  39%
+Saving file:          [============                  ]  41%
+Saving file:          [============                  ]  42%
+Saving file:          [============                  ]  43%
+Saving file:          [=============                 ]  44%
+Saving file:          [=============                 ]  45%
+Saving file:          [=============                 ]  46%
+Saving file:          [==============                ]  48%
+Saving file:          [==============                ]  49%
+Saving file:          [===============               ]  50%
+Saving file:          [===============               ]  51%
+Saving file:          [===============               ]  52%
+Saving file:          [===============               ]  53%
+Saving file:          [================              ]  55%
+Saving file:          [================              ]  56%
+Saving file:          [=================             ]  57%
+Saving file:          [=================             ]  58%
+Saving file:          [=================             ]  59%
+Saving file:          [==================            ]  60%
+Saving file:          [==================            ]  62%
+Saving file:          [==================            ]  63%
+Saving file:          [===================           ]  64%
+Saving file:          [===================           ]  65%
+Saving file:          [===================           ]  66%
+Saving file:          [====================          ]  67%
+Saving file:          [====================          ]  69%
+Saving file:          [=====================         ]  70%
+Saving file:          [=====================         ]  71%
+Saving file:          [=====================         ]  72%
+Saving file:          [=====================         ]  73%
+Saving file:          [======================        ]  75%
+Saving file:          [======================        ]  76%
+Saving file:          [=======================       ]  77%
+Saving file:          [=======================       ]  78%
+Saving file:          [=======================       ]  79%
+Saving file:          [========================      ]  80%
+Saving file:          [========================      ]  82%
+Saving file:          [========================      ]  83%
+Saving file:          [=========================     ]  84%
+Saving file:          [=========================     ]  85%
+Saving file:          [=========================     ]  86%
+Saving file:          [==========================    ]  87%
+Saving file:          [==========================    ]  89%
+Saving file:          [===========================   ]  90%
+Saving file:          [===========================   ]  91%
+Saving file:          [===========================   ]  92%
+Saving file:          [===========================   ]  93%
+Saving file:          [============================  ]  94%
+Saving file:          [============================  ]  96%
+Saving file:          [============================= ]  97%
+Saving file:          [============================= ]  98%
+Saving file:          [============================= ]  99%
+Saving file:          [==============================]  100%
+
+Wrote 2097152 bytes to build\wren-japanese-hardware\recovery-preflight\bootsel-preflight-full.bin
+
+BOOTSEL_BACKUP_READBACK_SHA256 d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b
+RECOVERY_REBOOT returncode=0
+The device was rebooted into application mode.
+
+RETURN hash=d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console=(False, True, True, 'None')
+RECOVERY_PREFLIGHT_PASS no_flash_writes

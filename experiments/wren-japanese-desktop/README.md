@@ -1,6 +1,6 @@
 # Stage 4 — Wren Native Japanese Desktop Integration
 
-**Host and ARM-emulated validation and the complete RP2040 link audit pass. Physical execution of this new image is pending separate approval.** The Wren script creates `神楽 Desktop` from a temporary concatenated string, clears that VM variable and calls `System.gc()` before drawing. Native-owned text remains correct through redraws, overlapping-window reveal, partial clipping/movement and VM recreation. [Wren host output](results/wren-japanese-title.png), [overlap](results/wren-overlap.png), [partly clipped title](results/wren-partial-title.png).
+**Host, ARM-emulated and separately approved physical RP2040 validation completed; original MicroPython flash is fully readback-verified and restored.** The Wren script creates `神楽 Desktop` from a temporary concatenated string, clears that VM variable and calls `System.gc()` before drawing. Native-owned text remains correct through redraws, overlap/reveal and partial movement tests. [Physical Japanese title](results/hardware/validated/frame-1.png), [hardware report](HARDWARE.md), [host overlap](results/wren-overlap.png), [host partial clipping](results/wren-partial-title.png). The original 46-pixel thin-red colour-classification caveat remains open and unchanged.
 
 This is an integration, not a replacement renderer. PR #71's `kj_text` / `kj_desktop` and all **7,171 Misaki glyphs** are unchanged. The full 71,718-byte KJ8F and its separate [Misaki attribution/license](../native-text/NOTICE.md) are reused, hash `cbfb1071801f7ed3b6637bb6763219e59d86c13bd149169bbbab5bca753d9238`. The font is immutable flash data, never copied into the Wren heap.
 
@@ -53,7 +53,7 @@ Additional tests include:
 * Duplicate ownership, stale/private handle guards, immediate `System.gc()`, VM recreation, sampled Nth-allocation failures and the original ABI/write/DONE/FENCE/error transport regressions.
 * The cover crosses the Japanese title itself, then reveals it. The window moves to x=-100 for partial title clipping and returns; no new scripting method is needed. Dirty tile behavior is checked byte-for-byte through the existing mock sink.
 
-Native C, Wren and ARM-emulated frame CRCs agree: seven normal frames and ten overlap/reveal/move frames. The normal native/Wren indexed image exports are byte-identical. [Goldens](results/goldens.json), [host trace](results/japanese-trace.txt), [ARM correctness](results/arm-correctness.txt). These are mock transport results, **not new physical FPGA readbacks**.
+Native C, Wren and ARM-emulated frame CRCs agree: seven normal frames and ten overlap/reveal/move frames. The normal native/Wren indexed image exports are byte-identical. [Goldens](results/goldens.json), [host trace](results/japanese-trace.txt), [ARM correctness](results/arm-correctness.txt). The physical FPGA additionally matches all seven normal frames byte-for-byte and by CRC; the extended overlap/movement matrix remains host/emulator coverage.
 
 Normal CRC sequence: `be72ff88`, `32f7ed69`, `8bfbed7c`, `1371f7cb`, `0b96b49e`, `505973a9`, `be72ff88`.
 
@@ -108,7 +108,9 @@ GC settings remain 16 KiB initial / 8 KiB minimum / 25% growth; normal ARM/Pico 
 
 `System.gc()` after open is real VM collection; the host's existing explicit-collection metric counts its own `wrenCollectGarbage` calls, not every automatic or script-triggered collection. Compiled method handles are reused; only the separate repeated-interpretation stress intentionally recompiles.
 
-New physical latency and stack/heap high-water measurements are **pending**. Emulator timer hooks are not cycle models and cannot predict MCU latency. PR #70's measured 49.505 ms per five-present/four-event App.run and 1.370 ms explicit GC mean are historical references, not Stage 4 results. A separate approved run will capture the same timing spans without including readback/capture waits. The 48 KiB stack reservation must not be reduced based on compiler or emulator observations.
+The approved physical run observes **91,994 B** payload peak, **126,436 B** arena peak, **122,796 B** used occupancy and **33,848 B** stack upper bound. All bottom/recovery canaries are intact, and every normal/OOM shutdown balances the ledger to zero. The changed arena start explains its 40-byte lower reported size than #70; requested payload, used occupancy and stack grow, so this is not a runtime-memory saving claim. [Physical data and comparisons](HARDWARE.md).
+
+Physical App.run averages **53.711 ms** for five presents/four events, vs #70's historical 49.505 ms; explicit host-triggered GC averages **1.381 ms**. These include extra script GC/string work and are not an isolated font-cost benchmark. Readback/capture waits are excluded. Emulator timer hooks cannot predict MCU latency. The 48 KiB stack reservation remains unchanged.
 
 ## Reproduction
 
@@ -129,16 +131,16 @@ bash tools/evidence.sh
 
 ARM CPU tests use qemu-arm **10.2.1**, not Pico peripheral emulation. `tools/regressions.sh` configures PR #70 and #71 suites separately and writes results here. Their original tests/evidence remain intact. The standalone Wren baseline is also configured/tested separately. No physical operation occurs in these commands.
 
-## Hardware gate and remaining acceptance
+## Hardware approval, recovery and remaining limits
 
-Stage 4 explicitly says **“Only then perform the separately approved hardware-validation procedure.”** This candidate has not yet been physically executed or programmed. Host/ARM/mock CRC success does not satisfy the physical FPGA/HDMI part of acceptance.
+Stage 4 explicitly required separate hardware approval. The user approved source **25c7e9c03a5bfe6508dea91ee3faeebb0a57874d**, the exact ELF hash above and the bounded write/restore range after reviewing Draft PR #72. The approved artifact was tested without target-code changes; [HARDWARE.md](HARDWARE.md) records preflight, two capture attempts, actual measurements and complete restoration.
 
 The existing complete 2 MiB MicroPython backup remains readable locally at parent-workspace `build/wren-desktop-hardware/flash-backup-20261102T142039Z/flash-2MiB.bin`, SHA-256 **d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b**. The known-good `build/micropython-src/ports/rp2/build-KAGURA_PICO_PINNED/firmware.uf2` still hashes to **9ebfa459351e7e402d7c5690a0ddfc405b91d65093162586e89198733d03f95c**. Neither private flash/filesystem image is committed.
 
-Prepared procedure: after separate approval, verify current board/wiring/ABI/power/recovery, make or validate a fresh complete backup, prove ROM readback and normal MicroPython recovery, then use `tools/hardware_run.py`. It reuses PR #70's bounded-prefix program/readback/restore procedure and all its assertions, replacing **only** the frozen frame CRC input with the Stage 4 native/Wren/ARM goldens. Exact artifact/backup hashes and --approved remain required; --plan-only accesses no device. If current flash differs from the retained backup, stop and preserve current state rather than restoring an obsolete image.
+The executed procedure verifies board/wiring/ABI/recovery, creates a fresh backup, proves ROM readback and normal MicroPython recovery, then uses `tools/hardware_run.py`. PR #70's bounded-prefix program/readback/restore assertions are reused, with Stage 4 frozen CRC inputs. Exact artifact/backup hashes and --approved remain required; --plan-only accesses no device. Capture was strengthened to 180 frames/3 s and an explicit no-signal abort check after the first short-settle attempt captured black/no-signal images. This is host receiver settling, not a change to the target or the original colour classifier. Actual execution additionally needs Pillow. If current flash differs from the retained backup, preserve current state rather than restoring an obsolete image.
 
-The candidate's proposed write/restore range is 0x10000000–0x10038000. Read all 2 MiB after programming and before execution, require the tail outside that range unchanged, then run Japanese visual frames, GC/lifecycles/OOM and canary/timing capture. Restore the original same-sized prefix, read all flash and require full backup equality/hash, reboot MicroPython and verify its hash/normal KAGURA console before claiming restoration. Never touch FPGA firmware or other device storage.
+The approved write/restore range was **0x10000000–0x10038000**. In each attempt, complete 2 MiB readbacks verified the programmed prefix and unchanged tail before execution, then full backup equality after restoration. Subsequent MicroPython device hashing again matched **d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b**, with a normal KAGURA console and restored HDMI capture. No FPGA firmware or unrelated device storage was modified.
 
-The existing **46-pixel thin-red HDMI colour-classification discrepancy remains a separate open issue**. The original comparison thresholds are unchanged. No new physical result or resolution is claimed here. A new capture uses the unchanged native classifier and Stage 4 native reference images.
+The existing **46-pixel thin-red HDMI colour-classification discrepancy remains a separate open issue**, reproduced with the original thresholds and no additional unexplained Japanese-title pixels. Supplemental red geometry does not waive it. Physical overlap/movement capture and long-duration qualification are not claimed; those scenarios have host/ARM regression coverage. Receiver settling remains a measurement constraint.
 
-No SKK, IME, editor, filesystem, GUI redesign, font redesign, new runtime, framebuffer elimination or unrelated optimization is included. All reference PRs and this integration must remain Draft and unmerged pending review and the hardware gate.
+No SKK, IME, editor, filesystem, GUI redesign, font redesign, new runtime, framebuffer elimination or unrelated optimization is included. All reference PRs and this integration remain Draft and unmerged for review.
