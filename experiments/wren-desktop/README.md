@@ -1,6 +1,6 @@
 # Minimal flash-resident Wren Desktop experiment
 
-Status: host and CPU-emulated validation complete. Physical flash validation is now authorized, but requires all recovery gates to pass; see [HARDWARE.md](HARDWARE.md) for current preflight status. No Wren image has yet been flashed. See [REPORT.md](REPORT.md) for measured limits and the actual SRAM map. This is a separate experiment, not a replacement for MicroPython or the native desktop.
+Status: **physical RP2040 runtime/memory/CRC/OOM validation completed on 2026-11-03; original MicroPython flash restored and verified by complete readback**. The initial SDK malloc-panic mismatch was corrected. HDMI shows the expected geometry, with 46 thin-red colour-classifier mismatches retained as an open caveat. See [HARDWARE.md](HARDWARE.md) for evidence and [REPORT.md](REPORT.md) for the linked budget. This remains an isolated experiment, not a replacement for MicroPython or the native desktop.
 
 Inputs are pinned to PR #68 `be344f5c742101f0cff170a29f63d09c0a17c441` and PR #69 `d03912b4339495379302b286383eb40cf8a6d53e`. Their source directories and `software/` remain unchanged. `tools/verify_inputs.py` checks this. Wren revision `99d2f0b8fc2686134b32b18166e037639f7e9f2c` is MIT licensed; acquisition, manifest and license are inherited from `../wren-rp2040`.
 
@@ -45,5 +45,7 @@ OOM discards the entire interrupted VM through the allocator boundary, closes it
 ## Hardware boundary
 
 This flash-resident image reserves 48 KiB native stack and 8 KiB recovery storage. It starts at 125 MHz with USB serial and an 8-second watchdog. A timeout, test failure or normal completion explicitly enters ROM BOOTSEL for restoration; an unexpected watchdog reboot is reported and stops the test. USB automatic reset interfaces remain disabled. Watchdog reset alone restarts **this flash image**, not MicroPython.
+
+The SDK is configured to return NULL for expected malloc failures rather than panic. The hard sbrk limit remains at the 132 KiB arena boundary, and each successful Wren allocation has an explicit lower/upper/end bounds check; invalid ranges still panic. This preserves memory protection while allowing the existing whole-VM OOM discard/recovery path to execute.
 
 The authorized hardware procedure requires a full-flash backup/hash, proven BOOTSEL readback and a known-good MicroPython image before programming. `tools/hardware_run.py` writes only the ELF's sector-aligned flash prefix, checks the complete flash including the untouched tail, captures metrics and HDMI, then restores the original prefix and verifies all 2 MiB against the backup before rebooting MicroPython. Exact hashes, recovery log and `--approved` are required. Backups remain outside Git. The previous SRAM-only loading procedure cannot be used for this flash-addressed ELF. The firmware itself contains no erase/program routine.

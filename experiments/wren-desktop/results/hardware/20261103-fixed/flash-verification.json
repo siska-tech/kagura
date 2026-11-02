@@ -1,0 +1,26 @@
+{
+  "region": [
+    "0x10000000",
+    "0x10026000"
+  ],
+  "backup_sha256": "d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b",
+  "bytes": 2097152,
+  "stages": {
+    "before-bootsel.bin": {
+      "sha256": "d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b",
+      "matches_expected": true,
+      "unchanged_tail_sha256": "c79a10527ed1e69705ad75222434d42aee1ad6eebc0b9e57056dedc7f5096b0a"
+    },
+    "programmed-full.bin": {
+      "sha256": "297f10319dbba4f39627799a8d1709680a12163ef61584a97527dd7b2df58c12",
+      "matches_expected": true,
+      "unchanged_tail_sha256": "c79a10527ed1e69705ad75222434d42aee1ad6eebc0b9e57056dedc7f5096b0a"
+    },
+    "restored-full.bin": {
+      "sha256": "d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b",
+      "matches_expected": true,
+      "unchanged_tail_sha256": "c79a10527ed1e69705ad75222434d42aee1ad6eebc0b9e57056dedc7f5096b0a"
+    }
+  },
+  "micropython_rehash_and_console_pass": true
+}
