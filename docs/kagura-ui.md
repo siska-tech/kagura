@@ -150,6 +150,8 @@ Mini Studio（`ui_studio_mock.py`）はWidgetのpaint拡張例であり、編集
 - 16×16のdataは、16×16 hardware spriteの連続4 pattern（左上、右上、左下、右下）と同じ並びである。
 - 色は4bitの番号で、意味（RGB）はpalette次第である。SpriteCanvasは、番号をそのままUIのpalette番号として表示する。
 
+RP2040での受入と描画時間は、[Canvas記録](kagura-ui-canvas.md)に記載。
+
 ## 更新・入力・メモリ
 
 UI damageは最大`damage_limit`個（既定1）の矩形で保持し、SDKのdirty 1200 Bを複製しない。
