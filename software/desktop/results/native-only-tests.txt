@@ -1,15 +1,17 @@
-Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.desktop-consolidation-worktree/software/desktop/build-native-only
-    Start 1: text_core
-1/5 Test #1: text_core ........................   Passed    0.01 sec
-    Start 2: unicode_font_oracle
-2/5 Test #2: unicode_font_oracle ..............   Passed    0.31 sec
-    Start 3: text_desktop
-3/5 Test #3: text_desktop .....................   Passed    0.30 sec
-    Start 4: japanese_titles_demo
-4/5 Test #4: japanese_titles_demo .............   Passed    0.14 sec
-    Start 5: runtime_free_application
-5/5 Test #5: runtime_free_application .........   Passed    0.01 sec
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.desktop-native-worktree/software/desktop/build-native-only
+    Start 1: ascii_font_reproducible
+1/6 Test #1: ascii_font_reproducible ..........   Passed    0.05 sec
+    Start 2: text_core
+2/6 Test #2: text_core ........................   Passed    0.01 sec
+    Start 3: unicode_font_oracle
+3/6 Test #3: unicode_font_oracle ..............   Passed    0.24 sec
+    Start 4: text_desktop
+4/6 Test #4: text_desktop .....................   Passed    0.21 sec
+    Start 5: japanese_titles_demo
+5/6 Test #5: japanese_titles_demo .............   Passed    0.09 sec
+    Start 6: runtime_free_application
+6/6 Test #6: runtime_free_application .........   Passed    0.01 sec
 
-100% tests passed, 0 tests failed out of 5
+100% tests passed, 0 tests failed out of 6
 
-Total Test time (real) =   0.90 sec
+Total Test time (real) =   0.71 sec

@@ -1,4 +1,6 @@
 # Reuse the established test sources; no forked goldens or weaker assertions.
+add_test(NAME ascii_font_reproducible COMMAND ${Python3_EXECUTABLE} -I
+  ${KD_EXP}/c-gem-desktop/tools/gen_font.py --check)
 add_executable(text_tests ${KD_TEXT}/tests/test_text.c)
 target_link_libraries(text_tests PRIVATE Kagura::Text)
 add_test(NAME text_core COMMAND text_tests)

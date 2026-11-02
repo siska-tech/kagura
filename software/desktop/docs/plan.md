@@ -1,5 +1,9 @@
 # Review sequence, integration strategy and risks
 
+Step 1 was delivered as Draft PR #73. Step 2 is the isolated native source
+ownership follow-up described in [native-ownership.md](native-ownership.md).
+Steps 3 onward remain proposals, not part of this follow-up.
+
 ## Dependency and merge strategy
 
 This Stage 5 branch starts at #72's verified evidence head e2ff7ea and should be

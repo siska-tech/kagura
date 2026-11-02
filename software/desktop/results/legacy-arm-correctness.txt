@@ -1,0 +1,238 @@
+INFO CPU emulation only; mock external FPGA, no hardware timing
+こんにちは、神楽！
+ASCII_PR70_CRC_BYTE_EQUIVALENT
+こんにちは、神楽！
+JP_CRC cover=0 frame=0 crc=be72ff88
+JP_CRC cover=0 frame=1 crc=32f7ed69
+JP_CRC cover=0 frame=2 crc=8bfbed7c
+JP_CRC cover=0 frame=3 crc=1371f7cb
+JP_CRC cover=0 frame=4 crc=0b96b49e
+JP_CRC cover=0 frame=5 crc=505973a9
+JP_CRC cover=0 frame=6 crc=be72ff88
+こんにちは、神楽！
+JP_CRC cover=1 frame=0 crc=be72ff88
+JP_CRC cover=1 frame=1 crc=c2d8e339
+JP_CRC cover=1 frame=2 crc=22da35e9
+JP_CRC cover=1 frame=3 crc=eb92ef92
+JP_CRC cover=1 frame=4 crc=6aa32e3b
+JP_CRC cover=1 frame=5 crc=f1c2e304
+JP_CRC cover=1 frame=6 crc=505973a9
+JP_CRC cover=1 frame=7 crc=c2d7919e
+JP_CRC cover=1 frame=8 crc=505973a9
+JP_CRC cover=1 frame=9 crc=be72ff88
+こんにちは、神楽！
+TITLE_CASE 0 native_bytes=23 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 1 native_bytes=23 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 2 native_bytes=23 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 3 native_bytes=21 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 4 native_bytes=22 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 5 native_bytes=7 GC-after-open CRC=equal
+こんにちは、神楽！
+TITLE_CASE 6 native_bytes=0 GC-after-open CRC=equal
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 title must be a string
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 title must be a string
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 title must be a string
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 title must be a string
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 embedded NUL in title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 malformed UTF8 title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 malformed UTF8 title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 malformed UTF8 title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 malformed UTF8 title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 C0/DEL control in title
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 title exceeds 1024-byte input limit
+WREN_ERROR type=2 module=integration line=11 run()
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+こんにちは、神楽！
+こんにちは、神楽！
+こんにちは、神楽！
+こんにちは、神楽！
+BUDGET cap=32768 status=1 peak=32756
+BUDGET cap=65536 status=1 peak=65418
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+BUDGET cap=98304 status=0 peak=91994
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+BUDGET cap=131072 status=0 peak=91994
+こんにちは、神楽！
+WREN_ERROR type=1 module=? line=-1 present failed
+WREN_ERROR type=2 module=integration line=17 run()
+こんにちは、神楽！
+WREN_ERROR type=0 module=syntax line=1 Error at '=': Expect variable name.
+WREN_ERROR type=1 module=? line=-1 expected error
+WREN_ERROR type=2 module=error line=1 (script)
+WREN_ERROR type=1 module=? line=-1 rectangle requires int16 values
+WREN_ERROR type=2 module=badargs line=2 (script)
+INTEGRATION_PASS JAPANESE explicit-length strict-policy native-ownership handles GC OOM CRC clipping movement overlap

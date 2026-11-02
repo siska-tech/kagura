@@ -1,0 +1,104 @@
+{
+  "commit": "0214429bd0cde433fab111e7acb78bc1b3f22a3a",
+  "host": {
+    "kind": "host equivalence, not physical hardware acceptance",
+    "crc_trace": [
+      "JP_CRC cover=0 frame=0 crc=be72ff88",
+      "JP_CRC cover=0 frame=1 crc=32f7ed69",
+      "JP_CRC cover=0 frame=2 crc=8bfbed7c",
+      "JP_CRC cover=0 frame=3 crc=1371f7cb",
+      "JP_CRC cover=0 frame=4 crc=0b96b49e",
+      "JP_CRC cover=0 frame=5 crc=505973a9",
+      "JP_CRC cover=0 frame=6 crc=be72ff88",
+      "JP_CRC cover=1 frame=0 crc=be72ff88",
+      "JP_CRC cover=1 frame=1 crc=c2d8e339",
+      "JP_CRC cover=1 frame=2 crc=22da35e9",
+      "JP_CRC cover=1 frame=3 crc=eb92ef92",
+      "JP_CRC cover=1 frame=4 crc=6aa32e3b",
+      "JP_CRC cover=1 frame=5 crc=f1c2e304",
+      "JP_CRC cover=1 frame=6 crc=505973a9",
+      "JP_CRC cover=1 frame=7 crc=c2d7919e",
+      "JP_CRC cover=1 frame=8 crc=505973a9",
+      "JP_CRC cover=1 frame=9 crc=be72ff88"
+    ],
+    "frame_sha256": {
+      "wren-frames/frame-0.pgm": "72d6355d70a26b172a33cd6cc700df18e98cfa6d512df4f6e798eb76fcb1e58e",
+      "wren-frames/frame-1.pgm": "7c20e94cbd6d9f1cc392e9050ad66abe3da49952ce1495fdd737e3a0827ca874",
+      "wren-frames/frame-2.pgm": "88f958cf661d402c5a22086d0252b7f88cf25ac76f61c8ceec9f79fd806e841e",
+      "wren-frames/frame-3.pgm": "e2be3433a19e8069fd34a65d6ceeb5781d08d3af8d7441a9b6d9c4fe78a57e81",
+      "wren-frames/frame-4.pgm": "31f36a96a61b0b1c572b6f0882b45c1cdc1d4c2bf435ff2496904cfd0eb0607e",
+      "wren-frames/frame-5.pgm": "68159df8500afdd32c92c8bb53b99eae0ae83b6dd1c769b63a31b26b60dd3d05",
+      "wren-frames/frame-6.pgm": "72d6355d70a26b172a33cd6cc700df18e98cfa6d512df4f6e798eb76fcb1e58e",
+      "native-frames/frame-0.pgm": "72d6355d70a26b172a33cd6cc700df18e98cfa6d512df4f6e798eb76fcb1e58e",
+      "native-frames/frame-1.pgm": "7c20e94cbd6d9f1cc392e9050ad66abe3da49952ce1495fdd737e3a0827ca874",
+      "native-frames/frame-2.pgm": "88f958cf661d402c5a22086d0252b7f88cf25ac76f61c8ceec9f79fd806e841e",
+      "native-frames/frame-3.pgm": "e2be3433a19e8069fd34a65d6ceeb5781d08d3af8d7441a9b6d9c4fe78a57e81",
+      "native-frames/frame-4.pgm": "31f36a96a61b0b1c572b6f0882b45c1cdc1d4c2bf435ff2496904cfd0eb0607e",
+      "native-frames/frame-5.pgm": "68159df8500afdd32c92c8bb53b99eae0ae83b6dd1c769b63a31b26b60dd3d05",
+      "native-frames/frame-6.pgm": "72d6355d70a26b172a33cd6cc700df18e98cfa6d512df4f6e798eb76fcb1e58e"
+    },
+    "native_demo_files": 3,
+    "native_without_runtime_or_allocator": true,
+    "generated_app_identical": true
+  },
+  "load_image": {
+    "elf_sha256": "3a756660250a006e4df3a1317835cd2ec8eec29c1a4328e559c2086d5e64f6be",
+    "entry": "0x100001e9",
+    "segments": [
+      {
+        "vaddr": "0x10000000",
+        "paddr": "0x10000000",
+        "filesz": 221272,
+        "memsz": 221272,
+        "flags": 5,
+        "alignment": 4096,
+        "sha256": "47ecc4a9c8ddff1ddf14dc4d09aeb34c79542234b336ad93386a7a14deeee6a5"
+      },
+      {
+        "vaddr": "0x200000c0",
+        "paddr": "0x10036058",
+        "filesz": 6208,
+        "memsz": 45404,
+        "flags": 7,
+        "alignment": 4096,
+        "sha256": "e77b415ace84444998e6bb58708656e118c6b3318b411bc6a01c547e40590de0"
+      },
+      {
+        "vaddr": "0x2000b21c",
+        "paddr": "0x10037898",
+        "filesz": 0,
+        "memsz": 2048,
+        "flags": 4,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20000000",
+        "paddr": "0x20000000",
+        "filesz": 0,
+        "memsz": 192,
+        "flags": 6,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20032000",
+        "paddr": "0x20032000",
+        "filesz": 0,
+        "memsz": 8192,
+        "flags": 6,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "vaddr": "0x20034000",
+        "paddr": "0x20034000",
+        "filesz": 0,
+        "memsz": 49152,
+        "flags": 4,
+        "alignment": 4096,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  }
+}

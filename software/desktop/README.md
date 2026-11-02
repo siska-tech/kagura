@@ -1,12 +1,16 @@
 # Native Desktop foundation — Stage 5
 
-This is a **transitional build entry point**, not a second implementation. It
-compiles the verified experimental C sources into explicit component targets.
-Source relocation is deliberately deferred to smaller follow-up PRs. The old
-experiments and their historical evidence remain usable at their original paths.
+Native GUI source ownership now lives in `core/` and `gfx/`. The source bytes
+are unchanged from PR #73. Old native source/header paths forward to these
+canonical files so existing experiment builds and bindings remain buildable.
+Compile either the canonical C files or their compatibility wrappers, never
+both. Text/runtime/platform ownership still migrates in separate follow-up PRs.
+The old experiments and historical evidence remain at their original paths.
 
 See [architecture audit](docs/architecture.md), [Japanese GUI specification](docs/japanese-gui.md),
 [PR sequence and risks](docs/plan.md), and [validation/memory report](docs/validation.md).
+See the [native source ownership report](docs/native-ownership.md) for the
+current follow-up's measurements and compatibility contract.
 
 ## Build without a scripting runtime
 
@@ -57,4 +61,5 @@ The CPU-only ARM executable is not a Pico image or timing model.
 
 All implementation paths are explicitly listed in `cmake/modules.cmake`.
 Public aliases are build integration boundaries, not a new stable binary ABI.
-This first step has not yet removed the experimental source dependency.
+The native core/raster no longer compile through experimental paths. Text,
+application/runtime and hardware entry-point sources still do.

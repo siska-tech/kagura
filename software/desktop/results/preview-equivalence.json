@@ -1,0 +1,8 @@
+{
+  "kind": "host preview only, no device IO",
+  "baseline": "0214429bd0cde433fab111e7acb78bc1b3f22a3a",
+  "python": "3.12 Windows",
+  "pillow": "13.0.0",
+  "png_sha256": "b6bc9fe1081ca187eed9333b5479dcbf08aa5fe25113d7db9918d99ae6d02f30",
+  "byte_identical": true
+}

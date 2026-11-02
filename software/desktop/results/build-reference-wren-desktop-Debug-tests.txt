@@ -1,41 +1,41 @@
-Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.desktop-consolidation-worktree/software/desktop/build-reference-wren-desktop-Debug
+Test project /mnt/c/Users/Shion/Documents/Projects/Kagura/.desktop-native-worktree/software/desktop/build-reference-wren-desktop-Debug
       Start  1: integration
- 1/18 Test  #1: integration ......................   Passed    0.78 sec
+ 1/18 Test  #1: integration ......................   Passed    0.52 sec
       Start  2: kd_tests
- 2/18 Test  #2: kd_tests .........................   Passed   10.89 sec
+ 2/18 Test  #2: kd_tests .........................   Passed    5.97 sec
       Start  3: mutant_1
- 3/18 Test  #3: mutant_1 .........................   Passed    8.07 sec
+ 3/18 Test  #3: mutant_1 .........................   Passed    5.46 sec
       Start  4: mutant_2
- 4/18 Test  #4: mutant_2 .........................   Passed    8.16 sec
+ 4/18 Test  #4: mutant_2 .........................   Passed    5.40 sec
       Start  5: mutant_3
- 5/18 Test  #5: mutant_3 .........................   Passed    2.27 sec
+ 5/18 Test  #5: mutant_3 .........................   Passed    1.59 sec
       Start  6: mutant_4
- 6/18 Test  #6: mutant_4 .........................   Passed    8.64 sec
+ 6/18 Test  #6: mutant_4 .........................   Passed    5.65 sec
       Start  7: mutant_5
- 7/18 Test  #7: mutant_5 .........................   Passed    2.10 sec
+ 7/18 Test  #7: mutant_5 .........................   Passed    1.55 sec
       Start  8: mutant_6
- 8/18 Test  #8: mutant_6 .........................   Passed    2.01 sec
+ 8/18 Test  #8: mutant_6 .........................   Passed    1.62 sec
       Start  9: mutant_7
- 9/18 Test  #9: mutant_7 .........................   Passed    7.21 sec
+ 9/18 Test  #9: mutant_7 .........................   Passed    5.40 sec
       Start 10: mutant_8
-10/18 Test #10: mutant_8 .........................   Passed    1.58 sec
+10/18 Test #10: mutant_8 .........................   Passed    1.65 sec
       Start 11: mutant_9
-11/18 Test #11: mutant_9 .........................   Passed    5.46 sec
+11/18 Test #11: mutant_9 .........................   Passed    5.43 sec
       Start 12: mutant_10
-12/18 Test #12: mutant_10 ........................   Passed    1.58 sec
+12/18 Test #12: mutant_10 ........................   Passed    1.59 sec
       Start 13: mutant_11
-13/18 Test #13: mutant_11 ........................   Passed    5.60 sec
+13/18 Test #13: mutant_11 ........................   Passed    5.45 sec
       Start 14: mutant_12
-14/18 Test #14: mutant_12 ........................   Passed    1.87 sec
+14/18 Test #14: mutant_12 ........................   Passed    1.68 sec
       Start 15: mutant_13
-15/18 Test #15: mutant_13 ........................   Passed    1.54 sec
+15/18 Test #15: mutant_13 ........................   Passed    1.57 sec
       Start 16: headless_scenario
-16/18 Test #16: headless_scenario ................   Passed    0.42 sec
+16/18 Test #16: headless_scenario ................   Passed    0.39 sec
       Start 17: hdmi_reference
-17/18 Test #17: hdmi_reference ...................   Passed    0.26 sec
+17/18 Test #17: hdmi_reference ...................   Passed    0.18 sec
       Start 18: sdk_reference
-18/18 Test #18: sdk_reference ....................   Passed    0.79 sec
+18/18 Test #18: sdk_reference ....................   Passed    0.67 sec
 
 100% tests passed, 0 tests failed out of 18
 
-Total Test time (real) =  69.61 sec
+Total Test time (real) =  52.08 sec
