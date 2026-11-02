@@ -1,0 +1,15 @@
+INFO host pointer_bytes=8 budget=262144 cycles=1
+Hello World
+こんにちは、神楽！
+ERROR 0 badcompile:1 Error at '=': Expect variable name.
+ERROR 1 ?:-1 expected failure
+ERROR 2 badruntime:1 (script)
+RESULT name=small_gui cycle=0 budget=262144 status=PASS stage=shutdown init=119784 compiled=136417 after_gc=141839 shutdown=0 peak=143897 physical_peak=182489 allocs=4822 reallocs=4993 frees=4822 largest=8192 oom_request=0 compile_us=41 run_us=5 samples=8 explicit_gc_us=327 explicit_gc_count=61 foreign_calls=40 header=32 init_allocs=3128 compile_allocs=226 run_allocs=80 run_reallocs=0 init_peak=119784 init_physical_peak=150792 largest_success=8192 oom_kind=none
+AUDIT name=small_gui cumulative=392596 growth=298708 moved_reallocs=911 peak_phase=checks peak_blocks=1206 ledger_at_peak=182489 native_live=0 executed=136043 peak_usable=0 peak_malloc_used=0 peak_arena=0
+PHASE name=small_gui phase=init start=0 end=119784 peak=119784 ledger_peak=150792 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=3128 reallocs=3711 frees=2159 cumulative=278805 largest=8192 ledger_end=150792 used_end=0 arena_end=0
+PHASE name=small_gui phase=compile start=119784 end=136417 peak=136417 ledger_peak=170497 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=226 reallocs=248 frees=130 cumulative=25814 largest=4096 ledger_end=170497 used_end=0 arena_end=0
+PHASE name=small_gui phase=handles start=136417 end=136893 peak=136893 ledger_peak=171357 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=12 reallocs=3 frees=0 cumulative=483 largest=96 ledger_end=171357 used_end=0 arena_end=0
+PHASE name=small_gui phase=call start=136893 end=135639 peak=137465 ledger_peak=172249 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=100 reallocs=4 frees=2 cumulative=3928 largest=192 ledger_end=169591 used_end=0 arena_end=0
+PHASE name=small_gui phase=gc start=137465 end=141839 peak=143897 ledger_peak=182489 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=0 reallocs=0 frees=1156 cumulative=0 largest=0 ledger_end=179247 used_end=0 arena_end=0
+PHASE name=small_gui phase=checks start=135639 end=141839 peak=143897 ledger_peak=182489 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=1356 reallocs=1027 frees=206 cumulative=83566 largest=256 ledger_end=179247 used_end=0 arena_end=0
+PHASE name=small_gui phase=shutdown start=141839 end=0 peak=141839 ledger_peak=179247 arena_peak=0 used_peak=0 free_end=0 top_end=0 native_live_end=0 allocs=0 reallocs=0 frees=1169 cumulative=0 largest=0 ledger_end=0 used_end=0 arena_end=0

@@ -1,0 +1,12 @@
+INFO ARM emulation memory only: time fields are zero, not RP2040 results
+Hello World
+こんにちは、神楽！
+RESULT name=hello cycle=0 budget=262144 status=PASS stage=shutdown init=74908 compiled=80276 after_gc=78777 shutdown=0 peak=80996 physical_peak=98004 allocs=3326 reallocs=3805 frees=3326 largest=8192 oom_request=0 compile_us=0 run_us=0 samples=8 explicit_gc_us=0 explicit_gc_count=11 foreign_calls=0 header=16 init_allocs=3128 compile_allocs=86 run_allocs=80 run_reallocs=0 init_peak=74908 init_physical_peak=90412 largest_success=8192 oom_kind=none
+AUDIT name=hello cumulative=207793 growth=147289 moved_reallocs=1380 peak_phase=call peak_blocks=1063 ledger_at_peak=98004 native_live=0 executed=79183 peak_usable=102956 peak_malloc_used=108240 peak_arena=111952
+PHASE name=hello phase=init start=0 end=74908 peak=74908 ledger_peak=90412 arena_peak=107856 used_peak=99896 free_end=7960 top_end=1288 native_live_end=94988 allocs=3128 reallocs=3711 frees=2159 cumulative=197865 largest=8192 ledger_end=90412 used_end=99896 arena_end=107856
+PHASE name=hello phase=compile start=74908 end=80276 peak=80276 ledger_peak=96932 arena_peak=111952 used_peak=106992 free_end=4960 top_end=3312 native_live_end=101796 allocs=86 reallocs=86 frees=14 cumulative=6873 largest=2048 ledger_end=96932 used_end=106992 arena_end=111952
+PHASE name=hello phase=handles start=80276 end=80588 peak=80588 ledger_peak=97436 arena_peak=111952 used_peak=107592 free_end=4360 top_end=3008 native_live_end=102348 allocs=12 reallocs=3 frees=0 cumulative=319 largest=64 ledger_end=97436 used_end=107592 arena_end=111952
+PHASE name=hello phase=call start=80588 end=78777 peak=80996 ledger_peak=98004 arena_peak=111952 used_peak=108240 free_end=7136 top_end=2600 native_live_end=99732 allocs=100 reallocs=5 frees=2 cumulative=2736 largest=128 ledger_end=94985 used_end=104816 arena_end=111952
+PHASE name=hello phase=gc start=80996 end=78777 peak=80996 ledger_peak=98004 arena_peak=111952 used_peak=108240 free_end=7136 top_end=2600 native_live_end=99732 allocs=0 reallocs=0 frees=138 cumulative=0 largest=0 ledger_end=94985 used_end=104816 arena_end=111952
+PHASE name=hello phase=shutdown start=78777 end=0 peak=78777 ledger_peak=94985 arena_peak=111952 used_peak=104816 free_end=110920 top_end=110920 native_live_end=0 allocs=0 reallocs=0 frees=1013 cumulative=0 largest=0 ledger_end=0 used_end=1032 arena_end=111952
+ARM_MALLOC arena_high_water=111952 arena=111952 in_use=1032 limit=524288 stack_painted_upper=33840 sbrk_failures=0 brk_now=111952 last_sbrk_failure=0

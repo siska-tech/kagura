@@ -7,17 +7,31 @@
 #include <stdalign.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/times.h>
 #include <stdint.h>
 static alignas(max_align_t) unsigned char arena[512*1024];
 static size_t used;
+static size_t arena_limit = sizeof(arena);
+static size_t sbrk_failures;
+static size_t arena_high_water;
+static size_t last_sbrk_failure;
+static uint32_t *paint_lo, *paint_hi;
+static uintptr_t stack_top;
 uint64_t experiment_time_us(void) { return 0; }
 void experiment_tick(void) {}
 void *_sbrk(ptrdiff_t n) {
-    if (n < 0 || (size_t)n > sizeof(arena)-used) { errno = ENOMEM; return (void *)-1; }
-    void *p = arena+used; used += (size_t)n; return p;
+    void *p = arena + used;
+    if (n < 0) {
+        if ((size_t)(-n) > used) { errno = ENOMEM; return (void *)-1; }
+        used -= (size_t)(-n); return p;
+    }
+    if ((size_t)n > arena_limit-used) { sbrk_failures++; last_sbrk_failure = (size_t)n; errno = ENOMEM; return (void *)-1; }
+    used += (size_t)n;
+    if (used > arena_high_water) arena_high_water = used;
+    return p;
 }
 int _write(int fd, const void *data, size_t n) {
     register long r0 __asm__("r0") = fd;
@@ -44,10 +58,27 @@ __attribute__((noreturn)) void _exit(int code) {
 __attribute__((used)) void arm_main(const long *sp) {
     int argc = sp[0]; char **argv = (char **)(sp+1);
     size_t budget = argc > 1 ? strtoul(argv[1], NULL, 10) : 128*1024;
+    if (argc > 4) arena_limit = strtoul(argv[4], NULL, 10);
+    if (!arena_limit || arena_limit > sizeof(arena)) _exit(2);
+    uintptr_t current_sp;
+    __asm__ volatile("mov %0, sp" : "=r"(current_sp));
+    stack_top = (uintptr_t)sp; /* include arm_main's own frame in the high-water */
+    paint_lo = (uint32_t *)(stack_top - 128*1024);
+    paint_hi = (uint32_t *)(current_sp - 256);
+    for (uint32_t *p = paint_lo; p < paint_hi; p++) *p = 0xACEDBEEF;
     puts("INFO ARM emulation memory only: time fields are zero, not RP2040 results");
-    int result = experiment(budget, 1, argc > 2);
+    if (argc > 6) {
+        int system_oom = !strcmp(argv[6], "malloc-recovery");
+        int failed = experiment_named(system_oom ? 262144 : 82000, 1, 0, system_oom ? "strings" : "small_gui");
+        if (failed != 1) _exit(2);
+    }
+    int result = experiment_named(budget, argc > 5 ? (unsigned)strtoul(argv[5], NULL, 10) : 1,
+                                  argc > 2 && strcmp(argv[2], "plain"), argc > 3 && strcmp(argv[3], "all") ? argv[3] : NULL);
     struct mallinfo mi = mallinfo();
-    printf("ARM_MALLOC arena_high_water=%zu arena=%d in_use=%d\n", used, mi.arena, mi.uordblks);
+    uint32_t *p = paint_lo;
+    while (p < paint_hi && *p == 0xACEDBEEF) p++;
+    printf("ARM_MALLOC arena_high_water=%zu arena=%u in_use=%u limit=%zu stack_painted_upper=%lu sbrk_failures=%zu brk_now=%zu last_sbrk_failure=%zu\n", arena_high_water, mi.arena, mi.uordblks, arena_limit,
+           (unsigned long)(stack_top - (uintptr_t)p), sbrk_failures, used, last_sbrk_failure);
     fflush(stdout); _exit(result);
 }
 __attribute__((naked,noreturn)) void _start(void) {

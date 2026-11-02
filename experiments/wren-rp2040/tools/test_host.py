@@ -28,4 +28,9 @@ assert len(rows) == 20
 assert all(row['status'] == 'OOM_DISCARDED' for row in rows[:10])
 assert all(row['status'] == 'PASS' for row in rows[10:])
 assert all(row['shutdown'] == '0' and row['allocs'] == row['frees'] for row in rows)
+p = subprocess.run([exe, '262144', '20', 'checks', 'small_gui'], capture_output=True, text=True, encoding='utf-8')
+assert p.returncode == 0, (p.stdout,p.stderr)
+rows = [dict(pair.split('=',1) for pair in line.split()[1:]) for line in p.stdout.splitlines() if line.startswith('RESULT ')]
+assert len(rows) == 20
+assert all(row['status']=='PASS' and row['foreign_calls']=='40' and row['shutdown']=='0' and row['allocs']==row['frees'] for row in rows)
 print('PASS: UTF-8, ten checksums, compiled callbacks, foreign calls, errors/recovery, 200 lifecycles, OOM cleanup and same-process restart')

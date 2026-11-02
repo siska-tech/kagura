@@ -11,4 +11,6 @@ for name, value in expected.items():
     source = (r / 'workloads' / (name + '.wren')).read_text(encoding='utf-8')
     lines.append('{'+json.dumps(name)+','+json.dumps(source, ensure_ascii=False)+','+str(value)+'},')
 lines.append('};')
+source = (r / 'workloads/small_gui.wren').read_text(encoding='utf-8')
+lines.append('static const Workload gui_workload = {"small_gui",'+json.dumps(source, ensure_ascii=False)+',173};')
 (r / 'src/workloads.h').write_text('\n'.join(lines)+'\n', encoding='utf-8')

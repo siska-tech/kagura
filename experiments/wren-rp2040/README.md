@@ -7,6 +7,13 @@ ARM allocation-only emulation. The SRAM-only image builds and passes offline
 validation, but its remaining allocator space cannot accommodate the full suite.
 No physical Pico was accessed or executed by this experiment.
 
+**Memory audit update:** [MEMORY_ANALYSIS.md](MEMORY_ANALYSIS.md) separates payload
+from allocator footprint and adds a small GUI profile. It also finds native
+stack use exceeding the old 32 KiB reservation: current builds require 48 KiB.
+The old image hashes/layouts in `results/` are historical and not loading
+candidates. Fresh guarded layouts are in `results/memory-audit/`. A positive
+SRAM-only RP2040 GUI acceptance test still does not fit; no hardware run is requested.
+
 All changes are confined to this directory. No desktop bindings, IME, GUI,
 filesystem, MicroPython, SDK, RTL, ABI, firmware, or FPGA changes are included.
 
@@ -56,6 +63,8 @@ contains upstream fix `f09ebf6a`; final correctness and ASan/UBSan runs pass.
   call counts, 200 successful VM lifecycles, repeated scripts/GC, forced OOM
   during initialization and during later allocations, zero outstanding blocks.
 - [REPORT.md](REPORT.md): measured results, limits and MicroPython comparison.
+- [MEMORY_ANALYSIS.md](MEMORY_ANALYSIS.md): phase breakdown, allocator overhead,
+  bounded GUI/recovery minima, corrected stack and conservative coexistence budget.
 - [pico/ACCEPTANCE.md](pico/ACCEPTANCE.md): build, SRAM map, stack analysis,
   acceptance gates and recovery. Hardware execution requires separate approval.
 - `results/`: raw host budget sweeps, timing table, minimums, allocation-only

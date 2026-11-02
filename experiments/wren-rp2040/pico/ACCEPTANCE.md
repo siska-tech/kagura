@@ -39,79 +39,84 @@ hashes can differ with checkout paths because debug information embeds paths.
 Use the hash of the actual candidate for approval and verify it immediately
 before loading. No build or validation command programs flash or starts a Pico.
 
-## ELF, SRAM, flash and stack
+## ELF, SRAM, flash and stack (updated after memory audit)
 
-Exact final records are in `../results/rp2040-image.txt`,
-`rp2040-program-headers.txt`, `rp2040-sections.txt` and `rp2040-symbols.txt`.
-All ranges below are exclusive at the end; consult those records after a rebuild.
+**The original 32 KiB-stack image is retired and must not be loaded.** Its hashes
+and layout in `results/rp2040-*` are historical records. ARM stack painting now
+observes up to 39,940 B, so CMake requires at least 48 KiB. The present images are
+eligible only as offline memory/OOM candidates; they cannot fit positive runtime
+acceptance. See [../MEMORY_ANALYSIS.md](../MEMORY_ANALYSIS.md).
 
-| Allocation | Layout / interpretation |
-|---|---|
-| Entry | `0x20000001`, Thumb; lowest load address `0x20000000` |
-| File-backed PT_LOAD | `0x20000000–0x2001f82c`, filesz 129,068 B, memsz 135,360 B including BSS and minimum heap |
-| Text | `0x20000000–0x20019280`, 103,040 B |
-| rodata | `0x20019280–0x2001eb2c`, 22,700 B |
-| binary_info | `0x2001eb2c–0x2001eb44`, 24 B |
-| data | `0x2001eb50–0x2001f82c`, 3,292 B |
-| BSS | `0x2001f830–0x200208c0`, 4,240 B including ledger context, USB and system globals |
-| malloc | `0x200208c0–0x20038000`, 96,064 B (93.81 KiB) total capacity, not an additional allocation |
-| Core 0 stack | `0x20038000–0x20040000`, 32,768 B, NOLOAD |
-| Real SCRATCH_X/Y | `0x20040000–0x20042000`, 8 KB, not used as additional application heap |
-| Flash | no section in `0x10000000+`, no flash-programming code linked |
+Current exact hashes, ELF headers, sections and symbols are in
+`../results/memory-audit/pico-{audit,audit-expanded,lto}-*.txt`. All address ranges
+are exclusive at the end. No physical hardware was accessed.
 
-Candidate ELF SHA-256:
-`939ea2abe57a81ea48a08e650d04f5b8ad09c1d824650715b3fe8465185b7b4f`.
-Candidate UF2 SHA-256:
-`3399a06b6877ea90099ee236dadcac3d185118b6aa38ac802195809e19633e39`.
-UF2 has 505 blocks. These identify the locally built candidate only; a rebuild
-must be verified and identified independently before any loading approval.
+| Layout item | Current default | Optional scratch-expanded |
+|---|---|---|
+| Thumb entry | `0x20000001` | same |
+| File-backed load | `0x20000000–0x2001feac`, 130,732 B | same |
+| BSS | `0x2001feb0–0x200211b0`, 4,864 B | same |
+| malloc range | `0x200211b0–0x20034000`, 77,392 B | `0x200211b0–0x20036000`, 85,584 B |
+| Core 0 stack | `0x20034000–0x20040000`, 49,152 B NOLOAD | `0x20036000–0x20042000`, 49,152 B NOLOAD |
+| Actual scratch banks | 8 KiB outside stack, unused | part of core 0 stack; no core 1 launch/data allowed |
+| Flash/XIP sections | none | none |
 
-The SDK default no_flash linker script is SHA-256 pinned in CMake, then two
-memory-region values are changed: main RAM ends at `0x20038000`; the script's
-SCRATCH_Y-named region is repurposed as a 32 KB **main SRAM** stack. It is not the
-physical 4 KB SCRATCH_Y bank. Main malloc cannot grow into that stack; the linker
-heap limit and `__StackLimit` both stop at `0x20038000`. The `.heap` NOLOAD section
-reserves the SDK's minimum 2 KB inside the malloc range; it must not be added
-again to available-memory calculations.
+`tools/check_layout.py ELF UF2` independently checks heap/stack boundaries,
+48 KiB minimum stack, empty scratch/core-1 sections and forbidden flash/reset/
+core-1 launch symbols. It rejects the archived 32 KiB binary. For positive GUI
+acceptance, also require `--min-arena 135168`; all current candidates fail that
+gate as expected. A layout-only pass is not a runtime-capacity pass.
 
-Do not use the aggregate `size` text column as the firmware code footprint: this
-linker's `.stack_dummy` can appear there despite being NOLOAD. Section flags and
-program headers are the source of truth. The Wren VM and application allocations
-are dynamic, not part of BSS.
+The script's SCRATCH_Y-named region is repurposed for the larger contiguous
+stack; it is not the physical 4 KiB bank. The heap limit and SDK `_sbrk` limit stop
+at the stack bottom; the MPU bottom guard remains enabled. New linker assertions
+require scratch X/Y data and core 1 stack sections to be empty. Expanded mode
+requires core 1 to remain parked in its normal ROM holding pen, with no launch
+or FIFO-handshake code linked. Its successful offline address checks do not
+establish runtime acceptance or authorize loading.
 
-Largest final `-fstack-usage` frames are in `rp2040-stack.txt`. The upstream
-compiler's method frame is about 12.6 KB, `methodCall` about 6.4 KB and
-`wrenCompile` about 6.4 KB. A compile → method → nested closure chain can already
-consume approximately 25.3 KB, plus helper frames, C host, exception frame and
-USB IRQ stack. A conventional 4 KB Pico stack is unsuitable. **32 KB is a
-provisional reservation for these shallow fixed scripts, not a proven bound for
-arbitrary user programs.** Compiler nesting is recursive and not bounded by this
-experiment. Wren VM value/fiber stacks are heap allocations, separate from the
-native C stack. MPU guards and a painted high-water measurement are enabled;
-only a completed approved run could establish an observed device peak.
+The SDK minimum `.heap` NOLOAD section reserves 2 KiB inside malloc capacity; do
+not count it again. Do not use the aggregate `size` text column as code footprint:
+`.stack_dummy` can be counted there despite being NOLOAD. Section flags/program
+headers are authoritative. Wren VM/value/fiber stacks are heap allocations;
+the recursive source compiler uses the separate native stack.
 
-## VM budgets and likely OOM
+Largest native frames are recorded in `pico-stack-largest.txt`; individual frame
+sizes alone did not predict recursive compiler depth. 48 KiB is a conservative
+fixed-suite reservation with IRQ/SDK margin, not a bound on arbitrary user code.
+Painted stack high-water, guards and watchdog recovery remain enabled; actual
+Pico stack behavior is unmeasured. Wren-only LTO was also evaluated and enlarged
+the load image to 131,692 B, reducing allocator capacity by another 960 B.
 
-The embedded configuration is initial GC threshold 16 KB, minimum 8 KB, 25%
-growth, separately enforced requested-byte budgets 1 KB (fault injection),
-32 KB, 64 KB and 96 KB. Each runs the same ten workload sources twice, with
-extra repeat/GC/error checks in hello. The 128 KB cap cannot be supported by
-the current SRAM allocator range and is tested on the PC/ARM emulator instead.
+## VM budgets, smallest profile and failure headroom
 
-ARM allocation emulation gives 74,908 B requested-live initialization,
-98,239 B full-suite requested peak, 116,391 B peak including ledger headers,
-and an even larger newlib malloc arena. These are not RP2040 runtime results.
-Even an ideal allocator would have insufficient contiguous main SRAM for this
-suite in the current layout; a real allocator also needs headers, rounding,
-realloc growth and fragmentation space. The 96 KB cap is not a promise that
-96 KB can actually be allocated. System malloc failure triggers whole-VM discard
-and is distinguished from hitting the requested-byte cap.
+GC thresholds remain initial 16 KiB, minimum 8 KiB, growth 25%. They are not a
+heap allocation or limit. The embedded program retains the original full suite
+with requested-byte caps 1 KiB (intentional OOM), 32 KiB, 64 KiB and 96 KiB.
+Physical malloc bounds apply independently and will fail before a requested-byte
+cap when the image leaves insufficient room. OOM still discards the entire VM,
+never reuses the interrupted VM and reports whether the cap or malloc failed.
 
-This target can test OOM containment and recovery after approval, but **full
-runtime acceptance remains open until an offline-validated candidate can fit all
-workloads**. Do not reduce stack below the compilation requirement to force a
-positive memory result. A smaller image/allocator is future experimental work;
-putting code in flash would require a different authorization and is excluded.
+The full-suite 98,239 B maximum is requested-live payload, not allocator capacity.
+The smallest proposed positive acceptance profile is the additional persistent
+`small_gui` model, specified exactly in MEMORY_ANALYSIS.md: Japanese output,
+one application/rectangle/four-event model, compiled callbacks into Wren, real
+C foreign calls, all existing repeat/GC/error recovery checks and 20 VM lifecycles.
+Use a 96 KiB requested-live cap, **132 KiB bounded physical arena** and 48 KiB
+native stack, requiring at least 4 KiB observed arena and 8 KiB native-stack
+headroom. Its model answer is 173 and it makes 40 C foreign calls per VM.
+
+CPU emulation measures 90,437 B peak payload and 124,240 B allocator minimum for
+20 checked GUI lifecycles. 128 KiB arena tests pass 100 lifecycles, including
+fresh-VM recovery after a real bounded malloc failure; 132 KiB is the more
+conservative proposed hardware allowance for alignment and recovery margin.
+These are not device results. A hypothetical 8 KiB increase to the old malloc
+region still could not initialize newlib-backed Wren, let alone run this model.
+
+Neither current SRAM-only image has enough allocator space for that profile.
+**Do not request positive RP2040 runtime acceptance for these binaries.**
+An OOM/boot/watchdog-only test could be separately scoped, but must not be called
+GUI or full-suite acceptance. No flash-resident firmware change is authorized.
 
 ## Offline UF2 checks
 

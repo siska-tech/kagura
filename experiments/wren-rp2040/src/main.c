@@ -18,5 +18,5 @@ int main(int argc, char **argv) {
     if (argc > 3 && !strcmp(argv[3], "oom-recovery")) {
         if (experiment(4096, 1, 0) != 1) return 2;
     }
-    return experiment(budget, cycles, argc > 3);
+    return experiment_named(budget, cycles, argc > 3 && strcmp(argv[3], "plain"), argc > 4 ? argv[4] : NULL);
 }

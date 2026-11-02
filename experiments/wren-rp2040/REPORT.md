@@ -1,5 +1,13 @@
 # Wren feasibility report — 2026-11-02
 
+**Follow-up:** [MEMORY_ANALYSIS.md](MEMORY_ANALYSIS.md) supersedes the original
+32 KiB stack/96,064 B allocator candidate and initial coexistence estimates.
+The stack reservation is now 48 KiB after ARM painting observes up to 39,940 B.
+The 98,239 B figure is live Wren payload, not malloc footprint. A small GUI
+needs 90,437 B payload with error/lifecycle checks and a 124,240 B simulated
+newlib arena; its proposed guarded hardware profile uses a 132 KiB arena.
+No positive SRAM-only RP2040 acceptance candidate fits. Hardware remains unrun.
+
 ## Evidence and decision
 
 | Question | Finding |
@@ -122,24 +130,29 @@ and from the entirely unperformed hardware run.
 
 Initialization uses 74,908 B requested live (3,128 successful allocations over
 bootstrap). Full-suite maximum requested-live is 98,239 B (strings); peak with
-ledger headers is 116,391 B (repeat/GC). The newlib arena high-water in the
-256 KiB sweep is 130,720 B (including libc/stdio) and exceeds these live-byte
+ledger headers is 116,391 B (repeat/GC). In the original 256 KiB suite-wide sweep,
+newlib arena high-water was 130,720 B (including libc/stdio), exceeding live-byte
 figures. Shutdown ledger bytes are zero; libc retains arena space and its stdio
 allocation (1,032 B in this emulator). This is allocator retention, not a VM leak.
+The corrected trimming model and fresh-process audit now measure 132,432 B for
+the largest-workload arenas; see MEMORY_ANALYSIS.md for the exact decomposition.
 Each workload gets its own VM, so these numbers do not promise that ten resident
 applications can coexist. A budget exactly matching this small suite is not an
 adequate production application allowance.
 
-The no_flash ELF has about 128 KB of loadable code/constants/data, plus BSS and
-a reserved 32 KiB C stack. Its allocator range is 96,064 B (93.81 KiB). That is
+The original no_flash ELF had about 128 KB of loadable code/constants/data, plus
+BSS and a 32 KiB stack. Its allocator range was 96,064 B (93.81 KiB). That is
 less than the full-suite requested-live peak even before headers, newlib metadata
 or fragmentation. **The current SRAM-only target is expected to report OOM,
 not ten passes.** Running it cannot establish full runtime acceptance. A future
 smaller SRAM image/allocator, or an approved different test platform, is needed
 to close that gap; changing flash firmware is outside this experiment.
 
-See [pico/ACCEPTANCE.md](pico/ACCEPTANCE.md) and `results/rp2040-image.txt` for the
-exact final addresses, hashes, section sizes and gates. No actual RP2040 heap,
+That stack reservation is now retired: ARM stack painting exceeds it, and the
+current guarded builds require 48 KiB, leaving still less malloc space. See
+[MEMORY_ANALYSIS.md](MEMORY_ANALYSIS.md), [pico/ACCEPTANCE.md](pico/ACCEPTANCE.md)
+and `results/memory-audit/pico-*-image.txt` for current layouts/gates.
+`results/rp2040-image.txt` is the historical candidate. No actual RP2040 heap,
 stack peak, runtime timing, MicroPython restoration or flash-hash result exists.
 
 ## Coexistence estimate (code in flash, not the SRAM-only test image)
@@ -148,25 +161,25 @@ An integrated firmware would execute most runtime and GUI code from flash, retai
 only selected routines/constants in SRAM, and share system/USB code. Adding the
 standalone Desktop ELF size to the standalone Wren ELF size is invalid.
 
-| SRAM component | Planning allowance, KiB | Basis |
+| SRAM component | Conservative allowance, KiB | Basis |
 |---|---:|---|
-| C GUI framebuffer + compositor/window/app state | 34–46 | C Desktop state 34,792 B on ARM; Stage 3A retained layer is larger; no second framebuffer assumed |
-| Wren core + compiled small application + transient allocations | 96–128 | ARM emulated full-suite live peak 95.94 KiB; upper allowance is an estimate |
-| Allocator headers/fragmentation reserve | 24–40 | Ledger + newlib behavior; requires real allocator high-water validation |
-| System/USB/static runtime state | 8–16 | Experiment static state plus integration reserve, estimate |
-| Native stacks including source compiler | 32–40 | Large compiler frames; user nesting has no hard bound here |
-| Transport/staging/event buffers beyond GUI state | 4–12 | Estimate; ownership must avoid double-counting shared buffers |
-| **Total** | **198–282** | Scenario range, not measured integrated firmware |
+| Existing retained C GUI state | 45 | 45,960 B ARM ABI; framebuffer and staging included |
+| Wren/newlib arena, including all allocator overhead | 144 | 132 KiB proposed GUI acceptance arena plus integration cushion |
+| System/USB/static runtime state | 16 | Outside the Wren arena, estimate |
+| Native compiler/IRQ stack and guard | 48 | Corrected fixed-suite reservation; arbitrary source nesting remains unbounded |
+| Additional transport buffers | 4 | Beyond existing retained GUI state, estimate |
+| RAM-resident code/constants | 16 | Most code in flash; actual integrated map required |
+| Unassigned recovery margin | 8 | Outside the tested Wren arena |
+| **Total** | **281** | Conservative scenario, not measured integrated firmware |
 
-RP2040 has 264 KiB: approximately 66 KiB spare at the lean end, an 18 KiB deficit
-at the high end, before large Japanese font caches, user programs or extra GUI
-objects. It may fit with explicit limits and shared C state, but useful headroom
-is not established. Script-owned pixel lists are costly (8 B values plus array
+RP2040 has 264 KiB: this scenario has a 17 KiB deficit before additional font
+caches or larger applications. Leaner allocations may fit, but a conservative
+coexistence claim is not established. Script-owned pixel lists cost 8 B per value plus array
 overhead); a future native packed sprite buffer would avoid duplicating GUI
 pixels, but no such binding is implemented here.
 
-RP2350 has 520 KiB, giving approximately 238–322 KiB spare for the same planning
-range. Different M33 code sizes, SDK, stacks and workload behavior require a real
+RP2350 has 520 KiB, giving approximately 239 KiB spare in this scenario.
+Different M33 code sizes, SDK, stacks and workload behavior require a real
 build/run. Its single-precision FPU does not directly make Wren double arithmetic
 hardware-native. Larger SRAM is the strongest established benefit here.
 

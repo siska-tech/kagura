@@ -9,3 +9,4 @@ python3 tools/verify_sources.py
 cmake -S pico -B build-pico -DCMAKE_BUILD_TYPE=Release "$@"
 cmake --build build-pico -j4
 python3 tools/verify_image.py build-pico/wren_rp2040.elf build-pico/wren_rp2040.uf2 --selftest
+python3 tools/check_layout.py build-pico/wren_rp2040.elf build-pico/wren_rp2040.uf2

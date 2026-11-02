@@ -1,0 +1,26 @@
+build-pico-lto/wren_rp2040.elf  :
+section                 size        addr
+.text                 104568   536870912
+.rodata                25076   536975480
+.binary_info              24   537000556
+.data                   2012   537000592
+.tdata                     0   537002604
+.uninitialized_data        0   537002604
+.tbss                      0   537002604
+.bss                    4864   537002608
+.heap                   2048   537007472
+.scratch_x                 0   537133056
+.scratch_y                 0   537083904
+.stack_dummy           49152   537083904
+.debug_info           339746           0
+.debug_abbrev          40443           0
+.debug_loclists       132716           0
+.debug_aranges          5992           0
+.debug_rnglists        14656           0
+.debug_line           176006           0
+.debug_str             49692           0
+.comment                  69           0
+.ARM.attributes           42           0
+.debug_frame           27780           0
+.debug_line_str         2744           0
+Total                 977630
