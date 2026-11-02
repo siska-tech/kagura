@@ -3,7 +3,32 @@
 Stage 1 of the hardware validation. It times the same workloads as `kd_bench` and the qemu instruction counts (`bench/workloads.h`) on a real RP2040.
 The program runs entirely from SRAM, with no KAGURA FPGA I/O, no GPIO other than USB, no flash write, no filesystem change, and no change to the installed MicroPython firmware.
 
-**Status: built and statically verified; not yet run on hardware (awaiting approval).**
+**Status: run on 2026-11-02 with approval, both variants passed.** Results are in BENCHMARKS.md section 6; the logs are in `../docs/rp2040-logs/`.
+
+### Run record, 2026-11-02
+
+- **Backup first.**
+  - The two existing full-flash backups (`build/ui-normal-install/backup-20261101T103750Z`, `build/ui-phase2/backup-before-glyph8`) matched their own recorded hashes but no longer matched the device (`d2ccc104…`).
+  - A new read-only backup was made with `rp2040_sram_bench.py backup`: `build/c-gem-rp2040/flash-backup-20261102T073944Z/flash-2MiB.bin`, SHA-256 `d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b`.
+  - Its hash equals the device hash taken before and after the dump, and an independent `sha256sum` of the saved file agrees. The old backups were not touched.
+- **SDK variant first**, then the plain variant, each started only after the previous checks had passed:
+  - the UF2 re-verified;
+  - the flash equal to the backup hash;
+  - a control reboot left the flash unchanged, and the console came back attached and unpaused with no error.
+- **Flash:** the whole-flash SHA-256 was `d2ccc104…` at every one of the six checkpoints (before, after the control reboot and after the run, for both variants).
+- **CRCs:** all 17 workload CRCs equal the PC's (`kd_bench --crc 8`) in both variants.
+- **Guards:**
+  - stack peak 1,884 B of 4,096;
+  - painted stack words below the peak intact;
+  - SCRATCH_X 1,024/1,024 words intact;
+  - free main RAM above the heap 30,705/30,705 (SDK) and 30,631/30,631 (plain) words intact;
+  - no malloc arena.
+- **Recovery:** the console was restored and a final normal reboot returned to MicroPython. Both runs took about 40 s.
+- **FPGA:** never addressed by the benchmark program.
+  The MicroPython-side scripts pause the HDMI console, a state change with no I/O, so their output is not rendered through the FPGA.
+  The first, unpaused hash script did print one line to the console, which the firmware rendered as usual. The console restarts at each normal boot, as boot.py always does.
+- **Tool fix during the backup.** mpremote's `read_until` builds its result one byte at a time, which is quadratic. A first backup attempt with it never finished and was stopped; it was only reading.
+  The tool now streams large output in chunks. Two empty, half-created backup directories were removed.
 
 ## Build (WSL)
 
@@ -98,7 +123,9 @@ The Pico must be the only Raspberry Pi USB device attached. The tool refuses oth
 ```powershell
 $py = "$env:APPDATA\uv\python\cpython-3.14.7-windows-x86_64-none\python.exe"
 $env:PYTHONPATH = "build\transport-analysis\python-deps"
-& $py experiments/c-gem-desktop/tools/rp2040_sram_bench.py run --approved `
+# verified read-only full-flash backup into a new directory; prints its SHA-256
+& $py experiments/c-gem-desktop/tools/rp2040_sram_bench.py backup --dir build/c-gem-rp2040
+& $py experiments/c-gem-desktop/tools/rp2040_sram_bench.py run --approved --expected-flash <backup sha256> `
     --uf2 build/c-gem-rp2040/kd_rp2040_bench.uf2 --elf build/c-gem-rp2040/kd_rp2040_bench.elf `
     --log build/c-gem-rp2040/device-sdk.txt
 # second run with the _plain variant, log device-plain.txt

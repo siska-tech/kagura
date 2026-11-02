@@ -3,11 +3,13 @@
 2026-11-02, branch `experiment/c-gem-desktop`.
 Every number is labelled:
 - **measured (PC)**: on the development PC;
-- **measured (RP2040)**: copied from existing repository records, KAGURA-UI only;
+- **measured (RP2040, C)**: the C core on a real RP2040, SRAM-only, no FPGA I/O (section 6);
+- **measured (RP2040, KAGURA-UI)**: copied from existing repository records;
 - **counted**: executed Thumb-1 instructions under `qemu-arm`;
 - **estimate**: derived, with the assumptions stated.
 
-**No C desktop code was run on an RP2040.** PC timings do not predict RP2040 timings.
+The C core's CPU time was measured on an RP2040 (section 6). Its transport to the KAGURA-9 display has not been measured.
+PC timings do not predict RP2040 timings.
 
 ## 1. Setup
 
@@ -107,6 +109,14 @@ Caveats:
 
 ### 4.2 Cortex-M0+ (counted, estimate)
 
+> **Superseded by section 6.** This section is the pre-hardware estimate, kept so it can be compared with the measurements.
+> The counting method used here, the difference of runs with and without the operation, had three flaws found by the RP2040 run:
+> - it cancelled the export's fixed dirty-map scan (23 k instructions per export);
+> - it double-counted workloads whose untimed pre-step only does work after the operation (`menu_open`, `menu_close`);
+> - it included a first sample that changed nothing (`sprite_import`, `label_one_char`).
+>
+> Section 6 has the corrected counts, bracketed by marker calls around exactly the measured region.
+
 `tools/arm_report.sh` builds the same workloads (`bench/workloads.h`) for Cortex-M0+ (Thumb-1, no divide instruction) as a freestanding Linux ELF (`bench/arm_count.c`). It runs them under `qemu-arm` one instruction per translation block, and counts executed instructions for N samples with and without the operation.
 Two complete runs gave identical counts.
 
@@ -185,3 +195,115 @@ KAGURA-UI on RP2040 (**measured**, `docs/kagura-ui.md`):
 - per step: allocates (0.4–0.6 KB per Tab dispatch on unix MicroPython).
 
 The C desktop's RAM is static and does not grow at run time.
+
+## 6. RP2040 SRAM-only measurements (measured, RP2040, C)
+
+2026-11-02, Raspberry Pi Pico (RP2040, boot ROM "UF2 Bootloader v3.0"), `clk_sys` 125.000 MHz confirmed by the frequency counter.
+The program is the Pico SDK no_flash build in `pico/`, loaded into SRAM through BOOTSEL. Procedure and safety record: [pico/README.md](pico/README.md).
+Logs: [docs/rp2040-logs/](docs/rp2040-logs/).
+
+- There was no KAGURA FPGA I/O. "Export" packs dirty tiles into the 1,280 B staging buffer and copies them into a 32,000 B RAM "VRAM", as on the PC; transport time is not included.
+- The core is built with `-O2`, as in the counts.
+- Each workload: 4 warm-up and 32 measured samples. SysTick cycles, with interrupts masked during each sample.
+- Every sample of a workload took the same number of cycles, so p50 = p90 = max except `button_press`, whose press and release differ by 27 cycles.
+
+**Correctness:**
+- all 17 workload CRCs (framebuffer + exported VRAM after 8 samples) equal the PC's in both variants;
+- the whole-flash SHA-256 was unchanged at all six checkpoints.
+
+**Memory:**
+- static image + `.bss` 139,068 B, which includes the benchmark's 32,000 B RAM VRAM and timing arrays;
+- no heap;
+- stack peak 1,884 B of 4,096 B (estimate before the run: about 2.3 KB);
+- all painted guard regions intact (SCRATCH_X, free main RAM, stack below the peak).
+
+Two builds of the same program:
+
+- **sdk:** Pico SDK defaults, with boot ROM `memcpy`/`memset` and the SIO hardware divider, as a firmware build would use.
+- **plain:** newlib `memcpy` and libgcc software division, closer to the counted build. The counted build uses newlib-nano's byte-wise `memcpy`, so even this variant does not execute exactly the counted instructions.
+
+Instructions are the corrected qemu counts (op + render + export between marker calls, same loop and sample parity as the device).
+
+| workload | instructions (counted) | sdk cycles | sdk ms | sdk cycles/instr. | plain ms | plain cycles/instr. |
+|---|---:|---:|---:|---:|---:|---:|
+| idle (export's dirty-map scan only) | 23,088 | 27,180 | 0.22 | 1.18 | 0.22 | 1.18 |
+| one-character label | 54,546 | 66,601 | 0.53 | 1.22 | 0.57 | 1.30 |
+| one sprite pixel | 91,618 | 120,381 | 0.96 | 1.31 | 1.00 | 1.36 |
+| button press/release | 93,007 | 111,613 | 0.89 | 1.20 | 1.01 | 1.36 |
+| software cursor 4 px | 100,045 | 129,139 | 1.03 | 1.29 | 1.12 | 1.40 |
+| window move 8 px, outline | 480,377 | 572,276 | 4.58 | 1.19 | 5.78 | 1.50 |
+| menu open | 520,926 | 625,282 | 5.00 | 1.20 | 6.13 | 1.47 |
+| menu close | 587,772 | 719,327 | 5.75 | 1.22 | 6.93 | 1.47 |
+| full export, 1,000 tiles (32,000 B) | 647,961 | 542,484 | 4.34 | 0.84 | 6.82 | 1.31 |
+| overlap recompose 160x120 | 927,450 | 1,156,472 | 9.25 | 1.25 | 10.75 | 1.45 |
+| window activation | 1,210,474 | 1,872,210 | 14.98 | 1.55 | 17.73 | 1.83 |
+| full sprite import | 1,779,240 | 2,052,943 | 16.42 | 1.15 | 18.89 | 1.33 |
+| full redraw, 3 windows | 2,852,476 | 3,561,088 | 28.49 | 1.25 | 33.39 | 1.46 |
+| overlap recompose, painter's | 2,965,640 | 3,692,984 | 29.54 | 1.25 | 31.95 | 1.35 |
+| window move 8 px, live | 4,863,846 | 5,908,619 | 47.27 | 1.21 | 54.59 | 1.40 |
+| outline drop (window moves 8 px) | 4,868,212 | 5,915,872 | 47.33 | 1.22 | 54.65 | 1.40 |
+| full redraw, painter's | 5,196,652 | 6,391,991 | 51.14 | 1.23 | 56.96 | 1.37 |
+
+The render/export split for every workload is in the logs (`KDRP_TIME`).
+Export of the 3 tiles of a sprite pixel takes 40,033 cycles (0.32 ms), of which 27,115 is the fixed scan.
+
+### 6.1 Against the pre-hardware estimate (section 4.2)
+
+| workload | estimate, ms | measured sdk / plain, ms | verdict |
+|---|---:|---:|---|
+| full redraw | 27.2–36.2 | 28.5 / 33.4 | inside |
+| full redraw, painter's | 49.7–66.2 | 51.1 / 57.0 | inside |
+| window move, live | 46.5–62.0 | 47.3 / 54.6 | inside |
+| window move, outline | 4.4–5.9 | 4.6 / 5.8 | inside |
+| overlap recompose / painter's | 8.7–11.6 / 28.2–37.7 | 9.3 / 10.8, 29.5 / 32.0 | inside |
+| full export | 6.0–8.0 | 4.3 / 6.8 | sdk faster: ROM `memcpy` |
+| window activation | 11.4–15.2 | 15.0 / 17.7 | at or above the top |
+| full sprite import | 12.7–16.9 | 16.4 / 18.9 | plain above: count 25% low (see below) |
+| label, sprite pixel, button, cursor | 0.36–0.90 | 0.53–1.12 | above: fixed export scan not counted |
+| menu open / close | 8.8–12.0 | 5.0–6.9 | below: count included the pre-step |
+
+Causes of the discrepancies:
+
+1. **The export's fixed dirty-map scan was cancelled out.** The old differencing method subtracted a run without the operation, which also exports, so the scan of all 1,000 dirty bits (23 k instructions, 27 k cycles, 0.22 ms per export) vanished from the counts.
+   This is why every small operation came out above the band: sprite pixel 68.5 k counted, 91.6 k with the scan.
+2. **Pre-step workloads were double-counted.** `menu_open` has an untimed pre-step that closes the menu. In the run without the operation the menu was never open, so the close did nothing and its full redraw was attributed to the operation.
+   Old count: 921 k. Marker count: 521 k.
+3. **A first sample that changed nothing.** The old loop had no warm-up, and its first import loaded the sprite already shown, so it averaged 3 imports over 4 samples.
+   Old count: 1.32 M. Corrected: 1.78 M, the old count times 4/3.
+4. **Library routines.**
+   - SDK variant: the boot ROM `memcpy` executes fewer and faster instructions than the counted newlib-nano byte loop, and the hardware divider replaces libgcc division. Full export therefore runs below 1 cycle per counted instruction, and the SDK variant is 10–37% faster than plain overall.
+   - Plain variant: its newlib `memcpy` differs from newlib-nano too, so its cycles per counted instruction (1.30–1.83) mix the two effects.
+5. **Window activation**, at 1.55 (sdk) and 1.83 (plain) cycles per instruction, is an outlier. Its mix of instructions was not analysed.
+
+With the corrected counts, the effective cycles per counted instruction are 1.15–1.31 in the SDK variant (activation and export excepted), which is in the lower half of the 1.2–1.6 band assumed in section 4.2.
+The method itself (qemu counts times a small CPI factor) predicts RP2040 CPU time within about ±25% once the counted region matches the measured one.
+
+### 6.2 Against KAGURA-UI on the same chip
+
+Both sides are now measured on RP2040 at 125 MHz, but the operations are not identical:
+- the C desktop is 320x200 with three windows; the KAGURA-UI sprite editor is a single 320x240 screen with a zoom-8 grid;
+- the C times exclude transport; the KAGURA-UI frames include their flush.
+
+| operation | C core, sdk | KAGURA-UI (records) |
+|---|---:|---:|
+| one sprite pixel | 0.96 ms | CPU 19.5 ms, frame 21.9 ms (22.2 ms after #67) |
+| full sprite import | 16.4 ms | 323 ms including `import_hex()` (#67) |
+| full-screen redraw | 28.5 ms (3-window desktop) | 213.5 ms frame (sprite editor, #67) |
+| one-label update | 0.53 ms | 21.5 ms frame (`ui_benchmark` label) |
+
+For the operations that can be compared directly (a pixel edit, a sprite import), the C core uses about 20x less CPU time than KAGURA-UI on the same chip.
+
+### 6.3 Findings for the architecture
+
+- **Interactive budget.**
+  - Small updates cost 0.5–1.1 ms of CPU.
+  - Menus and outline moves cost 4.6–6.9 ms.
+  - A full redraw costs 28–33 ms.
+  - A live window drag costs 47–55 ms per step, so outline drag remains the right default on RP2040.
+- **Export.**
+  - Packing the 1,000 tiles costs 4.3 ms (ROM `memcpy`).
+  - The fixed scan (0.22 ms per export) could be skipped with a per-byte or per-row "any dirty" check. Not done: it is optimisation work.
+- **Memory.** The stack needs 1.9 KB. The desktop core's own RAM (state, framebuffer, staging) is 36 KB.
+  The remaining 103 KB of this program's static SRAM is code (in SRAM in a no_flash build; it would be in flash in a firmware build), the benchmark's 32 KB VRAM copy, and SDK/USB data.
+- **Variant.** A firmware build should use the SDK's ROM memory routines and hardware divider; that is the sdk column.
+- **Not yet measured:** transport to the KAGURA-9 display, end-to-end frame time, and any MicroPython binding overhead.

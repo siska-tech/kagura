@@ -4,9 +4,10 @@
 #   1. code/data size of the core and the demo apps for Cortex-M0+ (RP2040)
 #      and Cortex-M33 (RP2350), from arm-none-eabi-size on the objects;
 #   2. per-function stack frames (-fstack-usage), largest first;
-#   3. executed Thumb-1 instructions per benchmark operation, counted by
-#      running bench/arm_count.c under qemu-arm user mode one instruction
-#      per translation block.
+#   3. executed Thumb-1 instructions per benchmark operation (op + render +
+#      export, bracketed by marker calls), counted by running
+#      bench/arm_count.c under qemu-arm user mode one instruction per
+#      translation block.
 # Requires the Arm GNU toolchain (as for software/starfall) and qemu-arm
 # (QEMU env var, default: qemu-arm on PATH). Run from the repository root:
 #   bash experiments/c-gem-desktop/tools/arm_report.sh [OUT_DIR]
@@ -59,22 +60,22 @@ size_table() {   # cpu opt
 $CC -mcpu=cortex-m0plus -mthumb -O2 $COMMON -I"$EXP/bench" -nostartfiles -static --specs=nano.specs \
     "$EXP"/bench/arm_count.c $(for f in $CORE; do echo "$EXP/src/$f.c"; done) \
     $(for f in $APPS; do echo "$EXP/apps/$f.c"; done) -lc -lgcc -o "$OUT/kd_count.elf"
-count() {   # workload n mode
-    "$QEMU" -one-insn-per-tb -d nochain,exec -D /dev/stdout "$OUT/kd_count.elf" "$1" "$2" "$3" | grep -c '^Trace'
+count() {   # workload n -> instructions between kd_mark_begin and kd_mark_end, per sample
+    "$QEMU" -one-insn-per-tb -d nochain,exec -D /dev/stdout "$OUT/kd_count.elf" "$1" "$2" |
+        awk -v n="$2" '/^Trace/ { f = $NF; if (f == "kd_mark_begin") on = 1; else if (f == "kd_mark_end") on = 0; else if (on) c++ }
+                       END { printf "%d", c / n }'
 }
 {
-    echo "### Executed Thumb-1 instructions per operation (render + TILE4 export)"
+    echo "### Executed Thumb-1 instructions per operation (op + render + TILE4 export)"
+    echo
+    echo 'Counted between kd_mark_begin/kd_mark_end, mean of 4 samples after 4 warm-up (bench/arm_count.c).'
     echo
     echo '| workload | instructions/op |'
     echo '|---|---:|'
     for w in idle full_redraw full_redraw_painter full_export button_press menu_open menu_close window_activate \
              window_move_live window_move_outline window_drop_outline label_one_char sprite_pixel sprite_import \
              recompose_overlap recompose_overlap_painter pointer_move; do
-        n=4
-        case "$w" in full_*|window_move_live|window_drop_outline|recompose_overlap_painter) n=2 ;; esac
-        a=$(count "$w" "$n" pre)
-        b=$(count "$w" "$n" op)
-        echo "| $w | $(( (b - a) / n )) |"
+        echo "| $w | $(count "$w" 4) |"
     done
     echo
 } >> "$OUT/report.md"

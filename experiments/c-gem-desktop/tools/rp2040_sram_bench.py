@@ -7,6 +7,8 @@
   flash-hash [--port P --expected-serial S]
                                   read-only SHA-256 of the whole 2 MB flash via
                                   the installed MicroPython (raw REPL, no soft reset)
+  backup [--dir D]                read-only full-flash dump into a new directory,
+                                  verified against the device hash before and after
   run [--port P --expected-serial S] --uf2 F --elf F --approved --log L
                                   the whole procedure: hash, control reboot, hash,
                                   BOOTSEL, verified copy of the RAM-only UF2, collect
@@ -37,7 +39,16 @@ FLASH_BYTES = 2 * 1024 * 1024               # Raspberry Pi Pico (PICO_BOARD pico
 PICO_VID = 0x2E8A
 NO_FLASH_SERIAL = 'E' * 16                  # pico_unique_id in PICO_NO_FLASH builds
 
-HASH_SOURCE = (
+# Every device script first pauses the KAGURA HDMI console: a pure state change
+# (no I/O) that stops it rendering REPL output through the FPGA. The next
+# normal boot (control reset, return from the RAM program) restarts it.
+PAUSE = "try:\n kagura_console.pause()\nexcept NameError:\n pass\n"
+# Console state as found (before pausing): paused, attached, screen, last_error.
+CONSOLE_STATE = ("try:\n _cs=(kagura_console.paused,kagura_console._attached,"
+                 "kagura_console.screen is not None,repr(kagura_console.last_error))\n"
+                 "except NameError:\n _cs=None\n")
+CONSOLE_OK = "(False, True, True, 'None')"
+HASH_SOURCE = CONSOLE_STATE + PAUSE + "print('CONSOLE',_cs)\n" + (
     "import uctypes,hashlib,binascii\n"
     "h=hashlib.sha256()\n"
     "for o in range(0,%d,4096): h.update(uctypes.bytearray_at(0x10000000+o,4096))\n"
@@ -172,12 +183,74 @@ def micropython_exec(port, source, timeout=120):
         transport.close()
 
 
-def flash_hash(port):
+def flash_hash(port, with_console=False):
     out = micropython_exec(port, HASH_SOURCE, timeout=180)
+    digest = console = None
     for line in out.splitlines():
         if line.startswith('FLASH_SHA256 '):
-            return line.split()[1]
-    raise SystemExit('no FLASH_SHA256 line')
+            digest = line.split()[1]
+        elif line.startswith('CONSOLE '):
+            console = line[len('CONSOLE '):].strip()
+    if digest is None:
+        raise SystemExit('no FLASH_SHA256 line')
+    return (digest, console) if with_console else digest
+
+
+DUMP_SOURCE = PAUSE + (
+    "import sys,uctypes,binascii\n"
+    "for o in range(0,%d,4096): sys.stdout.buffer.write(binascii.hexlify(uctypes.bytearray_at(0x10000000+o,4096)))\n"
+    % FLASH_BYTES)
+INFO_SOURCE = PAUSE + (
+    "import sys,json\n"
+    "print(json.dumps(dict(machine=sys.implementation._machine,version=list(sys.implementation.version))))\n")
+
+
+def micropython_stream(port, source, timeout=300):
+    """Like micropython_exec, but reads the output in large chunks: mpremote's
+    read_until appends one byte at a time (quadratic for megabytes of output)."""
+    from mpremote.transport_serial import SerialTransport
+    transport = SerialTransport(port, timeout=0.2)
+    try:
+        transport.enter_raw_repl(soft_reset=False)
+        transport.exec_raw_no_follow(source)
+        data = bytearray()
+        start = last = time.monotonic()
+        while data.count(4) < 2:   # stdout \x04 stderr \x04
+            part = transport.serial.read(max(transport.serial.in_waiting, 1))
+            if part:
+                data.extend(part)
+                last = time.monotonic()
+            if time.monotonic() - start > timeout or time.monotonic() - last > 30:
+                raise SystemExit('device output stalled')
+        out, err, _ = bytes(data).split(b'\x04', 2)
+        if err:
+            raise SystemExit('device exception: %s' % err.decode('utf8', 'replace'))
+        transport.serial.read(max(transport.serial.in_waiting, 1))   # the raw REPL '>' prompt
+        transport.exit_raw_repl()
+        return out.decode('ascii', 'replace')
+    finally:
+        transport.close()
+
+
+def backup(args):
+    """Read-only full-flash dump into a new directory; never overwrites."""
+    resolve_device(args)
+    target = args.dir / datetime.now(timezone.utc).strftime('flash-backup-%Y%m%dT%H%M%SZ')
+    target.mkdir(parents=True, exist_ok=False)
+    before = flash_hash(args.port)
+    info = micropython_exec(args.port, INFO_SOURCE).strip()
+    text = micropython_stream(args.port, DUMP_SOURCE)
+    image = bytes.fromhex(''.join(text.split()))
+    after = flash_hash(args.port)
+    digest = hashlib.sha256(image).hexdigest()
+    if len(image) != FLASH_BYTES or not (digest == before == after):
+        raise SystemExit('backup NOT verified: %d bytes, dump %s, device %s/%s' % (len(image), digest, before, after))
+    (target / 'flash-2MiB.bin').write_bytes(image)
+    (target / 'device.json').write_text(info + '\n', encoding='utf8')
+    (target / 'sha256.txt').write_text(digest + '  flash-2MiB.bin\n', encoding='utf8')
+    if hashlib.sha256((target / 'flash-2MiB.bin').read_bytes()).hexdigest() != digest:
+        raise SystemExit('backup file re-read does not match')
+    print('BACKUP_VERIFIED %s %s' % (target, digest))
 
 
 def find_bootsel_drive(seconds=30):
@@ -217,8 +290,10 @@ def run(args):
         emit('HOST_START %s' % datetime.now(timezone.utc).isoformat())
         for c in checks:
             emit('HOST_UF2 ' + c)
-        h0 = flash_hash(port)
-        emit('HOST_FLASH_BEFORE %s' % h0)
+        h0, c0 = flash_hash(port, True)
+        emit('HOST_FLASH_BEFORE %s console %s' % (h0, c0))
+        if args.expected_flash and h0 != args.expected_flash:
+            raise SystemExit('flash does not match the verified backup; no BOOTSEL entry')
         # Control: a normal reboot must not change the hash (boot.py writes nothing).
         try:
             micropython_exec(port, "import machine\nmachine.reset()\n", timeout=5)
@@ -230,10 +305,12 @@ def run(args):
         if not port:
             raise SystemExit('MicroPython did not come back after the control reset')
         time.sleep(3)
-        h1 = flash_hash(port)
-        emit('HOST_FLASH_CONTROL %s' % h1)
+        h1, c1 = flash_hash(port, True)
+        emit('HOST_FLASH_CONTROL %s console %s' % (h1, c1))
         if h1 != h0:
             raise SystemExit('flash hash changed across a normal reboot; stopping before BOOTSEL')
+        if c1 != CONSOLE_OK:
+            raise SystemExit('the console did not start normally after the control reset; stopping before BOOTSEL')
         try:
             micropython_exec(port, "import machine\nmachine.bootloader()\n", timeout=5)
         except Exception:
@@ -267,10 +344,20 @@ def run(args):
         if not port:
             raise SystemExit('MicroPython did not come back; unplug/replug USB (RAM image is lost on power-off)')
         time.sleep(3)
-        h2 = flash_hash(port)
-        emit('HOST_FLASH_AFTER %s' % h2)
-        ok = h2 == h0 and done
+        h2, c2 = flash_hash(port, True)
+        emit('HOST_FLASH_AFTER %s console %s' % (h2, c2))
         emit('HOST_FLASH_UNCHANGED %s' % ('yes' if h2 == h0 else 'NO'))
+        emit('HOST_CONSOLE_RESTORED %s' % ('yes' if c2 == CONSOLE_OK else 'NO'))
+        ok = h2 == h0 and done and c2 == CONSOLE_OK
+        # The hash script paused the console (state only); a normal reboot
+        # leaves the device as found: MicroPython with a live HDMI console.
+        try:
+            micropython_exec(port, "import machine\nmachine.reset()\n", timeout=5)
+        except Exception:
+            pass
+        back = wait_gone(args.expected_serial) and wait_port(args.expected_serial)
+        emit('HOST_FINAL_REBOOT %s' % ('ok' if back else 'MicroPython did not re-enumerate'))
+        ok = ok and bool(back)
         emit('HOST_END %s %s' % (datetime.now(timezone.utc).isoformat(), 'OK' if ok else 'FAILED'))
         if not ok:
             sys.exit(1)
@@ -331,12 +418,17 @@ def main():
     h = sub.add_parser('flash-hash')
     h.add_argument('--port')
     h.add_argument('--expected-serial')
+    b = sub.add_parser('backup')
+    b.add_argument('--port')
+    b.add_argument('--expected-serial')
+    b.add_argument('--dir', type=Path, default=Path('build/c-gem-rp2040'))
     r = sub.add_parser('run')
     r.add_argument('--port')
     r.add_argument('--expected-serial')
     r.add_argument('--uf2', required=True)
     r.add_argument('--elf', required=True)
     r.add_argument('--approved', action='store_true')
+    r.add_argument('--expected-flash', help='SHA-256 of the verified backup; stop if the flash differs')
     r.add_argument('--timeout', type=int, default=300)
     r.add_argument('--log', type=Path, default=Path('build/c-gem-rp2040/device.txt'))
     s = sub.add_parser('summarize')
@@ -350,6 +442,8 @@ def main():
     elif args.cmd == 'flash-hash':
         resolve_device(args)
         print('FLASH_SHA256 %s' % flash_hash(args.port))
+    elif args.cmd == 'backup':
+        backup(args)
     elif args.cmd == 'run':
         run(args)
     else:

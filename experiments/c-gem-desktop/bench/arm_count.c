@@ -4,10 +4,21 @@
 // it and count every executed instruction (tools/arm_report.sh). No libc
 // start-up or stdio: a naked _start and two raw Linux syscalls.
 //
-//   kd_count WORKLOAD N MODE     MODE "pre": setup + N x (pre, render, export)
-//                                MODE "op":  same plus N x (op, render, export)
-// Instructions per op = (count(op) - count(pre)) / N.
+//   kd_count WORKLOAD N
+//
+// Runs the same loop as the RP2040 benchmark (pico/main.c): setup, 4 warm-up
+// and N measured samples of (pre, render, export) then (op, render, export).
+// The measured region of each sample, op + render + export, is bracketed by
+// calls to kd_mark_begin/kd_mark_end; the report counts only the executed
+// instructions between them. (An earlier version subtracted a run without
+// the op instead, which miscounted workloads whose pre-step only does work
+// after the op, such as closing a menu the op opened.)
 #include "workloads.h"
+
+#define WARM 4
+
+__attribute__((noinline, used)) void kd_mark_begin(void) { __asm__ volatile("" ::: "memory"); }
+__attribute__((noinline, used)) void kd_mark_end(void) { __asm__ volatile("" ::: "memory"); }
 
 static void sys_write(const char *s) {
     register long r0 __asm__("r0") = 1;
@@ -26,33 +37,34 @@ static int to_int(const char *s) {
 __attribute__((used)) int kd_count_main(const long *sp) {
     int argc = (int)sp[0];
     char **argv = (char **)(sp + 1);
-    if (argc != 4) {
-        sys_write("usage: kd_count WORKLOAD N pre|op\n");
+    if (argc != 3) {
+        sys_write("usage: kd_count WORKLOAD N\n");
         return 2;
     }
     const workload *w = NULL;
-    for (unsigned k = 0; k < sizeof workloads / sizeof workloads[0]; k++)
+    for (unsigned k = 0; k < KD_WORKLOAD_COUNT; k++)
         if (strcmp(workloads[k].name, argv[1]) == 0) w = &workloads[k];
     if (!w) {
         sys_write("unknown workload\n");
         return 2;
     }
     int n = to_int(argv[2]);
-    bool with_op = strcmp(argv[3], "op") == 0;
     kd_tile4_stats st;
     workloads_init();
     w->setup();
     kd_desktop_render(&S.desk);
     flush(&st);
-    for (int i = 0; i < n; i++) {
+    for (int i = -WARM; i < n; i++) {
         if (w->pre) {
             w->pre(i);
             kd_desktop_render(&S.desk);
             flush(&st);
         }
-        if (with_op) w->op(i);
+        if (i >= 0) kd_mark_begin();
+        w->op(i);
         kd_desktop_render(&S.desk);
         flush(&st);
+        if (i >= 0) kd_mark_end();
     }
     sys_write("done\n");
     return 0;

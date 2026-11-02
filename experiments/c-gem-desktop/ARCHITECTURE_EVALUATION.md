@@ -3,11 +3,13 @@
 Decision report for the experiment on branch `experiment/c-gem-desktop` (2026-11-02).
 Evidence is labelled:
 - **measured (PC)**: this experiment, on a PC;
+- **measured (RP2040, C)**: the C core on a real RP2040, SRAM-only, no FPGA I/O (BENCHMARKS.md section 6, added 2026-11-02);
 - **measured (RP2040)**: existing repository records of KAGURA-UI;
 - **counted**: Cortex-M0+ instructions under `qemu-arm`;
 - **estimate**: derived.
 
-No C desktop code ran on an RP2040 or RP2350, and nothing here is a hardware measurement of the C desktop.
+The C core's CPU time and memory have been measured on an RP2040.
+Not measured: its transport to the KAGURA-9 display, end-to-end frame time, the RP2350, and a MicroPython binding.
 Details are in [BENCHMARKS.md](BENCHMARKS.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Summary
@@ -22,6 +24,15 @@ On the evidence, the rendering, composition, damage and TILE4 export core is a g
 **Recommendation: a hybrid.** Validate the C core on RP2040 hardware first. If the estimates hold, add it as a native module under MicroPython, with Python remaining the application layer.
 The current KAGURA-UI stays as it is until then.
 
+**Update after the RP2040 SRAM-only run.** The CPU side held. Measured on the chip, with byte-identical output to the PC:
+- small updates 0.5–1.1 ms;
+- full redraw 28.5 ms;
+- full sprite import 16.4 ms;
+- stack peak 1.9 KB.
+
+For a pixel edit and a sprite import that is about 20x less CPU than KAGURA-UI's recorded times on the same chip.
+The remaining gate is transport and end-to-end frame time on the real display.
+
 ## Answers
 
 ### Which parts of KAGURA-UI are good candidates for native C?
@@ -30,7 +41,7 @@ Those whose cost grows with pixels or with the number of damage rects and layers
 
 - **Raster primitives and glyph drawing.**
   - KAGURA-UI already has Viper kernels, but each SDK call has a fixed cost: **measured (RP2040)** `fill_rect` 1.16 ms for 96x16 and 1.41 ms for 304x32; a 1x1 damage rect costs 5.7 ms to recompose.
-  - In C a whole small update is **counted** at 38–70 k instructions (**estimate** 0.4–0.9 ms on RP2040, including export packing).
+  - In C a whole small update, including export packing, takes 0.5–1.1 ms on RP2040 (**measured (RP2040, C)**; 55–100 k instructions counted).
 - **Composition and damage.** KAGURA-UI recomposes the widget tree in Python for each damage rect, which is why it defaults to a single bounding rect (`damage_limit=1`). Per-rect fixed costs of about 2.4 ms made several rects slower (**measured (RP2040)**).
   The C compositor's visible rectangle lists cost tens of microseconds on the PC and cut pixel work by 2.2–3.5x against the painter's algorithm (**measured (PC)**).
 - **Exposure handling for overlapping windows.** It must not enter the VM. In C, raising, moving, menu close and exposure never call application code that runs Python.
@@ -58,7 +69,7 @@ Keep Python where iteration speed matters more than microseconds. Keep KAGURA-UI
 | whole desktop state (8 windows, damage, menus, exact-dirty snapshot) | 34,160 B | |
 | demo app state | 632 B | |
 | TILE4 staging (one tile row) | 1,280 B | |
-| peak stack, **estimate** from per-function frames (largest 896 B) | about 2 KB | |
+| peak stack (**measured (RP2040, C)**, painted stack; the estimate was about 2.3 KB) | 1,884 B | |
 | core code, Cortex-M0+ `-O2` (fonts included) | | 22.6 KB |
 | core code, Cortex-M0+ `-Os` | | 17.8 KB |
 | demo apps | | 7.9 KB |
@@ -98,9 +109,9 @@ Yes, at this size:
 - for scale, KAGURA-UI is 1,325 lines of Python.
 
 The real complexity is in integration, not the window manager: a MicroPython user C module, a resource lease, a transport path, input sources.
-Two warnings from the counts (**estimate**, Cortex-M0+ at 125 MHz):
-- **Live window dragging** would take about 46–62 ms per step at today's code quality. Outline drag (about 4.4–5.9 ms) is the practical default.
-- **Full redraws** at about 27–36 ms are fine for a desktop but not for animation.
+Two warnings (**measured (RP2040, C)**, 125 MHz, SDK build):
+- **Live window dragging** takes 47.3 ms per 8 px step at today's code quality. Outline drag (4.6 ms) is the practical default.
+- **Full redraws** at 28.5 ms are fine for a desktop but not for animation.
 
 ### What changes, if any, would be needed to the KAGURA SDK?
 
@@ -122,13 +133,14 @@ What supports moving the core to C:
 | Evidence | Kind |
 |---|---|
 | C composition is 11–39x faster than KAGURA-UI's on the same PC for comparable small operations, with native raster on both sides | measured (PC) |
-| Composition plus export of a small update: 38–70 k Thumb-1 instructions; full redraw 2.8 M; sprite import 1.3 M | counted |
-| On RP2040, roughly 0.4–0.9 ms for small updates and 27–36 ms for a full redraw. KAGURA-UI for comparable operations: 19.5 ms of CPU for a sprite pixel, a 213.5 ms frame for a full sprite-editor redraw, 323 ms for a full import (#67) | estimate vs measured (RP2040) |
+| Composition plus export of a small update: 55–100 k Thumb-1 instructions; full redraw 2.85 M; sprite import 1.78 M (corrected counts) | counted |
+| On RP2040: 0.5–1.1 ms for small updates, 16.4 ms for a full sprite import, 28.5 ms for a full redraw. KAGURA-UI for comparable operations: 19.5 ms of CPU for a sprite pixel, a 213.5 ms frame for a full sprite-editor redraw, 323 ms for a full import (#67) | measured (RP2040, C) vs measured (RP2040) |
+| Measured cycles are 1.15–1.31 per counted instruction (SDK build), so qemu counts predict RP2040 CPU time well once the counted region matches | measured (RP2040, C) |
 | No GC heap use and no run-time allocation | measured |
 | Overlapping windows without extra buffers | measured |
 
 What argues for caution:
-- None of the RP2040 numbers for C are measured, and the CPI band and flash-cache behaviour are assumptions.
+- The RP2040 run executed from SRAM. A firmware build runs from XIP flash with a 16 KB cache, and its cache behaviour is not measured. No RP2350 run.
 - Transport is unchanged: a C desktop still pays the SDK flush per frame (**measured (RP2040)** 2.4 ms for a one-pixel edit under MicroPython), roughly in proportion to tiles.
 - Integration work (user C module, lease API, pointer input) is larger than the core itself.
 - KAGURA-UI is shipped, tested on hardware and good enough for single-screen tools.
@@ -136,6 +148,7 @@ What argues for caution:
 Suggested next steps, each with an exit criterion:
 1. **RAM-only RP2040 CPU benchmark.** Build `bench/workloads.h` for RP2040 without FPGA I/O, load it to SRAM through BOOTSEL (no flash write) and time the workloads.
    Proceed if small updates are below about 2 ms and a full redraw below 50 ms.
+   **Done 2026-11-02: passed.** Small updates 0.5–1.1 ms, full redraw 28.5 ms; flash unchanged, CRCs identical to the PC.
 2. **Measure the transport.** Use a C flush of TILE4 runs through `tile_fb_io.c`-style code on the real FPGA, with the same workloads.
 3. **Native module.** Wrap `kd_app.h` as a MicroPython user C module with retained display lists and event rings. Port one KAGURA-UI demo (the sprite editor) and compare it end to end against #67's numbers.
 4. Only then decide whether KAGURA-UI's widgets move onto the native core or stay as a separate full-screen toolkit.

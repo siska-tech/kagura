@@ -99,7 +99,7 @@ This cost about 30% of the full-redraw instructions on Cortex-M0+, mostly newlib
 
 ## 4. TILE4 export and the 320x240 output
 
-- Tile `t = (y/8)*40 + x/8` becomes pattern `t` (0..999). Within a pattern, byte `(y%8)*4 + (x%8)/2` holds two pixels, even x in the high nibble. That is 1,000 patterns and 32,000 B; the full export is **measured** at 2.9 µs on the PC and 625 k Thumb-1 instructions.
+- Tile `t = (y/8)*40 + x/8` becomes pattern `t` (0..999). Within a pattern, byte `(y%8)*4 + (x%8)/2` holds two pixels, even x in the high nibble. That is 1,000 patterns and 32,000 B; the full export is **measured** at 2.9 µs on the PC and 4.3 ms on an RP2040 at 125 MHz (BENCHMARKS.md section 6).
 - `kd_tile4_flush(fb, max_gap, staging, n, sink)` packs dirty runs into a caller-provided staging buffer (one tile row of 1,280 B in the hosts) and hands them to the sink in ascending order.
   Clean gaps of up to `max_gap` tiles join runs. A run becomes clean only after the sink accepts it, and a failure stops the flush, as `tfb_flush` does.
   A KAGURA sink would call the existing pattern write path, either `Video.tiles` or the C `kh_vram_write` with the 1023/1024 split, followed by FENCE.
@@ -127,7 +127,7 @@ This cost about 30% of the full-redraw instructions on Cortex-M0+, mostly newlib
 | Code, core, Cortex-M33 `-O2` | 21.2 KB |
 | Code, demo apps, Cortex-M0+ `-O2` | 7.9 KB |
 
-**Estimated:** peak stack about 2 KB, the deepest frame chains added up by hand: menu hook → file open → sprite import → invalidate → region subtract.
+**Measured** on RP2040: peak stack 1,884 B, against an estimate of about 2.3 KB from the deepest frame chains (menu hook → file open → sprite import → invalidate → region subtract).
 The total is about 36–38 KB of RAM, all static and outside the MicroPython GC heap. For comparison:
 - KAGURA-UI needs one contiguous 38,400 B heap block plus 1,200 B (**measured** 40,544 B constructor growth) and the widget tree (**measured** 3,984 B for the gallery).
 - RP2040 has 264 KB of SRAM and RP2350 520 KB. The C desktop's RAM is static, so it is reserved at link time; it cannot fail later for lack of a contiguous heap block.
@@ -181,7 +181,7 @@ while desk.step():
 
 - No window resizing, scroll bars or text input fields. There is one File Manager instance and two viewer slots.
 - KAGURA has no mouse input path today (KAGURA-UI is keyboard only). The desktop is fully keyboard operable, but pointer input on hardware needs a HID or serial mouse source.
-- Live window dragging is expensive on Cortex-M0+ (estimated 46–62 ms per 8 px step, section 4 of BENCHMARKS.md); outline drag is the practical mode there.
+- Live window dragging is expensive on Cortex-M0+ (measured 47.3 ms per 8 px step on RP2040, BENCHMARKS.md section 6); outline drag is the practical mode there.
 - Clear optimisation targets were identified and left alone:
   - word-sized copies for snapshot and pack;
   - per-pixel pattern and glyph paths;
