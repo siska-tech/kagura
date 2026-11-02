@@ -55,7 +55,10 @@
 - 改善の候補（未実施）:
   - `cell()`の読出しの費用を減らす。
   - 全体の再描画を`TileFramebuffer.blit`で行う（zoom 1のみ）。
-  - SDKの高速経路（#62）。
+- SDKの`fill_rect`/`glyph8`の高速経路（#62）は、mainにmerge済み（`c520412`）である。
+  - 実機のfirmware（最終Phase 2 UF2 `9ebfa459…`）には、まだ入っていない。
+  - 固定した候補UF2 `a5166d79…`（`d219778`）にも入っていない。
+  - 上の時間は、高速経路のないfrozen SDKでの値である。#62を含むUF2は、別の候補として作り、測り直す。
 
 ![Canvas受入のHDMI](images/kagura-ui-canvas-hdmi.png)
 
