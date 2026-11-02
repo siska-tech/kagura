@@ -28,7 +28,7 @@
 
 #define KD_MAX_WINDOWS 8
 #define KD_MAX_ICONS 8
-#define KD_TITLE_MAX 24
+#define KD_TITLE_MAX 48          // bytes with NUL: 16 Japanese characters in UTF-8
 #define KD_DOUBLE_CLICK_MS 400
 
 struct kd_window {

@@ -29,6 +29,11 @@ static bool fits16(int v) { return v >= -32768 && v <= 32767; }
 static bool fits_rect(int x, int y, int w, int h) {
     return fits16(x) && fits16(y) && w >= 0 && h >= 0 && w <= 32767 && h <= 32767;
 }
+static bool ascii(const char *s, size_t n) {
+    for (size_t i = 0; i < n; i++)
+        if ((unsigned char)s[i] >= 0x80) return false;
+    return true;
+}
 static bool has_text(const kdm_item *it) {
     return it->op == KDM_OP_TEXT || it->op == KDM_OP_TEXT_SMALL || it->op == KDM_OP_BUTTON || it->op == KDM_OP_ICON;
 }
@@ -429,7 +434,7 @@ int kdm_add_text(kdm *m, int slot, int x, int y, const char *s, size_t len, uint
     kdm_item *it = &m->items[i];
     it->x = (int16_t)x;
     it->y = (int16_t)y;
-    it->w = (int16_t)(len * (font ? kd_font_small.width : kd_font_system.width));
+    it->w = (int16_t)kd_text_width_n(font ? &kd_font_small : &kd_font_system, s, (int)len);
     it->h = 8;
     it->c0 = fg;
     it->c1 = bg < 0 ? KDM_NO_BG : (uint8_t)bg;
@@ -500,9 +505,11 @@ int kdm_item_set_text(kdm *m, int slot, int id, const char *s, size_t len) {
     if (off < 0) return off;
     const char *a = m->text + it->aux, *b = m->text + off;
     m->stats.text = (uint16_t)(m->stats.text - (la + 1));
-    if (it->op == KDM_OP_TEXT || it->op == KDM_OP_TEXT_SMALL) {
+    bool text = it->op == KDM_OP_TEXT || it->op == KDM_OP_TEXT_SMALL;
+    const kd_font *font = it->op == KDM_OP_TEXT_SMALL ? &kd_font_small : &kd_font_system;
+    if (text && ascii(a, la) && ascii(b, len)) {
         // Fixed-width cells: invalidate runs of cells that differ, as kd_label_set.
-        int cw = it->op == KDM_OP_TEXT ? kd_font_system.width : kd_font_small.width;
+        int cw = font->width;
         size_t n = la > len ? la : len;
         for (size_t c = 0; c < n;) {
             if (c < la && c < len && a[c] == b[c]) { c++; continue; }
@@ -517,6 +524,7 @@ int kdm_item_set_text(kdm *m, int slot, int id, const char *s, size_t len) {
         return KDM_OK;
     }
     it->aux = (uint16_t)off;
+    if (text) it->w = (int16_t)kd_text_width_n(font, b, (int)len);
     invalidate(m, slot, before);
     invalidate(m, slot, item_box(m, it));
     return KDM_OK;

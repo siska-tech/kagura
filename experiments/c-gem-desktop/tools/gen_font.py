@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Generate src/kd_font_data.c from the repository's Misaki KJ8F font.
+"""Generate software/desktop/core/kd_font_data.c from the repository's Misaki KJ8F font.
 
 Two printable-ASCII fonts (0x20..0x7E) are extracted, glyphs unchanged:
   system: 8x8 cells from the full-width forms (U+FF01..U+FF5E, space U+3000)
@@ -16,7 +16,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 SOURCE = ROOT / 'software/micropython/fonts/misaki8.kfnt'
-OUTPUT = HERE.parent / 'src/kd_font_data.c'
+OUTPUT = HERE.parents[2] / 'software/desktop/core/kd_font_data.c'
 SOURCE_SHA256 = 'cbfb1071801f7ed3b6637bb6763219e59d86c13bd149169bbbab5bca753d9238'
 
 

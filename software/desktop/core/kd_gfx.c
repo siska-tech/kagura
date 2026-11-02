@@ -181,17 +181,17 @@ void kd_gfx_desktop(kd_fb *fb, kd_rect area) {
     kd_fb_fill_rect(fb, area.x, area.y, area.w, area.h, KD_C_DESK);
 }
 
-static int title_len(const kd_menu *menus, int index) {
-    return (int)strlen(menus[index].title);
+static int title_w(const kd_menu *menus, int index) {
+    return kd_text_width(&kd_font_system, menus[index].title);
 }
 
 int kd_menu_title_x(const kd_menu *menus, int index) {
     int x = 8;
-    for (int i = 0; i < index; i++) x += title_len(menus, i) * 8 + 16;
+    for (int i = 0; i < index; i++) x += title_w(menus, i) + 16;
     return x;
 }
 
-int kd_menu_title_w(const kd_menu *menus, int index) { return title_len(menus, index) * 8; }
+int kd_menu_title_w(const kd_menu *menus, int index) { return title_w(menus, index); }
 
 int kd_menu_item_count(const kd_menu *m) {
     int n = 0;
@@ -203,10 +203,10 @@ kd_rect kd_menu_dropdown_rect(const kd_menu *menus, int index) {
     const kd_menu *m = &menus[index];
     int longest = 0, n = kd_menu_item_count(m);
     for (int i = 0; i < n; i++) {
-        int len = (int)strlen(m->items[i].label);
+        int len = kd_text_width(&kd_font_system, m->items[i].label);
         if (len > longest) longest = len;
     }
-    int w = longest * 8 + 16 + 2 + 1;           // text, margins, border, shadow
+    int w = longest + 16 + 2 + 1;           // text, margins, border, shadow
     int h = n * KD_MENU_ITEM_H + 2 + 1;
     int x = kd_menu_title_x(menus, index) - 4;
     if (x + w > KD_W) x = KD_W - w;
@@ -275,10 +275,9 @@ void kd_gfx_frame(kd_fb *fb, kd_rect f, const char *title, bool active, bool clo
     kd_fb_fill_rect(fb, left, t.y, avail, t.h, KD_C_WHITE);
     // Rows y+2, y+4 .. y+8 are black: the GEM "lines" of an active window.
     if (active) kd_fb_pattern_rect(fb, left + 1, t.y + 1, avail - 2, t.h - 2, stripes, KD_C_WHITE, KD_C_BLACK);
-    int n = (int)strlen(title), maxn = (avail - 8) / 8;
-    if (n > maxn) n = maxn < 0 ? 0 : maxn;
+    int tw, n = kd_text_fit(&kd_font_system, title, avail - 8, &tw);
     if (n == 0) return;
-    int tw = n * 8, tx = left + (avail - tw) / 2;
+    int tx = left + (avail - tw) / 2;
     kd_fb_fill_rect(fb, tx - 4, t.y, tw + 8, t.h, KD_C_WHITE);
     kd_text_n(fb, &kd_font_system, tx, t.y + 1, title, n, active ? KD_C_BLACK : KD_C_DGREY, KD_NO_KEY);
 }

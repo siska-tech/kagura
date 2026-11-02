@@ -7,6 +7,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# The core lives in the shared native library (software/desktop/core).
+set(KD_CORE ${CMAKE_CURRENT_SOURCE_DIR}/../../software/desktop/core)
+
 option(KD_SDL "Build the interactive SDL2 host" ON)
 option(KD_MUTATION_TESTS "Build fault-injected test variants that must fail" ON)
 
@@ -18,14 +21,15 @@ else()
 endif()
 
 set(KD_CORE_SOURCES
-    src/kd_fb.c src/kd_region.c src/kd_tile4.c src/kd_font.c src/kd_font_data.c
-    src/kd_sprite.c src/kd_gfx.c src/kd_app.c src/kd_desktop.c)
+    ${KD_CORE}/kd_fb.c ${KD_CORE}/kd_region.c ${KD_CORE}/kd_tile4.c ${KD_CORE}/kd_font.c
+    ${KD_CORE}/kd_font_data.c ${KD_CORE}/kd_sprite.c ${KD_CORE}/kd_gfx.c ${KD_CORE}/kd_app.c
+    ${KD_CORE}/kd_desktop.c)
 set(KD_APP_SOURCES apps/shell.c apps/filemgr.c apps/studio.c)
 
 # One core+apps library per fault number; 0 is the real build.
 function(kd_variant fault suffix)
     add_library(kd_desktop_lib${suffix} STATIC ${KD_CORE_SOURCES} ${KD_APP_SOURCES})
-    target_include_directories(kd_desktop_lib${suffix} PUBLIC src apps)
+    target_include_directories(kd_desktop_lib${suffix} PUBLIC ${KD_CORE} apps)
     target_compile_definitions(kd_desktop_lib${suffix} PUBLIC KD_FAULT=${fault})
     target_compile_options(kd_desktop_lib${suffix} PRIVATE ${KD_WARNINGS})
 endfunction()
