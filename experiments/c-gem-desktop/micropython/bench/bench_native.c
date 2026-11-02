@@ -176,6 +176,7 @@ static const workload workloads[] = {
     {"rects_256_batched", op_rects, 50, 256, true},
 };
 
+#ifndef KDM_COUNT
 static double now_us(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -196,36 +197,113 @@ int main(int argc, char **argv) {
         quads[4 * k + 3] = (int16_t)(8 + (k % 3) * 4);
     }
     printf("# kdm_bench: pure C through kdm (op + present into a TILE4 mirror), per iteration\n");
-    printf("| workload | p50 us | p90 us | max us | tiles | fb crc | vram crc |\n|---|---:|---:|---:|---:|---:|---:|\n");
+    printf("| workload | mean us | p50 us | p90 us | max us | tiles | fb crc | vram crc |\n"
+           "|---|---:|---:|---:|---:|---:|---:|---:|\n");
     static double t[200];
     for (unsigned w = 0; w < sizeof workloads / sizeof workloads[0]; w++) {
         const workload *wl = &workloads[w];
         int n = quick ? 8 : wl->iterations;
-        scene();
         rects_n = wl->rects;
         batched = wl->batched;
-        if (wl->rects) {
-            rw = kdm_window_open(&M, "Rects", kd_rect_make(4, 14, 312, 184), KD_WF_CLOSE | KD_WF_MOVE, 2);
-            present();
-        }
+        double mean = 0;
         uint32_t tiles = 0;
-        for (int i = -4; i < n; i++) {
-            uint32_t before = M.stats.tiles;
-            double t0 = now_us();
-            wl->op(i);
-            present();
-            double t1 = now_us();
-            if (i >= 0) {
-                t[i] = t1 - t0;
-                tiles += M.stats.tiles - before;
+        for (int pass = 0; pass < 2; pass++) {   // as bench_binding.py: whole-loop mean, then per iteration
+            uint32_t tick_start = tick;
+            scene();
+            if (wl->rects) {
+                rw = kdm_window_open(&M, "Rects", kd_rect_make(4, 14, 312, 184), KD_WF_CLOSE | KD_WF_MOVE, 2);
+                present();
+            }
+            if (pass == 0) {
+                for (int i = -4; i < 0; i++) wl->op(i), present();
+                double t0 = now_us();
+                for (int i = 0; i < n; i++) wl->op(i), present();
+                mean = (now_us() - t0) / n;
+                tick = tick_start;
+                continue;
+            }
+            for (int i = -4; i < n; i++) {
+                double t0 = now_us();
+                wl->op(i);
+                int k = kdm_present(&M, to_vram, NULL, NULL);
+                double t1 = now_us();
+                if (i >= 0) {
+                    t[i] = t1 - t0;
+                    tiles += (uint32_t)k;
+                }
             }
         }
         qsort(t, (size_t)n, sizeof t[0], cmp_double);
-        printf("| %s | %.2f | %.2f | %.2f | %.1f | %08lx | %08lx |\n", wl->name, t[n / 2], t[(n - 1) * 9 / 10], t[n - 1],
-               (double)tiles / n, (unsigned long)kdm_crc32(0, M.desk.fb.px, KD_FB_BYTES),
-               (unsigned long)kdm_crc32(0, vram, sizeof vram));
+        printf("| %s | %.2f | %.2f | %.2f | %.2f | %.1f | %08lx | %08lx |\n", wl->name, mean, t[n / 2],
+               t[(n - 1) * 9 / 10], t[n - 1], (double)tiles / n,
+               (unsigned long)kdm_crc32(0, M.desk.fb.px, KD_FB_BYTES), (unsigned long)kdm_crc32(0, vram, sizeof vram));
     }
     printf("# sizeof(kdm) %zu, kd_desktop %zu, records %zu, text %zu, sprites %zu, events %zu\n", sizeof M,
            sizeof M.desk, sizeof M.items, sizeof M.text, sizeof M.sprites, sizeof M.ring);
     return 0;
 }
+
+#else
+// KDM_COUNT: freestanding Cortex-M0+ build for qemu-arm instruction counts
+// (tools/m0count/count.sh), the C counterpart of tools/m0count/main.c:
+//   kdm_count WORKLOAD N
+// Each sample, op + present, is bracketed by kd_mark_begin/kd_mark_end.
+__attribute__((noinline, used)) void kd_mark_begin(void) { __asm__ volatile("" ::: "memory"); }
+__attribute__((noinline, used)) void kd_mark_end(void) { __asm__ volatile("" ::: "memory"); }
+
+void *_sbrk(int incr) {   // newlib may link malloc; nothing here uses it
+    (void)incr;
+    return (void *)-1;
+}
+
+static void sys_write(const char *s) {
+    register long r0 __asm__("r0") = 1;
+    register long r1 __asm__("r1") = (long)s;
+    register long r2 __asm__("r2") = (long)strlen(s);
+    register long r7 __asm__("r7") = 4;   // write
+    __asm__ volatile("svc #0" : "+r"(r0) : "r"(r1), "r"(r2), "r"(r7) : "memory");
+}
+
+__attribute__((used)) int kd_count_main(const long *sp) {
+    char **argv = (char **)(sp + 1);
+    const workload *wl = NULL;
+    for (unsigned w = 0; w < sizeof workloads / sizeof workloads[0]; w++)
+        if ((int)sp[0] == 3 && strcmp(workloads[w].name, argv[1]) == 0) wl = &workloads[w];
+    if (!wl) {
+        sys_write("usage: kdm_count WORKLOAD N\n");
+        return 2;
+    }
+    int n = atoi(argv[2]);
+    for (int k = 0; k < 2; k++) kd_sprite_import_hex((kd_sprite *)sprite_data[k], HEX[k], NULL);
+    for (int k = 0; k < 256; k++) {
+        quads[4 * k + 1] = (int16_t)((k * 23) % 140);
+        quads[4 * k + 2] = (int16_t)(12 + (k % 5) * 4);
+        quads[4 * k + 3] = (int16_t)(8 + (k % 3) * 4);
+    }
+    rects_n = wl->rects;
+    batched = wl->batched;
+    scene();
+    if (wl->rects) {
+        rw = kdm_window_open(&M, "Rects", kd_rect_make(4, 14, 312, 184), KD_WF_CLOSE | KD_WF_MOVE, 2);
+        present();
+    }
+    for (int i = -4; i < n; i++) {
+        if (i >= 0) kd_mark_begin();
+        wl->op(i);
+        present();
+        if (i >= 0) kd_mark_end();
+    }
+    char line[64];
+    snprintf(line, sizeof line, "%s %08lx\n", wl->name, (unsigned long)kdm_crc32(0, M.desk.fb.px, KD_FB_BYTES));
+    sys_write(line);
+    return 0;
+}
+
+__attribute__((naked, noreturn, used)) void _start(void) {
+    __asm__ volatile(
+        "mov r0, sp\n"
+        "bl kd_count_main\n"
+        "movs r7, #1\n"   // exit
+        "svc #0\n");
+}
+#endif

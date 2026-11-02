@@ -12,6 +12,7 @@
 #include "py/mphal.h"
 #include "py/nlr.h"
 #include "py/objarray.h"
+#include "py/objint.h"
 #include "py/runtime.h"
 
 #include "kdm.h"
@@ -107,9 +108,13 @@ static handle_obj_t *new_handle(const mp_obj_type_t *type, desktop_obj_t *d, int
     return h;
 }
 
+// Event time in ms: None or negative means now; otherwise any int, used modulo
+// 2**32 like ticks_ms() (only differences matter).
 static uint32_t now_ms(size_t n_args, const mp_obj_t *args, size_t i) {
-    int t = int_arg(n_args, args, i, -1);
-    return t < 0 ? (uint32_t)mp_hal_ticks_ms() : (uint32_t)t;
+    if (i >= n_args || args[i] == mp_const_none) return (uint32_t)mp_hal_ticks_ms();
+    if (!mp_obj_is_int(args[i])) mp_raise_TypeError(MP_ERROR_TEXT("time must be an int"));
+    if (mp_obj_int_sign(args[i]) < 0) return (uint32_t)mp_hal_ticks_ms();
+    return (uint32_t)mp_obj_int_get_truncated(args[i]);
 }
 
 // ---- Desktop ----

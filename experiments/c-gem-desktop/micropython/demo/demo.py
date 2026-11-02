@@ -23,7 +23,7 @@ exported runs reproduce the screen. tests/ref_demo.c draws the same scenario
 with the C API directly (no kdm, no MicroPython) and must print the same
 lines.
 
-  micropython demo/demo.py
+  micropython demo/demo.py [--dump DIR]   (raw 4bpp snapshots per step)
 """
 import binascii
 
@@ -45,8 +45,10 @@ OK_BOX = (100, 4, 56, 14)
 
 
 class Demo:
-    def __init__(self, out=print):
+    def __init__(self, out=print, dump=None):
         self.out = out
+        self.dump = dump   # directory for raw framebuffer snapshots (tools/fb_to_png.py)
+        self.steps = 0
         self.t = 0
         self.vram = bytearray(32000)
         d = self.desk = kd.Desktop(320, 200, menus=MENUS)
@@ -149,6 +151,12 @@ class Demo:
         self.handle()
         tiles = self.desk.present(self.vram)
         self.out('STEP %s %08x %08x %d' % (name, self.desk.crc(), binascii.crc32(self.vram), tiles))
+        self.steps += 1
+        if self.dump:
+            buf = bytearray(32000)
+            self.desk.snapshot(buf)
+            with open('%s/%02d-%s.raw' % (self.dump, self.steps, name), 'wb') as f:
+                f.write(buf)
 
     # ---- the scenario ----
 
@@ -186,4 +194,5 @@ class Demo:
 
 
 if __name__ == '__main__':
-    Demo().run()
+    import sys
+    Demo(dump=sys.argv[sys.argv.index('--dump') + 1] if '--dump' in sys.argv else None).run()
