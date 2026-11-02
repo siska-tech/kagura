@@ -169,4 +169,38 @@ static const workload workloads[] = {
     {"pointer_move", "software cursor 4 px over desktop", setup_cursor, NULL, op_cursor},
 };
 
+#define KD_WORKLOAD_COUNT (sizeof workloads / sizeof workloads[0])
+
+static inline uint32_t crc32_update(uint32_t c, const uint8_t *p, size_t n) {
+    c = ~c;
+    while (n--) {
+        c ^= *p++;
+        for (int k = 0; k < 8; k++) c = (c >> 1) ^ (0xEDB88320u & (0u - (c & 1)));
+    }
+    return ~c;
+}
+
+// Deterministic correctness pass shared by every platform: setup, then k
+// samples of (pre, render, export, op, render, export). Returns the CRC32 of
+// the framebuffer followed by the exported VRAM copy; the RP2040 build must
+// print the same value as the PC (kd_bench --crc).
+static inline uint32_t workload_crc(const workload *w, int k) {
+    kd_tile4_stats st;
+    memset(vram, 0, sizeof vram);
+    w->setup();
+    kd_desktop_render(&S.desk);
+    flush(&st);
+    for (int i = 0; i < k; i++) {
+        if (w->pre) {
+            w->pre(i);
+            kd_desktop_render(&S.desk);
+            flush(&st);
+        }
+        w->op(i);
+        kd_desktop_render(&S.desk);
+        flush(&st);
+    }
+    return crc32_update(crc32_update(0, S.desk.fb.px, KD_FB_BYTES), vram, sizeof vram);
+}
+
 #endif

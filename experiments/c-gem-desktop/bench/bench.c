@@ -7,6 +7,7 @@
 // times are host CPU times and say nothing direct about an RP2040.
 //
 //   kd_bench [--samples N] [--json FILE]
+//   kd_bench --crc K     per-workload CRC32 after K samples (RP2040 reference)
 #if !defined(_WIN32)
 #define _POSIX_C_SOURCE 199309L
 #endif
@@ -121,15 +122,22 @@ static void cpu_name(char *out, size_t n) {
 }
 
 int main(int argc, char **argv) {
-    int n = 1001;
+    int n = 1001, crc_k = -1;
     const char *json = NULL;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--samples") == 0 && i + 1 < argc) n = atoi(argv[++i]);
         else if (strcmp(argv[i], "--json") == 0 && i + 1 < argc) json = argv[++i];
+        else if (strcmp(argv[i], "--crc") == 0 && i + 1 < argc) crc_k = atoi(argv[++i]);
         else {
-            fprintf(stderr, "usage: %s [--samples N] [--json FILE]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--samples N] [--json FILE] [--crc K]\n", argv[0]);
             return 2;
         }
+    }
+    if (crc_k >= 0) {   // reference CRCs for the RP2040 SRAM benchmark (pico/)
+        workloads_init();
+        for (unsigned k = 0; k < KD_WORKLOAD_COUNT; k++)
+            printf("%s %08x\n", workloads[k].name, (unsigned)workload_crc(&workloads[k], crc_k));
+        return 0;
     }
     if (n < 11) n = 11;
     workloads_init();
