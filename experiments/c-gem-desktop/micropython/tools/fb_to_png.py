@@ -3,7 +3,7 @@
 160 bytes, even x in the high nibble) to indexed PNGs in the desktop palette,
 plus a montage of all of them. CPython, standard library only.
 
-  python3 -I tools/fb_to_png.py DIR [--scale 2]
+  python3 -I tools/fb_to_png.py DIR [--scale 2] [--ref240 OUT]   (OUT: 320x240 HDMI references)
 """
 import struct
 import sys
@@ -59,6 +59,12 @@ def main():
         for y, row in enumerate(rows):
             canvas[oy + y][ox:ox + W] = row
     write_png(folder / 'montage.png', canvas, 1)
+    if '--ref240' in sys.argv:   # 320x240 HDMI references: plane centred (SCROLL_Y 236), border colour 0
+        out = Path(sys.argv[sys.argv.index('--ref240') + 1])
+        out.mkdir(parents=True, exist_ok=True)
+        for raw, rows in zip(shots, images):
+            frame = [bytearray(W) for _ in range(20)] + rows + [bytearray(W) for _ in range(20)]
+            write_png(out / (raw.stem + '.png'), frame, 1)
     print('%d snapshots -> PNG, montage %dx%d' % (len(images), mw, mh))
 
 

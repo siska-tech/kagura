@@ -1,0 +1,14 @@
+UF2 kagura-pico-native-1c9c234.uf2: 2102 blocks 0x10000000..0x10083600 (filesystem at 0x100a0000), sha256 53547157e81be0d836391ee25c064de3d69c9a28d76c84b95a3a6f5cdcaab015
+FLASH_BEFORE d532c0d30ffdf175c6f02c810d3222b7207da1ece5012ef45aa117535a324cb4
+CURRENT_FIRMWARE matches kagura-pico-native-806d1bd.uf2
+BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+COPIED kagura-pico-native-1c9c234.uf2
+BUILD v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel) KAGURA Raspberry Pi Pico with RP2040
+
+HEAP 153216 48000
+
+FPGA (0, 6) 0x5b 240
+
+NATIVE kagura_desktop [('desktop', 34352), ('events', 896), ('framebuffer', 32000), ('items', 5760), ('max_items', 320), ('menus', 584), ('sprites', 1088), ('staging', 1280), ('text', 2048), ('total', 46152)]
+FS_UNCHANGED yes
+FIRMWARE_READBACK match

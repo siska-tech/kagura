@@ -112,6 +112,17 @@ kd_window *kd_desktop_window_at(kd_desktop *d, int x, int y) {
 
 // ---- window operations (kd_app.h) ----
 
+// Copies at most KD_TITLE_MAX - 1 bytes, never splitting a UTF-8 character.
+static void copy_title(char out[KD_TITLE_MAX], const char *title) {
+    size_t n = title ? strlen(title) : 0;
+    if (n > KD_TITLE_MAX - 1) {
+        n = KD_TITLE_MAX - 1;
+        while (n > 0 && ((unsigned char)title[n] & 0xC0) == 0x80) n--;
+    }
+    memset(out, 0, KD_TITLE_MAX);
+    if (n) memcpy(out, title, n);
+}
+
 kd_window *kd_window_open(kd_desktop *d, const kd_window_class *cls, void *user,
                           const char *title, kd_rect frame, unsigned flags) {
     int slot = -1;
@@ -126,7 +137,7 @@ kd_window *kd_window_open(kd_desktop *d, const kd_window_class *cls, void *user,
     w->frame = frame;
     w->flags = (uint16_t)flags;
     w->open = true;
-    strncpy(w->title, title ? title : "", KD_TITLE_MAX - 1);
+    copy_title(w->title, title);
     d->z[d->zn++] = (int8_t)slot;
     damage_from(d, frame, d->zn - 1);
     if (old) {
@@ -174,8 +185,7 @@ void kd_window_invalidate_all(kd_desktop *d, kd_window *w) {
 }
 
 void kd_window_set_title(kd_desktop *d, kd_window *w, const char *title) {
-    memset(w->title, 0, sizeof w->title);
-    strncpy(w->title, title, KD_TITLE_MAX - 1);
+    copy_title(w->title, title);
     damage_title(d, w);
 }
 

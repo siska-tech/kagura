@@ -371,6 +371,50 @@ def test_heap_locked_frame():
     check(lost is None and d.poll()[5] == 66, 'the event survived the failed poll')
 
 
+def glyph_rows(scalar):
+    # The KJ8F file the firmware embeds: header 8 B, then (code, 8 rows) x count.
+    path = __file__.rsplit('/', 3)[0] + '/micropython/fonts/misaki8.kfnt'
+    with open(path, 'rb') as f:
+        data = f.read()
+    for k in range((len(data) - 8) // 10):
+        if data[8 + k * 10] | data[9 + k * 10] << 8 == scalar:
+            return data[10 + k * 10:18 + k * 10]
+    raise KeyError(scalar)
+
+
+def pixel(buf, x, y):
+    b = buf[y * 160 + x // 2]
+    return b >> 4 if x % 2 == 0 else b & 15
+
+
+def test_japanese_text():
+    menus = (('ファイル', ('開く', '-', '閉じる')), ('編集', ('コピー',)), ('表示', ('一覧',)), ('設定', ('色',)))
+    d = kd.Desktop(menus=menus)
+    w = d.create_window('神楽デスクトップ', 10, 20, 200, 100)
+    t = w.text(4, 4, '神楽', 1, 2)
+    d.present()
+    buf = bytearray(32000)
+    d.snapshot(buf)
+    wx, wy = w.work()[:2]
+    for k, ch in enumerate((0x795E, 0x697D)):   # 神 楽: 8 px apart
+        rows = glyph_rows(ch)
+        for r in range(8):
+            for c in range(8):
+                want = 1 if rows[r] & (0x80 >> c) else 2
+                check(pixel(buf, wx + 4 + k * 8 + c, wy + 4 + r) == want, (ch, r, c))
+    w.set_text(t, '神楽デスクトップ表示')
+    w.set_text(t, 'ﾃｽﾄ')                         # shorter: freed cells are redrawn
+    w.text(4, 20, 'ファイル名.TXT', 1, -1, 1)     # small font: ASCII 4 px, kana 8 px
+    w.set_title('あ' * 20)                        # 60 bytes: cut to 15 whole characters
+    d.pointer(kd.POINTER_DOWN, 12, 4, 100)        # ファイル menu
+    d.present()
+    d.invalidate(0, 0, 320, 200)
+    check(d.present() == 0, 'incremental frame equals a full recomposition')
+    d.pointer(kd.POINTER_MOVE, 14, 15, 200)
+    d.pointer(kd.POINTER_UP, 14, 15, 300)         # 開く
+    check(drain(d)[-1] == (kd.MENU, None, 0, 0, 0, 0, 0, 0))
+
+
 def test_crc_matches_snapshot():
     d = kd.Desktop()
     d.create_window('W', 10, 20, 200, 120).text(4, 4, 'crc')

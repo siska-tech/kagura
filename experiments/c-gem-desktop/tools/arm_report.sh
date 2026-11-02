@@ -20,12 +20,12 @@ CC=arm-none-eabi-gcc
 mkdir -p "$OUT"
 CORE="kd_fb kd_region kd_tile4 kd_font kd_font_data kd_sprite kd_gfx kd_app kd_desktop"
 APPS="shell filemgr studio"
-COMMON="-std=c11 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -I$EXP/src -I$EXP/apps"
+COMMON="-std=c11 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -I$EXP/../../software/desktop/core -I$EXP/apps"
 
 size_table() {   # cpu opt
     local dir="$OUT/$1$2"
     mkdir -p "$dir"
-    for f in $CORE; do $CC -mcpu=$1 -mthumb $2 $COMMON -fstack-usage -c "$EXP/src/$f.c" -o "$dir/$f.o"; done
+    for f in $CORE; do $CC -mcpu=$1 -mthumb $2 $COMMON -fstack-usage -c "$EXP/../../software/desktop/core/$f.c" -o "$dir/$f.o"; done
     for f in $APPS; do $CC -mcpu=$1 -mthumb $2 $COMMON -fstack-usage -c "$EXP/apps/$f.c" -o "$dir/$f.o"; done
     echo "### $1 $2"
     echo
@@ -58,7 +58,7 @@ size_table() {   # cpu opt
 
 # Instruction counts.
 $CC -mcpu=cortex-m0plus -mthumb -O2 $COMMON -I"$EXP/bench" -nostartfiles -static --specs=nano.specs \
-    "$EXP"/bench/arm_count.c $(for f in $CORE; do echo "$EXP/src/$f.c"; done) \
+    "$EXP"/bench/arm_count.c $(for f in $CORE; do echo "$EXP/../../software/desktop/core/$f.c"; done) \
     $(for f in $APPS; do echo "$EXP/apps/$f.c"; done) -lc -lgcc -o "$OUT/kd_count.elf"
 count() {   # workload n -> instructions between kd_mark_begin and kd_mark_end, per sample
     "$QEMU" -one-insn-per-tb -d nochain,exec -D /dev/stdout "$OUT/kd_count.elf" "$1" "$2" |

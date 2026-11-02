@@ -13,14 +13,15 @@ set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
 
 set(KD ${CMAKE_CURRENT_LIST_DIR}/..)
+set(KD_CORE ${KD}/../../software/desktop/core)
 set(KD_SOURCES
-    ${KD}/src/kd_fb.c ${KD}/src/kd_region.c ${KD}/src/kd_tile4.c ${KD}/src/kd_font.c
-    ${KD}/src/kd_font_data.c ${KD}/src/kd_sprite.c ${KD}/src/kd_gfx.c ${KD}/src/kd_app.c
-    ${KD}/src/kd_desktop.c ${KD}/apps/shell.c ${KD}/apps/filemgr.c ${KD}/apps/studio.c)
+    ${KD_CORE}/kd_fb.c ${KD_CORE}/kd_region.c ${KD_CORE}/kd_tile4.c ${KD_CORE}/kd_font.c
+    ${KD_CORE}/kd_font_data.c ${KD_CORE}/kd_sprite.c ${KD_CORE}/kd_gfx.c ${KD_CORE}/kd_app.c
+    ${KD_CORE}/kd_desktop.c ${KD}/apps/shell.c ${KD}/apps/filemgr.c ${KD}/apps/studio.c)
 
 function(kd_rp2040 target variant)
     add_executable(${target} main.c ${KD_SOURCES})
-    target_include_directories(${target} PRIVATE ${KD}/src ${KD}/apps ${KD}/bench)
+    target_include_directories(${target} PRIVATE ${KD_CORE} ${KD}/apps ${KD}/bench)
     # -O2 as in the qemu instruction counts (tools/arm_report.sh).
     target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -O2 -fstack-usage)
     target_compile_definitions(${target} PRIVATE
@@ -45,7 +46,7 @@ set(KD_PICO_HOST ${CMAKE_CURRENT_LIST_DIR}/../../../software/pico)
 add_executable(kd_rp2040_hdmi hdmi_main.c ${KD_SOURCES}
     ${KD_PICO_HOST}/kagura_host.c ${KD_PICO_HOST}/tile_fb.c ${KD_PICO_HOST}/tile_fb_io.c)
 pico_generate_pio_header(kd_rp2040_hdmi ${KD_PICO_HOST}/kagura_host.pio)
-target_include_directories(kd_rp2040_hdmi PRIVATE ${KD}/src ${KD}/apps ${KD}/bench
+target_include_directories(kd_rp2040_hdmi PRIVATE ${KD_CORE} ${KD}/apps ${KD}/bench
     ${KD_PICO_HOST} ${CMAKE_CURRENT_LIST_DIR}/../../../software/include)
 target_compile_options(kd_rp2040_hdmi PRIVATE -Wall -Wextra -Werror -O2 -fstack-usage)
 target_compile_definitions(kd_rp2040_hdmi PRIVATE

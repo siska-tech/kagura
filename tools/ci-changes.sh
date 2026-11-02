@@ -20,6 +20,8 @@ classify() {
         spec/design-budget.json|tools/check-design.ps1) ;;
         # Self-contained experiments with their own build and test scripts; CI does not run them.
         experiments/*) ;;
+        # Native desktop library and its MicroPython module: built into both KAGURA boards.
+        software/desktop/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
         spec/registers.json|tools/gen-registers.ps1) all ;;
@@ -58,7 +60,8 @@ classify() {
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
         tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
-        tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py) ;;
+        tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
+        tools/rp2040-firmware.py|tools/kagura-desktop-device.py) ;;
         *) all ;;
     esac
 }

@@ -36,7 +36,7 @@ The full API is in [DESIGN.md section 4](DESIGN.md#4-python-api).
 Needs the MicroPython v1.26.0 checkout at `build/micropython-src` (as for the repository's other unix tests), gcc, CMake and Python 3.
 
 ```sh
-bash experiments/c-gem-desktop/micropython/tools/build_unix.sh   # unix port with the module
+bash software/desktop/tools/build_unix.sh                         # unix port with the module
 bash experiments/c-gem-desktop/micropython/tools/run_tests.sh    # everything below
 ```
 
@@ -56,7 +56,7 @@ Other tools:
 | `tools/build_rp2.sh` | builds (never flashes) KAGURA_PICO firmware without and with the module, for the memory report |
 | `tools/fb_to_png.py DIR` | PNGs and a montage from `demo.py --dump DIR` snapshots |
 
-`micropython.cmake` (CMake ports such as rp2) and `kagura_desktop/micropython.mk` (Make ports such as unix) add the module with `USER_C_MODULES`.
+The module now lives in `software/desktop` (core, retained layer, text engine, binding); `software/desktop/binding/micropython.cmake` (rp2) and `micropython.mk` (unix) add it with `USER_C_MODULES`.
 
 ## Layout
 

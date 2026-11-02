@@ -1,0 +1,11 @@
+SCENE 1 desktop 1a27e331 1000 tile4 855b9d6c
+SCENE 2 files 851ad4ee 375 tile4 c90e901f
+SCENE 3 menu 67a04804 42 tile4 f6d8dc42
+SCENE 4 about 3da90048 271 tile4 34b04fb7
+SCENE 5 ok-pressed 7ec40e9d 21 tile4 d76f1925
+SCENE 6 about-closed 7600c8b4 230 tile4 d74143ad
+SCENE 7 studio 3986f03e 396 tile4 0efa16d3
+SCENE 8 paint 4ece6c58 26 tile4 c413de4e
+SCENE 9 import 597865ff 142 tile4 89cfe118
+SCENE 10 move 8b36e887 394 tile4 abfa985e
+SCENE 11 closed c21f8d5b 340 tile4 2285aec6

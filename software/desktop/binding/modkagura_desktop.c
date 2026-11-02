@@ -359,7 +359,8 @@ static bool call_sink(void *ctx, unsigned first, unsigned count, const uint8_t *
     return false;
 }
 
-// present(sink=None): render the damage and export dirty TILE4 runs. sink is
+// present(sink=None, max_gap=0): render the damage and export dirty TILE4 runs,
+// joining runs separated by at most max_gap clean tiles (0..999). sink is
 // None, a writable buffer of >= 32,000 bytes (TILE4 mirror at pattern
 // offsets) or a callable sink(first_tile, memoryview) valid during the call.
 // Returns the number of tiles exported.
@@ -368,6 +369,8 @@ static mp_obj_t desktop_present(size_t n_args, const mp_obj_t *args) {
     sink_ctx c = {mp_const_none, NULL, MP_OBJ_NULL};
     kd_tile4_sink sink = NULL;
     mp_obj_t s = n_args > 1 ? args[1] : mp_const_none;
+    int max_gap = int_arg(n_args, args, 2, 0);
+    if (max_gap < 0 || max_gap > KD_TILES - 1) raise_rc(KDM_EINVAL);
     mp_buffer_info_t bi;
     if (s == mp_const_none) {
     } else if (mp_get_buffer(s, &bi, MP_BUFFER_WRITE)) {
@@ -381,12 +384,12 @@ static mp_obj_t desktop_present(size_t n_args, const mp_obj_t *args) {
         mp_raise_TypeError(MP_ERROR_TEXT("sink must be None, a buffer or a callable"));
     }
     busy = sink == call_sink;
-    int rc = kdm_present(&state, sink, &c, NULL);
+    int rc = kdm_present_gap(&state, (unsigned)max_gap, sink, &c, NULL);
     busy = false;
     if (c.exc != MP_OBJ_NULL) nlr_raise(c.exc);
     return MP_OBJ_NEW_SMALL_INT(check(rc));
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(desktop_present_obj, 1, 2, desktop_present);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(desktop_present_obj, 1, 3, desktop_present);
 
 // invalidate(x, y, w, h): recompose a screen area at the next present().
 static mp_obj_t desktop_invalidate(size_t n_args, const mp_obj_t *a) {

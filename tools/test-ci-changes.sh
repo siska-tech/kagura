@@ -21,6 +21,7 @@ files "no files" ""
 files "docs only" "" README.md docs/video.md software/micropython/README.md rtl/README.md
 files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/c-gem-desktop/src/kd_fb.c experiments/c-gem-desktop/CMakeLists.txt
+files "native desktop" "micropython micropython_firmware" software/desktop/core/kd_fb.c software/desktop/binding/micropython.cmake
 files "board constraints" "" boards/tang-nano-9k/vdp-720p.sdc boards/tang-nano-9k/phase1.cst
 files "synthesis tools" "" tools/build-nano9k.tcl tools/eval-gowin-hdmi.ps1 tools/run-baseline.ps1
 files "register spec" "$ALL" spec/registers.json

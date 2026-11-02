@@ -104,7 +104,12 @@ def shift(a, dx, dy):
 
 
 def main():
+    global SCENES
     ref_dir, run = Path(sys.argv[1]), Path(sys.argv[2])
+    # Other scene sets (e.g. the Japanese desktop demo): every NN-name.png reference.
+    names = sorted(p.stem for p in ref_dir.glob('[0-9][0-9]-*.png'))
+    if names and names != SCENES:
+        SCENES = names
     stills = run / 'stills'
     refs = {n: load_ref(ref_dir / ('%s.png' % n)) for n in SCENES}
     present = [n for n in SCENES if (stills / ('%s.png' % n)).exists()]

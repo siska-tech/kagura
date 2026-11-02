@@ -14,7 +14,7 @@ export PATH="${ARM_GCC_BIN:-$HOME/opt/arm-gnu-toolchain-14.2.rel1-x86_64-arm-non
 BOARD_DIR="$ROOT/software/micropython/boards/KAGURA_PICO"
 for variant in base kd; do
     extra=()
-    [ "$variant" = kd ] && extra=(USER_C_MODULES="$ROOT/experiments/c-gem-desktop/micropython/micropython.cmake")
+    [ "$variant" = kd ] && extra=(USER_C_MODULES="$ROOT/software/desktop/binding/micropython.cmake")
     make -C "$MPY_DIR/ports/rp2" BOARD=KAGURA_PICO BOARD_DIR="$BOARD_DIR" \
         BUILD="build-KAGURA_PICO-stage3a-$variant" "${extra[@]}" -j"$(nproc)" >&2
     echo "$MPY_DIR/ports/rp2/build-KAGURA_PICO-stage3a-$variant/firmware.elf"
