@@ -1,0 +1,54 @@
+HOST_START 2026-11-02T07:42:47.848411+00:00
+HOST_UF2 UF2 kd_rp2040_bench_plain.uf2: 260 blocks, sha256 042901f380817003366e6d56dbc61c4a853f2c047ed584ec03f381f9191e7a67
+HOST_UF2 all blocks: magic ok, flags=familyID only, family RP2040, payload 256, numbered 0..259
+HOST_UF2 targets 0x20000000..0x20010400, all inside main SRAM 0x20000000..0x20042000; first block 0x20000000 (RAM binary)
+HOST_UF2 no target in flash (0x10000000..0x11000000) or XIP cache-as-SRAM (0x15000000..)
+HOST_UF2 payload equals the ELF load image (66472 bytes); padding is zero
+HOST_UF2 entry 0x20000001 = lowest loaded address (bootrom enters RAM binaries there)
+HOST_FLASH_BEFORE d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_FLASH_CONTROL d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+HOST_COPIED kd_rp2040_bench_plain.uf2
+KDRP_INFO variant plain clk_sys_hz 125000000 fc0_khz 125000 samples 32 warm 4
+KDRP_LAYOUT image_start 20000000 etext 2000FD60 data 2000FD60 bss 200103A8..20022064 end 20022064 stack 20041000..20042000 scratch_x_end 20040000
+KDRP_CRC idle 807dbd48
+KDRP_CRC full_redraw f9331102
+KDRP_CRC full_redraw_painter f9331102
+KDRP_CRC full_export 807dbd48
+KDRP_CRC button_press f096ca86
+KDRP_CRC menu_open 42303a54
+KDRP_CRC menu_close 807dbd48
+KDRP_CRC window_activate 807dbd48
+KDRP_CRC window_move_live 807dbd48
+KDRP_CRC window_move_outline 14d83603
+KDRP_CRC window_drop_outline 807dbd48
+KDRP_CRC label_one_char 1f75b80d
+KDRP_CRC sprite_pixel be7bebce
+KDRP_CRC sprite_import fe72fae1
+KDRP_CRC recompose_overlap f9331102
+KDRP_CRC recompose_overlap_painter f9331102
+KDRP_CRC pointer_move 091eb34f
+KDRP_TIME idle render_p50 65 p90 65 max 65 export_p50 27115 total_p50 27180 total_max 27180 tiles 0 bytes 0
+KDRP_TIME full_redraw render_p50 4146615 p90 4146615 max 4146615 export_p50 27115 total_p50 4173730 total_max 4173730 tiles 0 bytes 0
+KDRP_TIME full_redraw_painter render_p50 7092616 p90 7092616 max 7092616 export_p50 27115 total_p50 7119731 total_max 7119731 tiles 0 bytes 0
+KDRP_TIME full_export render_p50 251 p90 251 max 251 export_p50 851722 total_p50 851973 total_max 851973 tiles 1000 bytes 32000
+KDRP_TIME button_press render_p50 81933 p90 81960 max 81960 export_p50 44545 total_p50 126478 total_max 126505 tiles 12 bytes 384
+KDRP_TIME menu_open render_p50 590901 p90 590901 max 590901 export_p50 175652 total_p50 766553 total_max 766553 tiles 162 bytes 5184
+KDRP_TIME menu_close render_p50 690406 p90 690406 max 690406 export_p50 175652 total_p50 866058 total_max 866058 tiles 162 bytes 5184
+KDRP_TIME window_activate render_p50 1988469 p90 1988469 max 1988469 export_p50 228398 total_p50 2216867 total_max 2216867 tiles 227 bytes 7264
+KDRP_TIME window_move_live render_p50 6426820 p90 6426820 max 6426820 export_p50 397081 total_p50 6823901 total_max 6823901 tiles 434 bytes 13888
+KDRP_TIME window_move_outline render_p50 549407 p90 549407 max 549407 export_p50 173121 total_p50 722528 total_max 722528 tiles 154 bytes 4928
+KDRP_TIME window_drop_outline render_p50 6434281 p90 6434281 max 6434281 export_p50 397081 total_p50 6831362 total_max 6831362 tiles 434 bytes 13888
+KDRP_TIME label_one_char render_p50 36150 p90 36150 max 36150 export_p50 34712 total_p50 70862 total_max 70862 tiles 3 bytes 96
+KDRP_TIME sprite_pixel render_p50 83666 p90 83666 max 83666 export_p50 40971 total_p50 124637 total_max 124637 tiles 3 bytes 96
+KDRP_TIME sprite_import render_p50 2201563 p90 2201563 max 2201563 export_p50 159752 total_p50 2361315 total_max 2361315 tiles 146 bytes 4672
+KDRP_TIME recompose_overlap render_p50 1316357 p90 1316357 max 1316357 export_p50 27115 total_p50 1343472 total_max 1343472 tiles 0 bytes 0
+KDRP_TIME recompose_overlap_painter render_p50 3967045 p90 3967045 max 3967045 export_p50 27115 total_p50 3994160 total_max 3994160 tiles 0 bytes 0
+KDRP_TIME pointer_move render_p50 100162 p90 100162 max 100162 export_p50 39622 total_p50 139784 total_max 139784 tiles 6 bytes 192
+KDRP_MEM static_bytes 139364 heap_arena 0 heap_inuse 0 stack_size 4096 stack_peak_bytes 1884 stack_guard_words 537/888 scratch_x_words 1024/1024 free_ram_words 30631/30631
+KDRP_DONE
+HOST_FLASH_AFTER d2ccc104c2a14a84e56501632ceb2ef802f3ad39c3493f42eba83c547f14987b console (False, True, True, 'None')
+HOST_FLASH_UNCHANGED yes
+HOST_CONSOLE_RESTORED yes
+HOST_FINAL_REBOOT ok
+HOST_END 2026-11-02T07:43:27.398674+00:00 OK
