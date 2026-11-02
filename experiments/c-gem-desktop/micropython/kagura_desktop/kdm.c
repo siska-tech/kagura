@@ -4,6 +4,22 @@
 
 #include <string.h>
 
+// Fault injection for the mutation tests (tests/CMakeLists.txt): a normal
+// build has KDM_FAULT 0 and every KDM_FAULTY() is a constant false.
+#ifndef KDM_FAULT
+#define KDM_FAULT 0
+#endif
+#define KDM_FAULTY(n) (KDM_FAULT == (n))
+enum {
+    KDM_FAULT_SERIAL = 1,          // item ids are not checked against the serial
+    KDM_FAULT_TEXT_CELLS = 2,      // set_text skips the cells a shorter text frees
+    KDM_FAULT_COMPACT = 3,         // compaction moves strings without updating records
+    KDM_FAULT_SPRITE_DAMAGE = 4,   // sprite pixel changes invalidate nothing
+    KDM_FAULT_CLOSE_LEAK = 5,      // a closed window keeps its records
+    KDM_FAULT_RING = 6,            // a full event ring overwrites the oldest event
+    KDM_FAULT_MOVE_OLD = 7,        // moving a record does not invalidate its old box
+};
+
 static const kd_art *const icon_art[] = {
     &kd_art_folder, &kd_art_file, &kd_art_drive, &kd_art_trash, &kd_art_studio, &kd_art_app, &kd_art_text,
 };
@@ -36,8 +52,12 @@ int kdm_icon_lookup(const char *name, size_t len) {
 
 static void push(kdm *m, const kd_event *ev, int slot) {
     if (m->ring_count == KDM_EVENTS) {
-        m->stats.dropped++;
-        return;
+        if (!KDM_FAULTY(KDM_FAULT_RING)) {
+            m->stats.dropped++;
+            return;
+        }
+        m->ring_head = (uint8_t)((m->ring_head + 1) % KDM_EVENTS);
+        m->ring_count--;
     }
     kdm_event *e = &m->ring[(m->ring_head + m->ring_count) % KDM_EVENTS];
     e->ev = *ev;
@@ -86,7 +106,7 @@ static void compact(kdm *m) {
         uint16_t len = (uint16_t)(strlen(m->text + it->aux) + 1);
         scan = (uint16_t)(it->aux + len);
         memmove(m->text + lo, m->text + it->aux, len);
-        it->aux = lo;
+        if (!KDM_FAULTY(KDM_FAULT_COMPACT)) it->aux = lo;
         lo = (uint16_t)(lo + len);
     }
     m->text_top = lo;
@@ -118,7 +138,12 @@ static void text_free(kdm *m, uint16_t off) {
 
 static kd_rect item_box(const kdm *m, const kdm_item *it) {
     if (it->op == KDM_OP_ICON) return kd_icon_box(it->x, it->y, m->text + it->aux);
-    return kd_rect_make(it->x, it->y, it->w, it->h);
+    kd_rect r = kd_rect_make(it->x, it->y, it->w, it->h);
+    if (it->op == KDM_OP_BUTTON) {   // kd_gfx_button centres the label without clipping it
+        int tw = kd_text_width(&kd_font_system, m->text + it->aux);
+        r = kd_rect_union(r, kd_rect_make(it->x + (it->w - tw) / 2, it->y + (it->h - 8) / 2, tw, 8));
+    }
+    return r;
 }
 
 static void invalidate(kdm *m, int slot, kd_rect r) {
@@ -132,7 +157,8 @@ static kdm_item *item_get(kdm *m, int slot, int id) {
     int i = id & ((1 << KDM_ITEM_BITS) - 1);
     if (i >= KDM_MAX_ITEMS) return NULL;
     kdm_item *it = &m->items[i];
-    if (it->op == KDM_OP_FREE || it->win != slot || it->serial != (unsigned)(id >> KDM_ITEM_BITS)) return NULL;
+    if (it->op == KDM_OP_FREE || it->win != slot || (it->serial != (unsigned)(id >> KDM_ITEM_BITS) && !KDM_FAULTY(KDM_FAULT_SERIAL)))
+        return NULL;
     return it;
 }
 
@@ -233,7 +259,7 @@ static bool event(kd_window *w, const kd_event *ev) {
 static void closed(kd_window *w) {
     kdm *m = kd_window_user(w);
     int slot = slot_of(m, w);
-    free_list(m, slot);
+    if (!KDM_FAULTY(KDM_FAULT_CLOSE_LEAK)) free_list(m, slot);
     m->win[slot].open = false;
     if (m->api_closing != slot) {
         kd_event ev;
@@ -480,6 +506,7 @@ int kdm_item_set_text(kdm *m, int slot, int id, const char *s, size_t len) {
         size_t n = la > len ? la : len;
         for (size_t c = 0; c < n;) {
             if (c < la && c < len && a[c] == b[c]) { c++; continue; }
+            if (KDM_FAULTY(KDM_FAULT_TEXT_CELLS) && c >= len) break;
             size_t e = c + 1;
             while (e < n && !(e < la && e < len && a[e] == b[e])) e++;
             invalidate(m, slot, kd_rect_make(it->x + (int)c * cw, it->y, (int)(e - c) * cw, it->h));
@@ -525,7 +552,7 @@ int kdm_item_move(kdm *m, int slot, int id, int x, int y) {
     if (!it) return KDM_ESTALE;
     if (!fits16(x) || !fits16(y)) return KDM_EINVAL;
     if (it->x == x && it->y == y) return KDM_OK;
-    invalidate(m, slot, item_box(m, it));
+    if (!KDM_FAULTY(KDM_FAULT_MOVE_OLD)) invalidate(m, slot, item_box(m, it));
     it->x = (int16_t)x;
     it->y = (int16_t)y;
     invalidate(m, slot, item_box(m, it));
@@ -576,6 +603,7 @@ int kdm_sprite_free(kdm *m, int s) {
 // Invalidates pixel (x, y) of sprite s in every record that shows it; x < 0
 // invalidates the whole record.
 static void sprite_damage(kdm *m, int s, int x, int y) {
+    if (KDM_FAULTY(KDM_FAULT_SPRITE_DAMAGE)) return;
     for (int i = 0; i < KDM_MAX_ITEMS; i++) {
         const kdm_item *it = &m->items[i];
         if (it->op != KDM_OP_SPRITE || it->aux != s) continue;

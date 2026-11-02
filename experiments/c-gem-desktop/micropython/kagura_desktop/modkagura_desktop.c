@@ -383,6 +383,14 @@ static mp_obj_t desktop_present(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(desktop_present_obj, 1, 2, desktop_present);
 
+// invalidate(x, y, w, h): recompose a screen area at the next present().
+static mp_obj_t desktop_invalidate(size_t n_args, const mp_obj_t *a) {
+    desk_arg(a[0]);
+    kd_desktop_invalidate(&state.desk, kd_rect_make(i16(a[1]), i16(a[2]), i16(a[3]), i16(a[4])));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(desktop_invalidate_obj, 5, 5, desktop_invalidate);
+
 static mp_obj_t desktop_top(mp_obj_t self) {
     desktop_obj_t *d = desk_arg(self);
     kd_window *w = kd_desktop_top(&state.desk);
@@ -493,6 +501,7 @@ static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_poll_into), MP_ROM_PTR(&desktop_poll_into_obj)},
     {MP_ROM_QSTR(MP_QSTR_render), MP_ROM_PTR(&desktop_render_obj)},
     {MP_ROM_QSTR(MP_QSTR_present), MP_ROM_PTR(&desktop_present_obj)},
+    {MP_ROM_QSTR(MP_QSTR_invalidate), MP_ROM_PTR(&desktop_invalidate_obj)},
     {MP_ROM_QSTR(MP_QSTR_top), MP_ROM_PTR(&desktop_top_obj)},
     {MP_ROM_QSTR(MP_QSTR_windows), MP_ROM_PTR(&desktop_windows_obj)},
     {MP_ROM_QSTR(MP_QSTR_crc), MP_ROM_PTR(&desktop_crc_obj)},
