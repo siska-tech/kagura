@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+cmake_minimum_required(VERSION 3.13)
+project(kagura_desktop C)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+option(KAGURA_DESKTOP_WITH_WREN "Build the bounded, single-application Wren adapter" ON)
+include(CTest)
+include(cmake/modules.cmake)
+if(BUILD_TESTING)
+  include(tests/host.cmake)
+endif()
