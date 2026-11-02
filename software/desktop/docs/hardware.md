@@ -88,15 +88,11 @@ The steady update loop leaves about 56 B of garbage per update (event tuples are
 - **PSG and PCM** are unchanged: they stay in the SDK.
 - **Input on hardware** is scripted pointer events, plus keyboard handling in `desktop_ja.py` (`main(script=False)`: F10 menus, arrows, Enter, F6). There is no pointer device yet.
 
-## State at the end of the session
+## State after the session (verified 2026-11-03)
 
-After the acceptance run, the board finished its hard reset and booted normally; HDMI shows the console and the REPL. A later host-side check (`tools/rp2040-firmware.py check`) hung while entering the raw REPL:
-- **Host to device:** the Pico's USB CDC stopped accepting data, and every write timed out.
-- **Device side:** HDMI shows the board waiting in raw-paste mode.
-- **Recovery from here:** restarting the USB device needs administrator rights on the PC, so the board needs a USB unplug and replug.
+After the acceptance run, a host-side raw-REPL entry left the Pico's USB CDC not accepting writes. Restarting the device on the PC needed administrator rights, so the board was unplugged and replugged. After that, `python tools/rp2040-firmware.py check` reported:
+- the firmware build of 2026-11-03, free heap 153,296 B, FPGA ABI 0.6 / CAPS 0x5b / 240 lines, and `kagura_desktop` present;
+- **filesystem SHA-256 `7b07b001…`**, identical to the value before the first flash;
+- **whole flash SHA-256 `a85cc8a4…`**. This is exactly the original backup (`d2ccc104…`) with two changes: the `1c9c234` firmware image written at `0x10000000`..`0x10083600`, and the rest of its last 4 KB sector (`0x10083600`..`0x10084000`) erased to `0xFF` by the UF2 bootloader.
 
-Nothing was being written at the time:
-- each of the three flashes had already verified the filesystem region unchanged and the firmware read back;
-- the session wrote nothing to the filesystem.
-
-After the replug, run `python tools/rp2040-firmware.py check`. The filesystem hash should be the original `7b07b001…`.
+Nothing else in the flash changed.
