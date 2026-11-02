@@ -69,6 +69,13 @@ target_compile_options(kd_headless PRIVATE ${KD_WARNINGS})
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/scenario)
 add_test(NAME headless_scenario COMMAND kd_headless --scenario ${CMAKE_CURRENT_BINARY_DIR}/scenario)
 
+add_executable(kd_hdmi_ref host/hdmi_ref.c host/image.c)
+target_link_libraries(kd_hdmi_ref kd_desktop_lib)
+target_include_directories(kd_hdmi_ref PRIVATE host bench)
+target_compile_options(kd_hdmi_ref PRIVATE ${KD_WARNINGS})
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hdmi-ref)
+add_test(NAME hdmi_reference COMMAND kd_hdmi_ref ${CMAKE_CURRENT_BINARY_DIR}/hdmi-ref)
+
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
     add_test(NAME sdk_reference

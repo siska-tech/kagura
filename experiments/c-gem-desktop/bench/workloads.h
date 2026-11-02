@@ -16,13 +16,13 @@ static uint8_t vram[KD_TILE4_TOTAL];
 static uint8_t staging[KD_TILE_COLS * KD_TILE4_BYTES];
 static char sample_hex[KD_SAMPLE_SPRITES][KD_SPRITE_HEX + 1];
 
-static bool to_vram(void *ctx, unsigned first, unsigned count, const uint8_t *data) {
+static inline bool to_vram(void *ctx, unsigned first, unsigned count, const uint8_t *data) {
     (void)ctx;
     memcpy(vram + first * KD_TILE4_BYTES, data, count * KD_TILE4_BYTES);
     return true;
 }
 
-static void flush(kd_tile4_stats *st) {
+static inline void flush(kd_tile4_stats *st) {
     kd_tile4_flush(&S.desk.fb, 0, staging, KD_TILE_COLS, to_vram, NULL, st);
 }
 

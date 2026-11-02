@@ -306,4 +306,78 @@ For the operations that can be compared directly (a pixel edit, a sprite import)
 - **Memory.** The stack needs 1.9 KB. The desktop core's own RAM (state, framebuffer, staging) is 36 KB.
   The remaining 103 KB of this program's static SRAM is code (in SRAM in a no_flash build; it would be in flash in a firmware build), the benchmark's 32 KB VRAM copy, and SDK/USB data.
 - **Variant.** A firmware build should use the SDK's ROM memory routines and hardware divider; that is the sdk column.
-- **Not yet measured:** transport to the KAGURA-9 display, end-to-end frame time, and any MicroPython binding overhead.
+- **Measured in section 7:** transport to the KAGURA-9 display and end-to-end frame time. **Not yet measured:** any MicroPython binding overhead.
+
+## 7. Stage 2: the KAGURA-9 display over HDMI (measured, RP2040 + FPGA)
+
+2026-11-02. The C desktop ran from SRAM on the RP2040 and drove the Tang Nano 9K over the repository's own C transport (`software/pico` `kagura_host.c`, `tile_fb.c`, `tile_fb_io.c`, unchanged).
+Setup: QSPI at 5 MHz (`clk_sys` 120 MHz, which that driver requires), 480p bitstream already on the FPGA (ID 4B39, ABI 0.6, CAPS `0x5B`, 240 lines, 1,200 patterns), desktop in patterns 0..999 at the top of the 320x240 screen.
+Procedure and safety record: [pico/README.md](pico/README.md#stage-2-hdmi-acceptance). Logs: [docs/rp2040-logs/stage2/](docs/rp2040-logs/stage2/).
+
+![HDMI capture vs PC reference: reference, capture, diff per scene](docs/images/stage2/hdmi-vs-pc-montage.png)
+
+**Correctness.**
+- **VRAM:** after each of the 13 scenes and each of the 17 timing workloads, all 1,200 patterns (38,400 B) were read back from the FPGA. Their CRC equalled the bytes sent, which equal the desktop's TILE4 export.
+- **Scene framebuffers** equal the PC references (`kd_hdmi_ref`), CRC for CRC.
+- **ERROR_CODE** was 0 throughout.
+- **HDMI stills** (1280x960 capture of 640x480p60, sampled per 4x4 block): 0 unexplained pixel differences in all 13 scenes. The 53–377 colour differences per scene are all at horizontal colour edges, explained by the capture path's 4:2:2 chroma and edge filtering (luma correct, or the colour lies between or just beyond the two edge colours).
+- **Console:** identical before and after the run.
+
+**Non-atomic updates.** At 60 fps, recordings of window activation, menu close and outline drop caught:
+- exactly one torn frame each for activation and outline drop: rows above the update new, rows below still old, 10 tile-row segments partly written byte by byte;
+- no intermediate frame for menu close.
+
+There were 0 corrupt pixels, and the settled frames match.
+
+![Window activation: settled before, the one torn frame, settled after](docs/images/stage2/hdmi-torn-frame-05-activate.png)
+
+**End-to-end timing** (n = 64 samples each after 4 warm-up; p50/p95/p99 within 0.2% of each other).
+- render: CPU cycles at 120 MHz, interrupts masked;
+- export: packing dirty tiles into the transport buffer;
+- transfer: `kh_vram_write` of the dirty runs;
+- FENCE: confirmation wait;
+- end-to-end: render + export + transfer + FENCE.
+
+| workload | render ms | export ms | transfer ms | FENCE wait ms | end-to-end ms (p50 / p99) | tiles | bytes | runs |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| one-character label | 0.25 | 0.28 | 0.23 | 0.20 | 1.00 / 1.01 | 3 | 96 | 2 |
+| one sprite pixel | 0.63 | 0.33 | 0.29 | 0.30 | 1.60 / 1.60 | 3 | 96 | 3 |
+| button press/release | 0.58 | 0.34 | 0.55 | 0.20 | 1.70 / 1.70 | 12 | 384 | 2 |
+| software cursor 4 px | 0.75 | 0.31 | 0.40 | 0.30 | 1.81 / 1.81 | 6 | 192 | 3 |
+| menu open | 4.11 | 1.08 | 6.60 | 1.38 | 13.24 / 13.24 | 162 | 5,184 | 14 |
+| menu close | 4.91 | 1.08 | 6.59 | 1.38 | 14.04 / 14.04 | 162 | 5,184 | 14 |
+| window move, outline | 3.61 | 1.04 | 7.42 | 3.16 | 15.35 / 15.35 | 154 | 4,928 | 32 |
+| full sprite import | 15.89 | 0.96 | 6.22 | 1.68 | 24.82 / 24.82 | 146 | 4,672 | 17 |
+| window activation | 14.23 | 1.33 | 9.08 | 1.68 | 26.40 / 26.40 | 227 | 7,264 | 17 |
+| full export, all 1,000 tiles | 0.00 | 4.54 | 35.42 | 0.10 | 40.10 / 40.10 | 1,000 | 32,000 | 1 |
+| window move, live | 47.06 | 2.18 | 16.78 | 2.27 | 68.39 / 68.39 | 434 | 13,888 | 23 |
+| full redraw, 3 windows (unchanged screen) | 29.45 | 0.23 | 0 | 0 | 29.71 / 29.71 | 0 | 0 | 0 |
+
+A redraw that changes nothing sends nothing, thanks to the exact dirty map. Scene 04 (two overlapping windows opening, 430 tiles) took 45.1 ms end to end.
+The idle export scan costs 0.23 ms per frame (0.22 ms at 125 MHz in section 6).
+
+**Transport.**
+- **Throughput:** 32,000 B in 35.4 ms, about 0.90 MB/s through `kh_vram_write` at QSPI 5 MHz. The wire limit would be 2.5 MB/s; the difference is the driver's per-byte BUSY handling and transaction overhead.
+- **Confirmation:** each run costs about 0.1 ms of FENCE wait.
+- **Where the time goes:**
+  - for small updates, render, export, transfer and FENCE are of similar size;
+  - for window and menu operations, transfer is 40–60% of the frame;
+  - for live moves and sprite import, render dominates.
+
+**Against KAGURA-UI on the same chip and display** (both include the flush; KAGURA-UI at 125 MHz, the C desktop at 120 MHz):
+
+| operation | C desktop end-to-end | KAGURA-UI frame (records) |
+|---|---:|---:|
+| one-character label | 1.0 ms | 21.5 ms |
+| one sprite pixel | 1.6 ms | 22.2 ms |
+| full sprite import | 24.8 ms | 323 ms (including `import_hex()`) |
+
+That is 13–21x shorter end to end on the same hardware.
+
+**Limitations.**
+- Top placement only; the 40 border lines show colour 0 (BACKDROP). Centring would need a SCROLL_Y write that this test did not make.
+- QSPI at 5 MHz, as the console uses; faster SCK, `max_gap` run merging and DMA transport were not tried.
+- There is no pointer device: the scenes are scripted events.
+- The program runs from SRAM; a firmware build would run from XIP flash.
+- The HDMI comparison is bounded by the capture path: 4:2:2 chroma and edge filtering. The recordings are point-sampled and coarser than the stills.
+- Byte-exactness is established by the VRAM readback, not by the images.

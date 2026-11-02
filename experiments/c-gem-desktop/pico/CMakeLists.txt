@@ -38,6 +38,28 @@ function(kd_rp2040 target variant)
     pico_add_extra_outputs(${target})
 endfunction()
 
+# Stage 2: the same core driving the KAGURA-9 display through the repository's
+# validated C transport (software/pico kagura_host.c, tile_fb.c, tile_fb_io.c,
+# all unchanged), still a no_flash SRAM-only program.
+set(KD_PICO_HOST ${CMAKE_CURRENT_LIST_DIR}/../../../software/pico)
+add_executable(kd_rp2040_hdmi hdmi_main.c ${KD_SOURCES}
+    ${KD_PICO_HOST}/kagura_host.c ${KD_PICO_HOST}/tile_fb.c ${KD_PICO_HOST}/tile_fb_io.c)
+pico_generate_pio_header(kd_rp2040_hdmi ${KD_PICO_HOST}/kagura_host.pio)
+target_include_directories(kd_rp2040_hdmi PRIVATE ${KD}/src ${KD}/apps ${KD}/bench
+    ${KD_PICO_HOST} ${CMAKE_CURRENT_LIST_DIR}/../../../software/include)
+target_compile_options(kd_rp2040_hdmi PRIVATE -Wall -Wextra -Werror -O2 -fstack-usage)
+target_compile_definitions(kd_rp2040_hdmi PRIVATE
+    PICO_STACK_SIZE=0x1000
+    PICO_USE_STACK_GUARDS=1
+    PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=0
+    PICO_STDIO_USB_STDOUT_TIMEOUT_US=500000
+    PICO_STDIO_USB_ENABLE_RESET_VIA_BAUD_RATE=0
+    PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE=0)
+target_link_libraries(kd_rp2040_hdmi PRIVATE pico_stdlib hardware_pio hardware_clocks hardware_watchdog hardware_sync)
+pico_enable_stdio_usb(kd_rp2040_hdmi 1)
+pico_enable_stdio_uart(kd_rp2040_hdmi 0)
+pico_add_extra_outputs(kd_rp2040_hdmi)
+
 kd_rp2040(kd_rp2040_bench sdk)
 kd_rp2040(kd_rp2040_bench_plain plain)
 pico_set_mem_ops_implementation(kd_rp2040_bench_plain compiler)

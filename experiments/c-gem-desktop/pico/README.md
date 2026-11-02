@@ -161,3 +161,93 @@ Device-side effects:
 - a host-side `kd_rp2040_bench.uf2` "file" appears on the RPI-RP2 drive (not stored by the device).
 
 Nothing else changes.
+
+## Stage 2: HDMI acceptance
+
+`kd_rp2040_hdmi` (`hdmi_main.c`): the same SRAM-only loading and safety model, now driving the KAGURA-9 display. Results: BENCHMARKS.md section 7. Logs: `../docs/rp2040-logs/stage2/`.
+
+### Design
+
+- **Transport:** the repository's validated C path, compiled unchanged from `software/pico`. The PIO driver needs `clk_sys` 120 MHz.
+  - `kagura_host.c`: QSPI at divider 2 = 5 MHz, the console's own setting; pins GP2..GP10 as in `software/pico/main.c`.
+  - `tile_fb.c` / `tile_fb_io.c`:
+    - `tfb_initialize` checks ABI 0.6, 240 lines and 1,200 patterns before it writes anything, then sets map, scroll 0 and BACKDROP, uploads all patterns and enables BG;
+    - `tfb_flush` sends dirty runs and confirms each with a FENCE.
+- **Placement:** desktop tiles 0..999 are tfb tiles 0..999 (top placement). Tiles 1000..1199 stay colour 0, so lines 200..239 show BACKDROP (palette entry 0, the desk green).
+- **Palette:** the 16 desktop colours are written to palette bank 0 before `tfb_initialize`, whose COMMIT applies them.
+- **Per frame:** render (cycles, interrupts masked); export of dirty tiles into the tfb buffer; `tfb_flush` (transfer and FENCE wait timed separately).
+- **Verification after every scene and timing workload:**
+  - CRC of the desktop framebuffer (must equal the PC reference from `kd_hdmi_ref`);
+  - CRC of its TILE4 export and of the bytes sent;
+  - all 1,200 patterns read back from the FPGA (`kh_vram_read`) and their CRC compared;
+  - `ERROR_CODE`.
+  Any mismatch or error stops the run and reboots into flash.
+- **Scenes** (`bench/hdmi_scenes.h`, shared with the PC reference renderer):
+  1. desktop;
+  2. File Manager opened by double-click;
+  3. File Manager closed;
+  4. two overlapping windows;
+  5. activation by clicking the background window;
+  6. Desk menu;
+  7. menu closed;
+  8. About via F10/Enter;
+  9. About closed via OK;
+  10. live window move;
+  11. outline drag;
+  12. outline drop;
+  13. Studio drawing (sprite import, keyboard painting, mouse stroke).
+
+  Then the console after the return to flash.
+- **Timing:** the 17 benchmark workloads, 4 warm-up and 64 measured samples each.
+
+### Preflight (all must pass; otherwise nothing is written to the FPGA)
+
+1. Static, before any device access:
+   - `verify-uf2`: all 295 blocks in main SRAM, payload equal to the ELF, entry at the lowest address;
+   - no flash or USB-boot symbols;
+   - only float/double ROM lookups;
+   - `watchdog_enable` is the first call;
+   - the MPU stack guard is installed;
+   - no large stack frames on the frame path. The 1,280 B staging buffer is static: an earlier build had it on the stack twice and would have overflowed the 4 KB stack when frames nest inside scenes; caught from `-fstack-usage` before any run.
+2. Host:
+   - exactly one Raspberry Pi USB device;
+   - flash SHA-256 equal to the verified backup;
+   - a control reboot keeps the hash, and the console comes back attached and unpaused with no error.
+3. Device, register reads only: ID, ABI, CAPS, STATUS, `ERROR_CODE`, `DISPLAY_CTRL`, `SCREEN_HEIGHT`, `PATTERN_COUNT`, the measured `clk_sys`, lanes and divider.
+   The program requires ID 4B39, ABI 0.6, 240 lines, 1,200 patterns and `ERROR_CODE` 0. The host checks the same line, and only then sends `w`, which allows the first write.
+
+### Procedure
+
+```powershell
+$py = "$env:APPDATA\uv\python\cpython-3.14.7-windows-x86_64-none\python.exe"
+$env:PYTHONPATH = "build\transport-analysis\python-deps"
+$env:FFMPEG = "<path to ffmpeg.exe>"
+& $py experiments/c-gem-desktop/tools/rp2040_hdmi_test.py run --approved `
+    --expected-flash <backup sha256> --uf2 build/c-gem-rp2040/kd_rp2040_hdmi.uf2 `
+    --elf build/c-gem-rp2040/kd_rp2040_hdmi.elf --out build/c-gem-hdmi/run1
+build/c-gem/kd_hdmi_ref build/c-gem/hdmi-ref          # PC references (WSL)
+uv run --no-project --with pillow --with numpy python -I experiments/c-gem-desktop/tools/hdmi_compare.py `
+    build/c-gem/hdmi-ref build/c-gem-hdmi/run1        # writes compare.md, compare-*.png, montage.png
+```
+
+**Capture.**
+- **Format:** ffmpeg dshow from the HDMI capture device at 1280x960 YUYV, 60 fps; the device has no 640x480 mode. 1280x960 is exactly 2x the 640x480p60 output, so each logical pixel is a 4x4 block.
+- **Stills:** the last of 20 frames, taken 1 s after the scene's last transfer.
+- **Recordings:** activation, menu close and outline drop are recorded for 4 s as 320x240 point samples. They are offset by one logical pixel horizontally against the stills; the comparison finds the offset by search.
+
+**Comparison** (`tools/hdmi_compare.py`):
+- **Sampling:** block centres, with a ±1 capture-pixel phase search.
+- **Colour:** the observed colour of each palette index is learned from block interiors, which absorbs the YCbCr conversion and range.
+- **Mismatches:** each pixel is classified to the nearest learned colour. A mismatch counts as explained only on a horizontal colour edge of the reference (the screen border counts as an edge to blanking), and only when either the luma matches (4:2:2 chroma) or the colour lies on the line through the two edge colours within ±60% (receiver/capture filtering, blur and overshoot). Everything else is unexplained.
+- **Recordings:** compared capture-to-capture against their own settled first and last frames, pixel by pixel. "Torn-row boundary" pixels are allowed only at an edge between segments in different update states.
+- **Self-test:** synthetic captures with an injected wrong tile and an injected wrong segment. The tile is reported exactly (64 pixels); the segment is reported as 6 corrupt pixels, its 2 edge pixels counting as torn-row boundary.
+
+### Run record, 2026-11-02 (`build/c-gem-hdmi/run1`)
+
+- **Flash:** `d2ccc104…` before, after the control reboot, and after the run. The console was restored, the final normal reboot was OK, and `HOST_END OK`.
+- **Preflight:** `id 4b39 abi 0.6 caps 0x5b status 0x01 error_code 0x00 display_ctrl 0x07 height 240 patterns 1200 clk_sys_khz 120000 lanes 4 sck_div 2`, accepted.
+- **Initialisation** (palette, map, scroll, backdrop, 1,200 patterns, display on): 71.5 ms.
+- **Verification:** 13/13 scenes and 17/17 workloads passed (framebuffer CRC = PC, VRAM readback = sent, `ERROR_CODE` 0). Stack peak was 1,908 B of 4,096.
+- **HDMI:** 0 unexplained pixels in 13 scenes. The console was identical before and after (0 of 76,800 pixels).
+- **Recordings:** 0 corrupt pixels; one torn frame for activation and for outline drop, none for menu close.
+- **FPGA:** only the host interface was used. Configuration and bitstream were untouched; the MicroPython console re-initialised the display at the next boot, as always.

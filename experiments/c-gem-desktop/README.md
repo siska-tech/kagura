@@ -134,6 +134,9 @@ CTest expects each mutant to fail.
 - `build/c-gem/kd_bench [--samples N] [--json FILE]`: the PC benchmark.
 - `bench/kagura_ui_reference.py`: the same kinds of operations on the unchanged KAGURA-UI.
 - `tools/arm_report.sh`: Cortex-M0+/M33 code size, stack frames and Thumb-1 instruction counts under `qemu-arm`.
+- RP2040 hardware stages (SRAM-only, no flash writes), with procedures in [pico/README.md](pico/README.md):
+  - `tools/rp2040_sram_bench.py`: stage 1, CPU only.
+  - `tools/rp2040_hdmi_test.py`, `kd_hdmi_ref` and `tools/hdmi_compare.py`: stage 2, the KAGURA-9 display over HDMI, compared with PC references.
 
 ## Scope
 

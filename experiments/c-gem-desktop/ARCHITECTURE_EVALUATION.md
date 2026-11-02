@@ -9,7 +9,8 @@ Evidence is labelled:
 - **estimate**: derived.
 
 The C core's CPU time and memory have been measured on an RP2040.
-Not measured: its transport to the KAGURA-9 display, end-to-end frame time, the RP2350, and a MicroPython binding.
+Its end-to-end frame time on the KAGURA-9 display over HDMI has been measured too (BENCHMARKS.md section 7).
+Not measured: running from XIP flash, the RP2350, and a MicroPython binding.
 Details are in [BENCHMARKS.md](BENCHMARKS.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Summary
@@ -31,7 +32,20 @@ The current KAGURA-UI stays as it is until then.
 - stack peak 1.9 KB.
 
 For a pixel edit and a sprite import that is about 20x less CPU than KAGURA-UI's recorded times on the same chip.
-The remaining gate is transport and end-to-end frame time on the real display.
+**Update after the HDMI run (stage 2).** On the real display, through the repository's own C transport, end-to-end frame times (render + export + transfer + FENCE) are:
+- label 1.0 ms;
+- sprite pixel 1.6 ms;
+- menu open/close 13–14 ms;
+- sprite import 24.8 ms;
+- window activation 26.4 ms;
+- live window move 68.4 ms.
+
+That is 13–21x shorter than KAGURA-UI's recorded frames for the comparable operations.
+- VRAM readback was byte-exact after every scene and workload.
+- HDMI captures match the PC references, with 0 unexplained pixels.
+- Updates are non-atomic as expected: at most one torn frame per update, and no corruption.
+
+The remaining gate is the MicroPython integration (binding overhead, retained display lists, event rings) and running from XIP flash.
 
 ## Answers
 
@@ -141,7 +155,10 @@ What supports moving the core to C:
 
 What argues for caution:
 - The RP2040 run executed from SRAM. A firmware build runs from XIP flash with a 16 KB cache, and its cache behaviour is not measured. No RP2350 run.
-- Transport is unchanged: a C desktop still pays the SDK flush per frame (**measured (RP2040)** 2.4 ms for a one-pixel edit under MicroPython), roughly in proportion to tiles.
+- Transport is unchanged and now measured for the C path:
+  - about 0.9 MB/s at QSPI 5 MHz (35 ms for all 32,000 B), plus 0.1 ms FENCE wait per run;
+  - 40–60% of a window or menu frame (**measured (RP2040 + FPGA, C)**).
+  - Faster SCK, run merging (`max_gap`) and DMA were not tried.
 - Integration work (user C module, lease API, pointer input) is larger than the core itself.
 - KAGURA-UI is shipped, tested on hardware and good enough for single-screen tools.
 
@@ -150,5 +167,6 @@ Suggested next steps, each with an exit criterion:
    Proceed if small updates are below about 2 ms and a full redraw below 50 ms.
    **Done 2026-11-02: passed.** Small updates 0.5–1.1 ms, full redraw 28.5 ms; flash unchanged, CRCs identical to the PC.
 2. **Measure the transport.** Use a C flush of TILE4 runs through `tile_fb_io.c`-style code on the real FPGA, with the same workloads.
+   **Done 2026-11-02 (stage 2, HDMI):** end-to-end 1.0–1.8 ms for small updates, 13–26 ms for menus and window operations, 68 ms for a live window move; byte-exact readback; HDMI matches the PC.
 3. **Native module.** Wrap `kd_app.h` as a MicroPython user C module with retained display lists and event rings. Port one KAGURA-UI demo (the sprite editor) and compare it end to end against #67's numbers.
 4. Only then decide whether KAGURA-UI's widgets move onto the native core or stay as a separate full-screen toolkit.
