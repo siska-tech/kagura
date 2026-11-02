@@ -828,6 +828,38 @@ class ViperDifferentialTests(FramebufferTests):
         counts=self.fb.kernel_counts
         self.assertTrue(all(counts[n]>0 for n in (0,1,2,3,5,6,7)),counts)
 
+    def test_fill_rect_glyph8_fast_path_matches_checked_path(self):
+        # The Python backend always takes the checked path. Same pixels, dirty
+        # tiles and errors; an error leaves buffer, dirty and kernel params alone.
+        class Int(int): pass
+        python=TileFramebuffer(self.d);python.set_viper(False)
+        big=2**40
+        rects=[(0,0,320,240,1),(-5,-5,10,10,2),(315,235,10,10,3),(3,5,1,1,4),(7,0,2,9,5),
+               (0,0,0,5,6),(0,0,5,-1,7),(320,0,4,4,8),(0,240,4,4,9),(-4,0,4,4,10),
+               (big,0,8,8,11),(-big,3,big+17,5,12),(1,1,big,big,13),(True,False,9,9,14),
+               (Int(9),2,3,4,15),(4,4,8,8,0),(4,4,8,8,Int(3)),
+               (1.0,0,1,1,1),(0,0,'1',1,1),(0,0,1,1,16),(0,0,1,1,-1),(0,0,1,1,True),(0,0,1,1,None)]
+        rows=bytes((0x81,0x42,0x24,0x18,0xff,0,0x55,0xaa))
+        glyphs=[(rows,0,0,1),(rows,-7,-7,2),(rows,316,236,3),(rows,-8,0,4),(rows,320,0,5),
+                (bytearray(rows),9,3,6),(rows,big,0,7),(rows,-big,0,8),(rows,True,1,9),
+                (rows,Int(5),Int(6),10),(rows,3,3,Int(2)),(memoryview(rows),0,0,1),([0]*8,0,0,1),
+                (b'1234567',0,0,1),(rows,0.5,0,1),(rows,0,0,16),(rows,0,0,True)]
+        def outcome(fb,method,args):
+            params=bytes(fb._params)
+            try:
+                getattr(fb,method)(*args)
+            except Exception as e:
+                self.assertEqual(bytes(fb._params),params,(method,args))
+                return type(e),str(e)
+            return None
+        for method,cases in (('fill_rect',rects),('glyph8',glyphs)):
+            for args in cases:
+                python.dirty[:]=bytes(1200);self.fb.dirty[:]=bytes(1200)
+                result=outcome(python,method,args)
+                self.assertEqual(outcome(self.fb,method,args),result,(method,args))
+                self.assertEqual(self.fb.buffer,python.buffer,(method,args))
+                self.assertEqual(self.fb.dirty,python.dirty,(method,args))
+
     def test_paint_overflow_and_compaction_identical_to_python(self):
         import framebuffer_shapes as shapes
         python=TileFramebuffer(self.d);python.set_viper(False)

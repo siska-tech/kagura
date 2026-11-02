@@ -88,4 +88,5 @@ RP2040で`App.step`の各段階を計測した。条件は次のとおり。
 
 - focusでは、`root._draw`のうちSDK `fill_rect`が8.8 msを占める。ListViewの行とButtonの面で、呼出し回数が多い。
 - SDKの`fill_rect`/`glyph8`の固定費（型検査など）はSDK側の課題（#57）。
+  後続の[高速経路](kagura-sdk-fast-path.md)で、1回あたり約0.4 ms減らした。
 - 長時間soak、Pico 2/2 W、UART/HIDは未検証。

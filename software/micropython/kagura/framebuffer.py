@@ -294,6 +294,28 @@ class TileFramebuffer:
                 self._put(x, yy, color)
 
     def fill_rect(self, x, y, width, height, color):
+        kernels = self._kernels
+        # Fast path for exact ints and a valid colour: skips the checks and the
+        # _native_rect call, most of a small fill's cost on RP2040. Anything else
+        # (bool, int subclasses, bad values, Python backend) takes the checked path
+        # below, so errors are unchanged. Clamp before storing: array('i') wraps.
+        if (kernels is not None and type(x) is int and type(y) is int and
+                type(width) is int and type(height) is int and type(color) is int and
+                0 <= color <= 15):
+            right, bottom = x + width, y + height
+            if right > 320:
+                right = 320
+            if bottom > 240:
+                bottom = 240
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            if width > 0 and height > 0 and x < right and y < bottom:
+                p = self._params
+                p[0], p[1], p[2], p[3], p[4] = x, y, right, bottom, color
+                kernels.fill_rect(self.buffer, self.dirty, p, self._kernel_counts)
+            return
         _ints(x, y, width, height)
         _range(color, 0, 15, 'color')
         if self._kernels is not None:
@@ -400,6 +422,16 @@ class TileFramebuffer:
         Reuses the text raster kernel and dirty tracking. The caller retains
         ownership of rows; it is consumed synchronously and never modified.
         """
+        kernels = self._kernels
+        # Same fast path as fill_rect(); other arguments take the checked path.
+        if (kernels is not None and type(x) is int and type(y) is int and
+                type(color) is int and 0 <= color <= 15 and
+                (type(rows) is bytes or type(rows) is bytearray) and len(rows) == 8):
+            if -8 < x < 320 and -8 < y < 240:
+                p = self._params
+                p[0], p[1], p[2] = x, y, color
+                kernels.glyph(self.buffer, self.dirty, p, self._kernel_counts, rows)
+            return
         _ints(x, y)
         _range(color, 0, 15, 'color')
         if not isinstance(rows, (bytes, bytearray)):

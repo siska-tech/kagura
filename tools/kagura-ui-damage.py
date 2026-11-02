@@ -9,7 +9,9 @@ for BOTH limits, so frozen-versus-RAM bytecode does not bias the comparison.
 Other UI modules and the SDK stay frozen and must match except the
 data-only Widget/Panel.opaque attributes, which are set on older frozen classes
 and logged. --font-cache selects the BitmapFont8 glyph cache (0 disables);
-cache sizes and refs are compared in separate sessions. The HDMI console is
+cache sizes and refs are compared in separate sessions. --framebuffer also sends
+kagura/framebuffer.py (same ref) and hands the UI an instance of that RAM class
+before start(); the native Viper kernels stay frozen. The HDMI console is
 lent to the UI and restored; FPGA ERROR_CODE is read.
 summarize: offline table from a run log (also used by the PC tests).
 """
@@ -41,6 +43,15 @@ def branch_source(name, min_imports=0, ref=None):
     if count < min_imports or '\nfrom .' in rewritten:
         raise SystemExit('unexpected imports in kagura/ui/' + name)
     return rewritten
+
+
+def framebuffer_source(ref=None):
+    source = read_source('software/micropython/kagura/framebuffer.py', ref)
+    source, count = re.subn(r'^(\s*)from \.(\w*) import', lambda m: '%sfrom kagura%s import' % (
+        m.group(1), '.' + m.group(2) if m.group(2) else ''), source, flags=re.M)
+    if count < 4 or re.search(r'^\s*from \.', source, flags=re.M):
+        raise SystemExit('unexpected imports in kagura/framebuffer.py')
+    return source
 
 
 def branch_app_source(with_render=False, ref=None):
@@ -79,6 +90,7 @@ def run_device(args):
     app_source = branch_app_source(with_render=True, ref=args.ref)
     font_source = branch_source('fonts.py', ref=args.ref)
     widgets_source = branch_source('widgets.py', 1, ref=args.ref)
+    fb_source = framebuffer_source(args.ref) if args.framebuffer else ''
     # The benchmark itself always comes from this working tree.
     bench_source = (ROOT / 'software/micropython/examples/ui_damage_benchmark.py').read_bytes()
     args.log.parent.mkdir(parents=True, exist_ok=True)
@@ -98,6 +110,8 @@ def run_device(args):
             hashlib.sha256(widgets_source.encode('utf8')).hexdigest(),
             hashlib.sha256(bench_source).hexdigest(),
             'default' if args.font_cache is None else args.font_cache))
+        emit('HOST_FRAMEBUFFER %s\n' % ('ram sha256=' + hashlib.sha256(fb_source.encode('utf8')).hexdigest()
+                                        if args.framebuffer else 'frozen'))
         transport = SerialTransport(args.port, timeout=0.2)
         transport.serial.write_timeout = 5
         entered = False
@@ -143,10 +157,17 @@ def run_device(args):
             run(bench_source + b"\ngc.collect()\nprint('DAMAGE_BENCH_LOADED',gc.mem_free())")
             # After the benchmark: its Scene resolves Label/Button/ListView from these globals.
             run(widgets_source + "\ngc.collect()\nprint('DAMAGE_WIDGETS_LOADED',gc.mem_free())")
+            if args.framebuffer:
+                # Its own module globals, so SDK helper names cannot shadow UI ones.
+                run("_fbns={'__name__':'damage_framebuffer'}\nexec(%r,_fbns)\nDamageFramebuffer=_fbns['TileFramebuffer']\n"
+                    "assert DamageFramebuffer is not TileFramebuffer\ngc.collect()\nprint('DAMAGE_FRAMEBUFFER_LOADED',gc.mem_free())" % fb_source)
             font_class = 'DamageFont' if args.font_cache is None else 'lambda s:DamageFont(s,cache=%d)' % args.font_cache
             run("font=Font('/fonts/misaki8.kfnt'); del _reserve; gc.collect(); "
                 "app,scene=make(DamageApp,d,font,console=kagura_console,font_class=%s); "
-                "print('DAMAGE_APP_READY',gc.mem_free(),'FONT_CACHE',len(getattr(app.theme.font,'_keys',None) or ()))" % font_class)
+                "%s"
+                "print('DAMAGE_APP_READY',gc.mem_free(),'FONT_CACHE',len(getattr(app.theme.font,'_keys',None) or ()),"
+                "'FB',type(app.backend.fb).__name__ if app.backend.fb else 'frozen')" % (
+                    font_class, "app.backend.fb=DamageFramebuffer(d); assert app.backend.fb.viper_enabled; " if args.framebuffer else ''))
             begin = time.monotonic()
             run("try:\n run(app,scene,limits=(1,4),samples=%d,rounds=%d)\n"
                 " full=(0,0,320,240); app.step(); c=binascii.crc32(app.backend.fb.buffer)\n"
@@ -228,6 +249,8 @@ def main():
                         help='send kagura/ui sources from this git ref instead of the working tree')
     device.add_argument('--font-cache', type=int, default=None,
                         help='BitmapFont8 glyph cache slots (0 or a power of two); default: the branch default')
+    device.add_argument('--framebuffer', action='store_true',
+                        help='also send kagura/framebuffer.py from the same ref and use it for the UI')
     offline = sub.add_parser('summarize')
     offline.add_argument('log', type=Path)
     args = parser.parse_args()
