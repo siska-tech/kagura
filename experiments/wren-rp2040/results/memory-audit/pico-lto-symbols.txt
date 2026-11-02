@@ -1,0 +1,1873 @@
+00000000 a MEMSET
+00000000 a POPCOUNT32
+00000000 a debug
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a SIO_DIV_CSR_READY_SHIFT_FOR_CARRY
+00000001 a use_hw_div
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000002 a SIO_DIV_CSR_DIRTY_SHIFT_FOR_CARRY
+00000004 a BITS_FUNC_COUNT
+00000004 a CLZ32
+00000004 a MEMCPY
+00000004 a MEM_FUNC_COUNT
+00000005 a next_slot_number
+00000008 a CTZ32
+00000008 a MEMSET4
+0000000c a MEMCPY4
+0000000c a REVERSE32
+00000060 a DIV_UDIVIDEND
+00000064 a DIV_UDIVISOR
+00000070 a DIV_QUOTIENT
+00000078 a DIV_CSR
+00000800 a HeapSize
+0000c000 a StackSize
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 N
+00041ef7 W wren_vm.c.a3608bf0
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 N
+00044ed0 W wren_compiler.c.cbc192c9
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa N
+000489aa W wren_core.c.490584a1
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c N
+0004d64c W wren_debug.c.9d3befff
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 N
+0004e8c4 W wren_primitive.c.8cf16f11
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 N
+0004f921 W wren_utils.c.88378889
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b N
+00050b3b W wren_value.c.42237753
+20000000 T __logical_binary_start
+20000000 T __reset_start
+20000000 T _entry_point
+20000002 t _enter_vtable_in_r0
+2000000e t _reset_handler
+20000016 t hold_non_core0_in_bootrom
+20000022 t bss_fill_loop
+20000024 t bss_fill_test
+20000028 t platform_entry
+20000038 t data_cpy_table
+20000088 0000000c t __bi_54
+20000088 T __reset_end
+20000094 0000000c t __bi_42
+200000a0 0000000c t __bi_34
+200000ac t binary_info_header
+200000c0 T __binary_info_header_end
+200000c0 T __embedded_block_end
+20000100 T __VECTOR_TABLE
+20000100 T __vectors
+200001c0 T __default_isrs_start
+200001c0 T __unhandled_user_irq
+200001c0 T __vectors_end
+200001c0 W isr_irq0
+200001c0 W isr_irq1
+200001c0 W isr_irq10
+200001c0 W isr_irq11
+200001c0 W isr_irq12
+200001c0 W isr_irq13
+200001c0 W isr_irq14
+200001c0 W isr_irq15
+200001c0 W isr_irq16
+200001c0 W isr_irq17
+200001c0 W isr_irq18
+200001c0 W isr_irq19
+200001c0 W isr_irq2
+200001c0 W isr_irq20
+200001c0 W isr_irq21
+200001c0 W isr_irq22
+200001c0 W isr_irq23
+200001c0 W isr_irq24
+200001c0 W isr_irq25
+200001c0 W isr_irq26
+200001c0 W isr_irq27
+200001c0 W isr_irq28
+200001c0 W isr_irq29
+200001c0 W isr_irq3
+200001c0 W isr_irq30
+200001c0 W isr_irq31
+200001c0 W isr_irq4
+200001c0 W isr_irq5
+200001c0 W isr_irq6
+200001c0 W isr_irq7
+200001c0 W isr_irq8
+200001c0 W isr_irq9
+200001c6 T unhandled_user_irq_num_in_r0
+200001c8 W isr_invalid
+200001ca W isr_nmi
+200001cc W isr_hardfault
+200001ce W isr_svcall
+200001d0 W isr_pendsv
+200001d2 W isr_systick
+200001d4 T __default_isrs_end
+200001d4 00000044 T mutex_try_enter
+20000218 00000054 T mutex_enter_block_until
+2000026c 0000002e T mutex_try_enter_block_until
+2000029c 0000003c T mutex_enter_timeout_ms
+200002d8 00000028 T mutex_exit
+20000300 0000003c t reset_non_control_endpoints
+2000033c 00000070 t hw_handle_buff_status
+200003ac 000001b8 t dcd_rp2040_irq
+20000564 00000068 t prepare_ep_buffer
+200005cc 00000024 t e15_is_bulkin_ep
+200005f0 00000030 t e15_is_critical_frame_period
+20000620 0000004e t sync_ep_buffer
+2000066e 00000026 t _hw_endpoint_xfer_sync
+20000694 0000000a T hw_endpoint_reset_transfer
+200006a0 00000050 T _hw_endpoint_buffer_control_update32
+200006f0 00000078 T hw_endpoint_start_next_buffer
+20000768 0000003c T hw_endpoint_xfer_continue
+200007a4 000001b4 T dcd_event_handler
+20000958 00000008 T experiment_time_us
+20000960 00000008 T experiment_tick
+20000968 00000188 T main
+20000af0 0000003a t snapshot
+20000b2c 00000050 t bind
+20000b7c 00000034 t error_output
+20000bb0 00000034 t foreign_add
+20000be4 000001fc t tracked
+20000de0 00000030 t write_output
+20000e10 00000020 t discard.constprop.0
+20000e30 00000048 t phase.constprop.0
+20000e78 0000005c t collect.constprop.0
+20000ed4 00000350 t run.constprop.0
+20001224 000002f4 T experiment_named
+20001518 0000000a T experiment
+20001522 0000000a T rp2040_chip_version
+2000152c 00000030 T panic
+2000155c 00000018 T hw_claim_lock
+20001574 00000014 T hw_claim_unlock
+20001588 00000016 T hw_is_claimed
+2000159e 0000003a T hw_claim_or_assert
+200015d8 00000052 T hw_claim_unused_from_range
+2000162c 00000018 T next_striped_spin_lock_num
+20001644 00000020 T spin_lock_claim_unused
+20001664 0000001c T spin_locks_reset
+20001680 00000028 t set_raw_irq_handler_and_unlock
+200016a8 00000024 W runtime_init_per_core_irq_priorities
+200016cc 00000028 T irq_set_enabled
+200016f4 00000018 T irq_is_enabled
+2000170c 00000010 T irq_set_pending
+2000171c 00000010 T irq_get_vtable_handler
+2000172c 0000001c T irq_has_shared_handler
+20001748 00000040 T irq_set_exclusive_handler
+20001788 0000019c T irq_add_shared_handler
+20001924 000000a0 T irq_add_tail_to_free_list
+200019c4 00000028 T user_irq_claim_unused
+200019ec 00000010 T lock_init
+200019fc 0000001a T mutex_init
+20001a16 0000001a T recursive_mutex_init
+20001a30 0000002c W runtime_init_mutex
+20001a5c 00000014 T critical_section_init_with_lock_num
+20001a70 00000014 T critical_section_init
+20001a84 00000030 t sleep_until_callback
+20001ab4 0000007c t alarm_pool_post_alloc_init
+20001b30 00000034 W runtime_init_default_alarm_pool
+20001b64 00000024 t time_reached
+20001b88 00000278 t alarm_pool_irq_handler
+20001e00 00000008 T alarm_pool_get_default
+20001e08 000000a0 T alarm_pool_add_alarm_at_force_in_context
+20001ea8 00000038 T alarm_pool_add_alarm_at
+20001ee0 00000068 T alarm_pool_cancel_alarm
+20001f48 00000004 T alarm_pool_core_num
+20001f4c 00000098 T sleep_until
+20001fe4 00000024 T sleep_us
+20002008 00000014 T sleep_ms
+2000201c 00000094 T best_effort_wfe_or_timeout
+200020b0 00000014 T timer_hardware_alarm_claim
+200020c4 00000010 T timer_time_us_64
+200020d4 00000016 T timer_busy_wait_until
+200020ea 00000030 T timer_busy_wait_us
+2000211c 00000010 T time_us_64
+2000212c 00000014 T busy_wait_us
+20002140 00000014 T busy_wait_until
+20002154 000000a8 t clock_configure_internal
+200021fc 00000024 T clock_configure_int_divider
+20002220 0000000e T clock_configure_undivided
+20002230 0000000c T clock_get_hz
+2000223c 00000060 T set_sys_clock_pll
+2000229c 00000078 T check_sys_clock_khz
+20002314 0000009c T pll_init
+200023b0 00000014 T watchdog_update
+200023c4 00000064 T _watchdog_enable
+20002428 00000018 T watchdog_enable
+20002440 00000044 T watchdog_reboot
+20002484 00000010 T tick_start
+20002494 00000010 T rom_func_lookup
+200024a4 00000010 T rom_data_lookup
+200024b4 00000024 T rom_funcs_lookup
+200024d8 00000028 T xosc_init
+20002500 00000002 t first_per_core_initializer
+20002504 0000000c W hard_assertion_failure
+20002510 0000001c T runtime_run_initializers
+2000252c 0000002c W runtime_init_early_resets
+20002558 0000001c W runtime_init_usb_power_down
+20002574 00000020 W runtime_init_post_clock_resets
+20002594 00000014 W runtime_init_rp2040_gpio_ie_disable
+200025a8 00000008 W runtime_init_spin_locks_reset
+200025b0 000000d4 W runtime_init_clocks
+20002684 00000038 T runtime_init_per_core_install_stack_guard
+200026bc t __aeabi_bits_init
+200026cc T __wrap___aeabi_idiv
+200026cc T __wrap___aeabi_idivmod
+200026cc T div_s32s32
+200026cc T divmod_s32s32
+200026d4 T divmod_s32s32_unsafe
+20002700 T divmod_s32s32_savestate
+2000271c T __wrap___aeabi_uidiv
+2000271c T __wrap___aeabi_uidivmod
+2000271c T div_u32u32
+2000271c T divmod_u32u32
+20002724 T divmod_u32u32_unsafe
+2000274c T divmod_u32u32_savestate
+20002768 T __wrap___aeabi_ldivmod
+20002768 T div_s64s64
+20002768 T divmod_s64s64
+20002778 t divmod_s64s64_savestate
+20002798 T __wrap___aeabi_uldivmod
+20002798 T div_u64u64
+20002798 T divmod_u64u64
+200027a8 T divmod_u64u64_savestate
+200027c8 T divmod_s64s64_unsafe
+200027dc t l40_1
+200027e8 t l41_1
+200027f0 t l42_1
+20002824 t l43_1
+20002830 t l44_1
+2000283a t l45_1
+20002842 t l46_1
+2000284e t l47_1
+20002850 T divmod_u64u64_unsafe
+2000287a t udiv0
+2000289c t y64
+200028f8 t y64_x32
+200029c8 t last0
+20002a22 t y64_x48
+20002b1c t last1
+20002b2c t y64_x64
+20002b8c T push_r8_r11
+20002b98 T pop_r8_r11
+20002ba4 T __wrap___aeabi_drsub
+20002baa T __wrap___aeabi_dsub
+20002bbc T __wrap___aeabi_dadd
+20002bce T __wrap___aeabi_ddiv
+20002bda t ddiv_shim_call
+20002bec t ddiv_save_state
+20002c0a T __wrap___aeabi_dmul
+20002c0a t ddiv_dsub_nan_helper
+20002c24 T __wrap___aeabi_cdrcmple
+20002c34 T __wrap___aeabi_cdcmpeq
+20002c34 T __wrap___aeabi_cdcmple
+20002c36 t __aeabi_dfcmple_guts
+20002c90 T __wrap___aeabi_dcmpeq
+20002ca0 T __wrap___aeabi_dcmplt
+20002cac T __wrap___aeabi_dcmple
+20002cbc T __wrap___aeabi_dcmpge
+20002ccc T __wrap___aeabi_dcmpgt
+20002cd6 T __wrap___aeabi_dcmpun
+20002cf0 T __wrap___aeabi_ui2d
+20002cf0 T uint2double
+20002cf8 T __wrap___aeabi_i2d
+20002cf8 T int2double
+20002d28 T __wrap___aeabi_d2iz
+20002d28 T double2int_z
+20002d70 T __wrap___aeabi_d2uiz
+20002d70 T double2uint
+20002d70 T double2uint_z
+20002d88 T fix642double
+20002da0 T __wrap___aeabi_l2d
+20002da0 T int642double
+20002db8 T __wrap___aeabi_d2lz
+20002db8 T double2int64_z
+20002de0 T double2int64
+20002df8 T double2ufix64
+20002df8 T double2ufix64_z
+20002e10 T __wrap_sqrt
+20002e28 T sincostan_remainder
+20002e3c T __wrap_cos
+20002e68 T __wrap_sin
+20002e94 T __wrap_tan
+20002e9e t dtan_in_range
+20002eaa t dtan_shim_call
+20002ebc t dtan_save_state
+20002eda t dtan_angle_out_of_range
+20002ef0 T __wrap_atan2
+20002f08 T __wrap_exp
+20002f20 T __wrap_log
+20002f38 00000064 T __aeabi_double_init
+20002f9c 0000004c t dldexp
+20002fe8 00000058 t disoddint
+20003040 0000002c t dpow_int2
+2000306c 000000dc t drem_0
+20003148 000001bc t dpow_1
+20003304 000000d0 t dpow_0
+200033d4 00000008 T __wrap_ldexp
+200033dc 00000048 T __wrap_trunc
+20003424 00000070 T __wrap_round
+20003494 00000074 T __wrap_floor
+20003508 00000080 T __wrap_ceil
+20003588 00000058 T __wrap_asin
+200035e0 00000054 T __wrap_acos
+20003634 00000040 T __wrap_atan
+20003674 00000080 T __wrap_exp2
+200036f4 00000150 T __wrap_pow
+20003844 0000005c T __wrap_cbrt
+200038a0 00000090 T __wrap_fmod
+20003930 00000154 T __wrap_remquo
+20003a84 0000000c T __wrap_drem
+20003a90 00000008 T __wrap_remainder
+20003a98 T double_table_shim_on_use_helper
+20003ac4 T drsub_shim
+20003aca T dsub_shim
+20003ad4 T dadd_shim
+20003ad6 t da_entry
+20003aec t l8_1
+20003af8 t l8_2
+20003b06 t l8_3
+20003b1c t l9_1
+20003b28 t l9_2
+20003b36 t l9_3
+20003b48 t da_xgty0
+20003b52 t da_add
+20003b56 t da_pack
+20003b74 t da_2
+20003b80 t da_1
+20003b84 t da_4
+20003b92 t da_3
+20003ba6 t da_7
+20003bae t da_6
+20003bb4 t da_5
+20003bbe t da_0
+20003bd0 t da_xrgty
+20003bee t da_ygtx
+20003bfa t da_ygtx0
+20003c06 t da_yrgtx
+20003c24 t da_ymgtx
+20003c28 t da_xmgty
+20003c30 T dmul_shim
+20003c48 t l12_1
+20003c52 t l12_2
+20003c6a t l13_1
+20003c74 t l13_2
+20003c96 t l14_1
+20003cbc t l15_1
+20003ce2 t l16_1
+20003d10 t l17_1
+20003d5e t dm_2
+20003d64 t dm_0
+20003d7e t dm_1
+20003d8c T ddiv_shim
+20003d8e t ddiv0
+20003da4 t l20_1
+20003dae t l20_2
+20003e24 t l21_1
+20003e4e t l22_1
+20003eaa t dd_0
+20003ebc t dd_1
+20003eec t l24_1
+20003f0a t dd_2
+20003f20 t dd_5
+20003f24 t dd_3
+20003f2e t dd_4
+20003f3c t dq_2
+20003f42 t dq_0
+20003f4e t dq_3
+20003f52 t dq_4
+20003f54 t dq_1
+20003f58 T dsqrt_shim
+20003fd2 t l26_1
+20004010 t l27_1
+20004080 t drsqrtapp_minus_8
+20004088 t drsqrtapp
+200040a0 t dq_5
+200040e4 T dcordic_vec_step
+200040f2 T dcordic_rot_step
+20004168 T double2uint_shim
+2000416a T double2ufix_shim
+20004176 T double2int64_shim
+20004178 T double2fix64_shim
+20004190 T double2uint64_shim
+20004192 T double2ufix64_shim
+20004196 t d2fix
+200041ac t ret_dzero
+200041b2 W d2fix_a
+20004200 T uint2double_shim
+20004202 T ufix2double_shim
+20004208 T int2double_shim
+2000420a T fix2double_shim
+20004210 T uint642double_shim
+20004212 T ufix642double_shim
+20004218 T int642double_shim
+2000421a T fix642double_shim
+20004224 t uf2d
+20004290 T dunpacks
+200042a6 t l60_1
+200042b2 t l60_2
+200042c0 t l60_3
+200042cc T dreduce
+2000434e T dtan_shim
+2000436e T dcos_shim
+2000437e T dsin_shim
+20004394 t dsincos_internal
+200043dc t dcos_finish
+200043f8 t l72_1
+20004418 t dsin_finish
+20004434 t l73_1
+2000445c t dreddata0
+2000446c T datan2_shim
+20004580 t dtab_cc
+20004680 T dexp_shim
+2000471c T dln_shim
+200047d8 t dreddata1
+200047dc t dreddata1_plus_4
+200047e8 t dtab_exp
+200048e8 T __wrap___aeabi_lmul
+2000491c 0000005c T __aeabi_float_init
+20004978 T float_table_shim_on_use_helper
+200049a4 00000020 t check_alloc
+200049c4 00000014 T __wrap_realloc
+200049d8 00000008 T __wrap_free
+200049e0 T __aeabi_mem_init
+200049f0 T __wrap_memset
+200049fc T __wrap___aeabi_memcpy
+200049fc T __wrap_memcpy
+20004a08 00000008 t _out_buffer
+20004a10 00000002 t _out_null
+20004a12 0000007a t _out_rev
+20004a8c 000000f6 t _ntoa_format
+20004b82 00000090 t _ntoa_long
+20004c12 000000bc t _ntoa_long_long
+20004cd0 000003d0 t _etoa
+200050a0 00000320 t _ftoa
+200053c0 0000000c t _out_char
+200053cc 0000000e t _out_fct
+200053dc 00000534 t _vsnprintf
+20005910 00000028 T __wrap_sprintf
+20005938 00000020 T vfctprintf
+20005958 00000034 T weak_raw_vprintf
+2000598c 00000016 T weak_raw_printf
+200059a2 00000004 W _exit
+200059a8 0000002c W _sbrk
+200059d4 00000020 W _times
+200059f4 00000024 W _read
+20005a18 00000022 W _write
+20005a3a 00000006 W _close
+20005a40 00000006 W _lseek
+20005a46 00000006 W _fstat
+20005a4c 0000000c W _isatty
+20005a58 00000006 T exit
+20005a60 00000034 W __assert_func
+20005a94 00000028 T runtime_init
+20005abc 0000000e t stdio_out_chars_no_crlf
+20005acc 00000080 t stdio_out_chars_crlf
+20005b4c 00000038 t stdio_stack_buffer_flush.part.0
+20005b84 0000001e t stdio_buffered_printer
+20005ba4 0000002c T stdout_serialize_begin
+20005bd0 00000010 T stdout_serialize_end
+20005be0 00000080 T stdio_put_string
+20005c60 00000064 T stdio_get_until
+20005cc4 00000030 T stdio_set_driver_enabled
+20005cf4 0000001c T stdio_flush
+20005d10 00000008 T stdio_init_all
+20005d18 00000038 T stdio_getchar_timeout_us
+20005d50 00000018 T __wrap_putchar
+20005d50 00000018 T stdio_putchar
+20005d68 0000001e T __wrap_puts
+20005d68 0000001e T stdio_puts
+20005d88 00000044 T __wrap_vprintf
+20005d88 00000044 T stdio_vprintf
+20005dcc 00000016 T __wrap_printf
+20005dcc 00000016 T stdio_printf
+20005de4 00000014 T stdio_usb_set_chars_available_callback
+20005df8 00000010 t usb_irq
+20005e08 00000064 t timer_task
+20005e6c 0000004c t stdio_usb_out_flush
+20005eb8 000000c4 t low_priority_worker_irq
+20005f7c 000000e0 T stdio_usb_init
+2000605c 0000000a T stdio_usb_connected
+20006068 00000088 T stdio_usb_in_chars
+200060f0 000000e8 t stdio_usb_out_chars
+200061d8 00000008 T tud_descriptor_device_cb
+200061e0 00000008 T tud_descriptor_configuration_cb
+200061e8 00000068 T tud_descriptor_string_cb
+20006250 00000014 t _retrieve_unique_id_on_boot
+20006264 0000003c T pico_get_unique_board_id_string
+200062a0 0000008c t hw_endpoint_init
+2000632c 00000030 t hw_endpoint_alloc.isra.0
+2000635c 00000068 T dcd_init
+200063c4 0000000c T dcd_int_enable
+200063d0 00000014 T dcd_set_address
+200063e4 0000001c T dcd_sof_enable
+20006400 00000018 T dcd_edpt0_status_complete
+20006418 00000060 T dcd_edpt_open
+20006478 00000008 T dcd_edpt_close_all
+20006480 00000024 T dcd_edpt_xfer
+200064a4 00000038 T dcd_edpt_stall
+200064dc 0000002c T dcd_edpt_clear_stall
+20006508 00000040 T rp2040_usb_init
+20006548 0000003c T hw_endpoint_xfer_start
+20006584 00000004 W tud_vendor_control_xfer_cb
+20006588 0000001a t invoke_class_control
+200065a4 00000070 t configuration_reset
+20006614 00000002 W tud_event_hook_cb
+20006616 00000002 W tud_sof_cb
+20006618 00000004 W tud_descriptor_bos_cb
+2000661c 00000004 W tud_descriptor_device_qualifier_cb
+20006620 00000004 W tud_descriptor_other_speed_configuration_cb
+20006624 00000002 W tud_mount_cb
+20006626 00000002 W tud_umount_cb
+20006628 00000002 W tud_suspend_cb
+2000662a 00000002 W tud_resume_cb
+2000662c 00000010 T tud_mounted
+2000663c 00000010 T tud_suspended
+2000664c 000000d4 T tud_rhport_init
+20006720 00000034 T usbd_edpt_open
+20006754 0000004c T usbd_open_edpt_pair
+200067a0 00000024 T usbd_edpt_claim
+200067c4 00000024 T usbd_edpt_release
+200067e8 00000048 T usbd_edpt_xfer
+20006830 00000038 T usbd_edpt_stall
+20006868 00000038 T usbd_edpt_clear_stall
+200068a0 0000001c T usbd_edpt_stalled
+200068bc 000005ac T tud_task_ext
+20006e68 00000058 t data_stage_xact
+20006ec0 00000012 t status_stage_xact.isra.0
+20006ed4 00000024 T tud_control_status
+20006ef8 00000050 T tud_control_xfer
+20006f48 00000014 T usbd_control_reset
+20006f5c 0000000c T usbd_control_set_complete_callback
+20006f68 0000001c T usbd_control_set_request
+20006f84 00000098 T usbd_control_xfer_cb
+2000701c 00000068 t _prep_out_transaction.isra.0
+20007084 0000002c T tud_cdc_n_connected
+200070b0 00000014 T tud_cdc_n_available
+200070c4 00000030 T tud_cdc_n_read
+200070f4 00000074 T tud_cdc_n_write_flush
+20007168 0000003c T tud_cdc_n_write
+200071a4 00000014 T tud_cdc_n_write_available
+200071b8 00000078 T cdcd_init
+20007230 0000002c T cdcd_deinit
+2000725c 00000044 T cdcd_reset
+200072a0 0000009c T cdcd_open
+2000733c 000000d8 T cdcd_control_xfer_cb
+20007414 000000ec T cdcd_xfer_cb
+20007500 00000018 T tud_vendor_n_write_flush
+20007518 00000068 T vendord_init
+20007580 0000001c T vendord_deinit
+2000759c 0000002c T vendord_reset
+200075c8 000000f8 T vendord_open
+200076c0 00000090 T vendord_xfer_cb
+20007750 00000048 T tusb_rhport_init
+20007798 00000050 T tu_edpt_claim
+200077e8 00000036 T tu_edpt_release
+20007820 00000060 T tu_edpt_validate
+20007880 00000026 T tu_edpt_bind_driver
+200078a6 00000060 T tu_edpt_stream_init
+20007906 00000004 T tu_edpt_stream_deinit
+2000790c 00000068 T tu_edpt_stream_write_zlp_if_needed
+20007974 00000064 T tu_edpt_stream_write_xfer
+200079d8 000000cc T tu_edpt_stream_read_xfer
+20007aa4 00000016 t advance_index
+20007aba 0000004c t _tu_fifo_peek
+20007b06 00000096 t _tu_fifo_peek_n.constprop.0
+20007b9c 00000064 T tu_fifo_config
+20007c00 00000028 T tu_fifo_count
+20007c28 0000000e T tu_fifo_empty
+20007c36 00000026 T tu_fifo_full
+20007c5c 00000028 T tu_fifo_remaining
+20007c84 00000042 T tu_fifo_read
+20007cc6 00000046 T tu_fifo_read_n
+20007d0c 00000064 T tu_fifo_write
+20007d70 00000110 T tu_fifo_write_n
+20007e80 0000003e T tu_fifo_clear
+20007ebe 00000046 T tu_fifo_set_overwritable
+20007f04 00000024 t closeUpvalues
+20007f28 00000016 t nextChar
+20007f3e 00000016 t matchChar
+20007f54 0000001a t makeToken
+20007f6e 0000001c t twoCharToken
+20007f8a 0000001a t skipLineComment
+20007fa4 0000003c t readHexDigit
+20007fe0 00000028 t addLocal
+20008008 00000048 t addUpvalue
+20008050 00000040 t signatureParameterList
+20008090 0000001c t getEnclosingClass
+200080ac 00000006 T unarySignature
+200080b2 00000022 T prim_bool_not.lto_priv.0
+200080d4 00000014 T prim_class_toString.lto_priv.0
+200080e8 00000014 T prim_class_name.lto_priv.0
+200080fc 00000020 T prim_class_supertype.lto_priv.0
+2000811c 0000000e T prim_class_attributes.lto_priv.0
+2000812a 00000022 T prim_fiber_abort.lto_priv.0
+2000814c 00000010 T prim_fiber_current.lto_priv.0
+2000815c 0000000e T prim_fiber_error.lto_priv.0
+2000816a 0000002a T prim_fiber_isDone.lto_priv.0
+20008194 0000000a T prim_fiber_suspend.lto_priv.0
+2000819e 0000002a T prim_fiber_yield.lto_priv.0
+200081c8 0000002e T prim_fiber_yield1.lto_priv.0
+200081f6 00000016 T prim_fn_arity.lto_priv.0
+2000820c 00000014 T prim_list_count.lto_priv.0
+20008220 00000014 T prim_map_count.lto_priv.0
+20008234 00000010 T prim_null_not.lto_priv.0
+20008244 00000010 T prim_num_infinity.lto_priv.0
+20008254 00000010 T prim_num_nan.lto_priv.0
+20008264 00000014 T prim_num_pi.lto_priv.0
+20008278 00000014 T prim_num_tau.lto_priv.0
+2000828c 00000014 T prim_num_largest.lto_priv.0
+200082a0 0000000e T prim_num_smallest.lto_priv.0
+200082ae 00000012 T prim_num_maxSafeInteger.lto_priv.0
+200082c0 00000014 T prim_num_minSafeInteger.lto_priv.0
+200082d4 00000010 T prim_num_abs.lto_priv.0
+200082e4 00000014 T prim_num_negate.lto_priv.0
+200082f8 00000030 T prim_num_eqeq.lto_priv.0
+20008328 00000030 T prim_num_bangeq.lto_priv.0
+20008358 0000001a T prim_num_bitwiseNot.lto_priv.0
+20008372 00000046 T prim_num_isInfinity.lto_priv.0
+200083b8 00000028 T prim_num_isNan.lto_priv.0
+200083e0 00000044 T prim_num_sign.lto_priv.0
+20008424 00000010 T prim_object_not.lto_priv.0
+20008434 00000038 t wrenGetClassInline.lto_priv.0
+20008434 00000038 t wrenGetClassInline.lto_priv.1
+2000846c 0000001c T prim_object_type.lto_priv.0
+20008488 00000090 t getByteCountForArguments
+20008518 00000078 t wrenBindMethodCode
+20008590 00000014 t defaultReallocate
+200085a4 00000018 T prim_map_new.lto_priv.0
+200085bc 00000024 T prim_object_toString.lto_priv.0
+200085e0 00000034 T prim_bool_toString.lto_priv.0
+20008614 00000018 T prim_fn_toString.lto_priv.0
+2000862c 00000018 T prim_null_toString.lto_priv.0
+20008644 00000034 t emitByte
+20008678 00000048 t discardLocals
+200086c0 00000030 t popScope
+200086f0 0000001c T prim_list_add.lto_priv.0
+2000870c 00000012 T prim_list_addCore.lto_priv.0
+2000871e 00000062 t printError
+20008780 00000020 t lexError
+200087a0 00000060 t readHexEscape
+20008800 00000054 t makeNumber
+20008854 00000098 t readNumber
+200088ec 0000003c t resolveLocal
+20008928 0000005c t findUpvalue
+20008984 0000002e t resolveNonmodule
+200089b2 0000003a t readUnicodeEscape
+200089ec 00000024 t loadThis
+20008a10 0000001c T prim_map_clear.lto_priv.0
+20008a2c 00000018 T prim_list_new.lto_priv.0
+20008a44 00000048 T prim_fiber_new.lto_priv.0
+20008a8c 0000001a T prim_fn_new.lto_priv.0
+20008aa6 0000001e T prim_fiber_call.lto_priv.0
+20008ac4 0000001c T prim_fiber_call1.lto_priv.0
+20008ae0 0000001c T prim_fiber_transfer.lto_priv.0
+20008afc 0000001c T prim_fiber_transfer1.lto_priv.0
+20008b18 0000002c T prim_fiber_transferError.lto_priv.0
+20008b44 00000038 T prim_fiber_try.lto_priv.0
+20008b7c 00000038 T prim_fiber_try1.lto_priv.0
+20008bb4 00000094 T prim_list_filled.lto_priv.0
+20008c48 00000080 T prim_list_iterate.lto_priv.0
+20008cc8 00000088 T prim_map_iterate.lto_priv.0
+20008d50 0000001c T prim_list_clear.lto_priv.0
+20008d6c 00000034 T prim_list_iteratorValue.lto_priv.0
+20008da0 0000006c T prim_list_swap.lto_priv.0
+20008e0c 00000038 T prim_list_subscriptSetter.lto_priv.0
+20008e44 00000054 T prim_map_keyIteratorValue.lto_priv.0
+20008e98 0000005c T prim_map_valueIteratorValue.lto_priv.0
+20008ef4 00000034 T prim_list_removeAt.lto_priv.0
+20008f28 00000050 T prim_list_indexOf.lto_priv.0
+20008f78 00000060 T prim_list_removeValue.lto_priv.0
+20008fd8 00000028 T prim_object_same.lto_priv.0
+20009000 00000028 T prim_object_eqeq.lto_priv.0
+20009028 00000028 T prim_object_bangeq.lto_priv.0
+20009050 00000038 T prim_map_subscript.lto_priv.0
+20009088 0000003e T prim_map_subscriptSetter.lto_priv.0
+200090c6 00000036 T prim_map_addCore.lto_priv.0
+200090fc 00000038 T prim_map_containsKey.lto_priv.0
+20009134 000000b0 T prim_num_fromString.lto_priv.0
+200091e4 0000002c T prim_num_minus.lto_priv.0
+20009210 0000002c T prim_num_plus.lto_priv.0
+2000923c 0000002c T prim_num_multiply.lto_priv.0
+20009268 0000002c T prim_num_divide.lto_priv.0
+20009294 0000003c T prim_num_lt.lto_priv.0
+200092d0 0000003c T prim_num_gt.lto_priv.0
+2000930c 0000003c T prim_num_lte.lto_priv.0
+20009348 0000003c T prim_num_gte.lto_priv.0
+20009384 00000038 T prim_num_bitwiseAnd.lto_priv.0
+200093bc 00000038 T prim_num_bitwiseOr.lto_priv.0
+200093f4 00000038 T prim_num_bitwiseXor.lto_priv.0
+2000942c 0000003c T prim_num_bitwiseLeftShift.lto_priv.0
+20009468 0000003c T prim_num_bitwiseRightShift.lto_priv.0
+200094a4 00000054 T prim_num_min.lto_priv.0
+200094f8 00000054 T prim_num_max.lto_priv.0
+2000954c 00000088 T prim_num_clamp.lto_priv.0
+200095d4 00000014 T prim_num_acos.lto_priv.0
+200095e8 00000014 T prim_num_asin.lto_priv.0
+200095fc 00000014 T prim_num_atan.lto_priv.0
+20009610 00000014 T prim_num_cbrt.lto_priv.0
+20009624 00000014 T prim_num_ceil.lto_priv.0
+20009638 00000014 T prim_num_cos.lto_priv.0
+2000964c 00000014 T prim_num_floor.lto_priv.0
+20009660 00000014 T prim_num_round.lto_priv.0
+20009674 00000014 T prim_num_sin.lto_priv.0
+20009688 00000014 T prim_num_sqrt.lto_priv.0
+2000969c 00000014 T prim_num_tan.lto_priv.0
+200096b0 00000014 T prim_num_log.lto_priv.0
+200096c4 00000024 T prim_num_log2.lto_priv.0
+200096e8 00000014 T prim_num_exp.lto_priv.0
+200096fc 0000002c T prim_num_mod.lto_priv.0
+20009728 0000002c T prim_num_atan2.lto_priv.0
+20009754 0000002c T prim_num_pow.lto_priv.0
+20009780 00000016 T prim_num_fraction.lto_priv.0
+20009796 0000001a T prim_num_truncate.lto_priv.0
+200097b0 00000074 T prim_num_isInteger.lto_priv.0
+20009824 00000014 T prim_num_toString.lto_priv.0
+20009838 00000020 T wrenIsObjType.lto_priv.0.lto_priv.0
+20009838 00000020 T wrenIsObjType.lto_priv.1.lto_priv.0
+20009838 00000020 t wrenIsObjType.lto_priv.2
+20009838 00000020 T wrenIsObjType.lto_priv.3.lto_priv.0
+20009858 000000d4 t runtimeError
+2000992c 000000d0 T prim_list_subscript.lto_priv.0
+200099fc 00000054 T prim_object_is.lto_priv.0
+20009a50 0000002c T wrenInitConfiguration
+20009a7c 0000007c T wrenNewVM
+20009af8 0000033c T wrenCollectGarbage
+20009e34 0000002e T wrenReallocate
+20009e62 0000006c t wrenCallFunction.lto_priv.0
+20009e62 0000006c t wrenCallFunction.lto_priv.1
+20009ece 0000000e t call_fn
+20009edc 0000000c T prim_fn_call0.lto_priv.0
+20009ee8 0000000c T prim_fn_call1.lto_priv.0
+20009ef4 0000000c T prim_fn_call2.lto_priv.0
+20009f00 0000000c T prim_fn_call3.lto_priv.0
+20009f0c 0000000c T prim_fn_call4.lto_priv.0
+20009f18 0000000c T prim_fn_call5.lto_priv.0
+20009f24 0000000c T prim_fn_call6.lto_priv.0
+20009f30 0000000c T prim_fn_call7.lto_priv.0
+20009f3c 0000000c T prim_fn_call8.lto_priv.0
+20009f48 0000000c T prim_fn_call9.lto_priv.0
+20009f54 0000000c T prim_fn_call10.lto_priv.0
+20009f60 0000000c T prim_fn_call11.lto_priv.0
+20009f6c 0000000c T prim_fn_call12.lto_priv.0
+20009f78 0000000c T prim_fn_call13.lto_priv.0
+20009f84 0000000c T prim_fn_call14.lto_priv.0
+20009f90 0000000c T prim_fn_call15.lto_priv.0
+20009f9c 0000000c T prim_fn_call16.lto_priv.0
+20009fa8 0000004c T wrenFreeVM
+20009ff4 000001e0 t readString
+2000a1d4 000000d8 t readName
+2000a2ac 00000078 T prim_num_dotDot.lto_priv.0
+2000a324 00000078 T prim_num_dotDotDot.lto_priv.0
+2000a39c 00000038 T wrenReleaseHandle
+2000a3d4 0000000e T wrenPushRoot
+2000a3e2 000001ee t createClass
+2000a5d0 00000df8 t runInterpreter
+2000b3c8 00000032 T wrenCall
+2000b3fa 00000052 t wrenMakeHandle
+2000b44c 00000100 T wrenMakeCallHandle
+2000b54c 00000084 T wrenInterpret
+2000b5d0 000000d4 T wrenDefineVariable
+2000b6a4 00000114 t addToAttributeGroup
+2000b7b8 000000bc T prim_list_insert.lto_priv.0
+2000b874 000000e0 T prim_map_remove.lto_priv.0
+2000b954 00000044 T wrenEnsureSlots
+2000b998 00000080 T wrenGetSlotType
+2000ba18 0000000c T wrenGetSlotDouble
+2000ba24 00000012 T wrenGetSlotHandle
+2000ba36 00000012 T wrenSetSlotDouble
+2000ba48 00000012 T wrenSetSlotHandle
+2000ba5a 00000076 T wrenGetVariable
+2000bad0 00000006 T wrenGetUserData
+2000bad6 00000072 T error.lto_priv.0
+2000bb48 000000e8 t addConstant
+2000bc30 00000100 t declareVariable
+2000bd30 00000038 t patchJump
+2000bd68 00000038 t methodSymbol
+2000bda0 00000024 T this_.lto_priv.0
+2000bdc4 00000020 T matchLine.lto_priv.0
+2000bde4 00000034 T emitOp.lto_priv.0
+2000be18 0000001c t emitJump
+2000be34 00000016 T boolean.lto_priv.0
+2000be4a 0000000a T null.lto_priv.0
+2000be54 00000014 T emitByteArg.lto_priv.0
+2000be68 00000022 T emitShortArg.lto_priv.0
+2000be8a 00000022 t defineVariable
+2000beac 00000098 T staticField.lto_priv.0
+2000bf44 0000001c t callMethod
+2000bf60 00000026 t loadCoreVariable
+2000bf86 00000076 t endLoop
+2000bffc 00000014 T emitConstant.lto_priv.0
+2000c010 0000000e T literal.lto_priv.0
+2000c01e 0000012a t emitAttributes
+2000c148 0000001a T loadLocal.lto_priv.0
+2000c162 00000092 T endCompiler.lto_priv.0
+2000c1f4 00000094 T signatureToString.lto_priv.0
+2000c288 0000001e T signatureSymbol.lto_priv.0
+2000c2a6 0000004a t callSignature
+2000c2f0 00000078 T copyAttributes.lto_priv.0
+2000c368 00000458 T nextToken.part.0.lto_priv.0
+2000c7c0 0000002c T nextToken.lto_priv.0
+2000c7ec 00000032 T consume.lto_priv.0
+2000c81e 0000001a t declareNamedVariable
+2000c838 0000003c t finishParameterList
+2000c874 00000030 T infixSignature
+2000c8a4 00000034 T mixedSignature
+2000c8d8 0000004c t maybeSetter
+2000c924 0000002c T subscriptSignature
+2000c950 0000004c T namedSignature
+2000c99c 00000090 T constructorSignature
+2000ca2c 00000074 t parsePrecedence
+2000caa0 00000030 T unaryOp.lto_priv.0
+2000cad0 00000024 T and_.lto_priv.0
+2000caf4 00000024 T or_.lto_priv.0
+2000cb18 00000054 T conditional.lto_priv.0
+2000cb6c 00000044 T infixOp
+2000cbb0 0000000a T expression.lto_priv.0
+2000cbba 00000042 t finishArgumentList
+2000cbfc 00000018 T grouping.lto_priv.0
+2000cc14 00000068 T list.lto_priv.0
+2000cc7c 00000084 T map.lto_priv.0
+2000cd00 000000b0 T field.lto_priv.0
+2000cdb0 00000098 T stringInterpolation.lto_priv.0
+2000ce48 00000078 T subscript.lto_priv.0
+2000cec0 00000278 t classDefinition
+2000d138 00000150 T matchAttribute.part.0.lto_priv.0
+2000d288 0000019c T definition.lto_priv.0
+2000d424 00000078 t finishBlock
+2000d49c 0000003c T finishBody.lto_priv.0
+2000d4d8 000001b8 t methodCall
+2000d690 00000084 t namedCall
+2000d714 000000cc T name.lto_priv.0
+2000d7e0 00000024 T call.lto_priv.0
+2000d804 00000058 T super_.lto_priv.0
+2000d85c 00000348 t statement
+2000dba4 0000000e t prim_range_from
+2000dbb2 0000000e t prim_range_to
+2000dbc0 00000020 t prim_range_isInclusive
+2000dbe0 0000000c t prim_range_iteratorValue
+2000dbec 00000014 t prim_string_byteCount
+2000dc00 00000004 t prim_string_toString
+2000dc04 00000020 t prim_system_writeString
+2000dc24 00000064 t wrenUtf8Decode
+2000dc88 0000001a t wrenPowerOf2Ceil
+2000dca2 00000052 t hashBits
+2000dcf4 00000028 t hashString
+2000dd1c 0000001a t prim_range_min
+2000dd36 0000001a t prim_range_max
+2000dd50 000000bc t wrenStringFind
+2000de0c 00000020 t prim_system_clock
+2000de2c 00000040 t wrenNewModule
+2000de6c 0000002a t allocateString
+2000de96 0000004e T wrenByteBufferFill
+2000dee4 0000000a T wrenByteBufferWrite
+2000deee 00000056 T wrenIntBufferFill
+2000df44 00000040 T wrenSymbolTableFind
+2000df84 00000024 t wrenFindVariable.isra.0
+2000dfa8 0000002c T wrenUtf8EncodeNumBytes
+2000dfd4 0000007e T wrenUtf8Encode
+2000e052 00000018 T wrenValueBufferClear
+2000e06a 00000054 T wrenValueBufferWrite
+2000e0be 00000056 T wrenNewSingleClass
+2000e114 0000007e T wrenBindMethod
+2000e192 0000003a T wrenBindSuperclass
+2000e1cc 0000003c T wrenNewClosure
+2000e208 000000a4 T wrenNewFiber
+2000e2ac 0000005a T wrenNewFunction
+2000e306 0000002c T wrenFunctionBindName
+2000e332 0000003a T wrenNewList
+2000e36c 00000090 T wrenListRemoveAt
+2000e3fc 00000026 T wrenNewMap
+2000e422 00000018 T wrenMapClear
+2000e43a 00000032 T wrenNewStringLength
+2000e46c 00000060 t defineClass
+2000e4cc 00000060 T wrenSymbolTableAdd
+2000e52c 00000026 T wrenSymbolTableEnsure
+2000e552 0000005e t wrenStringCodePointAt
+2000e5b0 00000098 T wrenNumToString
+2000e648 000000e0 T wrenStringFormat
+2000e728 00000084 t prim_range_toString
+2000e7ac 00000028 T validateNum
+2000e7d4 000000ec t prim_range_iterate
+2000e8c0 00000038 t validateIntValue
+2000e8f8 00000084 t validateIndexValue
+2000e97c 0000002a T validateIndex
+2000e9a6 00000032 t prim_string_byteAt
+2000e9d8 00000054 t prim_string_codePointAt
+2000ea2c 00000034 t prim_string_iteratorValue
+2000ea60 00000022 T validateInt
+2000ea82 0000007e t prim_string_fromCodePoint
+2000eb00 0000006c t prim_string_fromByte
+2000eb6c 00000074 t prim_string_iterate
+2000ebe0 00000070 t prim_string_iterateByte
+2000ec50 00000180 T calculateRange
+2000edd0 00000030 T wrenNewUpvalue
+2000ee00 0000003c T wrenGrayObj
+2000ee3c 0000002a T wrenBlackenSymbolTable
+2000ee66 0000001a T wrenGrayValue
+2000ee80 00000024 T wrenGrayBuffer
+2000eea4 000000f8 T wrenFreeObj
+2000ef9c 00000090 T wrenValuesEqual
+2000f02c 00000100 T findEntry.lto_priv.0
+2000f12c 000000b4 T resizeMap.lto_priv.0
+2000f1e0 00000028 T wrenMapGet
+2000f208 00000074 T wrenMapSet
+2000f27c 00000074 T wrenEnsureStack.part.0
+2000f2f0 000000d4 T runFiber.isra.0
+2000f3c4 00000024 T loadVariable.isra.0
+2000f3e8 00000018 T allowLineBeforeDot.isra.0
+2000f400 00000018 T match.isra.0
+2000f418 000001c4 t wrenCompile.constprop.0
+2000f5dc 000000d4 T compileInModule.constprop.0
+2000f6b0 0000006c T consumeLiteral.constprop.0
+2000f71c 000003f4 T method.isra.0
+2000fb10 00000050 T bareName.isra.0
+2000fb60 0000000c T peekNextChar.isra.0
+2000fb6c 00000018 t prim_system_gc
+2000fb84 00001a40 T wrenInitializeCore
+200115c4 00000150 t prim_string_subscript
+20011714 0000007c T validateKey
+20011790 0000002c T validateString
+200117bc 00000038 t prim_string_contains
+200117f4 00000048 t prim_string_endsWith
+2001183c 00000040 t prim_string_indexOf1
+2001187c 00000074 t prim_string_indexOf2
+200118f0 00000044 t prim_string_startsWith
+20011934 00000048 t prim_string_plus
+2001197c 00000030 T validateFn.constprop.0
+200119ac 000000ac T modf
+20011a58 00000044 T fmax
+20011a9c 00000044 T fmin
+20011ae0 00000068 T __fpclassifyd
+20011b48 00000012 T __gnu_thumb1_case_uqi
+20011b5c 00000014 T __gnu_thumb1_case_shi
+20011b70 00000014 T __gnu_thumb1_case_uhi
+20011b84 00000002 W __aeabi_idiv0
+20011b84 00000002 W __aeabi_ldiv0
+20011b88 00000018 T __aeabi_llsr
+20011b88 00000018 T __lshrdi3
+20011ba0 00000018 T __aeabi_llsl
+20011ba0 00000018 T __ashldi3
+20011bb8 00000012 T __gnu_thumb1_case_sqi
+20011bcc 000000a6 T _calloc_r
+20011c74 00000014 T free
+20011c88 000005cc T _malloc_r
+20012254 00000010 T __malloc_lock
+20012264 00000010 T __malloc_unlock
+20012274 00000014 T mallinfo
+20012288 00000018 T realloc
+200122a0 00000350 T _realloc_r
+200125f0 00000030 t sulp
+20012620 00000fdc T _strtod_l
+200135fc 0000001c T strtod
+20013618 000001a0 t _strtoll_l.isra.0
+200137b8 00000018 T strtoll
+200137d0 0000013c T __sflush_r
+2001390c 00000066 T _fflush_r
+20013974 0000001c t stdio_exit_handler
+20013990 0000003c t cleanup_stdio
+200139cc 00000118 t global_stdio_init.part.0
+20013ae4 00000038 T __sinit
+20013b1c 00000010 T __sfp_lock_acquire
+20013b2c 00000010 T __sfp_lock_release
+20013b3c 000000b4 T _fputs_r
+20013bf0 00000018 T fputs
+20013c08 000002e8 T __sfvwrite_r
+20013ef0 00000044 T _fwalk_sglue
+20013f34 00000028 T __sread
+20013f5c 00000040 T __swrite
+20013f9c 0000002c T __sseek
+20013fc8 0000000c T __sclose
+20013fd4 000000f8 T __swsetup_r
+200140cc 00000046 T memcmp
+20014114 000000c4 T memmove
+200141d8 00000068 T strncmp
+20014240 0000005c T strncpy
+2001429c 00000028 T clock
+200142c4 00000010 T __locale_mb_cur_max
+200142d4 00000008 T _localeconv_r
+200142dc 00000024 T _close_r
+20014300 00000028 T _lseek_r
+20014328 00000028 T _read_r
+20014350 00000024 T _sbrk_r
+20014374 0000000a T _times_r
+20014380 00000028 T _write_r
+200143a8 0000000c T __errno
+200143b4 00000002 T __retarget_lock_init_recursive
+200143b8 00000002 T __retarget_lock_close_recursive
+200143bc 00000002 T __retarget_lock_acquire_recursive
+200143c0 00000002 T __retarget_lock_release_recursive
+200143c4 00000014 T sbrk
+200143d8 0000001a T sysconf
+200143f4 T setjmp
+2001440c T longjmp
+20014428 00000084 T strcmp
+200144b0 0000007c T memchr
+2001452c 0000005c T strlen
+20014588 0000000c T nan
+20014594 000000b4 T _malloc_trim_r
+20014648 000001f0 T _free_r
+20014838 000000ae t rshift
+200148e8 000005f4 T __gethex
+20014edc 0000002a T __match
+20014f08 00000208 T __hexnan
+20015110 00000058 T __malloc_update_mallinfo
+20015168 00000034 T _mallinfo_r
+2001519c 0000002c T __ascii_mbtowc
+200151c8 0000004e T _Balloc
+20015218 00000014 T _Bfree
+2001522c 000000a4 T __multadd
+200152d0 000000b0 T __s2b
+20015380 0000005e T __hi0bits
+200153e0 0000008e T __lo0bits
+20015470 00000060 T __i2b
+200154d0 000001b0 T __multiply
+20015680 000000d8 T __pow5mult
+20015758 000000fc T __lshift
+20015854 0000003a T __mcmp
+20015890 000001a8 T __mdiff
+20015a38 00000040 T __ulp
+20015a78 000000b8 T __b2d
+20015b30 000000c4 T __d2b
+20015bf4 00000068 T __ratio
+20015c5c 0000003e T __copybits
+20015c9c 0000004a T __any_on
+20015ce8 0000001c T __ascii_wctomb
+20015d04 00000050 T _wcrtomb_r
+20015d54 00000016 T _wcsrtombs_r
+20015d6c 000000cc T _fclose_r
+20015e38 000000d2 T __smakebuf_r
+20015f0c 00000028 T _fstat_r
+20015f34 00000024 T _isatty_r
+20015f58 00000102 T _wcsnrtombs_l
+2001605c 00000024 T _wcsnrtombs_r
+20016080 0000003c T vsprintf
+200160bc 000023cc T _svfprintf_r
+20018488 00000058 T __ssprint_r
+200184e0 00000068 T frexp
+20018548 00000150 t quorem
+20018698 00001110 T _dtoa_r
+200197a8 000000d0 T __ssputs_r
+2001e700 00000020 r phase_names
+2001e720 00000010 r gui_workload
+2001e730 000000a0 r workloads
+2001e7d0 00000008 R at_the_end_of_time
+2001e7d8 0000000c r __bi_84
+2001e7e4 0000000c r __bi_48
+2001e7f0 00000050 r pow10.0
+2001e840 00000002 r crlf_str.0
+2001e842 0000000c r __bi_202.0
+2001e850 00000014 r usbd_desc_str
+2001e864 0000004b r usbd_desc_cfg
+2001e8af 00000012 r usbd_desc_device
+2001e8c4 00000040 r _usbd_driver
+2001e914 00000500 R rules
+2001ee14 00000134 r stackEffects
+2001ef48 00000108 r keywords
+2001f050 00000134 r dispatchTable.0
+2001f4f8 00000014 r fpinan.0
+2001f50c 00000014 r fpi.1
+2001f520 00000028 r tinytens
+2001f548 00000101 R _ctype_
+2001f64c 00000100 R __hexdig
+2001f74c 0000000c r p05.0
+2001f758 00000028 R __mprec_bigtens
+2001f780 000000c8 R __mprec_tens
+2001fa4c 00000010 r zeroes.0
+2001fa5c 00000010 r blanks.1
+2001fa6c 00000004 r __bi_ptr84
+2001fa6c R __binary_info_start
+2001fa6c R __exidx_end
+2001fa6c R __exidx_start
+2001fa70 00000004 r __bi_ptr54
+2001fa74 00000004 r __bi_ptr48
+2001fa78 00000004 r __bi_ptr42
+2001fa7c 00000004 r __bi_ptr34
+2001fa80 00000004 r __bi_ptr202.2
+2001fa84 R __binary_info_end
+2001fa90 D __data_start__
+2001fa90 A __etext
+2001fa90 00000001 d striped_spin_lock_num
+2001fa94 D irq_handler_chain_slots
+2001fac4 D irq_handler_chain_first_slot
+2001face D irq_handler_chain_remove_tail
+2001fadc 00000018 d default_alarm_pool
+2001fb00 D aeabi_bits_funcs
+2001fb10 D aeabi_bits_funcs_end
+2001fb10 D aeabi_mem_funcs
+2001fb20 D aeabi_mem_funcs_end
+2001fb20 00000018 D stdio_usb
+2001fb38 0000001c D _usbd_qdef
+2001fb54 00000001 d _usbd_rhport
+2001fb58 00000004 D __malloc_sbrk_base
+2001fb5c 00000004 D __malloc_trim_threshold
+2001fb60 00000408 D __malloc_av_
+2001ff68 0000000c D __sglue
+2001ff74 0000016c D __global_locale
+200200e0 00000004 D _impure_ptr
+200200e8 00000140 D _impure_data
+20020228 d __mutex_array_start
+20020228 00000008 d print_mutex
+20020230 d __mutex_array_end
+20020230 00000004 D __pre_init_runtime_init_early_resets
+20020230 d __preinit_array_start
+20020234 00000004 D __pre_init_runtime_init_usb_power_down
+20020248 00000004 D __pre_init_runtime_init_clocks
+2002024c 00000004 D __pre_init_runtime_init_post_clock_resets
+20020250 00000004 D __pre_init_runtime_init_rp2040_gpio_ie_disable
+20020254 00000004 D __pre_init_runtime_init_spin_locks_reset
+20020258 00000004 D __pre_init_runtime_init_mutex
+2002025c 00000004 D __pre_init_runtime_init_default_alarm_pool
+20020260 00000004 D __pre_init_first_per_core_initializer
+20020264 00000004 D __pre_init_runtime_init_per_core_irq_priorities
+20020268 d __init_array_start
+20020268 d __preinit_array_end
+2002026c B __bss_start__
+2002026c D __data_end__
+2002026c d __init_array_end
+2002026c D __tdata_end
+2002026c B __tls_base
+2002026c B __tls_end
+20020270 B __tbss_end
+20020270 000003a8 b context
+20020618 00000180 b default_alarm_pool_entries
+20020798 00000008 b last_avail_time.1
+200207a0 00000001 B __lock___malloc_recursive_mutex
+200207a4 00000001 B __lock___sfp_recursive_mutex
+200207a8 00000028 B __malloc_current_mallinfo
+200207d0 00000004 B __malloc_max_sbrked_mem
+200207d4 00000004 B __malloc_max_total_mem
+200207d8 00000004 B __malloc_top_pad
+200207dc 00000138 B __sf
+20020914 00000004 B __stdio_exit_handler
+20020918 00000004 b _app_driver
+2002091c 00000080 b _cdcd_epbuf
+2002099c 000000c8 b _cdcd_itf
+20020a64 00000040 b _ctrl_epbuf
+20020aa4 00000014 b _ctrl_xfer
+20020ab8 00000008 b _ubsd_mutexdef
+20020ac0 00000004 b _usbd_mutex
+20020ac4 00000004 b _usbd_q
+20020ac8 00000080 b _vendord_epbuf
+20020b48 0000024c b _vendord_itf
+20020d94 00000004 b chars_available_callback
+20020d98 00000004 b chars_available_param
+20020d9c 00000004 b claimed
+20020da0 00000028 b configured_freq
+20020dc8 00000004 b drivers
+20020dcc 00000004 B e15_last_sof
+20020dd0 00000004 B errno
+20020dd4 00000004 b filter
+20020dd8 00000004 b heap_end.0
+20020ddc 00000400 b hw_endpoints
+200211dc 00000004 b lazy_vsnprintf
+200211e0 00000004 b load_value
+200211e4 00000004 b next_buffer_ptr
+200211e8 00000008 b one_shot_timer_crit_sec
+200211f0 00000010 b pools
+20021200 00000100 B sd_table
+20021300 00000004 V sf_clz_func
+20021304 00000100 B sf_table
+20021404 00000004 b sleep_notifier
+20021408 00000008 b stdio_usb_mutex
+20021410 00000028 b desc_str.0
+20021438 00000001 b _app_driver_count
+20021439 00000001 b _cdcd_fifo_cfg
+2002143a 00000001 b _sof_enable
+2002143b 00000002 B _tusb_rhport_role
+2002143d 00000054 b _usbd_dev
+20021491 000000c0 B _usbd_qdef_buf
+20021551 00000001 b _usbd_queued_setup
+20021552 00000001 b claimed
+20021553 00000001 b irq_handler_chain_free_slot_head
+20021554 00000001 b low_priority_irq_num
+20021555 00000001 b one_shot_timer_pending
+20021556 00000008 b retrieved_id
+2002155e 00000011 b usbd_serial_str
+2002156f 00000001 b user_irq_claimed
+20021570 B __bss_end__
+20021570 B __end__
+20021570 B end
+20034000 B __HeapLimit
+20034000 A __StackBottom
+20034000 B __StackLimit
+20034000 ? __scratch_y_end__
+20034000 A __scratch_y_source__
+20034000 ? __scratch_y_start__
+20040000 B __StackTop
+20040000 ? __scratch_x_end__
+20040000 A __scratch_x_source__
+20040000 ? __scratch_x_start__
+20041000 A __StackOneBottom
+20041000 B __StackOneTop
+d0000000 a IOPORT

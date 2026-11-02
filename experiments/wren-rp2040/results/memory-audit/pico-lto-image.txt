@@ -1,0 +1,14 @@
+ELF_SHA256 cd14aab93e9dc3090377ccba35246e16efbaa1608c205660d25478854230dc08
+UF2_SHA256 89b098f3d64783315e4bc7c49938c42588fa8bfe31459ab235b7c19778a4e59f
+ENTRY 0x20000001; all PT_LOAD and allocated sections in SRAM
+PT_LOAD {'vaddr': '0x20000000', 'filesz': 131692, 'memsz': 138608, 'flags': 7}
+PT_LOAD {'vaddr': '0x20034000', 'filesz': 0, 'memsz': 49152, 'flags': 4}
+SECTION .text 0x20000000 104568 LOAD
+SECTION .rodata 0x20019878 25076 LOAD
+SECTION .binary_info 0x2001fa6c 24 LOAD
+SECTION .data 0x2001fa90 2012 LOAD
+SECTION .bss 0x20020270 4864 NOLOAD
+SECTION .heap 0x20021570 2048 NOLOAD
+SECTION .stack_dummy 0x20034000 49152 NOLOAD
+UF2_PASS blocks=515; payload matches ELF; no flash targets
+SELFTEST rejected 8 mutated UF2 files

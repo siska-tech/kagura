@@ -1,0 +1,26 @@
+build-pico-audit-expanded/wren_rp2040.elf  :
+section                 size        addr
+.text                 103668   536870912
+.rodata                23732   536974584
+.binary_info              24   536998316
+.data                   3292   536998352
+.tdata                     0   537001644
+.uninitialized_data        0   537001644
+.tbss                      0   537001644
+.bss                    4864   537001648
+.heap                   2048   537006512
+.scratch_x                 0   537133056
+.scratch_y                 0   537092096
+.stack_dummy           49152   537092096
+.debug_info           328774           0
+.debug_abbrev          43115           0
+.debug_loclists       138361           0
+.debug_aranges          9424           0
+.debug_rnglists        16544           0
+.debug_line           188502           0
+.debug_str             49201           0
+.comment                  69           0
+.ARM.attributes           42           0
+.debug_frame           29084           0
+.debug_line_str         1117           0
+Total                 991013

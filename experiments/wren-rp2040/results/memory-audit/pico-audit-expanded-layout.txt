@@ -1,0 +1,2 @@
+LAYOUT_PASS malloc_start=0x200211b0 malloc_limit=0x20036000 capacity=85584 stack_bottom=0x20036000 stack_top=0x20042000 stack_bytes=49152 blocks=511
+No flash-programming, USB-boot reset or core1/FIFO launch symbols linked

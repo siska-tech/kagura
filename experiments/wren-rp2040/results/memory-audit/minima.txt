@@ -1,0 +1,10 @@
+{
+  "single_gui": {
+    "budget": 85881,
+    "limit": 120144
+  },
+  "checked_20_lifecycles": {
+    "budget": 90437,
+    "limit": 124240
+  }
+}

@@ -1,0 +1,7 @@
+LAYOUT_PASS malloc_start=0x200211b0 malloc_limit=0x20036000 capacity=85584 stack_bottom=0x20036000 stack_top=0x20042000 stack_bytes=49152 blocks=511
+No flash-programming, USB-boot reset or core1/FIFO launch symbols linked
+Traceback (most recent call last):
+  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/.wren-worktree/experiments/wren-rp2040/tools/check_layout.py", line 36, in <module>
+    assert limit-start >= args.min_arena, 'insufficient physical arena for requested acceptance profile'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: insufficient physical arena for requested acceptance profile
