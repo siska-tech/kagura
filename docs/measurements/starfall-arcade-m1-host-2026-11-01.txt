@@ -2,8 +2,8 @@ Start testing: Nov 01 05:25 JST
 ----------------------------------------------------------
 1/6 Testing: deterministic_game
 1/6 Test: deterministic_game
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_test"
+Directory: <repo>/build/starfall-host
 "deterministic_game" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------
@@ -21,8 +21,8 @@ Test Passed.
 
 2/6 Testing: arcade_flow
 2/6 Test: arcade_flow
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_flow_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_flow_test"
+Directory: <repo>/build/starfall-host
 "arcade_flow" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------
@@ -40,8 +40,8 @@ Test Passed.
 
 3/6 Testing: boss_phases
 3/6 Test: boss_phases
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_boss_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_boss_test"
+Directory: <repo>/build/starfall-host
 "boss_phases" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------
@@ -57,8 +57,8 @@ Test Passed.
 
 4/6 Testing: backend_contract
 4/6 Test: backend_contract
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_backend_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_backend_test"
+Directory: <repo>/build/starfall-host
 "backend_contract" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------
@@ -73,8 +73,8 @@ Test Passed.
 
 5/6 Testing: scene_music
 5/6 Test: scene_music
-Command: "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host/starfall_audio_test"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "<repo>/build/starfall-host/starfall_audio_test"
+Directory: <repo>/build/starfall-host
 "scene_music" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------
@@ -99,8 +99,8 @@ Test Passed.
 
 6/6 Testing: keyboard_protocol
 6/6 Test: keyboard_protocol
-Command: "/usr/bin/python3.14" "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/starfall/tests/test_keyboard.py"
-Directory: /mnt/c/Users/Shion/Documents/Projects/Kagura/build/starfall-host
+Command: "/usr/bin/python3.14" "<repo>/software/starfall/tests/test_keyboard.py"
+Directory: <repo>/build/starfall-host
 "keyboard_protocol" start time: Nov 01 05:25 JST
 Output:
 ----------------------------------------------------------

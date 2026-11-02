@@ -1,4 +1,4 @@
-test_real_assembler_and_existing_cycle_model (__main__.AssemblerTests.test_real_assembler_and_existing_cycle_model) ... /mnt/c/Users/Shion/Documents/Projects/Kagura/software/pico/tests/test_pio_timing.py:17: ResourceWarning: unclosed file <_io.TextIOWrapper name='/mnt/c/Users/Shion/Documents/Projects/Kagura/build/micropython-check/python-host.pio.h' mode='r' encoding='UTF-8'>
+test_real_assembler_and_existing_cycle_model (__main__.AssemblerTests.test_real_assembler_and_existing_cycle_model) ... <repo>/software/pico/tests/test_pio_timing.py:17: ResourceWarning: unclosed file <_io.TextIOWrapper name='<repo>/build/micropython-check/python-host.pio.h' mode='r' encoding='UTF-8'>
   text = open(header).read()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 ok

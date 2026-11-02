@@ -1,9 +1,9 @@
 SDK FINAL device kagura/device.mpy
 Traceback (most recent call last):
   File "<stdin>", line 7, in <module>
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/finalbench.py", line 7, in run
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 937, in __init__
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 183, in __init__
+  File "<repo>/build/sakura-perf/profsrc/finalbench.py", line 7, in run
+  File "<repo>/software/micropython/examples/sakura.py", line 937, in __init__
+  File "<repo>/software/micropython/examples/sakura.py", line 183, in __init__
 MemoryError: memory allocation failed, allocating 4096 bytes
 Local directory build/sakura-perf/run is mounted at /remote
 SDK FINAL device kagura/device.mpy
@@ -18,10 +18,10 @@ PLAINPROBE connect(accelerate=False)
 SAKURA CAPS 0x5b, 240 lines, nopcm: melody on the PSG sine
 Traceback (most recent call last):
   File "<stdin>", line 7, in <module>
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/plainprobe.py", line 25, in run
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/build/sakura-perf/profsrc/plainprobe.py", line 11, in check
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 1253, in run
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 1227, in load
-  File "/mnt/c/Users/Shion/Documents/Projects/Kagura/software/micropython/examples/sakura.py", line 378, in build_scenery
+  File "<repo>/build/sakura-perf/profsrc/plainprobe.py", line 25, in run
+  File "<repo>/build/sakura-perf/profsrc/plainprobe.py", line 11, in check
+  File "<repo>/software/micropython/examples/sakura.py", line 1253, in run
+  File "<repo>/software/micropython/examples/sakura.py", line 1227, in load
+  File "<repo>/software/micropython/examples/sakura.py", line 378, in build_scenery
 MemoryError: memory allocation failed, allocating 2344 bytes
 Local directory build/sakura-perf/run is mounted at /remote

@@ -6,8 +6,10 @@
   },
   {
     "path": "docs/framebuffer-transport-hardware-log.md",
-    "bytes": 13774,
-    "sha256": "9fe958f0e7126b7ffe2d9399dc468cacc5d3966bc25bbacb39cf754cbc8109e3"
+    "bytes": 13778,
+    "sha256": "bce5937be7f55a53c131efa96fae6b31e03f7044be2d4a76f26e8abaef592a16",
+    "original_sha256": "9fe958f0e7126b7ffe2d9399dc468cacc5d3966bc25bbacb39cf754cbc8109e3",
+    "redacted": "device serial / machine path; original in git history"
   },
   {
     "path": "docs/framebuffer-transport-logs/console-final-clean.log",
@@ -21,8 +23,10 @@
   },
   {
     "path": "docs/framebuffer-transport-logs/finish-operations.log",
-    "bytes": 634,
-    "sha256": "6aa8ad68ac94d44c5126c5a39473f506a92a3fc892e51136388f3739a01a0f39"
+    "bytes": 635,
+    "sha256": "a6553e49229492f22d91ee83a2cc85d6cfa7a6f2934a6085fef0836d969c8e60",
+    "original_sha256": "6aa8ad68ac94d44c5126c5a39473f506a92a3fc892e51136388f3739a01a0f39",
+    "redacted": "device serial / machine path; original in git history"
   },
   {
     "path": "docs/framebuffer-transport-logs/flash-abi06-reload.log",
@@ -41,8 +45,10 @@
   },
   {
     "path": "docs/framebuffer-transport-logs/full-source-operations.log",
-    "bytes": 535,
-    "sha256": "b317a2ddc3db260b6c4f2424e3580dc8efdb712a4f409a236b224d0911ad619c"
+    "bytes": 536,
+    "sha256": "6d9d2b112958ef463e0a34e532f7e052acac8cd8e81a04cd38150a3e1954c6f9",
+    "original_sha256": "b317a2ddc3db260b6c4f2424e3580dc8efdb712a4f409a236b224d0911ad619c",
+    "redacted": "device serial / machine path; original in git history"
   },
   {
     "path": "docs/framebuffer-transport-logs/fullblit-clean.log",
@@ -66,8 +72,10 @@
   },
   {
     "path": "docs/framebuffer-transport-logs/pio-tests.log",
-    "bytes": 7226,
-    "sha256": "fc46cf8f6889d1442d355f9b71fd305e03adae2ef3d5d81e99d3d02df78a4464"
+    "bytes": 7150,
+    "sha256": "74ee32f86a2d9b02ff67c48ec8962493445cbfdb405cb76dddbf1251e0c41f32",
+    "original_sha256": "fc46cf8f6889d1442d355f9b71fd305e03adae2ef3d5d81e99d3d02df78a4464",
+    "redacted": "device serial / machine path; original in git history"
   },
   {
     "path": "docs/framebuffer-transport-logs/README.md",
@@ -91,8 +99,10 @@
   },
   {
     "path": "docs/framebuffer-transport-logs/resume-operations.log",
-    "bytes": 535,
-    "sha256": "698a86f6ea2f16fb2834a4cc3e9903c7dfdbde582f294004006ef01bc58b02da"
+    "bytes": 536,
+    "sha256": "ffde87e55bebb5bdf39901ae3b80a8281d08ac5aee45d5397411ccca53426295",
+    "original_sha256": "698a86f6ea2f16fb2834a4cc3e9903c7dfdbde582f294004006ef01bc58b02da",
+    "redacted": "device serial / machine path; original in git history"
   },
   {
     "path": "docs/framebuffer-transport-logs/rtl-summary.tsv",

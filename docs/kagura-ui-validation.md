@@ -76,7 +76,7 @@ allocation回数、実際のGC回数は未取得。明示GC以外にもVMがGC�
 
 ## 初回の接続中断とSDK混在
 
-COM7、USB serial `E663A837CB73512D`の既存Picoを読み取り確認:
+COM7の既存Pico（USB serialは照合済み。値は記録しない）を読み取り確認:
 
 ```text
 MicroPython 1.26.0 / KAGURA Raspberry Pi Pico with RP2040 / _build KAGURA_PICO
@@ -198,8 +198,8 @@ done
 ```
 
 ```text
-python tools/kagura-ui-device.py --port COM7 --expected-serial E663A837CB73512D --bench --cycles 24 --hold-seconds 0
-python tools/kagura-ui-device.py --port COM7 --expected-serial E663A837CB73512D --accelerate --interactive
+python tools/kagura-ui-device.py --port <PORT> --expected-serial <USB_SERIAL> --bench --cycles 24 --hold-seconds 0
+python tools/kagura-ui-device.py --port <PORT> --expected-serial <USB_SERIAL> --accelerate --interactive
 ```
 
 interactiveはUSB GUIを実行したままCOMポートを解放する。
