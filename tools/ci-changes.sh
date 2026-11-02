@@ -18,6 +18,8 @@ classify() {
         # Phase 0 runs on every change: links in all Markdown, design budget.
         *.md|docs/*|LICENSE|.gitignore|.gitattributes|.vscode/*) ;;
         spec/design-budget.json|tools/check-design.ps1) ;;
+        # Self-contained experiments with their own build and test scripts; CI does not run them.
+        experiments/*) ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
         spec/registers.json|tools/gen-registers.ps1) all ;;
