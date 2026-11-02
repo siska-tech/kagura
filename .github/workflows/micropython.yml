@@ -66,6 +66,9 @@ jobs:
           python3 software/micropython/tests/ui_glyph_runtime.py > build/glyph-cpython.txt
           MICROPYPATH=software/micropython build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_glyph_runtime.py > build/glyph-micropython.txt
           diff -u build/glyph-cpython.txt build/glyph-micropython.txt
+          python3 software/micropython/tests/ui_canvas_runtime.py > build/canvas-cpython.txt
+          MICROPYPATH=software/micropython build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_canvas_runtime.py > build/canvas-micropython.txt
+          diff -u build/canvas-cpython.txt build/canvas-micropython.txt
           MICROPYPATH=software/micropython build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_focus_alloc.py
       - name: Numerical hardware fixture contracts
         run: python3 -I software/micropython/tests/test_tile1200_accept.py

@@ -20,6 +20,7 @@ freeze("$(BOARD_DIR)/../..", (
     "kagura/ui/app.py",
     "kagura/ui/widget.py",
     "kagura/ui/widgets.py",
+    "kagura/ui/canvas.py",
     "kagura/ui/layout.py",
     "kagura/ui/render.py",
     "kagura/ui/events.py",
