@@ -69,6 +69,10 @@ class Desktop:
         self._row = bytearray(128)
         self._open = False
         self._sink = self._write_run   # one bound method, not one per present()
+        # The accelerated link's calls, bound once (it is installed at connect()).
+        link = device._link()
+        self._lwrite = link.write_memory if link is not None else None
+        self._lfence = link.fence if link is not None else None
         if console is not None:
             console.pause()
         try:
@@ -115,10 +119,9 @@ class Desktop:
         # during the call. FENCE per run, as TileFramebuffer; ERROR_CODE is
         # checked once per present().
         d = self.device
-        link = d._link()
-        if link is not None:
-            link.write_memory(first * 32, data, d.timeout_us)
-            link.fence(d.timeout_us)
+        if self._lwrite is not None:
+            self._lwrite(first * 32, data, d.timeout_us)
+            self._lfence(d.timeout_us)
         else:
             d.write_memory(first * 32, data)
             d.fence()

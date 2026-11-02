@@ -128,6 +128,8 @@ while time.ticks_diff(end, time.ticks_ms()) > 0:
         bad += not ok
         gc.collect()
         lo = min(lo, gc.mem_free())
+        if checks %% 10 == 0:
+            print('SOAK progress %d updates, %d failed, free %d' % (n, bad, gc.mem_free()))
 print('SOAK %d updates, %d checks, %d failed, lowest free heap %d B' % (n, checks, bad, lo))
 desk.invalidate(0, 0, 320, 200)
 print('CONSISTENT', desk.present() == 0, 'error_code', desk.device.read_reg(_R.REG_ERROR_CODE))
