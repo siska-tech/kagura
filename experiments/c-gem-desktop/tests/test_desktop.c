@@ -534,6 +534,26 @@ static void test_random_sequence_equivalence(void) {
     random_run(99, false, true);
 }
 
+// A desktop without icons (as the MicroPython binding creates) ignores the
+// icon keys; Left/Up used to select icon 0 of an empty table.
+static void test_keys_without_icons(void) {
+    static const kd_menu none[] = {{NULL, NULL}};
+    kd_shell_hooks hooks = {NULL, NULL, NULL};
+    kd_desktop *d = &S.desk;
+    kd_desktop_init(d, none, NULL, 0, hooks);
+    kd_desktop_render(d);
+    static const uint8_t keys[] = {KD_KEY_LEFT, KD_KEY_UP, KD_KEY_RIGHT, KD_KEY_DOWN, KD_KEY_TAB, KD_KEY_ENTER};
+    for (unsigned i = 0; i < sizeof keys; i++) {
+        kd_event e;
+        memset(&e, 0, sizeof e);
+        e.type = KD_EV_KEY;
+        e.key = keys[i];
+        kd_desktop_event(d, &e);
+        CHECK_EQ(d->icon_sel, -1);
+    }
+    CHECK(!kd_desktop_render(d));
+}
+
 const kd_test_case kd_desktop_tests[] = {
     {"scene_renders", test_scene_renders},
     {"z_order_and_hit", test_z_order_and_hit},
@@ -546,6 +566,7 @@ const kd_test_case kd_desktop_tests[] = {
     {"drag_outline_live_close", test_outline_drag},
     {"window_slots", test_window_slots},
     {"desktop_icons_keyboard", test_desktop_icons_keyboard},
+    {"keys_without_icons", test_keys_without_icons},
     {"random_sequence_equivalence", test_random_sequence_equivalence},
     {NULL, NULL},
 };

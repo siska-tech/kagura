@@ -475,7 +475,7 @@ static void desktop_key(kd_desktop *d, const kd_event *ev) {
     int sel = d->icon_sel;
     switch (ev->key) {
     case KD_KEY_LEFT: case KD_KEY_UP:
-        kd_desktop_select_icon(d, sel <= 0 ? 0 : sel - 1);
+        if (d->nicons) kd_desktop_select_icon(d, sel <= 0 ? 0 : sel - 1);
         break;
     case KD_KEY_RIGHT: case KD_KEY_DOWN: case KD_KEY_TAB:
         if (d->nicons) kd_desktop_select_icon(d, sel + 1 >= d->nicons ? d->nicons - 1 : sel + 1);
