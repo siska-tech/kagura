@@ -506,7 +506,7 @@ static void key(kd_desktop *d, const kd_event *ev) {
     bool ctrl = ev->mods & KD_MOD_CTRL;
     if (ev->key == KD_KEY_F10) {
         kd_desktop_open_menu(d, 0);
-        set_hot(d, step_item(d, -1, 1));
+        if (d->menu_open >= 0) set_hot(d, step_item(d, -1, 1));   // a desktop may have no menus
         return;
     }
     if (ev->key == KD_KEY_F6 || (ctrl && ev->key == KD_KEY_TAB)) {
