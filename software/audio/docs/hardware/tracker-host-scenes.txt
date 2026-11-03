@@ -1,0 +1,12 @@
+SCENE 1 empty 213765e6 0 tile4 4c0bf7ba
+SCENE 2 song-settings 1cc4daee 0 tile4 28b61dd2
+SCENE 3 melody 7fd2d953 0 tile4 dcc7e118
+SCENE 4 bass-drums 8fbf27e0 0 tile4 a6772411
+SCENE 5 pattern-1 05eed68b 0 tile4 a3ba3a4e
+SCENE 6 instrument 39f00852 0 tile4 904cc3da
+SCENE 7 playing 2dea59f3 0 tile4 efe4374a
+SCENE 8 stopped 53ff65b1 0 tile4 6a373f9a
+SCENE 9 saved ec37474a 0 tile4 8ce16205
+SCENE 10 new 2f753c89 0 tile4 4b7d4d5e
+SCENE 11 reopened adab4a0c 0 tile4 f43d99f8
+SCENE 12 exported 3541a220 0 tile4 3c7b614e
