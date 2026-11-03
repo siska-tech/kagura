@@ -93,6 +93,18 @@
 
 *HDMI stills from the recording: composing pattern 1, and playing pattern 0 with the playback bar on row 30 above the edit cursor.*
 
+## Wave editor on the hardware
+
+`tools/kagura-audio-board.py wave` ([log](hardware/wave-editor-9759a49.txt)) drives the tracker's wave editor with its own keys.
+
+- **What it plays:** the four presets, then a staircase entered with the keyboard (96, −32, 32, −96, carried along with Shift+Right). Each one is held as a C-3 note on WAVE1.
+- **How it is checked:** `tools/kagura-audio-wave.py` folds each recorded note onto one period of its exact frequency and correlates it with the table:
+  - sine 0.9990, triangle 0.9992, sawtooth 0.9964;
+  - square 0.9799, staircase 0.9746 (the edges are band-limited by the audio path).
+- **Result:** every table played as drawn, with no FPGA errors.
+
+![wave editor, host render](hardware/wave-editor-host.png)
+
 ## Long playback and recovery
 
 **Soak** (`soak --seconds 600`, [log](hardware/soak-9759a49.txt)): the demo song for 10 minutes, with a window moving and a Japanese character typed on every loop.

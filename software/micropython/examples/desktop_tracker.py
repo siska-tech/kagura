@@ -182,9 +182,198 @@ def ram_songs(mount='/ramsongs', blocks=32, block_size=512):
     return SongFiles(mount + '/songs')
 
 
+WAVE_X, WAVE_Y = 8, 4            # the wave editor's canvas: 256 x 128 in the work area
+
+
+class WaveDialog:
+    """Graphical editor of one wave table: signed 8-bit samples, 32, 64, 128 or
+    256 of them (the FPGA's format, docs/audio-spec.md), saved in the song.
+
+    Keys: Left/Right choose a sample, Up/Down change it (Shift: by 16), PgUp/PgDn
+    by 32, Home/End to the top or bottom, Delete to 0; Shift+Left/Right carry the
+    value along (drawing with the keyboard); 1-4 sine, triangle, saw, square,
+    0 flat; L the length; N a copy as a new wave for this instrument; Space
+    plays a note with it; Enter or Esc closes. Pointer: press and drag in the
+    canvas to draw (POINTER_DOWN/MOVE/UP, work-area coordinates).
+    Each change goes to the HAL at once, so a sounding note plays the new wave
+    with the next frame.
+
+    Drawing: one fill record per sample (a bar from the centre line), so an
+    edit removes and re-adds only that sample's bar and the desktop redraws
+    only that column. A 256-sample wave uses 256 of the desktop's 320
+    records; with the tracker's window that leaves 8."""
+
+    def __init__(self, app, inst):
+        self.app, self.inst = app, inst
+        self.index = app.song.instruments[inst][1]
+        self.wave = app.song.waves[self.index]
+        self.sel, self.drag = 0, None
+        # The preview track: the cursor's if it is a wave voice, else the first one.
+        voices = app.song.voices
+        tracks = [t for t in range(len(voices)) if voices[t] >= 4]
+        self.track = app.track if app.track in tracks else (tracks[0] if tracks else None)
+        w = self.win = app.desk.create_window('', 22, 12, 276, 188, closable=False, movable=False)
+        X, Y = WAVE_X, WAVE_Y
+        w.rect(X - 1, Y - 1, 258, 130, 4)
+        for gy in (32, 96):
+            w.hline(X, Y + gy, 256, 3)
+        for gx in range(32, 256, 32):
+            w.vline(X + gx, Y, 128, 3)
+        self.cursor = w.fill_rect(X, Y, max(2, 256 // len(self.wave)), 128, 12)   # under the bars: first
+        w.hline(X, Y + 64, 256, 4)
+        self.bars = []                                 # record id of each sample's bar
+        self.t_info = w.text(X, Y + 133, '', 1)
+        w.text(X, Y + 145, '←→選択 ↑↓値 Shift+←→なぞる', 4)
+        w.text(X, Y + 156, '1正弦 2三角 3鋸 4矩形 0平ら L長さ', 4)
+        self.redraw()
+
+    @property
+    def n(self):
+        return len(self.wave)
+
+    def bar(self, i):
+        cw = 256 // self.n
+        v = self.value(i)
+        h = max(1, (v if v >= 0 else -v) // 2)
+        mid = WAVE_Y + 64
+        return self.win.fill_rect(WAVE_X + i * cw, mid - h if v > 0 else mid,
+                                  max(1, cw - 1) if cw > 2 else cw, h, 5)
+
+    def redraw(self, samples=None):
+        """Re-adds the bars of the samples given (all of them by default)."""
+        w = self.win
+        if samples is None or len(self.bars) != self.n:
+            for b in self.bars:
+                w.remove(b)
+            self.bars = [self.bar(i) for i in range(self.n)]
+        else:
+            for i in samples:
+                w.remove(self.bars[i])
+                self.bars[i] = self.bar(i)
+        self.show()
+
+    def show(self):
+        cw = 256 // self.n
+        self.win.move_item(self.cursor, WAVE_X + self.sel * cw - (1 if cw < 4 else 0), WAVE_Y)
+        v = self.wave[self.sel]
+        self.win.set_text(self.t_info, 'W%X %3d/%d  %+4d' % (self.index, self.sel, self.n, v - 256 if v > 127 else v))
+        self.win.set_title('波形 W%X (音色 %02X)' % (self.index, self.inst))
+
+    def changed(self, samples):
+        self.app.changed()
+        if self.track is not None:
+            ka.set_wave(self.app.song.voices[self.track], self.wave)   # heard with the next frame
+            self.app.audio.send()
+        self.redraw(samples)
+
+    def put(self, i, v):
+        self.wave[i] = max(-128, min(127, v)) & 255
+
+    def value(self, i):
+        v = self.wave[i]
+        return v - 256 if v > 127 else v
+
+    def set_cursor_size(self):
+        # The bars go first: the new cursor must be drawn under the new bars.
+        for b in self.bars:
+            self.win.remove(b)
+        self.bars = []
+        self.win.remove(self.cursor)
+        self.cursor = self.win.fill_rect(WAVE_X, WAVE_Y, max(2, 256 // self.n), 128, 12)
+        self.redraw()
+
+    def key(self, code, ch, mods):
+        shift = mods & kd.MOD_SHIFT
+        c = chr(ch) if code == kd.KEY_CHAR else ''
+        i, n = self.sel, self.n
+        if code in (kd.KEY_LEFT, kd.KEY_RIGHT):
+            j = max(0, min(n - 1, i + (1 if code == kd.KEY_RIGHT else -1)))
+            if shift and j != i:                          # draw: carry the value along
+                self.put(j, self.value(i))
+                self.sel = j
+                self.changed((j,))
+                return
+            self.sel = j
+        elif code in (kd.KEY_UP, kd.KEY_DOWN, kd.KEY_PGUP, kd.KEY_PGDN, kd.KEY_HOME, kd.KEY_END, kd.KEY_DELETE):
+            step = {kd.KEY_UP: 16 if shift else 1, kd.KEY_DOWN: -16 if shift else -1,
+                    kd.KEY_PGUP: 32, kd.KEY_PGDN: -32}.get(code)
+            v = 127 if code == kd.KEY_HOME else -128 if code == kd.KEY_END else 0 if code == kd.KEY_DELETE \
+                else self.value(i) + step
+            self.put(i, v)
+            self.changed((i,))
+            return
+        elif c in ('1', '2', '3', '4', '0'):
+            self.wave[:] = wave_shape(c, n)
+            self.changed(None)
+            return
+        elif c in ('l', 'L'):
+            m = 32 if n == 256 else n * 2
+            old = bytes(self.wave)
+            self.wave[:] = bytes(old[k * n // m] for k in range(m))
+            self.sel = self.sel * m // n
+            self.set_cursor_size()
+            self.changed(())
+            return
+        elif c in ('n', 'N'):
+            s = self.app.song
+            if len(s.waves) >= ka.WAVES:
+                self.app.message('波形は %d まで' % ka.WAVES)
+                return
+            s.waves.append(bytearray(self.wave))
+            self.index = len(s.waves) - 1
+            self.wave = s.waves[self.index]
+            s.instruments[self.inst][1] = self.index
+            self.app.changed()
+        elif c == ' ':
+            if self.track is None:
+                self.app.message('波形のトラックがありません')
+            else:
+                self.app.sync_player()
+                self.app.audio.preview(self.track, self.app.octave * 12 + 1, self.inst, 48)
+                self.app.audio.send()
+        elif code in (kd.KEY_ENTER, kd.KEY_ESCAPE):
+            self.close()
+            return
+        self.show()
+
+    def pointer(self, kind, x, y):
+        """Draws with the pointer: a press sets the sample under it, a drag
+        sets every sample between the last point and this one."""
+        if kind == kd.POINTER_UP:
+            self.drag = None
+            return
+        inside = WAVE_X <= x < WAVE_X + 256 and WAVE_Y <= y < WAVE_Y + 128
+        if kind == kd.POINTER_DOWN and not inside:
+            return
+        if kind == kd.POINTER_MOVE and self.drag is None:
+            return
+        n = self.n
+        i = max(0, min(n - 1, (x - WAVE_X) * n // 256))
+        v = max(-128, min(127, (WAVE_Y + 64 - y) * 2))
+        a, va = self.drag if self.drag is not None else (i, v)
+        lo, hi = min(a, i), max(a, i)
+        for k in range(lo, hi + 1):
+            self.put(k, v if hi == lo else va + (v - va) * (k - a) // (i - a))
+        self.drag = (i, v)
+        self.sel = i
+        self.changed(range(lo, hi + 1))
+
+    def close(self):
+        self.win.close()
+        self.app.dialog = None
+
+
+def wave_shape(c, n):
+    """The editor's presets: '1' sine, '2' triangle, '3' saw, '4' square, '0' flat."""
+    if c == '0':
+        return bytes(n)
+    return {'1': sine_wave, '2': triangle_wave, '3': saw_wave, '4': square_wave}[c](n)
+
+
 class ParamDialog:
     """A list of numbers: Up/Down choose, Left/Right change (Shift: by 16),
-    Space previews, Enter or Esc closes."""
+    Space previews, Enter or Esc closes. A row with an action (a sixth item)
+    runs it on Enter instead."""
 
     def __init__(self, app, title, params, h):
         self.app, self.params, self.sel = app, params, 0
@@ -209,12 +398,16 @@ class ParamDialog:
             self.sel = (self.sel - 1) % len(self.params)
         elif code == kd.KEY_DOWN:
             self.sel = (self.sel + 1) % len(self.params)
-        elif code in (kd.KEY_LEFT, kd.KEY_RIGHT):
+        elif code in (kd.KEY_LEFT, kd.KEY_RIGHT) and p[2] is not None:
             v = p[1]() + (step if code == kd.KEY_RIGHT else -step)
             p[2](min(max(v, p[3][0]), p[3][1]))
             self.app.changed()
         elif code == kd.KEY_CHAR and ch == ord(' '):
             self.app.preview(self.app.octave * 12 + 1)
+        elif code == kd.KEY_ENTER and len(p) > 5:
+            self.close()
+            p[5]()
+            return
         elif code in (kd.KEY_ENTER, kd.KEY_ESCAPE):
             self.close()
             return
@@ -575,12 +768,11 @@ class Tracker:
             if v == KIND_WAVE and not s.waves:
                 s.waves.append(triangle_wave())
 
-        shape = [0]
-
-        def wave_set(v):
-            shape[0] = v
-            if ins[0] == KIND_WAVE:
-                s.waves[ins[1]][:] = (triangle_wave, saw_wave, square_wave, sine_wave)[v]()
+        def edit_wave():
+            if ins[0] != KIND_WAVE:
+                self.message('波形の音色だけです')
+                return
+            self.dialog = WaveDialog(self, i)
 
         hexf, dec = (lambda v: '%02X' % v), (lambda v: '%d' % v)
         data_range = (0, 255) if ins[0] == KIND_PULSE else (0, max(0, len(s.waves) - 1))
@@ -592,7 +784,8 @@ class Tracker:
                   ('ディケイ', field(5)[0], field(5)[1], (0, 255), dec),
                   ('サステイン', field(6)[0], field(6)[1], (0, 15), hexf),
                   ('リリース', field(7)[0], field(7)[1], (0, 255), dec),
-                  ('波形の形', (lambda: shape[0]), wave_set, (0, 3), lambda v: ('TRI', 'SAW', 'SQR', 'SIN')[v])]
+                  ('波形を編集…', (lambda: ins[0]), None, None,
+                   lambda v: 'Enter' if v == KIND_WAVE else '-', edit_wave)]
         self.dialog = ParamDialog(self, '音色 %02X' % i, params, 9 * 11 + 34)
 
     def song_dialog(self):
@@ -781,6 +974,9 @@ class Tracker:
                 self.dialog.activate()
             elif kind == kd.KEY:
                 self.key(ev[4], ev[5], ev[6])
+            elif (kind in (kd.POINTER_DOWN, kd.POINTER_MOVE, kd.POINTER_UP)
+                  and hasattr(self.dialog, 'pointer') and ev[1] == self.dialog.win):
+                self.dialog.pointer(kind, ev[2], ev[3])
         if self.dirty_song and ka.position() >> 24 == ka.PLAYING:
             self.sync_player()        # edits during playback are heard at once
         self.update_play()

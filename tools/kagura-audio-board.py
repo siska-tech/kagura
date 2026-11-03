@@ -18,6 +18,11 @@ PCM) and tools/kagura-audio-timing.py measures the note timing on it.
            big to compile on the board: --mpy gives it cross-compiled
            (mpy-cross -march=armv6m), installed on a littlefs in RAM,
            imported, and the RAM disk freed again.
+  wave     the tracker's wave editor, driven by its own keys, makes the four
+           presets and a staircase drawn with the keyboard; each is held as a
+           note on WAVE1 with silence between, and its table printed. With
+           --wav, tools/kagura-audio-wave.py checks that the recorded HDMI
+           audio has each table's shape.
   soak     the demo song for --seconds with window moves and typing: ticks
            against the exact tempo, heap low-water mark, FPGA errors.
   reset    soft reset (kagura_audio state dropped, init works again, the
@@ -346,6 +351,7 @@ LIBPART = "with open('/ramlib/desktop_tracker.mpy', 'ab') as _f:\n    _f.write(b
 LIBLOAD = r'''
 sys.path.insert(0, '/ramlib')
 from desktop_tracker import main, ram_songs
+import desktop_tracker as DT
 sys.path.pop(0)
 vfs.umount('/ramlib')
 del _lib
@@ -360,7 +366,6 @@ gc.collect()
 print('FREE', gc.mem_free())
 lines = []
 app = main(script=True, files=files, key_ms=%(key_ms)d, step_ms=%(step_ms)d, loops=2)
-s = ka.stats() if False else None
 for n in files.names():
     print('FILE', n, len(files.load(n)))
 err, ast = fpga()
@@ -379,6 +384,70 @@ def run(b, log, source, timeout=60.0):
             log('DEVICE_ERROR ' + line)
         raise SystemExit('device error: ' + err.strip().splitlines()[-1])
     return out
+
+
+WAVE = r"""
+import kagura_desktop as kd
+from kagura.desktop import Desktop
+desk = Desktop(menus=DT.MENUS, cursor=False)
+audio = DT.AudioSession(d)
+desk.audio = audio
+app = DT.Tracker(desk, audio, files, 'スクリプト')
+app.inst, app.track, app.octave = 4, 4, 3            # wave instrument 04 on WAVE1, C-3
+
+def k(code, ch=0, mods=0):
+    desk.key(code, ch, mods)
+    app.handle()
+    desk.present()
+    audio.pump()
+
+def hold(ms):
+    t0 = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), t0) < ms:
+        desk.present()
+        audio.pump()
+        time.sleep_ms(2)
+
+def set_val(v):                                     # the sample under the cursor, by keys
+    k(kd.KEY_DELETE)                                # 0; the cursor stays
+    for _ in range(abs(v) // 32):
+        k(kd.KEY_PGUP if v > 0 else kd.KEY_PGDN)
+    for _ in range(abs(v) % 32):
+        k(kd.KEY_UP if v > 0 else kd.KEY_DOWN)
+
+app.menu(3, 2)                                      # 音色 > 編集…
+for _ in range(8):
+    k(kd.KEY_DOWN)
+k(kd.KEY_ENTER)                                     # 波形を編集…
+wd = app.dialog
+desk.present()
+hold(1500)
+step = ka.note_step(48)
+shapes = (('sine', '1'), ('triangle', '2'), ('saw', '3'), ('square', '4'), ('staircase', None))
+for name, key in shapes:
+    if key:
+        k(kd.KEY_CHAR, key)
+    else:
+        k(kd.KEY_CHAR, '0')
+        while wd.sel:
+            k(kd.KEY_LEFT)
+        for g, v in enumerate((96, -32, 32, -96)):
+            set_val(v)
+            for _ in range(7):
+                k(kd.KEY_RIGHT, 0, kd.MOD_SHIFT)    # carry the value: drawing with keys
+            if g < 3:
+                k(kd.KEY_RIGHT)
+    print('WAVE', name, step, bytes(wd.wave).hex())
+    k(kd.KEY_CHAR, ' ')                             # the note: about 1 s at 125 BPM
+    hold(1300)
+    hold(1200)                                      # silence between notes
+err, ast = fpga()
+print('WAVE_END error_code', err, 'audio_status 0x%02x' % ast)
+wd.close()
+desk.audio = None
+desk.close()
+audio.close()
+"""
 
 
 def record(args, wav=None, video=None):
@@ -401,7 +470,7 @@ def record(args, wav=None, video=None):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('phase', choices=('bench', 'tracker', 'soak', 'reset'))
+    p.add_argument('phase', choices=('bench', 'tracker', 'wave', 'soak', 'reset'))
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--wav', type=Path)
     p.add_argument('--video', type=Path)
@@ -446,20 +515,29 @@ def main():
             run(b, log, BENCH, timeout=600)
         elif args.phase == 'soak':
             run(b, log, SOAK % {'seconds': args.seconds}, timeout=args.seconds + 300)
-        else:
+        else:   # tracker, wave: the tracker as .mpy from a RAM disk
             mpy = args.mpy.read_bytes()
             log('MPY %s %d bytes' % (args.mpy.name, len(mpy)))
             run(b, log, LIBDISK % {'blocks': len(mpy) // 512 + 12})
             for at in range(0, len(mpy), 2048):
                 run(b, log, LIBPART % mpy[at:at + 2048].hex())
             run(b, log, LIBLOAD)
-            run(b, log, TRACKER % {'key_ms': args.key_ms, 'step_ms': args.step_ms}, timeout=1800)
+            if args.phase == 'wave':
+                run(b, log, WAVE, timeout=300)
+            else:
+                run(b, log, TRACKER % {'key_ms': args.key_ms, 'step_ms': args.step_ms}, timeout=1800)
         time.sleep(3)
     finally:
         if rec is not None:
             rec.communicate(b'q', timeout=60)
         b.close()
-    if args.wav:
+    if args.wav and args.phase == 'wave':
+        logf.flush()
+        r = subprocess.run([sys.executable, '-I', str(ROOT / 'tools/kagura-audio-wave.py'), str(args.wav),
+                            str(args.out)], capture_output=True, text=True)
+        for line in r.stdout.splitlines():
+            log(line)
+    elif args.wav:
         bpm = '150' if args.phase == 'bench' else '140'
         r = subprocess.run([sys.executable, '-I', str(ROOT / 'tools/kagura-audio-timing.py'), str(args.wav),
                             '--bpm', bpm, '--min-onsets', '50'], capture_output=True, text=True)

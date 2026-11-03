@@ -210,7 +210,14 @@ The cursor, its field and the playback row are movable fills under transparent t
   - Ctrl+Left/Right move through the order list, Ctrl+Up/Down change its pattern.
   - Ctrl+S, Ctrl+O and Ctrl+N save, open and start anew; F10 opens the menus.
 - **Editing while playing** reloads the song at once, keeping the position.
-- **Dialogs**: an instrument editor (kind, duty or wave, volume, pan, ADSR, wave shape) and song settings (tempo, speed, loop, loop order, pattern length).
+- **Dialogs**: an instrument editor (kind, duty or wave, volume, pan, ADSR) and song settings (tempo, speed, loop, loop order, pattern length).
+- **The wave editor** (instrument editor > 波形を編集…) draws a wave instrument's table: signed 8-bit samples, 32 to 256 of them (the FPGA's format), as bars on a 256×128 grid.
+  - **Keys:** Left/Right choose a sample and Up/Down change it (Shift: ×16; PgUp/PgDn ±32; Home/End the extremes; Delete 0). Shift+Left/Right carry the value along, which draws with the keyboard.
+  - **Presets:** 1 sine, 2 triangle, 3 sawtooth, 4 square, 0 flat. L changes the length (resampled); N copies the wave as a new one for the instrument.
+  - **Sound:** Space plays a note with it. Every change goes to the HAL at once, so the note sounding plays the new wave from the next frame.
+  - **Pointer:** pressing and dragging in the canvas draws, with interpolated lines. It is wired to POINTER_DOWN/MOVE/UP and tested by injecting them, so it works when a pointer is connected.
+  - **Drawing cost:** one fill record per sample, so an edit redraws that column only (a few tiles). A 256-sample wave uses 256 of the desktop's 320 records. No framebuffer is allocated.
+  - **Saving:** waves are saved in the song (KSNG wave records) and reload byte for byte.
 - **Files**: `NAME.KSN` in one folder with write-then-rename. 書き出し also writes `NAME.H`. `ram_songs()` keeps them in RAM.
   - File I/O goes in 512-byte pieces with the audio pumped between them, so a save while the music plays is mostly in time; single littlefs operations can still take tens of ms.
 - **A scripted session** (`main(script=True)`, `--host` on a PC) composes the demo song with the tracker's own keys. It plays two loops, saves, reopens and exports, printing a CRC per scene.

@@ -68,7 +68,7 @@ classify() {
         tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
         tools/rp2040-firmware.py|tools/kagura-desktop-device.py|tools/kagura-keyboard-device.py|\
         tools/kagura-editor-device.py|tools/kagura-editor-board.py|tools/kagura-audio-board.py|\
-        tools/kagura-audio-timing.py) ;;
+        tools/kagura-audio-timing.py|tools/kagura-audio-wave.py) ;;
         *) all ;;
     esac
 }
