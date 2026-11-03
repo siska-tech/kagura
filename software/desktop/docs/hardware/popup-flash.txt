@@ -1,0 +1,14 @@
+UF2 kagura-popup-ca4be0e.uf2: 2229 blocks 0x10000000..0x1008b500 (filesystem at 0x100a0000), sha256 f60fdea95c26dd3c309005f6ba7065795079c1535df79ad1461ec3ed40707425
+FLASH_BEFORE e6e6b4930be817cc5a4f8d41a759fe766b0b580343cb9511a6ed3b9dc3a90351
+CURRENT_FIRMWARE matches kagura-pico-phase5-75134de.uf2
+BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+COPIED kagura-popup-ca4be0e.uf2
+BUILD v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel) KAGURA Raspberry Pi Pico with RP2040
+
+HEAP 140672 47872
+
+FPGA (0, 6) 0x5b 240
+
+NATIVE kagura_desktop [('desktop', 36960), ('events', 896), ('framebuffer', 32000), ('items', 5760), ('max_items', 320), ('menus', 584), ('sprites', 1088), ('staging', 1280), ('text', 2048), ('total', 58604)]
+FS_UNCHANGED yes
+FIRMWARE_READBACK match

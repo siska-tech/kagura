@@ -1,0 +1,9 @@
+FREE 141424
+FREE 128288
+FREE 119728
+SOAK progress 50 rounds, 6200 keys, 0 failed, free 109568
+SOAK progress 100 rounds, 12400 keys, 0 failed, free 109568
+SOAK 135 rounds, 16740 keys, 27 checks, 0 failed, lowest free heap 109568 B
+KEYS p50 <16500 p95 <19500 max 86028 us (all 16740 keys, 0.5 ms buckets)
+STATS {'last_tiles': 1000, 'tiles': 847450, 'items': 9, 'items_peak': 9, 'layers': 52217, 'last_area': 64000, 'text': 39, 'text_peak': 44, 'compactions': 69, 'pending': 0, 'renders': 16637, 'dropped': 0, 'presents': 16769, 'runs': 82027}
+CLOSED free 109552 console paused False

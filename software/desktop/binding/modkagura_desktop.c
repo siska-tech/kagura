@@ -384,6 +384,17 @@ static mp_obj_t desktop_input_target(mp_obj_t self) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(desktop_input_target_obj, desktop_input_target);
 
+// set_status(text): right-aligned text in the menu bar (an input method's
+// mode), at most STATUS_BYTES bytes; never over the menu titles.
+static mp_obj_t desktop_set_status(mp_obj_t self, mp_obj_t text) {
+    desk_arg(self);
+    size_t len;
+    const char *s = mp_obj_str_get_data(text, &len);
+    check(kdm_set_status(&state, s, len));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(desktop_set_status_obj, desktop_set_status);
+
 static mp_obj_t desktop_render(mp_obj_t self) {
     desk_arg(self);
     return mp_obj_new_bool(kdm_render(&state));
@@ -564,6 +575,7 @@ static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_key), MP_ROM_PTR(&desktop_key_obj)},
     {MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&desktop_text_obj)},
     {MP_ROM_QSTR(MP_QSTR_input_target), MP_ROM_PTR(&desktop_input_target_obj)},
+    {MP_ROM_QSTR(MP_QSTR_set_status), MP_ROM_PTR(&desktop_set_status_obj)},
     {MP_ROM_QSTR(MP_QSTR_clipboard), MP_ROM_PTR(&desktop_clipboard_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_clipboard), MP_ROM_PTR(&desktop_set_clipboard_obj)},
     {MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&desktop_poll_obj)},
@@ -815,6 +827,29 @@ static mp_obj_t window_set_preedit(size_t n_args, const mp_obj_t *a) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_set_preedit_obj, 3, 5, window_set_preedit);
 
+// set_candidates(id, items, selected=-1, footer=''): an input method's
+// candidates (a list or tuple of at most CAND_ITEMS strings) in a popup under
+// the record's preedit, item selected highlighted, footer (a page number or
+// a message) at its foot; no items and no footer hide it. Shown while the
+// record has the focus. Allocates nothing.
+static mp_obj_t window_set_candidates(size_t n_args, const mp_obj_t *a) {
+    int slot = win_arg(a[0]);
+    size_t n;
+    mp_obj_t *objs;
+    mp_obj_get_array(a[2], &n, &objs);
+    if (n > KDM_CAND_ITEMS) check(KDM_EINVAL);
+    const char *items[KDM_CAND_ITEMS];
+    size_t lens[KDM_CAND_ITEMS];
+    for (size_t i = 0; i < n; i++) lens[i] = text_arg(objs[i], &items[i]);
+    mp_int_t sel = n_args > 3 ? mp_obj_get_int(a[3]) : -1;
+    const char *foot = "";
+    size_t foot_len = n_args > 4 ? text_arg(a[4], &foot) : 0;
+    if (sel < -1 || sel >= (mp_int_t)n) check(KDM_EINVAL);
+    check(kdm_set_candidates(&state, slot, id_arg(a[1]), items, lens, (int)n, (int)sel, foot, foot_len));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_set_candidates_obj, 3, 5, window_set_candidates);
+
 // caret_xy(id) -> (x, y, h): the caret on the screen, after any preedit.
 static mp_obj_t window_caret_xy(mp_obj_t self, mp_obj_t id) {
     int x, y, h;
@@ -982,6 +1017,7 @@ static const mp_rom_map_elem_t window_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_icon), MP_ROM_PTR(&window_icon_obj)},
     {MP_ROM_QSTR(MP_QSTR_field), MP_ROM_PTR(&window_field_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_preedit), MP_ROM_PTR(&window_set_preedit_obj)},
+    {MP_ROM_QSTR(MP_QSTR_set_candidates), MP_ROM_PTR(&window_set_candidates_obj)},
     {MP_ROM_QSTR(MP_QSTR_caret_xy), MP_ROM_PTR(&window_caret_xy_obj)},
     {MP_ROM_QSTR(MP_QSTR_editor), MP_ROM_PTR(&window_editor_obj)},
     {MP_ROM_QSTR(MP_QSTR_caret), MP_ROM_PTR(&window_caret_obj)},
@@ -1138,6 +1174,7 @@ static const mp_rom_map_elem_t module_table[] = {
     CONST(KEY_F6, KD_KEY_F6), CONST(KEY_F10, KD_KEY_F10), CONST(KEY_INSERT, KD_KEY_INSERT),
     CONST(KEY_PGUP, KD_KEY_PGUP), CONST(KEY_PGDN, KD_KEY_PGDN), CONST(DOC_BYTES, KDM_DOC_BYTES - 1),
     CONST(LINE_H, KDM_LINE_H), CONST(PREEDIT_BYTES, KDM_PREEDIT_BYTES - 1),
+    CONST(CAND_ITEMS, KDM_CAND_ITEMS), CONST(STATUS_BYTES, 31),
     CONST(CHANGE, KDM_EV_CHANGE), CONST(ACTIVATE, KDM_EV_ACTIVATE),
     CONST(EDIT_COPY, KDM_EDIT_COPY), CONST(EDIT_CUT, KDM_EDIT_CUT), CONST(EDIT_PASTE, KDM_EDIT_PASTE),
     CONST(EDIT_SELECT_ALL, KDM_EDIT_SELECT_ALL), CONST(FIELD_H, KDM_FIELD_H), CONST(FIELD_BYTES, KDM_FIELD_BYTES - 1),

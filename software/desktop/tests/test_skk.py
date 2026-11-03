@@ -224,6 +224,70 @@ def test_long_typing_is_stable():
     check(d.text.count('く') == 300, d.text.count('く'))
 
 
+class PopupDoc(Doc):
+    def __init__(self, style, mode=skk.HIRAGANA):
+        Doc.__init__(self, mode)
+        self.e = skk.SkkEngine(skk.test_dictionary(), mode=mode, style=style)
+
+
+DOWN, UP = ('down',), ('up',)
+KOU = ('行', '高', '工', '公', '効', '校', '考', '甲', '港', '光', '好', '後', '口', '交', '候')
+
+
+def test_popup_modern():
+    d = PopupDoc(skk.MODERN).keys('Kou ')
+    check(d.e.popup() == (list(KOU[:5]), 0, '1/3'), d.e.popup())   # the list at once
+    check(d.e.indicator() == '▼ 変換')
+    d.keys(' ', DOWN)
+    check(d.e.popup() == (list(KOU[:5]), 2, '1/3') and d.pre() == '▼工')
+    d.keys(DOWN, DOWN, DOWN)
+    check(d.e.popup() == (list(KOU[5:10]), 0, '2/3') and d.pre() == '▼校')
+    d.keys(UP)
+    check(d.e.popup() == (list(KOU[:5]), 4, '1/3'))
+    d.keys('x', ENTER)                                # x: back one, Enter: the highlighted one
+    check(d.text == '公' and d.e.popup() is None and d.e.indicator() == 'あ かな', d.text)
+    d.keys('Kou ', ' ' * 5, '3')            # page 2, the 3rd: 甲
+    check(d.text == '公甲', d.text)
+    d.keys('Kou ', UP)                                # Up on the first stays
+    check(d.pre() == '▼行')
+    d.keys(ESC)
+    check(d.pre() == '▽こう' and d.e.popup() is None and d.e.indicator() == '▽ 読み')
+    d.keys(ESC)
+    d.keys('Kou ', ' ' * 14)                          # the last, then 最後の候補
+    check(d.e.popup() == (list(KOU[10:]), 4, '3/3'))
+    d.keys(' ')
+    check(d.e.popup() == (list(KOU[10:]), 4, '最後の候補'), d.e.popup())
+    d.keys(ESC, ESC, 'Mogu ')
+    check(d.e.popup() == ([], -1, '候補なし: もぐ'), d.e.popup())
+    d.keys(ESC, 'Nihon ')
+    check(d.e.popup() == (['日本', '二本'], 0, ''))  # one page: no page number
+    d.keys('9')                                       # not a candidate key: commits, then 9
+    check(d.text.endswith('日本9'), d.text)
+
+
+def test_popup_classic():
+    d = PopupDoc(skk.CLASSIC).keys('Kou ')
+    check(d.pre() == '▼行' and d.e.popup() is None)   # the first candidate inline
+    d.keys(' ')
+    check(d.e.popup() == (list(KOU[1:6]), 0, '1/3') and d.pre() == '▼高')
+    d.keys(DOWN, '2')
+    check(d.text == '工', d.text)
+    d.keys('Kou  ', 'x', 'x')
+    check(d.pre() == '▽こう')
+
+
+def test_popup_skk_style_unchanged():
+    d = Doc().keys('Kou ')
+    check(d.e.popup() is None and d.e.indicator() == '▼ 変換')
+    check(d.e.feed_key('down') is False)              # an other key: commits
+    d.text += d.e.take()
+    check(d.text == '行')
+    d.keys('Mogu ')
+    check(d.e.popup() == ([], -1, '候補なし: もぐ'))
+    for mode, label in ((skk.ASCII, 'A 直接'), (skk.HIRAGANA, 'あ かな'), (skk.KATAKANA, 'ア カナ')):
+        check(skk.SkkEngine(skk.test_dictionary(), mode=mode).indicator() == label)
+
+
 def main():
     global failed, run
     tests = sorted((k, v) for k, v in globals().items() if k.startswith('test_'))
