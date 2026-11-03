@@ -4,6 +4,7 @@
 #include <math.h>
 #include "ka_audio.h"
 #include "ka_model.h"
+#include "ka_render.h"
 #include "ka_test.h"
 #include "kagura_regs.h"
 
@@ -255,6 +256,114 @@ static void test_random_against_model(void) {
     CHECK(uploads > 1000);
 }
 
+static void test_render(void) {
+    start(FULL_CAPS);
+    int8_t out[64];
+    CHECK_EQ(ka_render(&a, 0x3F, out, 64, 512), 0);          // all voices off: silence
+    for (unsigned i = 0; i < 64; i++) CHECK_EQ(out[i], 0);
+    // Pulse 0, duty 128, a period of exactly 64 samples (STEP 2^24 / 64), full gain.
+    ka_set_step(&a, 0, 1u << 18);
+    ka_set_duty(&a, 0, 128);
+    ka_set_gain(&a, 0, 255, 255);
+    ka_set_enable(&a, 0, true);
+    CHECK_EQ(ka_render(&a, 0x01, out, 64, 64), 0x01);
+    for (unsigned i = 0; i < 64; i++) CHECK_EQ(out[i], i < 32 ? 127 : -127);
+    ka_set_duty(&a, 0, 64);                                   // 25 %
+    ka_render(&a, 0x01, out, 64, 64);
+    CHECK(out[15] > 0 && out[16] < 0);
+    ka_set_gain(&a, 0, 128, 128);                             // half gain: half height
+    ka_render(&a, 0x01, out, 64, 64);
+    CHECK_EQ(out[0], 127 * 128 / 255);
+    // Wave 4: its table, 32 samples over 32 points of one period.
+    uint8_t w[32];
+    for (unsigned i = 0; i < 32; i++) w[i] = (uint8_t)(int8_t)(i * 8 - 128);
+    ka_set_wave(&a, 4, w, 32);
+    ka_set_step(&a, 4, 1u << 19);                             // 32 samples per period
+    ka_set_gain(&a, 4, 255, 255);
+    ka_set_enable(&a, 4, true);
+    int8_t pts[32];
+    CHECK_EQ(ka_render(&a, 0x10, pts, 32, 32), 0x10);
+    for (unsigned i = 0; i < 32; i++) {
+        int v = (int)(i * 8) - 128;
+        CHECK_EQ(pts[i], v < -127 ? -127 : v);                // the picture is clamped to +-127
+    }
+    // Noise: the spec's LFSR from state 1, PERIOD 0 (a new bit every sample).
+    ka_set_noise_period(&a, 0);
+    ka_set_gain(&a, 3, 255, 255);
+    ka_set_enable(&a, 3, true);
+    int8_t nz[40];
+    ka_render(&a, 0x08, nz, 40, 40);
+    uint16_t s = 1;
+    for (unsigned i = 0; i < 40; i++) {
+        CHECK_EQ(nz[i], (s >> 14 & 1u) ? 127 : -127);
+        s = (uint16_t)(((s << 1) | ((s >> 14 ^ s >> 13) & 1u)) & 0x7FFF);
+    }
+    // Mixed: two full voices fill the height, the mask names those drawn.
+    ka_set_gain(&a, 0, 255, 255);
+    ka_set_duty(&a, 0, 128);
+    CHECK_EQ(ka_render(&a, 0x3F, out, 64, 64), 0x19);
+    ka_set_enable(&a, 3, false);
+    ka_set_enable(&a, 4, false);
+    CHECK_EQ(ka_render(&a, 0x3F, out, 64, 64), 0x01);
+    CHECK_EQ(out[0], 127);                                    // one voice: its own level
+    // Against a sample-by-sample reference: random voices, 512 samples over 64 points.
+    uint32_t seed = 31;
+    for (unsigned round = 0; round < 200; round++) {
+        for (unsigned v = 0; v < KA_VOICES; v++) {
+            ka_set_pitch(&a, v, 20 + ka_rand(&seed) % 90, ka_rand(&seed) % 64);
+            ka_set_gain(&a, v, (uint8_t)ka_rand(&seed), (uint8_t)ka_rand(&seed));
+            ka_set_enable(&a, v, ka_rand(&seed) % 3 != 0);
+            if (v < 3) ka_set_duty(&a, v, (uint8_t)ka_rand(&seed));
+        }
+        ka_set_noise_period(&a, (uint16_t)(ka_rand(&seed) % 40));
+        uint8_t mask = (uint8_t)(ka_rand(&seed) % 64);
+        int8_t got[64], want[64];
+        unsigned drawn = ka_render(&a, mask, got, 64, 512);
+        // Reference: every sample in turn.
+        unsigned active = 0;
+        for (unsigned v = 0; v < KA_VOICES; v++)
+            if ((mask >> v & 1u) && (a.want[v][6] & 1u)) active |= 1u << v;
+        CHECK_EQ(drawn, active);
+        int32_t div = (active & (active - 1)) == 0 ? 255 : 510;
+        uint32_t ph[KA_VOICES] = {0}, cnt = 0;
+        uint16_t lfsr = 1;
+        uint32_t period = a.want[3][8] | a.want[3][9] << 8;
+        unsigned at = 0;
+        for (uint32_t s = 0; s < 512 && at < 64; s++) {
+            int32_t acc = 0;
+            for (unsigned v = 0; v < KA_VOICES; v++) {
+                const uint8_t *r = a.want[v];
+                int x;
+                if (v == 3) {
+                    x = (lfsr >> 14 & 1u) ? 127 : -127;
+                    if (cnt == 0) {
+                        lfsr = (uint16_t)(((lfsr << 1) | ((lfsr >> 14 ^ lfsr >> 13) & 1u)) & 0x7FFF);
+                        cnt = period;
+                    } else {
+                        cnt--;
+                    }
+                } else {
+                    x = v < 3 ? ((ph[v] >> 16 & 255) < r[3] ? 127 : -127)
+                              : (int8_t)a.wave[v - 4][ph[v] >> (24 - r[7])];
+                    ph[v] = (ph[v] + (r[0] | (uint32_t)r[1] << 8 | (uint32_t)r[2] << 16)) & 0xFFFFFFu;
+                }
+                if (active >> v & 1u) acc += x * ((r[4] + r[5]) / 2);
+            }
+            while (at < 64 && at * 512u / 64u == s) {
+                int32_t y = acc / div;
+                want[at++] = (int8_t)(y > 127 ? 127 : y < -127 ? -127 : y);
+            }
+        }
+        if (!active) memset(want, 0, sizeof want);
+        CHECK(!memcmp(got, want, sizeof got));
+    }
+    // Rendering never sends anything.
+    ka_flush(&a, &f);
+    ka_audio before = a;
+    ka_render(&a, 0x3F, out, 64, 4096);
+    CHECK(!memcmp(&before, &a, sizeof a));
+}
+
 int main(void) {
     static const ka_case cases[] = {
         {"registers_match_abi", test_registers_match_abi},
@@ -267,6 +376,7 @@ int main(void) {
         {"silence_and_pcm", test_silence_and_pcm},
         {"invalidate_recovers_from_another_owner", test_invalidate_recovers_from_another_owner},
         {"random_against_model", test_random_against_model},
+        {"render", test_render},
     };
     return ka_run(cases, sizeof cases / sizeof cases[0], "hal");
 }

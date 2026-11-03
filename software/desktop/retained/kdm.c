@@ -1612,6 +1612,57 @@ int kdm_sprite_fill(kdm *m, int s, int color) {
     return kdm_sprite_load(m, s, data);
 }
 
+int kdm_sprite_trace(kdm *m, const int *sprites, int cols, int rows, const int8_t *v, int n, int fg, int bg) {
+    if (cols < 1 || rows < 1 || cols * rows > KDM_MAX_SPRITES || n < 1 || fg < 0 || fg > 15 || bg < 0 || bg > 15)
+        return KDM_EINVAL;
+    for (int i = 0; i < cols * rows; i++) {
+        if (!sprite_ok(m, sprites[i])) return KDM_ESTALE;
+        for (int j = 0; j < i; j++)
+            if (sprites[j] == sprites[i]) return KDM_EINVAL;
+    }
+    int w = cols * KD_SPRITE_W, h = rows * KD_SPRITE_H, half = h / 2 - 1, mid = h / 2;
+    kd_sprite next[KDM_MAX_SPRITES];
+    for (int i = 0; i < cols * rows; i++) memset(next[i].data, (bg << 4) | bg, KD_SPRITE_BYTES);
+    int prev = -1;
+    for (int x = 0; x < w; x++) {
+        int val = v[x * n / w];
+        if (val < -127) val = -127;
+        int y = mid - val * half / 127;
+        int a = prev < 0 ? y : prev, lo = a < y ? a : y, hi = a < y ? y : a;
+        prev = y;
+        for (int yy = lo; yy <= hi; yy++)
+            kd_sprite_set(&next[(yy / KD_SPRITE_H) * cols + x / KD_SPRITE_W], x % KD_SPRITE_W, yy % KD_SPRITE_H,
+                          fg);
+    }
+    // As kdm_sprite_load decides (up to 16 changed pixels one by one, more as
+    // the whole record), but comparing bytes: per-pixel calls cost ms here.
+    int changed = 0;
+    for (int i = 0; i < cols * rows; i++) {
+        kd_sprite *cur = &m->sprites[sprites[i]].px;
+        if (!memcmp(cur->data, next[i].data, KD_SPRITE_BYTES)) continue;
+        int n_px = 0;
+        for (int b = 0; b < KD_SPRITE_BYTES; b++) {
+            uint8_t d = cur->data[b] ^ next[i].data[b];
+            n_px += (d & 0x0F ? 1 : 0) + (d & 0xF0 ? 1 : 0);
+        }
+        changed += n_px;
+        if (n_px > 16) {
+            *cur = next[i];
+            sprite_damage(m, sprites[i], -1, -1);
+            continue;
+        }
+        for (int b = 0; b < KD_SPRITE_BYTES; b++) {
+            if (cur->data[b] == next[i].data[b]) continue;
+            // TILE4 order (kd_sprite.c offset()): four 8x8 tiles, two per row,
+            // 4 bytes per tile row, two pixels per byte.
+            int t = b / 32, y = (t / 2) * 8 + (b % 32) / 4, x = (t % 2) * 8 + (b % 4) * 2;
+            for (int k = 0; k < 2; k++)
+                if (kd_sprite_set(cur, x + k, y, kd_sprite_get(&next[i], x + k, y))) sprite_damage(m, sprites[i], x + k, y);
+        }
+    }
+    return changed;
+}
+
 // ---- composition ----
 
 static bool discard(void *ctx, unsigned first, unsigned count, const uint8_t *data) {

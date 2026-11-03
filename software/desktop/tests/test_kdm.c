@@ -235,6 +235,98 @@ static void t_minimal_updates(void) {
     CHECK(equals_full_redraw());
 }
 
+// A line graph across a 4x2 grid of sprites (64x32 pixels), drawn in C.
+static int trace_px(const int *sp, int x, int y) {
+    return kd_sprite_get(&M.sprites[sp[(y / 16) * 4 + x / 16]].px, x % 16, y % 16);
+}
+
+// The picture kdm_sprite_trace must leave on a 64x32 canvas: an independent model.
+static bool trace_matches(const int *sp, const int8_t *v, int n, int fg, int bg) {
+    int prev = -1;
+    for (int x = 0; x < 64; x++) {
+        int val = v[x * n / 64];
+        if (val < -127) val = -127;
+        int y = 16 - val * 15 / 127;
+        int a = prev < 0 ? y : prev, lo = a < y ? a : y, hi = a < y ? y : a;
+        prev = y;
+        for (int yy = 0; yy < 32; yy++)
+            if (trace_px(sp, x, yy) != (yy >= lo && yy <= hi ? fg : bg)) return false;
+    }
+    return true;
+}
+
+static void t_sprite_trace(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "W", kd_rect_make(16, 24, 200, 150), 0, 2);
+    int sp[8];
+    for (int i = 0; i < 8; i++) {
+        sp[i] = kdm_sprite_alloc(&M, NULL);
+        kdm_add_sprite(&M, w, 10 + (i % 4) * 16, 10 + (i / 4) * 16, sp[i], 1, -1);
+    }
+    present();
+    int8_t v[64];
+    memset(v, 0, sizeof v);
+    CHECK(kdm_sprite_trace(&M, sp, 4, 2, v, 64, 9, 2) > 0);
+    for (int x = 0; x < 64; x++)                       // silence: the middle row, nothing else
+        for (int y = 0; y < 32; y++) CHECK_EQ(trace_px(sp, x, y), y == 16 ? 9 : 2);
+    present();
+    CHECK(equals_full_redraw());
+    CHECK_EQ(kdm_sprite_trace(&M, sp, 4, 2, v, 64, 9, 2), 0);   // the same picture: nothing changes
+    CHECK_EQ(present(), 0);
+    // A square wave: top for the first half, bottom for the second, joined.
+    int8_t sq[2] = {127, -127};
+    CHECK(kdm_sprite_trace(&M, sp, 4, 2, sq, 2, 9, 2) > 0);   // 2 values over 64 columns
+    CHECK(trace_matches(sp, sq, 2, 9, 2));
+    CHECK_EQ(trace_px(sp, 0, 1), 9);
+    CHECK_EQ(trace_px(sp, 31, 1), 9);
+    CHECK_EQ(trace_px(sp, 31, 2), 2);
+    for (int y = 1; y <= 31; y++) CHECK_EQ(trace_px(sp, 32, y), 9);   // the edge, joined
+    CHECK_EQ(trace_px(sp, 63, 31), 9);
+    CHECK_EQ(trace_px(sp, 63, 16), 2);
+    CHECK_EQ(trace_px(sp, 10, 16), 2);                 // the old line is gone
+    present();
+    CHECK(equals_full_redraw());
+    // A small change redraws a few tiles, not the whole graph.
+    int8_t sq2[64];
+    for (int i = 0; i < 64; i++) sq2[i] = i < 32 ? 127 : -127;
+    kdm_sprite_trace(&M, sp, 4, 2, sq2, 64, 9, 2);
+    CHECK(trace_matches(sp, sq2, 64, 9, 2));
+    present();
+    sq2[40] = -120;                                  // a few pixels: changed one by one
+    CHECK(kdm_sprite_trace(&M, sp, 4, 2, sq2, 64, 9, 2) <= 16);
+    CHECK(trace_matches(sp, sq2, 64, 9, 2));
+    int tiles = present();
+    CHECK(tiles >= 1 && tiles <= 4);
+    CHECK(equals_full_redraw());
+    uint32_t seed = 7;
+    int8_t rv[64];
+    for (int round = 0; round < 300; round++) {
+        for (int i = 0; i < 64; i++) {
+            seed = seed * 1664525u + 1013904223u;
+            if (round % 3 || (seed >> 28) == 0) rv[i] = (int8_t)(seed >> 24);   // often, change few values
+        }
+        kdm_sprite_trace(&M, sp, 4, 2, rv, 64, 9, 2);
+        CHECK(trace_matches(sp, rv, 64, 9, 2));
+    }
+    present();
+    CHECK(equals_full_redraw());
+    // Errors change nothing.
+    kd_sprite before[8];
+    for (int i = 0; i < 8; i++) before[i] = M.sprites[sp[i]].px;
+    int dup[8] = {sp[0], sp[1], sp[2], sp[3], sp[4], sp[5], sp[6], sp[0]};
+    CHECK_EQ(kdm_sprite_trace(&M, dup, 4, 2, v, 64, 9, 2), KDM_EINVAL);
+    CHECK_EQ(kdm_sprite_trace(&M, sp, 4, 3, v, 64, 9, 2), KDM_EINVAL);   // 12 sprites
+    CHECK_EQ(kdm_sprite_trace(&M, sp, 4, 2, v, 64, 16, 2), KDM_EINVAL);
+    CHECK_EQ(kdm_sprite_trace(&M, sp, 4, 2, v, 0, 9, 2), KDM_EINVAL);
+    kdm_sprite_free(&M, sp[5]);
+    CHECK_EQ(kdm_sprite_trace(&M, sp, 4, 2, v, 64, 9, 2), KDM_ESTALE);
+    for (int i = 0; i < 8; i++)
+        if (i != 5) CHECK(!memcmp(&before[i], &M.sprites[sp[i]].px, sizeof before[i]));
+    // One row of sprites works too (64x16).
+    CHECK(kdm_sprite_trace(&M, sp, 4, 1, v, 64, 1, 0) > 0);
+    CHECK_EQ(kd_sprite_get(&M.sprites[sp[0]].px, 0, 8), 1);
+}
+
 static void t_events(void) {
     kdm_init(&M, NULL);
     int w = kdm_window_open(&M, "W", kd_rect_make(10, 20, 100, 80), KD_WF_CLOSE | KD_WF_MOVE, 2);
@@ -1442,6 +1534,7 @@ static const kd_test_case tests[] = {
     {"events", t_events},
     {"menus", t_menus},
     {"sprite_free_removes_records", t_sprite_free_removes_records},
+    {"sprite_trace", t_sprite_trace},
     {"random_seed_1", t_random_seed_1},
     {"random_seed_2", t_random_seed_2},
     {"random_seed_3", t_random_seed_3},

@@ -15,6 +15,7 @@
 #include "py/runtime.h"
 
 #include "ka_audio.h"
+#include "ka_render.h"
 #include "ks_player.h"
 #include "ks_song.h"
 
@@ -196,6 +197,20 @@ static mp_obj_t mod_silence(size_t n_args, const mp_obj_t *args) {
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_silence_obj, 0, 1, mod_silence);
+
+// render(voices, buf, span): a synthesized picture of what the HAL wants the
+// voices (bit mask) to play: len(buf) signed points over span 48 kHz
+// samples, each voice from phase 0. An estimate for display, not the
+// hardware's output. Returns the mask of voices drawn. Allocates nothing.
+static mp_obj_t mod_render(mp_obj_t voices, mp_obj_t buf, mp_obj_t span) {
+    need_ready();
+    mp_buffer_info_t bi;
+    mp_get_buffer_raise(buf, &bi, MP_BUFFER_WRITE);
+    unsigned drawn = ka_render(&state.hal, (uint8_t)uint_arg(voices, 63), bi.buf, (unsigned)bi.len,
+                               uint_arg(span, 48000));
+    return MP_OBJ_NEW_SMALL_INT(drawn);
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(mod_render_obj, mod_render);
 
 static mp_obj_t mod_note_step(size_t n_args, const mp_obj_t *args) {
     unsigned fine = n_args > 1 ? uint_arg(args[1], KA_FINE - 1) : 0;
@@ -408,7 +423,7 @@ static const mp_rom_map_elem_t module_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_kagura_audio)},
     FUN(init), FUN(close), FUN(deinit), FUN(flush), FUN(invalidate), FUN(wave),
     FUN(pitch), FUN(step), FUN(noise), FUN(duty), FUN(gain), FUN(enable), FUN(retrigger),
-    FUN(set_wave), FUN(master), FUN(silence), FUN(note_step),
+    FUN(set_wave), FUN(master), FUN(silence), FUN(note_step), FUN(render),
     FUN(validate), FUN(load), FUN(play), FUN(stop), FUN(pause), FUN(resume), FUN(advance),
     FUN(preview), FUN(mute), FUN(voices), FUN(position), FUN(stats), FUN(reset_stats),
     FUN(pack), FUN(unpack_into), FUN(sizes),

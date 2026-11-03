@@ -33,8 +33,8 @@ from kagura.music import (AudioSession, Song, Pattern, instrument, note_name, NO
 
 MENUS = (('ファイル', ('新規', '開く…', '保存', '別名保存…', '書き出し', '-', '終了')),
          ('編集', ('行挿入', '行削除', '新パターン', '複製', '-', '順序+', '順序-')),
-         ('再生', ('曲', 'パターン', '停止', '-', 'ミュート', '設定…')),
-         ('音色', ('前へ', '次へ', '編集…', '-', 'Oct+', 'Oct-')))   # 242 of 256 bytes
+         ('再生', ('曲', 'パターン', '停止', '-', 'ミュート', '設定…', 'スコープ')),
+         ('音色', ('前へ', '次へ', '編集…', '-', 'Oct+', 'Oct-')))   # 255 of 256 bytes
 SONG_DIR = '/songs'
 FREE_MARGIN = 4096
 VOICE_NAMES = ('PULSE1', 'PULSE2', 'PULSE3', 'NOISE', 'WAVE1', 'WAVE2')
@@ -46,11 +46,13 @@ NOTES = tuple(note_name(n) for n in range(98))
 # Layout in the window's work area (pixels). The grid uses the 4x8 font.
 # Work area 318 x 176: status 1..8, rule 10, header 12, 16 rows of 9 from 20, rule 165, message 167.
 GRID_X, HEAD_Y, GRID_Y, ROW_H, ROWS = 2, 12, 20, 9, 16
+GRID_ROWS_PLAYING = 4            # grid rows formatted per loop while music plays
 CELL_CH = 13                       # 'C-4 01 F A12 '
 VISIBLE_TRACKS = 4
 FIELD_CH = (0, 4, 5, 7, 9, 10, 11)  # character of each cursor field in a cell
 FIELD_W = (3, 1, 1, 1, 1, 1, 1)
 PANEL_X = 228
+PANEL_INSTS = 3                  # instrument lines; the scope is below them
 # Piano keys: offset in semitones from C of the current octave.
 PIANO = {}
 for _i, _c in enumerate('zsxdcvgbhnjm,l.;/'):
@@ -183,6 +185,156 @@ def ram_songs(mount='/ramsongs', blocks=32, block_size=512):
 
 
 WAVE_X, WAVE_Y = 8, 4            # the wave editor's canvas: 256 x 128 in the work area
+# The scope in the panel: 4 x 2 sprites (64 x 32 px), 64 points over 512
+# samples (10.7 ms), drawn in C by Desktop.trace(). Placed on the screen's
+# 8 px tile grid (the work area starts at 1, 23), so a change touches 8 x 4
+# tiles and no more.
+SCOPE_X, SCOPE_Y, SCOPE_COLS, SCOPE_ROWS = 231, 129, 4, 2
+SCOPE_W, SCOPE_H = 16 * SCOPE_COLS, 16 * SCOPE_ROWS
+SCOPE_POINTS, SCOPE_SPAN = 64, 512
+SCOPE_FG, SCOPE_BG = 8, 2
+SCOPE_RATES_MS = (100, 200, 400, 800)     # 10, 5, 2.5 and 1.25 updates a second
+SCOPE_BUDGET_US = 6000                    # an average update cost above this slows the scope down
+SCOPE_LATE_US = 3000                      # so does music running this late on average
+SCOPE_SETTLE = 10                         # updates before the lateness counts
+SCOPE_NAMES = ('P1', 'P2', 'P3', 'NO', 'W1', 'W2')
+
+
+class Scope:
+    """A small waveform view in the tracker's panel.
+
+    It is SYNTHESIZED, not captured: kagura_audio.render() draws what the HAL
+    has set the voices to play (pitch, duty, wave table, noise, gain), each
+    from phase 0, so a held note shows a steady picture. KAGURA-9 has no path
+    to read its audio output back without RTL changes; the label says SYNTH.
+
+    Views: the mix, one track, or off (再生 > スコープ cycles). At most about
+    10 updates a second. When the running average of its update cost exceeds
+    SCOPE_BUDGET_US, or the running average of the music's lateness exceeds
+    SCOPE_LATE_US, the rate halves, down to off (shown as OFF(auto)); ten
+    cheap updates in a row bring it back up a step. Single slow updates do
+    not count: the average does.
+
+    Drawing: the trace goes into 8 sprites (4 x 2, 64 x 32 px) through
+    Desktop.trace(), which draws the line in C and redraws only the pixels
+    that changed; kagura_audio.render() fills the points, also in C. While a
+    dialog is open the scope is hidden: its sprite records are removed, as
+    the wave editor may need nearly all of the desktop's records."""
+
+    def __init__(self, app):
+        self.app = app
+        w = app.win
+        self.label = w.text(PANEL_X, 117, '', 4, -1, 1)
+        w.rect(SCOPE_X - 1, SCOPE_Y - 1, SCOPE_W + 2, SCOPE_H + 2, 4)
+        self.sprites = [app.desk.sprite() for _ in range(SCOPE_COLS * SCOPE_ROWS)]
+        self.pts = bytearray(SCOPE_POINTS)
+        self.ids = []                  # the sprites' records in the window, when shown
+        self.view = 0                  # 0 the mix, 1.. a track (index + 1), None off
+        self.level = 0                 # index into SCOPE_RATES_MS; past the end: off (auto)
+        self.next_ms = 0
+        self.good = 0                  # cheap updates in a row (to speed up again)
+        self.hidden = False
+        self.warm = False              # the next update is a full draw, not measured
+        self.calls = self.late_sum = 0
+        self.updates, self.cost_max_us, self.cost_sum_us = 0, 0, 0
+        self.cost_avg = 0              # running average of the update cost (us)
+        self.late_avg = 0              # running average of the music's lateness (us)
+        self.seen = 0                  # measured updates since the scope was shown
+        self.show_label()
+
+    def mask(self):
+        voices = self.app.song.voices
+        if self.view == 0:
+            return sum(1 << v for v in voices)
+        return 1 << voices[self.view - 1]
+
+    def show_label(self):
+        if self.view is None:
+            text = 'SYNTH OFF'
+        elif self.level >= len(SCOPE_RATES_MS):
+            text = 'SYNTH OFF(auto)'
+        else:
+            name = 'MIX' if self.view == 0 else SCOPE_NAMES[self.app.song.voices[self.view - 1]]
+            text = 'SYNTH %s %dHz' % (name, 1000 // SCOPE_RATES_MS[self.level])
+        self.app.set('scope', self.label, text)
+
+    def clear(self):
+        for i in self.ids:
+            self.app.win.remove(i)
+        self.ids = []
+        self.warm = False
+        self.seen = 0
+        self.late_avg = 0
+
+    def place(self):
+        w = self.app.win
+        self.ids = [w.sprite(SCOPE_X + 16 * (k % SCOPE_COLS), SCOPE_Y + 16 * (k // SCOPE_COLS), sp, 1)
+                    for k, sp in enumerate(self.sprites)]
+
+    def cycle(self):
+        n = self.app.song.tracks
+        self.view = 0 if self.view is None else (None if self.view >= n else self.view + 1)
+        self.level, self.good, self.next_ms = 0, 0, 0
+        if self.view is None:
+            self.clear()
+        self.show_label()
+
+    def hide(self):
+        if not self.hidden:
+            self.clear()
+            self.hidden = True
+
+    def update(self, now_ms):
+        if self.hidden:
+            self.hidden = False
+            self.next_ms = now_ms
+        if self.view is None or self.level >= len(SCOPE_RATES_MS):
+            return
+        if time.ticks_diff(now_ms, self.next_ms) < 0:
+            return
+        t0 = time.ticks_us()
+        if not self.ids:
+            self.place()
+        ka.render(self.mask(), self.pts, SCOPE_SPAN)
+        self.app.desk.trace(self.sprites, SCOPE_COLS, self.pts, SCOPE_FG, SCOPE_BG)
+        cost = time.ticks_diff(time.ticks_us(), t0)
+        self.updates += 1
+        if self.warm:
+            self.measured(now_ms, cost)
+        else:                          # the first update draws every column: not its steady cost
+            self.warm = True
+            self.next_ms = time.ticks_add(now_ms, SCOPE_RATES_MS[self.level])
+            self.calls, self.late_sum = ka.stats()['calls'], ka.stats()['late_sum_us']
+
+    def measured(self, now_ms, cost):
+        """Counts an update and throttles on its cost and on how late the music
+        has been since the last one."""
+        self.cost_sum_us += cost
+        if cost > self.cost_max_us:
+            self.cost_max_us = cost
+        self.cost_avg = (3 * self.cost_avg + cost) // 4
+        st = ka.stats()
+        calls, late = st['calls'] - self.calls, st['late_sum_us'] - self.late_sum
+        self.calls, self.late_sum = st['calls'], st['late_sum_us']
+        self.late_avg = (3 * self.late_avg + (late // calls if calls > 0 else 0)) // 4
+        self.seen += 1
+        # Lateness counts after a few updates: the first ones follow whatever
+        # started the music (a song load, a whole page drawn), not the scope.
+        late_bad = self.seen > SCOPE_SETTLE and self.late_avg > SCOPE_LATE_US
+        if self.cost_avg > SCOPE_BUDGET_US or late_bad:
+            self.level += 1
+            self.good = 0
+            self.cost_avg //= 2        # judge the slower rate afresh
+            if self.level >= len(SCOPE_RATES_MS):
+                self.clear()
+        elif self.level and self.cost_avg < SCOPE_BUDGET_US // 2 and self.late_avg < SCOPE_LATE_US * 2 // 3:
+            self.good += 1
+            if self.good >= 10:
+                self.level -= 1
+                self.good = 0
+        if self.level < len(SCOPE_RATES_MS):
+            self.next_ms = time.ticks_add(now_ms, SCOPE_RATES_MS[self.level])
+        self.show_label()
 
 
 class WaveDialog:
@@ -450,6 +602,8 @@ class Tracker:
         self.name = None
         self.song = Song.new()
         self.dirty_song = True       # the player's copy is out of date
+        self.grid_todo = ROWS        # grid rows drawn so far (ROWS: all)
+        self.version = 0             # bumped by every change; the view redraws on it
         self.modified = False
         self.order = 0               # order position being edited
         self.row = self.track = self.field = 0
@@ -473,12 +627,12 @@ class Tracker:
         w.text(PANEL_X, HEAD_Y, 'ORDER', 5)
         self.t_orders = [w.text(PANEL_X, GRID_Y + 2 + i * 9, '', 1) for i in range(6)]
         w.text(PANEL_X, 78, 'INSTR', 5)
-        self.t_insts = [w.text(PANEL_X, 88 + i * 9, '', 1) for i in range(6)]
-        self.t_len = w.text(PANEL_X, 146, '', 4)
+        self.t_insts = [w.text(PANEL_X, 88 + i * 9, '', 1) for i in range(PANEL_INSTS)]
         w.hline(0, GRID_Y + ROWS * ROW_H + 1, self.ww, 1)
         self.t_msg = w.text(2, GRID_Y + ROWS * ROW_H + 3, '', 1)
         self.t_source = w.text(self.ww - 52, GRID_Y + ROWS * ROW_H + 3, source, 5)
         self.play_pos = None
+        self.scope = Scope(self)
         self.message('F10:メニュー Space:再生')
         self.refresh()
 
@@ -491,6 +645,7 @@ class Tracker:
     def changed(self):
         self.modified = True
         self.dirty_song = True
+        self.version += 1            # what the grid and panel show may differ now
 
     def sync_player(self):
         """Gives the player the current song (keeps the position while playing)."""
@@ -521,26 +676,19 @@ class Tracker:
         if play is not None and play[0] == self.order:   # follow the playback row
             top = (play[1] // ROWS) * ROWS
         last = min(s.tracks, self.first_track + VISIBLE_TRACKS)
-        head = ['   ']
-        for t in range(self.first_track, last):
-            name = VOICE_NAMES[s.voices[t]] + ('(M)' if self.mute >> t & 1 else '')
-            head.append(name + ' ' * (CELL_CH - len(name)))
-        self.set('head', self.t_head, ''.join(head))
-        c = p.cells
-        for i in range(ROWS):
-            r = top + i
-            if r >= p.rows:
-                self.set(('r', i), self.t_rows[i], '')
-                continue
-            parts = ['%02d ' % r]
-            for t in range(self.first_track, last):
-                parts.append(cell_text(c, p.offset(r, t)))
-            text = ''.join(parts)
-            self.set(('r', i), self.t_rows[i], text)
-            color = 5 if r % 4 == 0 else 1
-            if self.shown.get(('c', i)) != color:
-                self.win.set_color(self.t_rows[i], color)
-                self.shown[('c', i)] = color
+        # The grid's text is rebuilt only when what it shows changes: formatting
+        # 16 rows costs tens of ms on the RP2040, and handle() runs every loop.
+        grid = (self.version, s.orders[self.order], top, self.first_track, self.mute)
+        if self.shown.get('grid') != grid:
+            self.shown['grid'] = grid
+            self.grid_todo = 0           # rows of the grid still to draw from
+            self.draw_head(last)
+        if self.grid_todo < ROWS:
+            # While music plays, a few rows per loop: a whole page at once is a
+            # stall long enough to make notes late. Stopped, all at once.
+            n = GRID_ROWS_PLAYING if self.play_pos is not None else ROWS
+            self.draw_rows(top, last, self.grid_todo, min(ROWS, self.grid_todo + n))
+            self.grid_todo = min(ROWS, self.grid_todo + n)
         # Cursor bar, field box and the playback bar.
         y = GRID_Y + (self.row - top) * ROW_H
         self.move('bar', self.cur_bar, GRID_X, y if 0 <= self.row - top < ROWS else -20)
@@ -557,7 +705,41 @@ class Tracker:
         if play is not None and play[0] == self.order and top <= play[1] < top + ROWS:
             py = GRID_Y + (play[1] - top) * ROW_H
         self.move('play', self.play_bar, GRID_X, py)
-        # Panel: orders around the current one, instruments around the current one.
+        panel = (self.version, self.order, play[0] if play is not None else None, self.inst, self.octave,
+                 self.modified, self.name)
+        if self.shown.get('panel') != panel:
+            self.shown['panel'] = panel
+            self.draw_panel(play)
+
+    def draw_head(self, last):
+        s = self.song
+        head = ['   ']
+        for t in range(self.first_track, last):
+            name = VOICE_NAMES[s.voices[t]] + ('(M)' if self.mute >> t & 1 else '')
+            head.append(name + ' ' * (CELL_CH - len(name)))
+        self.set('head', self.t_head, ''.join(head))
+
+    def draw_rows(self, top, last, first, end):
+        p = self.pattern
+        c = p.cells
+        for i in range(first, end):
+            r = top + i
+            if r >= p.rows:
+                self.set(('r', i), self.t_rows[i], '')
+                continue
+            parts = ['%02d ' % r]
+            for t in range(self.first_track, last):
+                parts.append(cell_text(c, p.offset(r, t)))
+            text = ''.join(parts)
+            self.set(('r', i), self.t_rows[i], text)
+            color = 5 if r % 4 == 0 else 1
+            if self.shown.get(('c', i)) != color:
+                self.win.set_color(self.t_rows[i], color)
+                self.shown[('c', i)] = color
+
+    def draw_panel(self, play):
+        s, p = self.song, self.pattern
+        # Orders around the current one, instruments around the current one.
         o0 = max(0, min(self.order - 2, len(s.orders) - 6))
         for i in range(6):
             o = o0 + i
@@ -565,8 +747,8 @@ class Tracker:
             if play is not None and o == play[0] and text:
                 text += '*'
             self.set(('o', i), self.t_orders[i], text)
-        i0 = max(0, min(self.inst - 2, len(s.instruments) - 6))
-        for i in range(6):
+        i0 = max(0, min(self.inst - 1, len(s.instruments) - PANEL_INSTS))
+        for i in range(PANEL_INSTS):
             n = i0 + i
             text = ''
             if n < len(s.instruments):
@@ -575,9 +757,9 @@ class Tracker:
                     (' W%X' % ins[1] if ins[0] == KIND_WAVE else '')
                 text = '%s%02X %s%s' % ('>' if n == self.inst else ' ', n, KIND_NAMES[ins[0]], detail)
             self.set(('i', i), self.t_insts[i], text)
-        self.set('len', self.t_len, 'LEN %d %s' % (p.rows, 'LOOP' if s.loop else 'ONCE'))
-        self.set('info', self.t_info, '%3dBPM SPD%d OCT%d INS%02X%s' % (
-            s.tempo, s.speed, self.octave, self.inst, ' *' if self.modified else ''))
+        self.set('info', self.t_info, '%3dBPM SPD%d OCT%d INS%02X L%d%s%s' % (
+            s.tempo, s.speed, self.octave, self.inst, p.rows, '' if s.loop else ' ONCE',
+            ' *' if self.modified else ''))
         title = '%s%s - 神楽トラッカー' % ('* ' if self.modified else '', self.name or '無題')
         if self.shown.get('title') != title:
             self.win.set_title(title)
@@ -588,8 +770,9 @@ class Tracker:
             self.win.move_item(item, x, y)
             self.shown[key] = (x, y)
 
-    def update_play(self):
-        """Follows the player: called often, redraws only when the row changes."""
+    def update_play(self, redraw=True):
+        """Follows the player: called often, redraws only when the row changes
+        (handle() passes redraw=False: it refreshes right after)."""
         pos = ka.position()
         state = pos >> 24
         playing = state == ka.PLAYING
@@ -600,7 +783,8 @@ class Tracker:
             if new is not None and self.follow and new[0] != self.order:
                 self.order = new[0]
             self.play_pos = new
-            self.refresh()
+            if redraw:
+                self.refresh()
 
     follow = True
 
@@ -822,6 +1006,7 @@ class Tracker:
     def new(self):
         self.stop()
         self.song, self.name = Song.new(), None
+        self.version += 1
         self.order = self.row = self.track = self.field = 0
         self.dirty_song, self.modified = True, False
         self.message('新しい曲')
@@ -834,6 +1019,7 @@ class Tracker:
             return
         self.stop()
         self.song, self.name = song, SongFiles.check_name(name)
+        self.version += 1
         self.order = self.row = self.track = self.field = 0
         self.dirty_song, self.modified = True, False
         self.message('%s を開きました' % self.name)
@@ -872,7 +1058,8 @@ class Tracker:
              6: lambda: self.guard('quit', self.do_quit)},
             {0: lambda: self.shift_rows(True), 1: lambda: self.shift_rows(False), 2: self.new_pattern,
              3: lambda: self.new_pattern(True), 5: self.order_insert, 6: self.order_delete},
-            {0: self.play, 1: lambda: self.play(True), 2: self.stop, 4: self.toggle_mute, 5: self.song_dialog},
+            {0: self.play, 1: lambda: self.play(True), 2: self.stop, 4: self.toggle_mute, 5: self.song_dialog,
+             6: self.scope.cycle},
             {0: lambda: self.pick_inst(-1), 1: lambda: self.pick_inst(1), 2: self.instrument_dialog,
              4: lambda: self.set_octave(1), 5: lambda: self.set_octave(-1)})[m]
         actions.get(item, lambda: None)()
@@ -962,6 +1149,10 @@ class Tracker:
         if self.confirm is not None:
             self.confirm = None
 
+    @staticmethod
+    def now_ms():
+        return time.ticks_ms()      # the scope's clock; tests replace it
+
     def handle(self):
         while True:
             ev = self.desk.poll()
@@ -979,8 +1170,12 @@ class Tracker:
                 self.dialog.pointer(kind, ev[2], ev[3])
         if self.dirty_song and ka.position() >> 24 == ka.PLAYING:
             self.sync_player()        # edits during playback are heard at once
-        self.update_play()
+        self.update_play(False)
         self.refresh()
+        if self.dialog is None:
+            self.scope.update(self.now_ms())
+        else:
+            self.scope.hide()          # under the dialog, and its records are needed there
 
 
 def square_wave(n=32):
@@ -1088,6 +1283,11 @@ def tour(app, step, key_ms=0, step_ms=0, loops=0):
                 break
             sleep_ms(1)
 
+    # The scope draws what is sounding at that moment, which depends on real
+    # time: off for the scenes, so the board's CRCs equal the host's; it is
+    # turned on through the menu while the song plays.
+    while app.scope.view is not None:
+        app.scope.cycle()
     scene('empty')
     # 曲の設定: 32-row patterns, 140 BPM.
     k(kd.KEY_F10)
@@ -1142,8 +1342,16 @@ def tour(app, step, key_ms=0, step_ms=0, loops=0):
     k(kd.KEY_ENTER)
     # Play the song from the start while the desktop keeps working.
     k(kd.KEY_LEFT, 0, kd.MOD_CTRL)
+    k(kd.KEY_F10)                       # 再生 > スコープ: the scope shows the mix
+    for _ in range(2):
+        k(kd.KEY_RIGHT)
+    for _ in range(5):
+        k(kd.KEY_DOWN)
+    k(kd.KEY_ENTER)
     ch(' ')
     listen(loops)
+    while app.scope.view is not None:   # off again for the scenes
+        app.scope.cycle()
     scene('playing')
     k(kd.KEY_ESCAPE)
     scene('stopped')

@@ -1,0 +1,20 @@
+HOST_START tracker 2026-11-04T01:46:32
+FREE 139488
+MPY desktop_tracker.mpy 25216 bytes
+TRACKER_LOADED free 68784
+FREE 68688
+SCENE 1 empty 0f2be47f 10
+SCENE 2 song-settings 32d85b77 0
+SCENE 3 melody d84c3634 0
+SCENE 4 bass-drums d49048f7 0
+SCENE 5 pattern-1 5ec1b99c 0
+SCENE 6 instrument 715f5d37 0
+SCENE 7 playing 41e99a4d 128
+SCENE 8 stopped f4618ad6 0
+SCENE 9 saved 22d9012e 0
+SCENE 10 new 0169bd10 0
+SCENE 11 reopened 63450c68 0
+SCENE 12 exported fbafe444 0
+FILE DEMO 725
+TRACKER_END error_code 0 audio_status 0x00
+FREE 59792

@@ -105,6 +105,45 @@
 
 ![wave editor, host render](hardware/wave-editor-host.png)
 
+## Tracker playback timing and the scope
+
+`tools/kagura-audio-board.py scope` plays a song in the real tracker loop (`handle`, `present`, `pump`) for 15 s, with the scope off and then on.
+
+**The tracker's own loop was the larger problem.** Before this change it re-formatted all 16 grid rows on every `handle()`.
+
+| click song | loop | late mean / max | folded | HDMI onset jitter p50 / p95 / max |
+|---|---|---|---|---|
+| before | 52 ms | 22.7 / 75 ms | 451 | 3.0 / 7.7 / 8.3 ms |
+| redraw only on change, 4 rows per loop while playing | 3 ms | 1.2 / 23 ms | 5 | 0.47 / 1.1 / 7.9 ms |
+
+**Scope cost.** Firmware with `kagura_audio.render` and `Desktop.trace` (`kdm_sprite_trace`). Parts measured on the RP2040 ([log](hardware/scope-parts-trace.txt)):
+
+| part | µs |
+|---|---|
+| `render`, 3-voice mix (only the 64 points are computed; noise is stepped per sample) | 205 |
+| `trace`, picture unchanged / changed (byte-wise diff, per-pixel damage up to 16 pixels) | 357 / 983 |
+| `present()` of the changed 64×32 sprite area | about 12,000 |
+
+The `present()` is the scope's real cost. So the scope runs at up to 10 Hz, on the tile grid, and its throttle also watches the music's lateness, which is where that cost shows.
+
+[Measurement](hardware/scope-trace.txt), 15 s each, in the real tracker loop:
+
+| song | scope | updates | cost mean / max | lateness mean | HDMI onset jitter p95 / max | at the end |
+|---|---|---|---|---|---|---|
+| click | off | — | — | 1.13 ms | 1.11 / 6.2 ms | |
+| click | MIX | 147 (9.8 Hz) | 0.76 / 2.3 ms | 1.24 ms | 1.34 / 6.9 ms | 10 Hz |
+| demo, 4 tracks | MIX | 71 (4.7 Hz) | 2.8 / 6.9 ms | 1.79 ms | — | 5 Hz |
+
+- **Before `Desktop.trace`:** the trace was one fill record per segment, about 0.5 ms each. With the demo song an update cost 9.8 ms, and the throttle switched the scope off.
+- **Now:** it keeps running with dense music, at 5–10 Hz, and costs the click about 0.2 ms of p95 jitter.
+- **The remaining ~20 ms spikes** happen with the scope off too. They come from `present()` after grid redraws.
+
+![scope during playback, HDMI](hardware/tracker-hdmi-scope.png)
+
+*HDMI still during the tracker session: SYNTH MIX at 5 Hz while the demo song plays.*
+
+**Tracker session with the scope:** 11 of 12 scene CRCs equal the host, scene 7 being live playback ([board](hardware/tracker-trace.txt), [host](hardware/tracker-host-scenes-trace.txt)). The tour keeps the scope off for its scenes, because the picture depends on what is sounding at that instant, and turns it on through the menu while the song plays.
+
 ## Long playback and recovery
 
 **Soak** (`soak --seconds 600`, [log](hardware/soak-9759a49.txt)): the demo song for 10 minutes, with a window moving and a Japanese character typed on every loop.

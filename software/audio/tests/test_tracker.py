@@ -346,6 +346,108 @@ def test_wave_editor_pointer_and_files():
     audio.close()
 
 
+def test_grid_while_playing():
+    desk, audio, app, dev = fresh('grid')
+    clock = audio.clock
+    for r in range(20):
+        app.row = r
+        typ(app, 'z')                               # a note on every row 0..19
+    app.row = 0
+    key(app, kd.KEY_CHAR, ' ')
+    handles = []
+    while app.play_pos is None or app.play_pos[1] < 16:
+        clock.t += 20000
+        audio.pump()
+        app.handle()
+    # The page turned to rows 16..31: while playing, 4 rows per loop.
+    check(app.grid_todo == T.GRID_ROWS_PLAYING, 'first loop after the page turn: %d rows' % app.grid_todo)
+    for _ in range(3):
+        app.handle()
+    check(app.grid_todo == T.ROWS, 'the page is complete after 4 loops')
+    text = [app.shown.get(('r', i)) for i in range(4)]
+    check(text[0].startswith('16 C-4') and text[3].startswith('19 C-4'), 'rows 16..19: %r' % (text,))
+    check(app.shown.get(('r', 4)).startswith('20 ---'), 'row 20 empty')
+    key(app, kd.KEY_ESCAPE)                         # stopped: a page is drawn at once
+    app.row = 40
+    app.handle()
+    check(app.grid_todo == T.ROWS and app.shown.get(('r', 0)).startswith('32 '), 'stopped: whole page at once')
+    audio.close()
+
+
+def test_scope():
+    desk, audio, app, dev = fresh('scope')
+    app.now_ms = lambda: 0          # handle() keeps the scope at time 0; the test drives it
+    sc = app.scope
+    sc.update(0)
+    check(app.shown.get('scope') == 'SYNTH MIX 10Hz', 'label: %r' % app.shown.get('scope'))
+    def lit_rows():                                 # canvas rows holding trace pixels
+        rows = set()
+        for k, sp in enumerate(sc.sprites):
+            for y in range(16):
+                for x in range(16):
+                    if sp.get(x, y) == T.SCOPE_FG:
+                        rows.add(16 * (k // T.SCOPE_COLS) + y)
+        return rows
+    check(len(sc.ids) == T.SCOPE_COLS * T.SCOPE_ROWS, 'one sprite record per sprite')
+    check(lit_rows() == {T.SCOPE_H // 2}, 'silence: a flat line at the centre: %r' % (sorted(lit_rows()),))
+    # A sounding note shows a waveform.
+    typ(app, 'z')                                   # previews C-4 on PULSE1
+    audio.pump()
+    sc.update(1000)
+    rows = lit_rows()
+    mid = T.SCOPE_H // 2
+    check(min(rows) < mid - 4 and max(rows) > mid + 4, 'a pulse wave above and below the centre: %r'
+          % (sorted(rows),))
+    check(sc.updates == 2, 'updates %d' % sc.updates)
+    sc.update(1050)                                 # within 100 ms: no update
+    check(sc.updates == 2, 'at most 10 updates a second')
+    sc.update(1100)
+    check(sc.updates == 3, 'and again after 100 ms')
+    # Views: the mix, each track, off.
+    names = []
+    for _ in range(app.song.tracks + 2):
+        app.menu(2, 6)                              # 再生 > スコープ
+        names.append(app.shown.get('scope'))
+    check(names[:2] == ['SYNTH P1 10Hz', 'SYNTH P2 10Hz'] and names[4] == 'SYNTH W1 10Hz', 'views %r' % (names,))
+    check(names[6] == 'SYNTH OFF' and not sc.ids, 'off frees the records')
+    check(names[7] == 'SYNTH MIX 10Hz', 'back to the mix')
+    # Hidden under a dialog: records freed for it, shown again afterwards.
+    sc.update(5000)
+    app.menu(2, 5)                                  # 設定… (song dialog)
+    app.handle()
+    check(sc.hidden and not sc.ids, 'hidden while a dialog is open')
+    key(app, kd.KEY_ESCAPE)
+    check(not sc.hidden and sc.ids, 'shown again after the dialog')
+    # Throttle: one slow update is tolerated; a costly average halves the rate
+    # down to off; cheap updates bring it back.
+    t = 10000
+    sc.cost_avg = 0
+    sc.measured(t, 3 * T.SCOPE_BUDGET_US)
+    check(app.shown.get('scope').endswith('10Hz'), 'a single slow update does not slow the scope')
+    seen = []
+    for _ in range(40):
+        sc.measured(t, 3 * T.SCOPE_BUDGET_US)
+        t += 1000
+        label = app.shown.get('scope').split()[-1]
+        if not seen or seen[-1] != label:
+            seen.append(label)
+        if label == 'OFF(auto)':
+            break
+    check(seen == ['10Hz', '5Hz', '2Hz', '1Hz', 'OFF(auto)'][-len(seen):] and seen[-1] == 'OFF(auto)',
+          'throttled step by step to off: %r' % (seen,))
+    check(not sc.ids, 'auto-off frees the records')
+    n = sc.updates
+    sc.update(t + 5000)
+    check(sc.updates == n, 'no updates when off')
+    app.menu(2, 6)                                  # cycling restores a rate
+    app.menu(2, 6)
+    sc.level, sc.cost_avg = 1, 0
+    for _ in range(10):
+        sc.measured(t, 100)
+    check(sc.level == 0, 'cheap updates speed it up again')
+    audio.close()
+
+
 def test_demo_song():
     """The scripted tour composes the demo; check what it wrote."""
     path = folder + '/demo'
@@ -375,7 +477,7 @@ def test_demo_song():
 
 for name in ('test_note_entry', 'test_rows_tracks_orders', 'test_playback_and_live_edit',
              'test_files_and_guards', 'test_wave_editor_keyboard', 'test_wave_editor_pointer_and_files',
-             'test_demo_song'):
+             'test_grid_while_playing', 'test_scope', 'test_demo_song'):
     globals()[name]()
 print('desktop_tracker: %d failures' % len(failures))
 if failures:
