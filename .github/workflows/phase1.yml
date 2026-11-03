@@ -165,6 +165,11 @@ jobs:
               -Dpicotool_DIR="$PWD/build/pico/_deps/picotool"
             cmake --build "build/starfall-$lane-ci" -j2
           done
+      - name: Standalone audio player (HAL, KSNG player, SRAM image)
+        run: |
+          export PATH="$HOME/opt/$ARM_TOOLCHAIN/bin:$PATH" PICO_SDK_PATH="$HOME/opt/pico-sdk"
+          cmake -S software/audio/pico -B build/audio-pico -DCMAKE_BUILD_TYPE=Release             -Dpicotool_DIR="$PWD/build/pico/_deps/picotool"
+          cmake --build build/audio-pico -j2
       - uses: actions/upload-artifact@v4
         with:
           name: pico-firmware
