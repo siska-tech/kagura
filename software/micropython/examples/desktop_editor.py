@@ -238,8 +238,17 @@ class Editor:
         ww, wh = w.work()[2:]
         rows = (wh - 20) // kd.LINE_H                # whole rows, then a status line
         self.ed = w.editor(2, 2, ww - 4, rows * kd.LINE_H + 4)
-        self.status = w.text(4, rows * kd.LINE_H + 10, '', 1, 3)
-        self.source = w.text(ww - 68, rows * kd.LINE_H + 10, source, 5, 3)
+        # Status: fixed fields, the numbers as ASCII records so that a keystroke
+        # redraws only the digit cells that changed, not the whole line.
+        sy = rows * kd.LINE_H + 10
+        self.n_line = w.text(4, sy, '   1', 1, 2)
+        w.text(36, sy, '行', 1, 2)
+        self.n_col = w.text(48, sy, '  1', 1, 2)
+        w.text(72, sy, '列', 1, 2)
+        self.n_size = w.text(88, sy, '   0', 1, 2)
+        w.text(120, sy, '/%dB' % kd.DOC_BYTES, 1, 2)
+        self.flag = w.text(176, sy, ' ', 6, 2)
+        self.source = w.text(ww - 68, rows * kd.LINE_H + 10, source, 5, 2)
         self.saved_version = w.version(self.ed)
         self.refresh()
 
@@ -254,10 +263,17 @@ class Editor:
         state = (line, col, self.win.length(self.ed), mod, self.name)
         if state == self.status_was:
             return
-        if self.status_was is None or self.status_was[3:] != state[3:]:
-            self.win.set_title(('* ' if mod else '') + (self.name or UNTITLED) + ' - 神楽メモ帳')
-        self.win.set_text(self.status, '%d行 %d列  %d/%dB%s' % (
-            line + 1, col + 1, state[2], kd.DOC_BYTES, '  変更あり' if mod else ''))
+        was = self.status_was or (None, None, None, None, None)
+        w = self.win
+        if was[3:] != state[3:]:
+            w.set_title(('* ' if mod else '') + (self.name or UNTITLED) + ' - 神楽メモ帳')
+            w.set_text(self.flag, '変更あり' if mod else ' ')
+        if was[0] != line:
+            w.set_text(self.n_line, '%4d' % (line + 1))
+        if was[1] != col:
+            w.set_text(self.n_col, '%3d' % (col + 1))
+        if was[2] != state[2]:
+            w.set_text(self.n_size, '%4d' % state[2])
         self.status_was = state
 
     def load_text(self, text, name, crlf=False, bom=False):

@@ -385,7 +385,20 @@ static void editor_after(kdm *m, int slot, kdm_item *it, field_was was, bool not
                 if (r[k] > hi) hi = r[k];
             }
             if (KDM_FAULTY(KDM_FAULT_FIELD_CARET)) lo = hi = r[2];
-            editor_rows_damage(m, slot, it, lo, hi);
+            if (lo == hi && was.caret == was.anchor && e->caret == e->anchor) {
+                // A caret moving along one row: only the columns between the two
+                // positions. (Old positions at or after a text change lie in the
+                // span invalidated above, which runs to the right edge.)
+                void *font = (void *)field_font(it);
+                size_t old = was.caret < e->len ? was.caret : e->len;
+                int x0 = kd_edit_x(e, old, advance, font), x1 = kd_edit_x(e, e->caret, advance, font);
+                if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+                int tx = it->x + 2 - f->scroll;
+                kd_rect span = kd_rect_make(tx + x0, it->y + 2 + (int)lo * KDM_LINE_H, x1 - x0 + 1, KDM_LINE_H);
+                invalidate(m, slot, kd_rect_intersect(span, editor_inner(it)));
+            } else {
+                editor_rows_damage(m, slot, it, lo, hi);
+            }
         }
     }
     if (notify && e->version != was.version) push_item_event(m, slot, KDM_EV_CHANGE, (int)(it - m->items), time_ms);
