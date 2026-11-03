@@ -164,7 +164,7 @@ size_t kd_edit_count(const kd_edit *e, size_t from, size_t to) {
 size_t kd_edit_line_index(const kd_edit *e, size_t pos) {
     if (pos > e->len) pos = e->len;
     size_t n = 0;
-    for (size_t i = 0; i < pos; i++) n += e->buf[i] == '\n';
+    for (const uint8_t *p = e->buf, *end = e->buf + pos; (p = memchr(p, '\n', (size_t)(end - p))) != NULL; p++) n++;
     return n;
 }
 

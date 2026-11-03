@@ -1,0 +1,19 @@
+KEY type ASCII (line end)      n  60 p50  15739 p95  33200 max  63401 us  tiles/key  59.6  heap/key  573.9
+p50 parts: key 2319  app 1953  compose 5003  send 6439 us
+KEY type Japanese (text)       n  40 p50  16777 p95  33846 max  33926 us  tiles/key  47.8  heap/key  574.0
+p50 parts: key 2409  app 1936  compose 6041  send 6410 us
+KEY caret left                 n  40 p50  15788 p95  16521 max  34258 us  tiles/key  34.2  heap/key  484.0
+p50 parts: key 1678  app 1445  compose 6262  send 6385 us
+KEY caret up/down              n  40 p50  19131 p95  20192 max  42245 us  tiles/key  81.7  heap/key  526.0
+p50 parts: key 1664  app 1749  compose 7292  send 8382 us
+KEY Enter (lines below move)   n  20 p50  42700 p95  69548 max  69548 us  tiles/key 120.1  heap/key  683.2
+p50 parts: key 1086  app 1927  compose 24035  send 15572 us
+KEY Backspace joining lines    n  20 p50  38641 p95  61904 max  61904 us  tiles/key 121.6  heap/key  682.4
+p50 parts: key 2166  app 1947  compose 24655  send 16322 us
+KEY PgDn / PgUp                n  20 p50  44137 p95  45543 max  45543 us  tiles/key  67.0  heap/key  540.0
+p50 parts: key 2275  app 1813  compose 30757  send 9238 us
+KEY idle frame                 n  40 p50   1059 p95   1340 max   1342 us  tiles/key   0.0  heap/key  302.0
+p50 parts: key 37  app 542  compose 104  send 374 us
+READY
+SAVED ['kagura.txt'] NAME kagura.txt TEXT_BYTES 182
+CLOSED free 97104 console_paused False
