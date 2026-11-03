@@ -1166,7 +1166,255 @@ static void t_f10_without_menus(void) {
     CHECK(equals_full_redraw());
 }
 
+// ---- input method candidate popup and status ----
+
+static const char *const CANDS[] = {"候補", "校", "公", "高等学校", "考"};
+
+static int cands(int w, int id, int n, int sel, const char *foot) {
+    size_t lens[KDM_CAND_ITEMS];
+    for (int i = 0; i < n; i++) lens[i] = strlen(CANDS[i]);
+    return kdm_set_candidates(&M, w, id, CANDS, lens, n, sel, foot, strlen(foot));
+}
+
+static bool popup_is(kd_rect r) {
+    kd_rect p = M.desk.popup;
+    return p.x == r.x && p.y == r.y && p.w == r.w && p.h == r.h;
+}
+
+// The popup is on screen, below the menu bar, inside the work area
+// horizontally, and never on the caret's row: below it, or above it.
+static bool popup_placed(int w, int id) {
+    kd_rect p = M.desk.popup, work = kd_window_work(&M.desk.win[w]);
+    int x, y, h;
+    if (kd_rect_empty(p) || kdm_caret_xy(&M, w, id, &x, &y, &h) != KDM_OK) return false;
+    if (p.x < 0 || p.x + p.w > KD_W || p.y < KD_MENU_H || p.y + p.h > KD_H) return false;
+    if (p.x < work.x || p.x + p.w > work.x + work.w) return false;
+    return p.y >= y + h || p.y + p.h <= y;
+}
+
+static void t_cand_corners(void) {
+    static const struct { int x, y; bool right, above; } corner[] = {
+        {0, 11, false, false}, {160, 11, true, false}, {0, 120, false, true}, {160, 120, true, true}};
+    for (int c = 0; c < 4; c++) {
+        kdm_init(&M, NULL);
+        int w = kdm_window_open(&M, "W", kd_rect_make(corner[c].x, corner[c].y, 160, 80), KD_WF_MOVE, 2);
+        int f = kdm_add_field(&M, w, 2, 50, 150, "abcdefghijklmnopq", 17, 0);
+        int at = corner[c].right ? 17 : 0;
+        kdm_field_select(&M, w, f, at, at);
+        present();
+        uint32_t crc0 = fb_crc();
+        CHECK_EQ(cands(w, f, 5, 0, "1/3"), KDM_OK);
+        present();
+        CHECK(popup_placed(w, f));
+        CHECK(equals_full_redraw());
+        kd_rect p = M.desk.popup, work = kd_window_work(&M.desk.win[w]);
+        int x, y, h;
+        kdm_caret_xy(&M, w, f, &x, &y, &h);
+        CHECK_EQ(p.y >= y + h, !corner[c].above);         // flipped above near the bottom
+        if (corner[c].right) CHECK_EQ(p.x + p.w, work.x + work.w);   // clamped at the right
+        else CHECK_EQ(p.x, work.x);                       // clamped at the left (x - 14 < 0)
+        CHECK_EQ(px(p.x, p.y), KD_C_BLACK);               // border
+        CHECK_EQ(px(p.x + 1, p.y + 3), KD_C_BLACK);       // the first row is selected
+        CHECK_EQ(cands(w, f, 0, -1, ""), KDM_OK);         // hidden: no trace
+        CHECK(kd_rect_empty(M.desk.popup));
+        present();
+        CHECK_EQ(fb_crc(), crc0);
+    }
+}
+
+static void t_cand_anchor(void) {
+    kdm_menu_def def = {1, {"M"}, {{"A", "B"}}, {2}};
+    kdm_init(&M, &def);
+    kdm_window_open(&M, "Low", kd_rect_make(0, 100, 320, 100), 0, 3);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(20, 20, 200, 100), KD_WF_MOVE, 2);
+    static const char doc[] = "日本語の文章と abc の行\n二行目\n三\n四\n五\n六\n七\n八\n九\n十";
+    int ed = kdm_add_editor(&M, w, 2, 2, 190, 74, doc, sizeof doc - 1, 0);
+    kdm_field_select(&M, w, ed, 6, 6);                    // after 日本 (full width)
+    present();
+    CHECK_EQ(kdm_set_preedit(&M, w, ed, "▼語", 6, 3, 6), KDM_OK);
+    CHECK_EQ(cands(w, ed, 5, 0, ""), KDM_OK);
+    present();
+    int x, y, h;
+    kdm_caret_xy(&M, w, ed, &x, &y, &h);
+    kd_rect work = kd_window_work(&M.desk.win[w]);
+    CHECK_EQ(M.desk.popup.x, work.x + 2 + 2 + 16 - 14);   // the text under the preedit's start
+    CHECK_EQ(M.desk.popup.y, y + h + 1);
+    CHECK(M.desk.popup.y + M.desk.popup.h > 100);         // over the lower window too
+    CHECK(equals_full_redraw());
+    // The window moves: the popup follows at the next render.
+    kd_rect before = M.desk.popup;
+    kdm_window_move(&M, w, 60, 40);
+    present();
+    CHECK(M.desk.popup.x == before.x + 40 && M.desk.popup.y == before.y + 20);
+    CHECK(equals_full_redraw());
+    kdm_window_move(&M, w, 20, 20);
+    // The view scrolls down to the last line: the popup follows the caret's row.
+    kdm_set_preedit(&M, w, ed, "", 0, -1, -1);
+    cands(w, ed, 0, -1, "");
+    kdm_field_select(&M, w, ed, (int)sizeof doc - 1, (int)sizeof doc - 1);
+    CHECK_EQ(kdm_set_preedit(&M, w, ed, "▼語", 6, 3, 6), KDM_OK);
+    CHECK_EQ(cands(w, ed, 3, 1, "2/2"), KDM_OK);
+    present();
+    CHECK(popup_placed(w, ed));
+    CHECK(equals_full_redraw());
+    // A dialog takes the focus: the popup hides.
+    kd_rect shown = M.desk.popup;
+    int dlg = kdm_window_open(&M, "Dlg", kd_rect_make(80, 60, 160, 50), 0, 2);
+    int fl = kdm_add_field(&M, dlg, 4, 4, 140, "", 0, 0);
+    present();
+    CHECK(kd_rect_empty(M.desk.popup));
+    CHECK(equals_full_redraw());
+    // The dialog's own field: the popup is above the dialog.
+    CHECK_EQ(cands(dlg, fl, 2, 0, ""), KDM_OK);
+    present();
+    CHECK(popup_placed(dlg, fl));
+    CHECK(equals_full_redraw());
+    CHECK_EQ(cands(dlg, fl, 0, -1, ""), KDM_OK);
+    kdm_window_close(&M, dlg);
+    CHECK_EQ(cands(w, ed, 3, 1, "2/2"), KDM_OK);
+    present();
+    CHECK(popup_is(shown));
+    // A menu opens over the popup and closes exactly.
+    uint32_t crc1 = fb_crc();
+    key(KD_KEY_F10, 0, 0);
+    present();
+    CHECK(equals_full_redraw());
+    key(KD_KEY_ESCAPE, 0, 0);
+    drain();
+    present();
+    CHECK_EQ(fb_crc(), crc1);
+    // Closing the window drops the popup.
+    kdm_window_close(&M, w);
+    CHECK_EQ(M.cand.item, KDM_NONE);
+    present();
+    CHECK(kd_rect_empty(M.desk.popup));
+    CHECK(equals_full_redraw());
+}
+
+static void t_cand_minimal(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "W", kd_rect_make(10, 20, 220, 100), 0, 2);
+    int f = kdm_add_field(&M, w, 8, 8, 200, "", 0, 0);
+    CHECK_EQ(cands(w, f, 5, 0, "1/2"), KDM_OK);
+    present();
+    kd_rect p = M.desk.popup;
+    int row = (p.w - 2) * 10;
+    CHECK_EQ(cands(w, f, 5, 1, "1/2"), KDM_OK);           // the selection moves: two rows
+    present();
+    CHECK_EQ(M.desk.stats.last_area, 2 * row);
+    CHECK(equals_full_redraw());
+    CHECK_EQ(cands(w, f, 5, 1, "1/2"), KDM_OK);           // nothing changed: nothing drawn
+    CHECK_EQ(present(), 0);
+    CHECK_EQ(cands(w, f, 5, 1, "2/2"), KDM_OK);           // the footer alone
+    present();
+    CHECK(M.desk.stats.last_area > 0 && M.desk.stats.last_area <= (p.w - 2) * 12);   // separator and row
+    CHECK(equals_full_redraw());
+    // Invalid lists change nothing.
+    static const char *const six[] = {"a", "b", "c", "d", "e", "f"};
+    size_t lens[6] = {1, 1, 1, 1, 1, 1};
+    CHECK_EQ(kdm_set_candidates(&M, w, f, six, lens, 6, 0, "", 0), KDM_EINVAL);
+    CHECK_EQ(cands(w, f, 2, 2, ""), KDM_EINVAL);
+    static const char *const nl[] = {"a\nb"};
+    size_t nll = 3;
+    CHECK_EQ(kdm_set_candidates(&M, w, f, nl, &nll, 1, 0, "", 0), KDM_EINVAL);
+    int t = kdm_add_text(&M, w, 0, 40, "label", 5, 1, -1, 0);
+    CHECK_EQ(cands(w, t, 1, 0, ""), KDM_EINVAL);
+    CHECK(popup_is(p));
+    // A footer alone (候補なし) still shows.
+    static const char none[] = "候補なし";
+    CHECK_EQ(kdm_set_candidates(&M, w, f, NULL, NULL, 0, -1, none, sizeof none - 1), KDM_OK);
+    present();
+    CHECK(!kd_rect_empty(M.desk.popup));
+    CHECK(equals_full_redraw());
+}
+
+static void t_status_indicator(void) {
+    kdm_menu_def def = {3, {"ファイル", "編集", "表示"}, {{"A"}, {"B"}, {"C"}}, {1, 1, 1}};
+    kdm_init(&M, &def);
+    kdm_window_open(&M, "W", kd_rect_make(10, 20, 220, 100), 0, 2);
+    present();
+    uint32_t crc0 = fb_crc();
+    int menus_end = kd_menu_title_x(M.desk.menus, 2) + kd_menu_title_w(M.desk.menus, 2);
+    static const char *const labels[] = {"A 直接", "あ かな", "ア カナ", "▽ 読み", "▼ 変換"};
+    for (int i = 0; i < 5; i++) {
+        kd_rect old = kd_desktop_status_box(&M.desk);
+        CHECK_EQ(kdm_set_status(&M, labels[i], strlen(labels[i])), KDM_OK);
+        kd_rect now = kd_desktop_status_box(&M.desk);
+        present();
+        CHECK(now.x > menus_end && now.x + now.w == KD_W - 2 && now.y == 0 && now.h == KD_MENU_H - 1);
+        CHECK(M.desk.stats.last_area <= old.w * old.h + now.w * now.h);   // only the indicator
+        CHECK(equals_full_redraw());
+    }
+    // Too long: clipped, never over the menus.
+    static const char lng[] = "あいうえおかきくけこさしすせそ";
+    CHECK_EQ(kdm_set_status(&M, lng, sizeof lng - 1), KDM_OK);
+    present();
+    CHECK(kd_desktop_status_box(&M.desk).x > menus_end);
+    CHECK(equals_full_redraw());
+    CHECK_EQ(kdm_set_status(&M, "\xE7\xA5", 2), KDM_EINVAL);
+    CHECK_EQ(kdm_set_status(&M, "", 0), KDM_OK);
+    present();
+    CHECK_EQ(fb_crc(), crc0);
+}
+
+static void t_cand_random(void) {
+    uint32_t r = 4242;
+    kdm_menu_def def = {2, {"ファイル", "編集"}, {{"A", "B"}, {"C"}}, {2, 1}};
+    kdm_init(&M, &def);
+    int low = kdm_window_open(&M, "Low", kd_rect_make(100, 60, 200, 120), KD_WF_MOVE, 3);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(0, 11, 260, 150), KD_WF_MOVE, 2);
+    int ed = kdm_add_editor(&M, w, 2, 2, 200, 94, "", 0, 0);
+    int fl = kdm_add_field(&M, w, 2, 110, 150, "", 0, 0);
+    static const char *const words[] = {"a", "神", "abc ", "\n", "日本語の文章"};
+    static const char *const st[] = {"A 直接", "あ かな", "ア カナ", "▽ 読み", "▼ 変換"};
+    for (int step = 0; step < 3000; step++) {
+        int target = kd_rand_range(&r, 0, 1) ? ed : fl;
+        int op = kd_rand_range(&r, 0, 11);
+        if (op <= 3) {
+            kdm_focus(&M, w, target);
+            kdm_set_preedit(&M, w, target, "▼漢字", 9, 3, 9);
+            int n = kd_rand_range(&r, 0, 5);
+            cands(w, target, n, n ? kd_rand_range(&r, -1, n - 1) : -1, kd_rand_range(&r, 0, 1) ? "1/3" : "");
+        } else if (op <= 5) {
+            kdm_set_preedit(&M, w, target, "", 0, -1, -1);
+            cands(w, target, 0, -1, "");
+            const char *s = words[kd_rand_range(&r, 0, 4)];
+            kdm_text_input(&M, s, strlen(s));
+        } else if (op == 6) {
+            static const uint8_t keys[] = {KD_KEY_LEFT, KD_KEY_RIGHT, KD_KEY_UP, KD_KEY_DOWN, KD_KEY_END};
+            key(keys[kd_rand_range(&r, 0, 4)], 0, 0);
+        } else if (op == 7) {
+            kdm_window_move(&M, kd_rand_range(&r, 0, 1) ? w : low, kd_rand_range(&r, -40, 120),
+                            kd_rand_range(&r, 0, 120));
+        } else if (op == 8) {
+            kdm_window_activate(&M, kd_rand_range(&r, 0, 1) ? w : low);
+        } else if (op == 9) {
+            const char *s = st[kd_rand_range(&r, 0, 4)];
+            kdm_set_status(&M, s, strlen(s));
+        } else if (op == 10) {
+            key(KD_KEY_F10, 0, 0);
+        } else {
+            key(KD_KEY_ESCAPE, 0, 0);
+        }
+        drain();
+        if (step % 10 == 0) {
+            present();
+            if (!equals_full_redraw()) {
+                char msg[48];
+                snprintf(msg, sizeof msg, "popup frame differs at step %d", step);
+                kd_test_fail(__FILE__, __LINE__, msg);
+                return;
+            }
+        }
+    }
+}
+
 static const kd_test_case tests[] = {
+    {"cand_corners", t_cand_corners},
+    {"cand_anchor", t_cand_anchor},
+    {"cand_minimal", t_cand_minimal},
+    {"status_indicator", t_status_indicator},
+    {"cand_random", t_cand_random},
     {"f10_without_menus", t_f10_without_menus},
     {"preedit_field", t_preedit_field},
     {"preedit_editor_and_targets", t_preedit_editor_and_targets},

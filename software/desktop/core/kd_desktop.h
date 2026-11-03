@@ -2,7 +2,9 @@
 // Layer C: window manager, compositor and event dispatch.
 //
 // Composition: every damage rect D is recomposed top-down. The layers are the
-// open dropdown, the menu bar and the windows from the top of the z-order;
+// open dropdown, the menu bar, the popup (an input method's candidates: above
+// every window, a dialog included, and below the menus) and the windows from
+// the top of the z-order;
 // each layer draws only into the part of D not yet covered by a layer above
 // it (a GEM-style visible rectangle list), then that part is removed. The
 // desktop fills what remains and the overlays (drag outline, software
@@ -95,6 +97,15 @@ struct kd_desktop {
     uint32_t last_click_ms;
     int16_t last_click_x, last_click_y;
     int8_t last_click_target;
+    // Right-aligned status text in the menu bar (an input method's mode).
+    char status[32];
+    uint8_t status_len;
+    // A popup (an input method's candidates): a layer above every window and
+    // below the menus, opaque over popup; draw paints it at screen coordinates
+    // with the clip set. Empty popup: none.
+    kd_rect popup;
+    void (*popup_draw)(void *ctx, kd_fb *fb);
+    void *popup_ctx;
     kd_compose_stats stats;
     uint8_t snap[KD_SNAP_TILES * 32];
 };
@@ -116,6 +127,14 @@ void kd_desktop_close_menu(kd_desktop *d);
 void kd_desktop_select_icon(kd_desktop *d, int icon);
 void kd_desktop_set_cursor(kd_desktop *d, bool on);
 void kd_desktop_menu_changed(kd_desktop *d);   // menu item flags changed
+// Shows, moves or hides (empty r) the popup layer: the old and the new rect
+// are recomposed. A change of its content alone: kd_desktop_invalidate the
+// changed part.
+void kd_desktop_set_popup(kd_desktop *d, kd_rect r, void (*draw)(void *ctx, kd_fb *fb), void *ctx);
+// Right-aligned status text in the menu bar (UTF-8, at most 31 bytes), never
+// over the menu titles: it is clipped instead. Only its own box is recomposed.
+void kd_desktop_set_status(kd_desktop *d, const char *s, int len);
+kd_rect kd_desktop_status_box(const kd_desktop *d);
 
 kd_rect kd_cursor_rect(const kd_desktop *d);
 

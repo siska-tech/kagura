@@ -599,6 +599,50 @@ def test_preedit_api():
     check(d.input_target() is None)
 
 
+def test_candidates_and_status_api():
+    d = kd.Desktop(menus=(('M', ('a', 'b')),))
+    w = d.create_window('E', 0, 11, 320, 189)
+    e = w.editor(2, 2, 300, 104, 'ab')
+    w.select(e, 1)
+    t = w.text(0, 120, 'label')
+    mirror = bytearray(32000)
+    d.present(mirror)
+    before = d.crc()
+    items = ['行', '高', '工', '公', '効']
+    w.set_preedit(e, '▼行', 1, 2)
+    w.set_candidates(e, items, 0, '1/3')
+    d.present(mirror)
+    check(d.crc() != before)
+    check(kd.CAND_ITEMS == 5)
+    check(raises(ValueError, w.set_candidates, e, items + ['x']))
+    check(raises(ValueError, w.set_candidates, e, items, 5))
+    check(raises(ValueError, w.set_candidates, e, ['a\nb']))
+    check(raises(TypeError, w.set_candidates, e, [1]))
+    check(raises(ValueError, w.set_candidates, t, items))
+    d.set_status('▼ 変換')
+    check(raises(ValueError, d.set_status, 'a\nb'))
+    micropython.heap_lock()
+    try:
+        w.set_candidates(e, items, 1, '1/3')        # no allocation while selecting
+        d.set_status('▽ 読み')
+        d.present(mirror)
+        ok = True
+    except MemoryError:
+        ok = False
+    micropython.heap_unlock()
+    check(ok, 'set_candidates allocates')
+    w.set_candidates(e, ())
+    w.set_preedit(e, '')
+    d.set_status('')
+    d.present(mirror)
+    check(d.crc() == before)                         # no trace
+    w.set_candidates(e, items, 0)
+    w.close()
+    check(raises(ValueError, w.set_candidates, e, items))
+    d.present(mirror)
+    check(d.input_target() is None)
+
+
 def main():
     global failed, run
     tests = [(k, v) for k, v in globals().items() if k.startswith('test_')]

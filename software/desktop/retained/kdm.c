@@ -2,6 +2,8 @@
 // Retained-mode layer for script-driven windows (see kdm.h).
 #include "kdm.h"
 
+#include "kj_text.h"
+
 #include <string.h>
 
 // Fault injection for the mutation tests (tests/CMakeLists.txt): a normal
@@ -22,6 +24,7 @@ enum {
     KDM_FAULT_FIELD_CARET = 9,     // a field motion does not invalidate the old caret
     KDM_FAULT_EDITOR_ROWS = 10,    // an editor line break does not redraw the lines below
     KDM_FAULT_PREEDIT = 11,        // a preedit change invalidates nothing
+    KDM_FAULT_CAND_ROWS = 12,      // a candidate change redraws every row (not only the changed ones)
 };
 
 static const kd_art *const icon_art[] = {
@@ -200,6 +203,7 @@ static void item_release(kdm *m, int i) {
         m->preedit_item = KDM_NONE;
         m->preedit_len = 0;
     }
+    if (m->cand.item == i) m->cand.item = KDM_NONE;   // the popup closes at the next render
     if (m->win[it->win].focus == i) m->win[it->win].focus = KDM_NONE;
     it->op = KDM_OP_FREE;
     it->next = m->free_item;
@@ -830,6 +834,7 @@ int kdm_init(kdm *m, const kdm_menu_def *menus) {
     for (int s = 0; s < KD_MAX_WINDOWS; s++) m->win[s].head = m->win[s].tail = m->win[s].focus = KDM_NONE;
     for (int f = 0; f <= KDM_FIELDS; f++) m->fields[f].item = KDM_NONE;
     m->preedit_item = KDM_NONE;
+    m->cand.item = KDM_NONE;
     kd_shell_hooks hooks = {menu_hook, NULL, m};
     kd_desktop_init(&m->desk, m->menus, NULL, 0, hooks);
     return rc;
@@ -1378,6 +1383,149 @@ int kdm_caret_xy(kdm *m, int slot, int id, int *x, int *y, int *h) {
     return KDM_OK;
 }
 
+// ---- candidate popup ----
+
+#define CAND_ROW 10      // 8 px glyphs, 1 px above and below
+#define CAND_TEXT_X 14   // border, padding, label digit and gap
+
+static void cand_size(const kdm *m, int *w, int *h) {
+    int tw = 0;
+    for (int i = 0; i < m->cand.n; i++) {
+        int t = kd_text_width_n(&kd_font_system, m->cand.text[i], m->cand.len[i]);
+        if (t > tw) tw = t;
+    }
+    int fw = m->cand.foot_len ? kd_text_width_n(&kd_font_system, m->cand.foot, m->cand.foot_len) + 6 : 0;
+    *w = CAND_TEXT_X + tw + 3;
+    if (*w < fw) *w = fw;
+    if (*w < 32) *w = 32;
+    *h = 4 + m->cand.n * CAND_ROW + (m->cand.foot_len ? CAND_ROW + (m->cand.n ? 1 : 0) : 0);
+}
+
+// Where the popup goes now: empty while hidden or its record lacks the focus.
+static kd_rect cand_place(kdm *m) {
+    kd_rect none = kd_rect_make(0, 0, 0, 0);
+    uint16_t i = m->cand.item;
+    if (i == KDM_NONE) return none;
+    const kdm_item *it = &m->items[i];
+    int slot = it->win;
+    if (!window_ok(m, slot) || !editable(it) || !shows_focus(m, slot, i)) return none;
+    const kdm_field *f = &m->fields[it->aux];
+    kd_rect work = kd_window_work(&m->desk.win[slot]);
+    // The preedit's start (where conversion text begins) and the caret's row.
+    int ax = work.x + it->x + 2 - f->scroll + kd_edit_x(&f->ed, f->ed.caret, advance, (void *)field_font(it));
+    int ry, rh;
+    if (it->op == KDM_OP_EDITOR) {
+        ry = work.y + it->y + 2 + (int)view_row(&f->ed, f, f->ed.caret) * KDM_LINE_H;
+        rh = KDM_LINE_H;
+    } else {
+        ry = work.y + it->y + 1;
+        rh = KDM_FIELD_H - 2;
+    }
+    int w, h;
+    cand_size(m, &w, &h);
+    kd_rect screen = kd_rect_make(0, 0, KD_W, KD_H), view = kd_rect_intersect(work, screen);
+    if (w > view.w) view = screen;
+    int x = ax - CAND_TEXT_X;                        // candidates' text under the preedit's text
+    if (x + w > view.x + view.w) x = view.x + view.w - w;
+    if (x < view.x) x = view.x;
+    int y = ry + rh + 1;                             // below the row...
+    if (y + h > KD_H) y = ry - h - 1;                // ...or above it
+    if (y < KD_MENU_H) y = KD_MENU_H;                // never over the menu bar
+    return kd_rect_make(x, y, w, h);
+}
+
+static kd_rect cand_row(const kdm *m, int i) {
+    kd_rect r = m->cand.rect;
+    return kd_rect_make(r.x + 1, r.y + 2 + i * CAND_ROW, r.w - 2, CAND_ROW);
+}
+
+static kd_rect cand_foot(const kdm *m) {
+    kd_rect r = m->cand.rect;
+    int y = r.y + 2 + m->cand.n * CAND_ROW;
+    return kd_rect_make(r.x + 1, y, r.w - 2, r.y + r.h - 1 - y);
+}
+
+static void cand_draw(void *ctx, kd_fb *fb) {
+    const kdm *m = ctx;
+    kd_rect r = m->cand.rect;
+    kd_fb_fill_rect(fb, r.x, r.y, r.w, r.h, KD_C_WHITE);
+    kd_fb_rect(fb, r.x, r.y, r.w, r.h, KD_C_BLACK);
+    for (int i = 0; i < m->cand.n; i++) {
+        kd_rect row = cand_row(m, i);
+        bool sel = i == m->cand.sel;
+        if (sel) kd_fb_fill_rect(fb, row.x, row.y, row.w, row.h, KD_C_BLACK);
+        char label = (char)('1' + i);
+        kd_text_n(fb, &kd_font_system, r.x + 2, row.y + 1, &label, 1, sel ? KD_C_WHITE : KD_C_DGREY, KD_NO_KEY);
+        kd_text_n(fb, &kd_font_system, r.x + CAND_TEXT_X, row.y + 1, m->cand.text[i], m->cand.len[i],
+                  sel ? KD_C_WHITE : KD_C_BLACK, KD_NO_KEY);
+    }
+    if (m->cand.foot_len) {
+        kd_rect fr = cand_foot(m);
+        if (m->cand.n) kd_fb_hline(fb, fr.x, fr.y, fr.w, KD_C_LGREY);
+        int fw = kd_text_width_n(&kd_font_system, m->cand.foot, m->cand.foot_len);
+        kd_text_n(fb, &kd_font_system, r.x + r.w - 3 - fw, fr.y + fr.h - 9, m->cand.foot, m->cand.foot_len,
+                  KD_C_DGREY, KD_NO_KEY);
+    }
+}
+
+// Follows the anchor (scrolling, window moves, focus): at every render.
+static void cand_refresh(kdm *m) {
+    kd_rect r = cand_place(m);
+    if (r.x == m->cand.rect.x && r.y == m->cand.rect.y && r.w == m->cand.rect.w && r.h == m->cand.rect.h) return;
+    m->cand.rect = r;
+    kd_desktop_set_popup(&m->desk, r, cand_draw, m);
+}
+
+static size_t utf8_cut(const char *s, size_t len, size_t cap) {
+    return kj_utf8_prefix((const uint8_t *)s, len, cap - 1);
+}
+
+int kdm_set_candidates(kdm *m, int slot, int id, const char *const *items, const size_t *lens, int n, int sel,
+                       const char *foot, size_t foot_len) {
+    if (!window_ok(m, slot)) return KDM_ESTALE;
+    kdm_item *it = item_get(m, slot, id);
+    if (!it) return KDM_ESTALE;
+    if (!editable(it) || n < 0 || n > KDM_CAND_ITEMS || sel >= n) return KDM_EINVAL;
+    for (int i = 0; i < n; i++)
+        if (kd_edit_measure((const uint8_t *)items[i], lens[i], KD_EDIT_SINGLE_LINE) != (long)lens[i]) return KDM_EINVAL;
+    if (kd_edit_measure((const uint8_t *)foot, foot_len, KD_EDIT_SINGLE_LINE) != (long)foot_len) return KDM_EINVAL;
+    __typeof__(m->cand) old = m->cand;
+    for (int i = 0; i < n; i++) {
+        size_t k = utf8_cut(items[i], lens[i], KDM_CAND_BYTES);
+        memcpy(m->cand.text[i], items[i], k);
+        m->cand.text[i][k] = 0;
+        m->cand.len[i] = (uint8_t)k;
+    }
+    size_t fk = utf8_cut(foot, foot_len, KDM_CAND_FOOT);
+    memcpy(m->cand.foot, foot, fk);
+    m->cand.foot[fk] = 0;
+    m->cand.foot_len = (uint8_t)fk;
+    m->cand.n = (uint8_t)n;
+    m->cand.sel = (int8_t)(sel < 0 ? -1 : sel);
+    m->cand.item = n || fk ? (uint16_t)(it - m->items) : KDM_NONE;
+    kd_rect r = cand_place(m);
+    if (r.x != old.rect.x || r.y != old.rect.y || r.w != old.rect.w || r.h != old.rect.h) {
+        m->cand.rect = r;                             // opened, moved, resized or closed
+        kd_desktop_set_popup(&m->desk, r, cand_draw, m);
+        return KDM_OK;
+    }
+    if (kd_rect_empty(r)) return KDM_OK;
+    // Same place: only the rows that changed (a new selection: two rows).
+    for (int i = 0; i < n; i++) {
+        bool same = old.item == m->cand.item && i < old.n && old.len[i] == m->cand.len[i] &&
+                    !memcmp(old.text[i], m->cand.text[i], old.len[i]) && (old.sel == i) == (m->cand.sel == i);
+        if (!same || KDM_FAULTY(KDM_FAULT_CAND_ROWS)) kd_desktop_invalidate(&m->desk, cand_row(m, i));
+    }
+    if (old.foot_len != fk || memcmp(old.foot, m->cand.foot, fk)) kd_desktop_invalidate(&m->desk, cand_foot(m));
+    return KDM_OK;
+}
+
+int kdm_set_status(kdm *m, const char *s, size_t len) {
+    if (kd_edit_measure((const uint8_t *)s, len, KD_EDIT_SINGLE_LINE) != (long)len) return KDM_EINVAL;
+    kd_desktop_set_status(&m->desk, s, (int)utf8_cut(s, len, sizeof m->desk.status));
+    return KDM_OK;
+}
+
 // ---- sprites ----
 
 int kdm_sprite_alloc(kdm *m, const uint8_t *data) {
@@ -1471,7 +1619,12 @@ static bool discard(void *ctx, unsigned first, unsigned count, const uint8_t *da
     return true;
 }
 
-bool kdm_render(kdm *m) { return kd_desktop_render(&m->desk); }
+static void cand_refresh(kdm *m);
+
+bool kdm_render(kdm *m) {
+    cand_refresh(m);
+    return kd_desktop_render(&m->desk);
+}
 
 int kdm_present(kdm *m, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st) {
     return kdm_present_gap(m, 0, sink, ctx, st);
@@ -1480,6 +1633,7 @@ int kdm_present(kdm *m, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st) {
 int kdm_present_gap(kdm *m, unsigned max_gap, kd_tile4_sink sink, void *ctx, kd_tile4_stats *st) {
     kd_tile4_stats local;
     if (!st) st = &local;
+    cand_refresh(m);
     kd_desktop_render(&m->desk);
     bool ok = kd_tile4_flush(&m->desk.fb, max_gap, m->staging, KD_TILE_COLS, sink ? sink : discard, ctx, st);
     m->stats.presents++;

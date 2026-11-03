@@ -71,6 +71,9 @@
 #endif
 #define KDM_LINE_H 10              // editor line pitch: 8 px text, 1 px above and below
 #define KDM_PREEDIT_BYTES 96       // input method preedit with its NUL
+#define KDM_CAND_ITEMS 5           // candidates on one page of the popup
+#define KDM_CAND_BYTES 48          // per candidate, NUL included (longer ones are cut)
+#define KDM_CAND_FOOT 24           // footer (page, message), NUL included
 #ifndef KDM_CLIP_BYTES
 #define KDM_CLIP_BYTES 256         // clipboard, NUL included
 #endif
@@ -179,6 +182,17 @@ typedef struct kdm {
     char preedit[KDM_PREEDIT_BYTES];
     uint8_t preedit_len, preedit_hl_a, preedit_hl_b;
     uint16_t preedit_item;      // record index, KDM_NONE: no preedit
+    // Input method candidates: a popup layer anchored at the preedit of one
+    // record (kdm_set_candidates); rect is where it was last placed.
+    struct {
+        char text[KDM_CAND_ITEMS][KDM_CAND_BYTES];
+        uint8_t len[KDM_CAND_ITEMS];
+        char foot[KDM_CAND_FOOT];
+        uint8_t foot_len, n;
+        int8_t sel;
+        uint16_t item;          // anchor record, KDM_NONE: hidden
+        kd_rect rect;
+    } cand;
     kdm_event ring[KDM_EVENTS];
     uint8_t ring_head, ring_count;
     int8_t api_closing;         // slot being closed by kdm_window_close
@@ -264,6 +278,20 @@ int kdm_set_preedit(kdm *m, int slot, int id, const char *s, size_t len, int hl_
 int kdm_input_target(const kdm *m, int *slot);
 // Screen position of a record's caret (after its preedit): x, top y, height.
 int kdm_caret_xy(kdm *m, int slot, int id, int *x, int *y, int *h);
+// Candidate popup for record id (the one with the preedit): items[0..n) with
+// item sel highlighted (-1: none), labelled 1..n, and a footer (a page like
+// "2/3", or a message such as 候補なし). n == 0 and no footer hides it. It is a
+// layer above every window (dialogs included) and below the menu bar and
+// menus, shown while the record has the focus. Placement, at every render,
+// from the preedit's start and the caret's row: below the row, or above it if
+// there is no room below; inside the window's work area horizontally (the
+// screen if it is wider), never over the menu bar. Opening, moving or closing
+// recomposes its old and new rect (the pixels below come back exactly);
+// changing the selection or a candidate only the changed rows.
+int kdm_set_candidates(kdm *m, int slot, int id, const char *const *items, const size_t *lens, int n, int sel,
+                       const char *foot, size_t foot_len);
+// Right-aligned status text in the menu bar (an input method's mode).
+int kdm_set_status(kdm *m, const char *s, size_t len);
 
 extern const char *const kdm_icon_names[];
 int kdm_icon_lookup(const char *name, size_t len);

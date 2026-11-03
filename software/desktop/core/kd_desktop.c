@@ -6,7 +6,7 @@
 #include "kd_fault.h"
 #include "kd_tile4.h"
 
-enum { LAYER_DROPDOWN, LAYER_MENUBAR, LAYER_WINDOW };
+enum { LAYER_DROPDOWN, LAYER_MENUBAR, LAYER_POPUP, LAYER_WINDOW };
 
 typedef struct {
     uint8_t kind;
@@ -42,6 +42,7 @@ static void damage_from(kd_desktop *d, kd_rect r, int level) {
     kd_region g;
     kd_region_init(&g, kd_rect_intersect(r, screen_rect()));
     for (int i = level + 1; i < d->zn; i++) kd_region_subtract(&g, d->win[d->z[i]].frame);
+    if (!kd_rect_empty(d->popup)) kd_region_subtract(&g, d->popup);   // the popup is above every window
     kd_region_subtract(&g, menubar_rect());
     if (d->menu_open >= 0) kd_region_subtract(&g, kd_menu_dropdown_rect(d->menus, d->menu_open));
     if (g.overflow) {
@@ -283,6 +284,42 @@ void kd_desktop_close_menu(kd_desktop *d) {
 
 void kd_desktop_menu_changed(kd_desktop *d) {
     if (d->menu_open >= 0) kd_damage_add(&d->damage, kd_menu_dropdown_rect(d->menus, d->menu_open));
+}
+
+// The status text's box: right-aligned, but never left of the menu titles.
+kd_rect kd_desktop_status_box(const kd_desktop *d) {
+    if (!d->status_len) return kd_rect_make(0, 0, 0, 0);
+    int left = 4, n = menu_count(d);
+    if (n) left = kd_menu_title_x(d->menus, n - 1) + kd_menu_title_w(d->menus, n - 1) + 8;
+    int w = kd_text_width_n(&kd_font_system, d->status, d->status_len);
+    int x = KD_W - 4 - w;
+    if (x < left) x = left;                          // too long: clipped at the right
+    return kd_rect_intersect(kd_rect_make(x - 2, 0, w + 4, KD_MENU_H - 1), kd_rect_make(left - 2, 0, KD_W - left + 2, KD_MENU_H - 1));
+}
+
+void kd_desktop_set_status(kd_desktop *d, const char *s, int len) {
+    if (len < 0) len = 0;
+    if (len > (int)sizeof d->status - 1) len = (int)sizeof d->status - 1;
+    if (len == d->status_len && memcmp(d->status, s, (size_t)len) == 0) return;
+    kd_rect old = kd_desktop_status_box(d);
+    memcpy(d->status, s, (size_t)len);
+    d->status[len] = 0;
+    d->status_len = (uint8_t)len;
+    kd_rect now = kd_desktop_status_box(d);
+    if (!kd_rect_empty(old)) kd_damage_add(&d->damage, old);
+    if (!kd_rect_empty(now)) kd_damage_add(&d->damage, now);
+}
+
+void kd_desktop_set_popup(kd_desktop *d, kd_rect r, void (*draw)(void *ctx, kd_fb *fb), void *ctx) {
+    r = kd_rect_intersect(r, screen_rect());
+    if (!draw) r = kd_rect_make(0, 0, 0, 0);
+    d->popup_draw = draw;
+    d->popup_ctx = ctx;
+    if (r.x == d->popup.x && r.y == d->popup.y && r.w == d->popup.w && r.h == d->popup.h) return;
+    // Where it was, the windows below show again; where it goes, it covers them.
+    if (!kd_rect_empty(d->popup)) kd_damage_add(&d->damage, d->popup);
+    d->popup = r;
+    if (!kd_rect_empty(r)) kd_damage_add(&d->damage, r);
 }
 
 static void choose(kd_desktop *d, int item) {
@@ -547,11 +584,12 @@ void kd_desktop_event(kd_desktop *d, const kd_event *ev) {
 
 // ---- composition ----
 
-static int collect_layers(kd_desktop *d, layer out[KD_MAX_WINDOWS + 2]) {
+static int collect_layers(kd_desktop *d, layer out[KD_MAX_WINDOWS + 3]) {
     int n = 0;
     if (d->menu_open >= 0)
         out[n++] = (layer){LAYER_DROPDOWN, NULL, kd_menu_dropdown_rect(d->menus, d->menu_open)};
     out[n++] = (layer){LAYER_MENUBAR, NULL, menubar_rect()};
+    if (!kd_rect_empty(d->popup)) out[n++] = (layer){LAYER_POPUP, NULL, d->popup};
     for (int i = d->zn - 1; i >= 0; i--) {
         kd_window *w = &d->win[d->z[i]];
         out[n++] = (layer){LAYER_WINDOW, w, w->frame};
@@ -567,6 +605,16 @@ static void draw_layer(kd_desktop *d, const layer *l, kd_rect clip) {
         kd_gfx_dropdown(fb, d->menus, d->menu_open, d->menu_hot);
     } else if (l->kind == LAYER_MENUBAR) {
         kd_gfx_menubar(fb, d->menus, d->menu_open);
+        kd_rect sb = kd_desktop_status_box(d);
+        kd_rect sc = kd_rect_intersect(clip, sb);
+        if (!kd_rect_empty(sc)) {
+            kd_fb_set_clip(fb, sc);
+            int w = kd_text_width_n(&kd_font_system, d->status, d->status_len);
+            int x = sb.x + 2 + (sb.w - 4 >= w ? sb.w - 4 - w : 0);
+            kd_text_n(fb, &kd_font_system, x, 1, d->status, d->status_len, KD_C_BLACK, KD_NO_KEY);
+        }
+    } else if (l->kind == LAYER_POPUP) {
+        d->popup_draw(d->popup_ctx, fb);
     } else {
         kd_window *w = l->w;
         kd_gfx_frame(fb, w->frame, w->title, w == kd_desktop_top(d), (w->flags & KD_WF_CLOSE) != 0);
@@ -601,7 +649,7 @@ static void draw_overlays(kd_desktop *d, kd_rect clip) {
 }
 
 static void compose_painter(kd_desktop *d, kd_rect area) {
-    layer l[KD_MAX_WINDOWS + 2];
+    layer l[KD_MAX_WINDOWS + 3];
     int n = collect_layers(d, l);
     draw_desktop(d, area);
     for (int k = n - 1; k >= 0; k--) {
@@ -612,7 +660,7 @@ static void compose_painter(kd_desktop *d, kd_rect area) {
 }
 
 static void compose_region(kd_desktop *d, kd_rect area) {
-    layer l[KD_MAX_WINDOWS + 2];
+    layer l[KD_MAX_WINDOWS + 3];
     int n = collect_layers(d, l);
     kd_region g;
     kd_region_init(&g, area);
