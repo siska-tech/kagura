@@ -11,13 +11,32 @@
 // bytes. Printable ASCII uses the font f; other bytes draw '?'. With KD_UTF8
 // a non-ASCII UTF-8 sequence is one 8x8 Misaki glyph (kj_misaki8 in flash);
 // invalid bytes are consumed one at a time and draw the replacement glyph.
+#if KD_UTF8
+// Recently drawn non-ASCII glyphs: the Misaki lookup is a binary search over
+// 7,171 entries (in XIP flash on the RP2040), and text repeats characters.
+// The font is immutable, so a cached row pointer is always right.
+#define GLYPH_CACHE 64
+static struct {
+    uint32_t scalar;
+    const uint8_t *rows;
+} glyph_cache[GLYPH_CACHE];
+
+static const uint8_t *misaki_rows(uint32_t scalar) {
+    unsigned slot = (scalar ^ (scalar >> 6)) & (GLYPH_CACHE - 1);
+    if (glyph_cache[slot].rows && glyph_cache[slot].scalar == scalar) return glyph_cache[slot].rows;
+    const uint8_t *rows = kj_lookup(&kj_misaki8, scalar).rows;
+    glyph_cache[slot].scalar = scalar;
+    glyph_cache[slot].rows = rows;
+    return rows;
+}
+#endif
+
 static int glyph(const kd_font *f, const char *s, int n, const uint8_t **rows, int *width) {
     unsigned char c = (unsigned char)s[0];
 #if KD_UTF8
     if (c >= 0x80) {
         kj_decoded d = kj_utf8_next((const uint8_t *)s, (size_t)n);
-        kj_glyph g = kj_lookup(&kj_misaki8, d.scalar);
-        *rows = g.rows;
+        *rows = misaki_rows(d.scalar);
         *width = 8;
         return d.consumed;
     }

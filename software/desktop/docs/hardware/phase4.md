@@ -125,3 +125,54 @@ python tools/kagura-editor-board.py showcase --reset --video showcase.mp4 --ffmp
 | 10 | every physical claim is backed by hardware evidence | the logs and frames in this folder |
 
 Phase 4 is therefore **partially complete**: criterion 1 waits for a physical keyboard, and the UART RX path waits for the GP1 wiring to be confirmed.
+
+## Full-view redraws: a4d0bdd, a94d702, and a rejected SRAM experiment
+
+Line breaks, Backspace joining lines, and paging redraw most of the editor view. Every build below was measured the same way, with `tools/kagura-editor-board.py bench --reset`, after a soft reset. Each key is timed end to end and split into parts:
+
+- key and app (Python);
+- compose (C);
+- pack (TILE4 staging and the Python run sink);
+- FPGA write and FENCE (from a timed run sink).
+
+The logs are `phase4-bench-<build>.txt`.
+
+**What was changed:**
+
+| build | change | static RAM |
+|---|---|---|
+| a4d0bdd | three tile rows per compose pass, glyph rows written a byte at a time through nibble masks, 64-entry glyph cache | +3.1 KB |
+| SRAM-hot (rejected) | the drawing path in SRAM (`.time_critical`) | +7.4 KB |
+| a94d702 | the exact dirty map snapshots a band's rows with one copy per row, and compares tiles inline | 0 |
+
+**Results** (p50 end to end per key; compose in brackets):
+
+| workload | a4d0bdd | SRAM-hot | a94d702 |
+|---|---|---|---|
+| full view, Japanese | 45.4 (44.1) ms | 45.7 (44.6) ms | **40.9 (39.6) ms** |
+| full view, ASCII | 33.2 (31.9) ms | 33.6 (32.6) ms | **28.8 (27.5) ms** |
+| full view, mixed document | 28.0 (26.6) ms | 28.3 (27.2) ms | **23.4 (22.1) ms** |
+| Enter (lines below move) | 28.5 (16.8) ms | 28.7 (17.4) ms | **24.3 (12.4) ms** |
+| Backspace joining lines | 35.6 (27.3) ms | 35.3 (27.5) ms | **31.0 (22.7) ms** |
+| PgDn / PgUp | 40.9 (27.6) ms | 40.6 (27.8) ms | **36.3 (22.9) ms** |
+| type ASCII, p50 / p95 | 12.3 / 28.0 ms | 11.4 / 28.3 ms | 12.1 / **23.9** ms |
+
+- **The SRAM experiment** cost 7.4 KB of heap and left full-view compose unchanged. Compose is compute-bound, not instruction-fetch-bound. It missed the 15–20% bar, so it was flashed back to a4d0bdd. The record is on branch `perf/desktop-ram-hot`, which is not for merging.
+- **a94d702 removed the real overhead.** Before, the exact dirty map packed every tile of a pass twice, using two divisions and eight `memcpy` calls of 4 bytes each. Then it called `memcmp`. That is about 2,000 small library calls per pass, which the M0+ cannot inline. Compose for full views fell 10–26% with no RAM cost.
+- **Unchanged in all builds:** free heap 124,656 B before the desktop and 114,800 B with the editor (SRAM-hot: 117,232 / 107,376). The C stack's deepest use is 3,744 B of 8,192.
+- **Correctness on a94d702:**
+  - the showcase, with PSG music, gives 20/20 scene CRCs equal to the host;
+  - the `desktop_ja` regression (log `phase4-regression-a94d702.txt`) gives 11/11 scene and VRAM CRCs, `ERROR_CODE` 0, and a soak of 10,827 updates and 54 checks with 0 failures;
+  - the console came back, and the board survived a soft and a hard reset;
+  - a whole-screen redraw (`FRAME full_redraw`) takes 19.3 ms, against 28.1 ms on 1eb6544 and 24.8 ms on a4d0bdd.
+
+### Where a keystroke's time goes now (a94d702, p50)
+
+| key | key + app (Python) | compose | pack | FPGA write | FENCE |
+|---|---|---|---|---|---|
+| type ASCII (12.1 ms) | 3.6 ms | 1.6 ms | 1.9 ms | 3.5 ms | 1.4 ms |
+| Enter (24.3 ms) | 2.8 ms | 12.4 ms | 2.3 ms | 4.8 ms | 2.0 ms |
+| PgDn (36.3 ms) | 3.3 ms | 22.9 ms | 2.4 ms | 5.4 ms | 2.3 ms |
+
+- **Typing** is now mostly the send path: Python per run of tiles, the link write, and a FENCE after every run. That is the next target, along with the Python per-key overhead.
+- **Paging and line breaks** remain compose-bound, at about 1.5 ms per text row.

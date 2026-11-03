@@ -39,18 +39,45 @@ def example(name):
 
 
 BENCH = r'''
-import gc, time
+import gc, time, micropython, machine
 from kagura.desktop import Desktop
+# Stack high-water: paint the unused part of core 0's C stack (8 KB below
+# 0x20042000; core 1 is idle) and find the deepest overwritten word afterwards.
+STACK_BOTTOM, STACK_TOP = 0x20040000, 0x20042000
+_sp = STACK_TOP - micropython.stack_use()
+for _a in range(STACK_BOTTOM + 64, _sp - 512, 4):
+    machine.mem32[_a] = 0x5AA5C33C
+gc.collect()
+print('HEAP free_before_desktop', gc.mem_free())
 desk = Desktop(menus=MENUS, cursor=False)
 try:
     app = Editor(desk, ram_docs(blocks=16), 'ベンチ')   # saves nothing: a small disk
     w, ed = app.win, app.ed
     desk.present()
+    gc.collect()
+    print('HEAP free_with_editor', gc.mem_free())
+    # The session's run sink, timed: FPGA write and FENCE per run of tiles.
+    link = [0, 0, 0]
+    lw, lf, dev = desk._lwrite, desk._lfence, desk.device
+    def timed_sink(first, data):
+        t0 = time.ticks_us()
+        lw(first * 32, data, dev.timeout_us)
+        t1 = time.ticks_us()
+        lf(dev.timeout_us)
+        t2 = time.ticks_us()
+        link[0] += time.ticks_diff(t1, t0)
+        link[1] += time.ticks_diff(t2, t1)
+        link[2] += 1
+    if lw is not None:
+        desk._sink = timed_sink
+    def p(v, q):
+        return v[min(len(v) - 1, len(v) * q // 100)]
     def run(name, fn, n):
-        times, parts, tiles = [], [[], [], [], []], 0
+        times, parts, tiles = [], [[], [], [], [], [], []], 0
         gc.collect()
         a0 = gc.mem_alloc()
         for i in range(n):
+            w0, f0 = link[0], link[1]
             t0 = time.ticks_us()
             fn(i)
             t1 = time.ticks_us()
@@ -61,40 +88,66 @@ try:
             tiles += desk.present()
             t4 = time.ticks_us()
             times.append(time.ticks_diff(t4, t0))
-            for k, (a, b) in enumerate(((t0, t1), (t1, t2), (t2, t3), (t3, t4))):
-                parts[k].append(time.ticks_diff(b, a))
+            wr, fe = link[0] - w0, link[1] - f0
+            send = time.ticks_diff(t4, t3)
+            for k, v in enumerate((time.ticks_diff(t1, t0), time.ticks_diff(t2, t1), time.ticks_diff(t3, t2),
+                                   send - wr - fe, wr, fe)):
+                parts[k].append(v)
         a1 = gc.mem_alloc()
         times.sort()
-        for p in parts:
-            p.sort()
+        for q in parts:
+            q.sort()
         print('KEY %-26s n %3d p50 %6d p95 %6d max %6d us  tiles/key %5.1f  heap/key %6.1f' % (
-            name, n, times[n // 2], times[n * 95 // 100], times[-1], tiles / n, (a1 - a0) / n))
-        print('    p50 parts: key %d  app %d  compose %d  send %d us' % tuple(p[n // 2] for p in parts))
-    doc = ''.join('%03d 行目 神楽メモ帳のテキスト\n' % i for i in range(100))
-    w.set_text(ed, doc)
-    for _ in range(40):
-        desk.key(kd.KEY_DOWN)
-    desk.key(kd.KEY_END)
-    app.handle(); desk.present()
-    run('type ASCII (line end)', lambda i: desk.key(kd.KEY_CHAR, 97 + i % 26), 60)
-    run('type Japanese (text)', lambda i: desk.text('漢'), 40)
-    run('caret left', lambda i: desk.key(kd.KEY_LEFT), 40)
-    w.select(ed, 41 * 18 + 5)                 # back to a short line, column 5, in view
-    app.handle(); desk.present()
-    run('caret up/down', lambda i: desk.key(kd.KEY_UP if i % 2 else kd.KEY_DOWN), 40)
-    run('Enter (lines below move)', lambda i: desk.key(kd.KEY_ENTER), 20)
-    run('Backspace joining lines', lambda i: desk.key(kd.KEY_BACKSPACE), 20)
-    run('PgDn / PgUp', lambda i: desk.key(kd.KEY_PGDN if i % 2 == 0 else kd.KEY_PGUP), 20)
-    run('idle frame', lambda i: None, 40)
-    w.set_text(ed, ('x' * 79 + '\n') * 102)
+            name, n, p(times, 50), p(times, 95), times[-1], tiles / n, (a1 - a0) / n))
+        print('    p50 key %d  app %d  compose %d  pack %d  write %d  fence %d us;  p95 compose %d  write %d' % (
+            tuple(p(q, 50) for q in parts) + (p(parts[2], 95), p(parts[4], 95))))
+    def view(name, text, n=15):
+        w.set_text(ed, text)
+        desk.present()
+        x, y, ww, hh = w.work()
+        def redraw(i):
+            desk.invalidate(x + 2, y + 2, ww - 4, 154)
+        run(name, redraw, n)
+    # 8 KB of text, inserted a line at a time (one 8 KB str rarely fits the heap).
+    w.set_text(ed, '')
+    line = 'x' * 79 + '\n'
+    for _ in range(102):
+        desk.text(line)
     desk.key(kd.KEY_HOME, 0, kd.MOD_CTRL)
     app.handle(); desk.present()
     print('DOC bytes', w.length(ed))
     run('8 KB doc: insert at start', lambda i: desk.key(kd.KEY_CHAR, 'y') if i % 2 == 0 else desk.key(kd.KEY_BACKSPACE), 40)
     gc.collect()
-    print('HEAP free_with_editor', gc.mem_free())
+    doc = ''.join('%03d 行目 神楽メモ帳のテキスト\n' % i for i in range(100))
+    view('VIEW Japanese 38/line', ('漢字仮名交じり文の表示' * 4 + '\n') * 20)
+    view('VIEW ASCII 38/line', ('The quick brown fox jumps over a dog' + '\n') * 20)
+    view('VIEW mixed document', doc)
+    w.set_text(ed, doc)
+    for _ in range(40):
+        desk.key(kd.KEY_DOWN)
+    desk.key(kd.KEY_END)
+    app.handle(); desk.present()
+    run('type ASCII (line end)', lambda i: desk.key(kd.KEY_CHAR, 97 + i % 26), 80)
+    run('type Japanese (text)', lambda i: desk.text('漢'), 60)
+    run('caret left', lambda i: desk.key(kd.KEY_LEFT), 60)
+    w.select(ed, 41 * 18 + 5)                 # back to a short line, column 5, in view
+    app.handle(); desk.present()
+    run('caret up/down', lambda i: desk.key(kd.KEY_UP if i % 2 else kd.KEY_DOWN), 60)
+    run('Enter (lines below move)', lambda i: desk.key(kd.KEY_ENTER), 30)
+    run('Backspace joining lines', lambda i: desk.key(kd.KEY_BACKSPACE), 30)
+    run('PgDn / PgUp', lambda i: desk.key(kd.KEY_PGDN if i % 2 == 0 else kd.KEY_PGUP), 30)
+    run('idle frame', lambda i: None, 40)
+    gc.collect()
+    print('HEAP free_after_bench', gc.mem_free())
 finally:
     desk.close()
+_low = _sp
+for _a in range(STACK_BOTTOM + 64, _sp - 512, 4):
+    if machine.mem32[_a] != 0x5AA5C33C:
+        _low = _a
+        break
+print('STACK deepest_use %d B of %d (free below: %d B)' % (STACK_TOP - _low, STACK_TOP - STACK_BOTTOM,
+                                                          _low - STACK_BOTTOM))
 print('CONSOLE paused', kagura_console.paused, 'error', kagura_console.last_error)
 '''
 

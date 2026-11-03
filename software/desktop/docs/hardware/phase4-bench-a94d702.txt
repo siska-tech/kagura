@@ -1,0 +1,17 @@
+HEAP free_before_desktop 124656
+HEAP free_with_editor 114800
+DOC bytes 8160
+KEY 8 KB doc: insert at start  n  40 p50  13816 p95  14458 max  14484 us  tiles/key  18.0  heap/key  554.0
+KEY VIEW Japanese 38/line      n  15 p50  40862 p95  46135 max  46135 us  tiles/key   0.2  heap/key  288.0
+KEY VIEW ASCII 38/line         n  15 p50  28775 p95  75605 max  75605 us  tiles/key  48.4  heap/key  307.2
+KEY VIEW mixed document        n  15 p50  23434 p95  28861 max  28861 us  tiles/key   0.4  heap/key  288.0
+KEY type ASCII (line end)      n  80 p50  12141 p95  23884 max  58341 us  tiles/key  57.0  heap/key  562.8
+KEY type Japanese (text)       n  60 p50  12584 p95  23741 max  23892 us  tiles/key  47.3  heap/key  540.0
+KEY caret left                 n  60 p50  11188 p95  12105 max  24581 us  tiles/key  31.2  heap/key  452.0
+KEY caret up/down              n  60 p50  17029 p95  17888 max  34853 us  tiles/key  81.2  heap/key  492.0
+KEY Enter (lines below move)   n  30 p50  24285 p95  58396 max  65131 us  tiles/key  87.9  heap/key  606.9
+KEY Backspace joining lines    n  30 p50  30978 p95  54905 max  57295 us  tiles/key  89.0  heap/key  606.4
+KEY PgDn / PgUp                n  30 p50  36322 p95  36792 max  37560 us  tiles/key  67.0  heap/key  506.1
+KEY idle frame                 n  40 p50    909 p95   1117 max   1178 us  tiles/key   0.0  heap/key  282.0
+HEAP free_after_bench 110240
+STACK deepest_use 3744 B of 8192 (free below: 4448 B)
