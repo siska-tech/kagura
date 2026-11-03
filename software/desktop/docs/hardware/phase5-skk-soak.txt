@@ -1,0 +1,6 @@
+SOAK progress 50 rounds, 5850 keys, 0 failed, free 110928
+SOAK progress 100 rounds, 11700 keys, 0 failed, free 110928
+SOAK progress 150 rounds, 17550 keys, 0 failed, free 110928
+SOAK 153 rounds, 17901 keys, 30 checks, 0 failed, lowest free heap 110928 B
+KEYS p50 <15000 p95 <17500 max 69070 us (all 17901 keys, 0.5 ms buckets)
+CLOSED free 110912 console paused False
