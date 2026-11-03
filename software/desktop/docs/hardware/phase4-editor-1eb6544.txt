@@ -1,0 +1,22 @@
+FREE 131984
+KEY type ASCII (line end)      n  60 p50  11870 p95  30012 max  61788 us  tiles/key  59.6  heap/key  573.9
+p50 parts: key 1611  app 1922  compose 1883  send 6399 us
+KEY type Japanese (text)       n  40 p50  12075 p95  30696 max  31144 us  tiles/key  47.8  heap/key  574.0
+p50 parts: key 1807  app 1899  compose 2009  send 6303 us
+KEY caret left                 n  40 p50  10484 p95  11411 max  30541 us  tiles/key  34.2  heap/key  484.0
+p50 parts: key 1270  app 1355  compose 1571  send 6289 us
+KEY caret up/down              n  40 p50  17666 p95  19216 max  40964 us  tiles/key  81.7  heap/key  526.0
+p50 parts: key 1003  app 1697  compose 6570  send 8374 us
+KEY Enter (lines below move)   n  20 p50  41132 p95  68416 max  68416 us  tiles/key 120.1  heap/key  683.2
+p50 parts: key 938  app 1878  compose 22693  send 15566 us
+KEY Backspace joining lines    n  20 p50  37298 p95  60222 max  60222 us  tiles/key 121.6  heap/key  682.4
+p50 parts: key 1482  app 1906  compose 23564  send 16287 us
+KEY PgDn / PgUp                n  20 p50  42035 p95  43573 max  43573 us  tiles/key  67.0  heap/key  540.0
+p50 parts: key 1552  app 1706  compose 29528  send 9292 us
+KEY idle frame                 n  40 p50    930 p95   1111 max   1198 us  tiles/key   0.0  heap/key  302.0
+p50 parts: key 39  app 435  compose 101  send 357 us
+DOC bytes 8160
+KEY 8 KB doc: insert at start  n  40 p50  13867 p95  14617 max  15091 us  tiles/key  18.0  heap/key  574.0
+p50 parts: key 1441  app 1788  compose 3953  send 6716 us
+HEAP free_with_editor 115072
+CONSOLE paused False error None
