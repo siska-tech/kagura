@@ -61,7 +61,7 @@ classify() {
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
         tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
         tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
-        tools/rp2040-firmware.py|tools/kagura-desktop-device.py) ;;
+        tools/rp2040-firmware.py|tools/kagura-desktop-device.py|tools/kagura-keyboard-device.py) ;;
         *) all ;;
     esac
 }
