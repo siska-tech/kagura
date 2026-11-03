@@ -124,7 +124,7 @@ for _k, _v in list(globals().items()):
 
 SHOWCASE = r'''
 print('\n' * 30)                     # a clean console before the desktop opens
-main(pace=%r)
+main(pace=%r, music=%r)
 print('SHOWCASE done; console paused', kagura_console.paused)
 '''
 
@@ -153,6 +153,8 @@ def main():
     p.add_argument('phase', choices=('bench', 'live', 'showcase'))
     p.add_argument('--pace', type=float, default=1.0, help='showcase pacing (1.0: about 2 minutes)')
     p.add_argument('--reset', action='store_true', help='soft reset first: a clean heap and console')
+    p.add_argument('--music', action='store_true', help='showcase with PSG background music')
+    p.add_argument('--audio', help='dshow audio device to record with --video (HDMI audio of the capture)')
     p.add_argument('--out', type=Path)
     p.add_argument('--cps', type=float, default=8.0, help='characters per second (live)')
     p.add_argument('--video', type=Path)
@@ -179,8 +181,9 @@ def main():
     rec = None
     try:
         if args.video and args.phase != 'bench':
-            rec = subprocess.Popen([args.ffmpeg, '-y'] + kbd_input() + ['-c:v', 'libx264', '-preset', 'veryfast',
-                                   '-crf', '18', '-pix_fmt', 'yuv420p', str(args.video)],
+            audio = ['-c:a', 'aac', '-b:a', '192k'] if args.audio else []
+            rec = subprocess.Popen([args.ffmpeg, '-y'] + kbd_input(args.audio) + ['-c:v', 'libx264', '-preset', 'veryfast',
+                                   '-crf', '18', '-pix_fmt', 'yuv420p'] + audio + [str(args.video)],
                                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(3)
         # One exec per module: compiling everything at once needs the source,
@@ -197,9 +200,12 @@ def main():
             b.run(free)
             b.run(lib)
             b.run(free)
+            if args.music:              # showcase_music's Music, defined before the show
+                show = show.replace('        from showcase_music import Music\n', '')
+                b.run(example('showcase_music.py'))
             b.run(show)
             b.run(free)
-            b.run(SHOWCASE % args.pace, timeout=900)
+            b.run(SHOWCASE % (args.pace, args.music), timeout=900)
             time.sleep(4)
         else:
             b.start(lib + LIVE)
@@ -237,9 +243,12 @@ def main():
             logf.close()
 
 
-def kbd_input():
-    return ['-hide_banner', '-loglevel', 'error', '-rtbufsize', '512M', '-f', 'dshow', '-video_size', '1280x960',
-            '-pixel_format', 'yuyv422', '-framerate', '60', '-i', 'video=UGREEN 15390']
+def kbd_input(audio=None):
+    # HDMI audio is 48 kHz stereo; the capture's audio device is opened with the video.
+    source = 'video=UGREEN 15390' + (':audio=' + audio if audio else '')
+    return (['-hide_banner', '-loglevel', 'error', '-rtbufsize', '512M', '-f', 'dshow', '-video_size', '1280x960',
+             '-pixel_format', 'yuyv422', '-framerate', '60'] + (['-sample_rate', '48000'] if audio else []) +
+            ['-i', source])
 
 
 if __name__ == '__main__':
