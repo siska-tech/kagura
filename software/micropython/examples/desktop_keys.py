@@ -9,11 +9,14 @@ the host and the board, and filmed:
 On KAGURA-9 (the HDMI console running, firmware with kagura_desktop):
     import desktop_keys; desktop_keys.main()                 # scripted tour
     desktop_keys.main(key_ms=120, step_ms=1500)              # slower, for video
+    desktop_keys.main(script=False)                          # your keyboard (terminal)
 On a PC (unix port with kagura_desktop), without hardware:
     micropython desktop_keys.py --host [--dump DIR]          # a CRC (and snapshot) per scene
 
-The status line says where the input comes from: スクリプト for this tour.
-Real keyboard input (PR C) shows キーボード instead.
+The window says where the input comes from: スクリプト for the tour,
+キーボード for a real keyboard (a terminal on USB or the console UART; see
+kagura/keyinput.py). ファイル > 終了 ends the keyboard session; Ctrl+C
+interrupts it, and the console comes back either way.
 
 Keys: F10 menus (arrows, Enter, Esc), F6 next window, Ctrl+W close, Tab and
 Shift+Tab move between fields and buttons, Enter presses the default
@@ -213,6 +216,25 @@ def tour(drv):
     drv.scene('cut-by-menu')
 
 
+def keyboard(app, step, source=None, idle_ms=5):
+    """Real keyboard: terminal bytes from stdin until ファイル > 終了."""
+    from kagura.keyinput import StdinSource, TerminalKeys
+    keys = TerminalKeys(app.desk)
+    src = source if source is not None else StdinSource()
+    step('keyboard')
+    try:
+        while not app.quit:
+            n = src.pump(keys)
+            app.handle()
+            app.desk.present()
+            if not n:
+                sleep_ms(idle_ms)
+    finally:
+        if source is None:
+            src.close()
+    return keys
+
+
 def main(script=True, desk=None, out=print, key_ms=None, step_ms=None, source=None, dump=None):
     own = desk is None
     if own:
@@ -242,7 +264,7 @@ def main(script=True, desk=None, out=print, key_ms=None, step_ms=None, source=No
         if script:
             tour(Driver(app, step, key_ms, step_ms))
         else:
-            raise NotImplementedError('keyboard input: PR C (kagura.desktop input adapter)')
+            keyboard(app, step)
     finally:
         if own:
             desk.close()

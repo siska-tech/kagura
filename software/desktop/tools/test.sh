@@ -5,7 +5,8 @@
 #      4 mutants, kdm (with fields and keyboard focus) and 9 mutants;
 #   2. the unix MicroPython port with the kagura_desktop module;
 #   3. tests/test_binding.py on it (API, lifetimes, GC, errors, Japanese),
-#      tests/test_session.py (kagura.desktop against a recording device), and
+#      tests/test_session.py (kagura.desktop against a recording device),
+#      tests/test_keyinput.py (terminal keyboard decoding, end to end), and
 #      the Japanese desktop demo (examples/desktop_ja.py) and the keyboard
 #      demo (examples/desktop_keys.py) without hardware.
 #   bash software/desktop/tools/test.sh
@@ -18,5 +19,6 @@ ctest --test-dir "$OUT" --output-on-failure
 MP="$(bash "$ROOT/software/desktop/tools/build_unix.sh")"
 "$MP" "$ROOT/software/desktop/tests/test_binding.py"
 MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_session.py"
+MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_keyinput.py"
 "$MP" "$ROOT/software/micropython/examples/desktop_ja.py" --host
 "$MP" "$ROOT/software/micropython/examples/desktop_keys.py" --host

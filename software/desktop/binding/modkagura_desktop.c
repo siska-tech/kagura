@@ -331,14 +331,23 @@ static mp_obj_t desktop_poll_into(mp_obj_t self, mp_obj_t lst) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(desktop_poll_into_obj, desktop_poll_into);
 
-// text(s): UTF-8 text (str or bytes) for the focused field of the active
-// window. Returns False when no field has the focus or the text does not fit
-// (nothing changes); invalid UTF-8 or a line break raise ValueError.
-// Allocates nothing, so it may run under heap_lock().
+// text(s): UTF-8 text (str, or any buffer such as bytes or a memoryview of a
+// decoder's bytearray) for the focused field of the active window. Returns
+// False when no field has the focus or the text does not fit (nothing
+// changes); invalid UTF-8 or a line break raise ValueError. Allocates
+// nothing, so it may run under heap_lock().
 static mp_obj_t desktop_text(mp_obj_t self, mp_obj_t text) {
     desk_arg(self);
     size_t len;
-    const char *s = mp_obj_str_get_data(text, &len);
+    const char *s;
+    if (mp_obj_is_str(text)) {
+        s = mp_obj_str_get_data(text, &len);
+    } else {
+        mp_buffer_info_t bi;
+        mp_get_buffer_raise(text, &bi, MP_BUFFER_READ);
+        s = bi.buf;
+        len = bi.len;
+    }
     int rc = kdm_text_input(&state, s, len);
     if (rc == KDM_ETOOLONG) return mp_const_false;
     return mp_obj_new_bool(check(rc) == 1);
