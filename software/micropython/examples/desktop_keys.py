@@ -224,9 +224,15 @@ def keyboard(app, step, source=None, idle_ms=5):
     step('keyboard')
     try:
         while not app.quit:
-            n = src.pump(keys)
-            app.handle()
-            app.desk.present()
+            n = 0
+            while n < 64 and not app.quit:   # one key at a time: the app sees each in order
+                got = src.pump(keys, 64 - n, True)
+                if not got:
+                    break
+                n += got
+                app.handle()
+            app.handle()                     # a lone Escape, decoded on time-out
+            app.desk.present()               # one frame for the whole batch
             if not n:
                 sleep_ms(idle_ms)
     finally:

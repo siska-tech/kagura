@@ -1,0 +1,9 @@
+ROUNDTRIP True bom True crlf 2
+OVERWRITE True files ['a.txt']
+LFS_RENAME_REPLACES True x_gone True
+STATVFS bsize 512 free_blocks 42 free 21504
+SPACE refused old_kept True tmp_left False
+NAMES refused 4
+BIG bytes 8160 save_ms 55 load_ms 38 equal True
+UMOUNT ok free 113552 mounts_root_ok True
+

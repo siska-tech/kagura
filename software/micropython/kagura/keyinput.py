@@ -31,6 +31,7 @@ Decoded keys:
   ESC [ 1~ 7~ / 4~ 8~        Home / End
   ESC [ 2~ / 3~              Insert / Delete (2;5~ Ctrl+Insert, 2;2~ Shift+Insert,
                              3;2~ Shift+Delete)
+  ESC [ 5~ / 6~              PgUp / PgDn
   ESC [ 17~ / 21~            F6 / F10
   ESC [ Z                    Shift+Tab
   ESC x                      x with MOD_ALT
@@ -46,7 +47,7 @@ _NORMAL, _ESC, _CSI, _SS3 = 0, 1, 2, 3
 _FINAL = {ord('A'): kd.KEY_UP, ord('B'): kd.KEY_DOWN, ord('C'): kd.KEY_RIGHT,
           ord('D'): kd.KEY_LEFT, ord('H'): kd.KEY_HOME, ord('F'): kd.KEY_END}
 _TILDE = {1: kd.KEY_HOME, 7: kd.KEY_HOME, 4: kd.KEY_END, 8: kd.KEY_END,
-          2: kd.KEY_INSERT, 3: kd.KEY_DELETE, 17: kd.KEY_F6, 21: kd.KEY_F10}
+          2: kd.KEY_INSERT, 3: kd.KEY_DELETE, 5: kd.KEY_PGUP, 6: kd.KEY_PGDN, 17: kd.KEY_F6, 21: kd.KEY_F10}
 
 
 def _ms():
@@ -216,14 +217,22 @@ class StdinSource:
         self._byte = bytearray(1)
         poller.register(stream, 1)      # POLLIN
 
-    def pump(self, keys, limit=64):
-        """Feeds available bytes to keys; returns how many were read."""
+    def pump(self, keys, limit=64, each=False):
+        """Feeds available bytes to keys; returns how many were read.
+
+        each=True returns as soon as a key or text was decoded. An
+        application then handles its events before the next key is routed:
+        when Ctrl+S opens a dialog, the name typed right after it goes into
+        the dialog, not into the document, however fast the bytes arrive."""
         n = 0
+        seen = keys.keys + keys.texts
         while n < limit and self.poller.poll(0):
             if not self.stream.readinto(self._byte):
                 break
             keys._byte(self._byte[0])
             n += 1
+            if each and keys.keys + keys.texts != seen:
+                break
         keys.expire()
         return n
 

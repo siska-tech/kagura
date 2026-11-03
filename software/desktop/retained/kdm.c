@@ -20,6 +20,7 @@ enum {
     KDM_FAULT_MOVE_OLD = 7,        // moving a record does not invalidate its old box
     KDM_FAULT_FIELD_TEXT = 8,      // a field edit does not invalidate the changed text
     KDM_FAULT_FIELD_CARET = 9,     // a field motion does not invalidate the old caret
+    KDM_FAULT_EDITOR_ROWS = 10,    // an editor line break does not redraw the lines below
 };
 
 static const kd_art *const icon_art[] = {
@@ -193,7 +194,7 @@ static int item_new(kdm *m, int slot, uint8_t op) {
 static void item_release(kdm *m, int i) {
     kdm_item *it = &m->items[i];
     if (has_text(it)) text_free(m, it->aux);
-    if (it->op == KDM_OP_FIELD) m->fields[it->aux].item = KDM_NONE;
+    if (it->op == KDM_OP_FIELD || it->op == KDM_OP_EDITOR) m->fields[it->aux].item = KDM_NONE;
     if (m->win[it->win].focus == i) m->win[it->win].focus = KDM_NONE;
     it->op = KDM_OP_FREE;
     it->next = m->free_item;
@@ -232,8 +233,10 @@ static bool window_ok(const kdm *m, int slot) {
 
 static int slot_of(const kdm *m, const kd_window *w) { return (int)(w - m->desk.win); }
 
+static bool editable(const kdm_item *it) { return it->op == KDM_OP_FIELD || it->op == KDM_OP_EDITOR; }
+
 static bool focusable(const kdm_item *it) {
-    return it->op == KDM_OP_FIELD || (it->op == KDM_OP_BUTTON && it->c1);
+    return editable(it) || (it->op == KDM_OP_BUTTON && it->c1);
 }
 
 // The focus is drawn only while the window is the active one.
@@ -291,10 +294,160 @@ static void push_item_event(kdm *m, int slot, uint8_t type, int i, uint32_t time
     push(m, &ev, slot);
 }
 
+// ---- the multiline editor ----
+//
+// The view shows logical lines from f->top, LF-separated and not wrapped,
+// KDM_LINE_H apart, all shifted left by f->scroll. Every derived value
+// (lines, top_off) is recomputed from the text after a change: a memchr scan
+// of at most KDM_DOC_BYTES, instead of incremental bookkeeping that could
+// drift.
+
+static kd_rect editor_inner(const kdm_item *it) { return kd_rect_make(it->x + 1, it->y + 1, it->w - 2, it->h - 2); }
+static int editor_rows(const kdm_item *it) { return (it->h - 4) / KDM_LINE_H; }
+
+static size_t count_lines(const kd_edit *e) {
+    size_t n = 1;
+    for (const uint8_t *p = e->buf, *end = e->buf + e->len; (p = memchr(p, '\n', (size_t)(end - p))) != NULL; p++) n++;
+    return n;
+}
+
+// Offset of the start of logical line `line`, or of the last line.
+static size_t line_offset(const kd_edit *e, size_t line) {
+    size_t pos = 0;
+    for (; line > 0; line--) {
+        const uint8_t *lf = memchr(e->buf + pos, '\n', e->len - pos);
+        if (!lf) break;
+        pos = (size_t)(lf - e->buf) + 1;
+    }
+    return pos;
+}
+
+// Keeps the caret's line and column in view, and no empty rows below the
+// last line while lines are hidden above.
+static void editor_scroll(kdm_field *f, const kdm_item *it) {
+    const kd_edit *e = &f->ed;
+    int view = it->w - 5, cx = kd_edit_x(e, e->caret, advance, (void *)field_font(it));
+    int s = f->scroll;
+    if (cx < s) s = cx - view / 2;   // back left: with half a view of context
+    if (cx - s > view) s = cx - view + view / 4;   // past the right edge: a quarter view ahead,
+                                                   // so typing redraws the view once per ~9 characters
+    f->scroll = (int16_t)(s < 0 ? 0 : s);
+    size_t rows = (size_t)editor_rows(it), line = kd_edit_line_index(e, e->caret), top = f->top;
+    if (line < top) top = line;
+    if (line >= top + rows) top = line - rows + 1;
+    if (f->lines > rows && top > f->lines - rows) top = f->lines - rows;
+    if (f->lines <= rows) top = 0;
+    f->top = (uint16_t)top;
+    f->top_off = (uint16_t)line_offset(e, top);
+}
+
+// Rows [r0, r1] of the view (relative to top), full width.
+static void editor_rows_damage(kdm *m, int slot, const kdm_item *it, long r0, long r1) {
+    kd_rect inner = editor_inner(it);
+    if (r0 < 0) r0 = 0;
+    if (r1 < r0) return;
+    int y0 = it->y + 2 + (int)r0 * KDM_LINE_H;
+    int y1 = r1 >= editor_rows(it) ? inner.y + inner.h : it->y + 2 + ((int)r1 + 1) * KDM_LINE_H;
+    invalidate(m, slot, kd_rect_intersect(kd_rect_make(inner.x, y0, inner.w, y1 - y0), inner));
+}
+
+static long view_row(const kd_edit *e, const kdm_field *f, size_t pos) {
+    return (long)kd_edit_line_index(e, pos < e->len ? pos : e->len) - f->top;
+}
+
+static void editor_after(kdm *m, int slot, kdm_item *it, field_was was, bool notify, uint32_t time_ms) {
+    kdm_field *f = &m->fields[it->aux];
+    kd_edit *e = &f->ed;
+    size_t damage = kd_edit_take_damage(e);
+    uint16_t lines = f->lines, top = f->top;
+    if (damage != KD_EDIT_NO_DAMAGE) f->lines = (uint16_t)count_lines(e);
+    editor_scroll(f, it);
+    if (f->scroll != was.scroll || f->top != top) {
+        invalidate(m, slot, editor_inner(it));
+    } else {
+        if (damage != KD_EDIT_NO_DAMAGE && !KDM_FAULTY(KDM_FAULT_FIELD_TEXT)) {
+            long r = view_row(e, f, damage);
+            if (f->lines != lines && !KDM_FAULTY(KDM_FAULT_EDITOR_ROWS)) {
+                editor_rows_damage(m, slot, it, r, editor_rows(it));   // lines below moved
+            } else {
+                int dx = it->x + 2 - f->scroll + kd_edit_x(e, damage, advance, (void *)field_font(it));
+                kd_rect inner = editor_inner(it);
+                kd_rect row = kd_rect_make(dx, it->y + 2 + (int)r * KDM_LINE_H, inner.x + inner.w - dx, KDM_LINE_H);
+                invalidate(m, slot, kd_rect_intersect(row, inner));
+            }
+        }
+        if (was.caret != e->caret || was.anchor != e->anchor) {
+            long r[4] = {view_row(e, f, was.caret), view_row(e, f, was.anchor), view_row(e, f, e->caret),
+                         view_row(e, f, e->anchor)};
+            long lo = r[0], hi = r[0];
+            for (int k = 1; k < 4; k++) {
+                if (r[k] < lo) lo = r[k];
+                if (r[k] > hi) hi = r[k];
+            }
+            if (KDM_FAULTY(KDM_FAULT_FIELD_CARET)) lo = hi = r[2];
+            if (lo == hi && was.caret == was.anchor && e->caret == e->anchor) {
+                // A caret moving along one row: only the columns between the two
+                // positions. (Old positions at or after a text change lie in the
+                // span invalidated above, which runs to the right edge.)
+                void *font = (void *)field_font(it);
+                size_t old = was.caret < e->len ? was.caret : e->len;
+                int x0 = kd_edit_x(e, old, advance, font), x1 = kd_edit_x(e, e->caret, advance, font);
+                if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+                int tx = it->x + 2 - f->scroll;
+                kd_rect span = kd_rect_make(tx + x0, it->y + 2 + (int)lo * KDM_LINE_H, x1 - x0 + 1, KDM_LINE_H);
+                invalidate(m, slot, kd_rect_intersect(span, editor_inner(it)));
+            } else {
+                editor_rows_damage(m, slot, it, lo, hi);
+            }
+        }
+    }
+    if (notify && e->version != was.version) push_item_event(m, slot, KDM_EV_CHANGE, (int)(it - m->items), time_ms);
+}
+
+static void draw_editor(kdm *m, const kd_draw *d, int slot, int i) {
+    const kdm_item *it = &m->items[i];
+    const kdm_field *f = &m->fields[it->aux];
+    const kd_edit *e = &f->ed;
+    void *font = (void *)field_font(it);
+    kd_draw_fill(d, it->x, it->y, it->w, it->h, KD_C_WHITE);
+    kd_draw_rect(d, it->x, it->y, it->w, it->h, KD_C_BLACK);
+    kd_rect clip = d->fb->clip, inner = editor_inner(it);
+    kd_fb_set_clip(d->fb, kd_rect_intersect(clip, kd_rect_make(d->ox + inner.x, d->oy + inner.y, inner.w, inner.h)));
+    bool focus = shows_focus(m, slot, i);
+    size_t a, b;
+    kd_edit_selection(e, &a, &b);
+    int tx = d->ox + it->x + 2 - f->scroll, bottom = d->oy + inner.y + inner.h;
+    const char *s = (const char *)e->buf;
+    size_t pos = f->top_off;
+    for (int ry = d->oy + it->y + 2; ry < bottom; ry += KDM_LINE_H) {
+        size_t end = kd_edit_line_end(e, pos);
+        // Rows outside the clip cost only the line scan.
+        if (ry + KDM_LINE_H > d->fb->clip.y && ry < d->fb->clip.y + d->fb->clip.h) {
+            kd_text_n(d->fb, font, tx, ry + 1, s + pos, (int)(end - pos), KD_C_BLACK, KD_NO_KEY);
+            if (focus && a != b && a <= end && b > pos) {
+                size_t s0 = a > pos ? a : pos, s1 = b < end ? b : end;
+                int x0 = kd_edit_x(e, s0, advance, font), x1 = kd_edit_x(e, s1, advance, font);
+                int nl = b > end ? 4 : 0;   // the line break is selected too
+                kd_fb_fill_rect(d->fb, tx + x0, ry, x1 - x0 + nl, KDM_LINE_H, KD_C_BLACK);
+                kd_text_n(d->fb, font, tx + x0, ry + 1, s + s0, (int)(s1 - s0), KD_C_WHITE, KD_NO_KEY);
+            }
+            if (focus && a == b && e->caret >= pos && e->caret <= end)
+                kd_fb_vline(d->fb, tx + kd_edit_x(e, e->caret, advance, font), ry, KDM_LINE_H, KD_C_BLACK);
+        }
+        if (end == e->len) break;
+        pos = end + 1;
+    }
+    kd_fb_set_clip(d->fb, clip);
+}
+
 // Invalidates what an edit or a motion changed: the text from the first
 // changed byte to the right edge, the old and the new caret or selection, or
 // the whole inside when the text scrolled. notify queues KDM_EV_CHANGE.
 static void field_after(kdm *m, int slot, kdm_item *it, field_was was, bool notify, uint32_t time_ms) {
+    if (it->op == KDM_OP_EDITOR) {
+        editor_after(m, slot, it, was, notify, time_ms);
+        return;
+    }
     kdm_field *f = &m->fields[it->aux];
     size_t damage = kd_edit_take_damage(&f->ed);
     field_scroll(f, it);
@@ -410,9 +563,34 @@ static bool field_key(kdm *m, int slot, kdm_item *it, const kd_event *ev) {
     kdm_field *f = &m->fields[it->aux];
     kd_edit *e = &f->ed;
     bool shift = ev->mods & KD_MOD_SHIFT, ctrl = ev->mods & KD_MOD_CTRL, alt = ev->mods & KD_MOD_ALT;
+    bool multi = it->op == KDM_OP_EDITOR;
     unsigned char ch = (unsigned char)ev->ch;
-    int motion = -1;
+    int motion = -1, repeat = 1;
     field_was was = field_before(f);
+    switch (multi ? ev->key : KD_KEY_NONE) {   // the editor's own keys
+    case KD_KEY_ENTER:
+        if (ctrl || alt) return false;
+        kd_edit_insert(e, (const uint8_t *)"\n", 1);
+        field_after(m, slot, it, was, true, ev->time_ms);
+        return true;
+    case KD_KEY_UP: motion = KD_EDIT_UP; break;
+    case KD_KEY_DOWN: motion = KD_EDIT_DOWN; break;
+    case KD_KEY_PGUP: case KD_KEY_PGDN:
+        motion = ev->key == KD_KEY_PGUP ? KD_EDIT_UP : KD_EDIT_DOWN;
+        repeat = editor_rows(it) > 1 ? editor_rows(it) - 1 : 1;
+        break;
+    case KD_KEY_HOME: case KD_KEY_END:
+        if (ctrl && !alt) motion = ev->key == KD_KEY_HOME ? KD_EDIT_START : KD_EDIT_FINISH;
+        break;
+    default: break;
+    }
+    if (motion >= 0) {
+        if (alt || (ctrl && motion != KD_EDIT_START && motion != KD_EDIT_FINISH)) return false;
+        void *font = (void *)field_font(it);
+        while (repeat--) kd_edit_move(e, motion, shift, advance, font);
+        field_after(m, slot, it, was, true, ev->time_ms);
+        return true;
+    }
     switch (ev->key) {
     case KD_KEY_CHAR:
         if (alt) return false;
@@ -466,7 +644,7 @@ static bool control_key(kdm *m, int slot, const kd_event *ev) {
     if (ev->key == KD_KEY_TAB && !ctrl && !alt) return focus_step(m, slot, ev->mods & KD_MOD_SHIFT ? -1 : 1);
     if (w->focus != KDM_NONE) {
         kdm_item *it = &m->items[w->focus];
-        if (it->op == KDM_OP_FIELD && field_key(m, slot, it, ev)) return true;
+        if (editable(it) && field_key(m, slot, it, ev)) return true;
         if (it->op == KDM_OP_BUTTON && !ctrl && !alt &&
             (ev->key == KD_KEY_ENTER || (ev->key == KD_KEY_CHAR && ev->ch == ' '))) {
             if (!(it->c0 & KD_BTN_DISABLED)) push_item_event(m, slot, KDM_EV_ACTIVATE, w->focus, ev->time_ms);
@@ -492,11 +670,16 @@ static void pointer_focus(kdm *m, int slot, const kd_event *ev) {
     if (hit < 0) return;
     set_focus(m, slot, (uint16_t)hit);
     kdm_item *it = &m->items[hit];
-    if (it->op != KDM_OP_FIELD) return;
+    if (!editable(it)) return;
     kdm_field *f = &m->fields[it->aux];
     field_was was = field_before(f);
     void *font = (void *)field_font(it);
-    size_t to = kd_edit_at_x(&f->ed, 0, ev->x - (it->x + 2 - f->scroll), advance, font);
+    size_t line = 0;
+    if (it->op == KDM_OP_EDITOR) {
+        int row = (ev->y - (it->y + 2)) / KDM_LINE_H;
+        line = line_offset(&f->ed, (size_t)f->top + (size_t)(row > 0 ? row : 0));
+    }
+    size_t to = kd_edit_at_x(&f->ed, line, ev->x - (it->x + 2 - f->scroll), advance, font);
     kd_edit_select(&f->ed, (ev->mods & KD_MOD_SHIFT) ? f->ed.anchor : to, to);
     field_after(m, slot, it, was, false, ev->time_ms);
 }
@@ -524,6 +707,7 @@ static void draw(kd_window *w, const kd_draw *d) {
             kd_draw_button(d, item_box(m, it), m->text + it->aux, it->c0 | (shows_focus(m, slot, i) ? KD_BTN_FOCUS : 0));
             break;
         case KDM_OP_FIELD: draw_field(m, d, slot, i); break;
+        case KDM_OP_EDITOR: draw_editor(m, d, slot, i); break;
         case KDM_OP_SPRITE:
             kd_draw_sprite(d, it->x, it->y, &m->sprites[it->aux].px, it->c0, it->c1 == KDM_NO_BG ? KD_NO_KEY : it->c1);
             break;
@@ -594,7 +778,7 @@ int kdm_init(kdm *m, const kdm_menu_def *menus) {
     if (rc) memset(m->menus, 0, sizeof m->menus);   // the desktop still works, without menus
     for (int i = 0; i < KDM_MAX_ITEMS; i++) m->items[i].next = i + 1 < KDM_MAX_ITEMS ? (uint16_t)(i + 1) : KDM_NONE;
     for (int s = 0; s < KD_MAX_WINDOWS; s++) m->win[s].head = m->win[s].tail = m->win[s].focus = KDM_NONE;
-    for (int f = 0; f < KDM_FIELDS; f++) m->fields[f].item = KDM_NONE;
+    for (int f = 0; f <= KDM_FIELDS; f++) m->fields[f].item = KDM_NONE;
     kd_shell_hooks hooks = {menu_hook, NULL, m};
     kd_desktop_init(&m->desk, m->menus, NULL, 0, hooks);
     return rc;
@@ -779,12 +963,13 @@ int kdm_item_set_text(kdm *m, int slot, int id, const char *s, size_t len) {
     if (!window_ok(m, slot)) return KDM_ESTALE;
     kdm_item *it = item_get(m, slot, id);
     if (!it) return KDM_ESTALE;
-    if (it->op == KDM_OP_FIELD) {
+    if (editable(it)) {
         kdm_field *f = &m->fields[it->aux];
         field_was was = field_before(f);
         int rc = kd_edit_set(&f->ed, (const uint8_t *)s, len);
         if (rc == KD_EDIT_EFULL) return KDM_ETOOLONG;
         if (rc < 0) return KDM_EINVAL;
+        if (it->op == KDM_OP_EDITOR) kd_edit_select(&f->ed, 0, 0);   // a new document: from its start
         field_after(m, slot, it, was, false, 0);
         return KDM_OK;
     }
@@ -828,7 +1013,7 @@ int kdm_item_set_color(kdm *m, int slot, int id, uint8_t color) {
     kdm_item *it = item_get(m, slot, id);
     if (!it) return KDM_ESTALE;
     if (color > 15 || it->op == KDM_OP_SPRITE || it->op == KDM_OP_BUTTON || it->op == KDM_OP_ICON ||
-        it->op == KDM_OP_FIELD)
+        editable(it))
         return KDM_EINVAL;
     if (it->c0 == color) return KDM_OK;
     it->c0 = color;
@@ -909,11 +1094,42 @@ int kdm_add_field(kdm *m, int slot, int x, int y, int w, const char *s, size_t l
     return item_id(m, i);
 }
 
+int kdm_add_editor(kdm *m, int slot, int x, int y, int w, int h, const char *s, size_t len, int font) {
+    if (!window_ok(m, slot)) return KDM_ESTALE;
+    if (!fits_rect(x, y, w, h) || w < 16 || h < KDM_LINE_H + 6 || (font != 0 && font != 1)) return KDM_EINVAL;
+    long need = kd_edit_measure((const uint8_t *)s, len, 0);
+    if (need < 0) return KDM_EINVAL;
+    if (need >= KDM_DOC_BYTES) return KDM_ETOOLONG;
+    kdm_field *f = &m->fields[KDM_FIELDS];
+    if (f->item != KDM_NONE) return KDM_ENOFIELD;
+    int i = item_new(m, slot, KDM_OP_EDITOR);
+    if (i < 0) return i;
+    kdm_item *it = &m->items[i];
+    it->x = (int16_t)x;
+    it->y = (int16_t)y;
+    it->w = (int16_t)w;
+    it->h = (int16_t)h;
+    it->c0 = (uint8_t)font;
+    it->aux = KDM_FIELDS;
+    f->item = (uint16_t)i;
+    f->scroll = 0;
+    f->top = f->top_off = 0;
+    kd_edit_init(&f->ed, m->doc, KDM_DOC_BYTES, 0);
+    kd_edit_set(&f->ed, (const uint8_t *)s, len);   // measured above: cannot fail
+    kd_edit_select(&f->ed, 0, 0);
+    kd_edit_take_damage(&f->ed);
+    f->lines = (uint16_t)count_lines(&f->ed);
+    editor_scroll(f, it);
+    if (m->win[slot].focus == KDM_NONE) m->win[slot].focus = (uint16_t)i;
+    invalidate(m, slot, item_box(m, it));
+    return item_id(m, i);
+}
+
 int kdm_item_get_text(kdm *m, int slot, int id, const char **s, size_t *len) {
     if (!window_ok(m, slot)) return KDM_ESTALE;
     kdm_item *it = item_get(m, slot, id);
     if (!it) return KDM_ESTALE;
-    if (it->op == KDM_OP_FIELD) {
+    if (editable(it)) {
         *s = (const char *)m->fields[it->aux].ed.buf;
         *len = m->fields[it->aux].ed.len;
         return KDM_OK;
@@ -926,7 +1142,7 @@ int kdm_item_get_text(kdm *m, int slot, int id, const char **s, size_t *len) {
 
 static kdm_item *field_get(kdm *m, int slot, int id) {
     kdm_item *it = window_ok(m, slot) ? item_get(m, slot, id) : NULL;
-    return it && it->op == KDM_OP_FIELD ? it : NULL;
+    return it && editable(it) ? it : NULL;
 }
 
 const kd_edit *kdm_field_editor(kdm *m, int slot, int id) {
@@ -938,7 +1154,7 @@ int kdm_field_select(kdm *m, int slot, int id, size_t anchor, size_t caret) {
     if (!window_ok(m, slot)) return KDM_ESTALE;
     kdm_item *it = item_get(m, slot, id);
     if (!it) return KDM_ESTALE;
-    if (it->op != KDM_OP_FIELD) return KDM_EINVAL;
+    if (!editable(it)) return KDM_EINVAL;
     kdm_field *f = &m->fields[it->aux];
     field_was was = field_before(f);
     if (kd_edit_select(&f->ed, anchor, caret) < 0) return KDM_EINVAL;
@@ -982,7 +1198,7 @@ int kdm_edit(kdm *m, int slot, int id, int cmd) {
     if (!window_ok(m, slot)) return KDM_ESTALE;
     kdm_item *it = item_get(m, slot, id);
     if (!it) return KDM_ESTALE;
-    if (it->op != KDM_OP_FIELD || cmd < KDM_EDIT_COPY || cmd > KDM_EDIT_SELECT_ALL) return KDM_EINVAL;
+    if (!editable(it) || cmd < KDM_EDIT_COPY || cmd > KDM_EDIT_SELECT_ALL) return KDM_EINVAL;
     kdm_field *f = &m->fields[it->aux];
     field_was was = field_before(f);
     bool clip = field_command(m, f, cmd);
@@ -995,7 +1211,7 @@ int kdm_text_input(kdm *m, const char *s, size_t len) {
     if (!top || m->desk.menu_open >= 0) return 0;
     int slot = slot_of(m, top);
     uint16_t i = m->win[slot].focus;
-    if (i == KDM_NONE || m->items[i].op != KDM_OP_FIELD) return 0;
+    if (i == KDM_NONE || !editable(&m->items[i])) return 0;
     kdm_item *it = &m->items[i];
     kdm_field *f = &m->fields[it->aux];
     field_was was = field_before(f);

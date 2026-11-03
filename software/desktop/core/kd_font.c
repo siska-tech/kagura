@@ -36,17 +36,37 @@ static int bounded_len(const char *s, int n) {
     return len;
 }
 
+// Width and length of the glyph at s, as glyph() gives them, without the
+// font lookup (for glyphs that will not be drawn).
+static int advance(const kd_font *f, const char *s, int n, int *width) {
+#if KD_UTF8
+    if ((unsigned char)s[0] >= 0x80) {
+        *width = 8;
+        return kj_utf8_next((const uint8_t *)s, (size_t)n).consumed;
+    }
+#else
+    (void)s, (void)n;
+#endif
+    *width = f->width;
+    return 1;
+}
+
 int kd_text_n(kd_fb *fb, const kd_font *f, int x, int y, const char *s, int n,
               uint8_t fg, int bg) {
     n = bounded_len(s, n);
+    // A string outside the clip rows draws nothing: only its width is needed.
+    bool rows_out = y + f->height <= fb->clip.y || y >= fb->clip.y + fb->clip.h;
     for (int i = 0; i < n;) {
-        const uint8_t *rows;
-        int w;
-        i += glyph(f, s + i, n - i, &rows, &w);
-        // Skip glyphs wholly outside the clip before touching the raster.
-        if (!(x + w <= fb->clip.x || x >= fb->clip.x + fb->clip.w ||
-              y + f->height <= fb->clip.y || y >= fb->clip.y + fb->clip.h))
+        int w, len = advance(f, s + i, n - i, &w);
+        // Glyphs wholly outside the clip skip the lookup and the raster
+        // (long or scrolled lines are mostly outside).
+        if (rows_out || x + w <= fb->clip.x || x >= fb->clip.x + fb->clip.w) {
+            i += len;
+        } else {
+            const uint8_t *rows;
+            i += glyph(f, s + i, n - i, &rows, &w);
             kd_fb_mono(fb, x, y, w, f->height, rows, fg, bg);
+        }
         x += w;
     }
     return x;

@@ -28,7 +28,7 @@ A complete application is `software/micropython/examples/desktop_ja.py`. It has 
 | `text/` | `kj_text`: strict UTF-8 decoding, KJ8F glyph lookup and measurement (from PR #71, without Wren); `kj_misaki8`: the repository's Misaki font, embedded unchanged in read-only memory; `kd_edit`: the bounded UTF-8 editing core | C11 |
 | `retained/` | `kdm`: retained display lists for script-driven windows, fixed pools, event ring, menus | core |
 | `binding/` | `kagura_desktop`, the MicroPython user C module (handles, errors, sinks) | kdm, MicroPython |
-| `tests/` | C tests (text, editing core with 4 mutants, kdm with 9 mutants) and MicroPython tests (binding, hardware session) | |
+| `tests/` | C tests (text, editing core with 4 mutants, kdm with 10 mutants) and MicroPython tests (binding, hardware session) | |
 | `tools/` | `test.sh`, `build_unix.sh`, `build_firmware.sh` | |
 
 The hardware session is `software/micropython/kagura/desktop.py`, frozen into the firmware. It uses the console's SDK device, so the board has one hardware owner and one transport.
@@ -93,12 +93,55 @@ while (ev := desk.poll()) is not None:
 
 The font data (`software/micropython/fonts/misaki8.kfnt`, 71,718 B, 7,171 glyphs) is © Num Kadoma and licensed separately; see `text/NOTICE.md` and `software/micropython/fonts/README.md`.
 
+## The text editor
+
+`w.editor(x, y, w, h, text='')` adds the multiline editor. There is one per desktop. It is a retained record like a field, and its document lives in static C memory.
+
+- **Capacity:** 8,191 bytes of UTF-8 (`kd.DOC_BYTES`), about 2,700 Japanese or 8,000 ASCII characters.
+  - Free heap after boot was 153,504 B; the document takes 8 KB of it.
+  - On the RP2040, a worst-case `memmove` of 8 KB takes 463 µs, under half the cost of one tile-transfer run.
+  - A full document refuses further input; nothing is cut.
+- **Lines are not wrapped.** Long lines scroll sideways. The view keeps the caret in sight: a quarter view ahead past the right edge, half a view of context when going back left. Vertically it shows no empty rows below the last line.
+- **Keys:** Enter breaks the line. Up and Down keep the visual column (ASCII and Japanese differ in width). PgUp/PgDn move one view. Ctrl+Home/End go to the start or end of the document. Shift selects with all of them. Backspace at a line start joins the lines.
+- **Repainting.** After a keystroke the editor repaints only part of the view:
+  - an edit on one line: from the change to the right edge;
+  - a line break added or removed: that line and the lines below;
+  - a caret move or selection: the affected rows;
+  - a scroll: the whole view.
+- **Python calls:** `w.caret(id)` gives (line, column) in characters. `w.version(id)` changes with every edit, so it tells whether the document was modified since the last save. `w.length(id)` gives the size in bytes.
+
+`software/micropython/examples/desktop_editor.py` (神楽メモ帳) is the application built on it:
+
+- **Commands:** 新規, 開く…, 保存, 名前を付けて保存… and 終了 in the menus, with Ctrl+N, Ctrl+O and Ctrl+S as shortcuts. The 編集 menu has cut, copy, paste and select all. The title and status line show the name, line, column, size and whether the document is modified (変更あり).
+- **Unsaved changes:** new, open and quit ask 保存 / 破棄 / 取消 first. Saving under an existing name asks before overwriting.
+- **Files are plain names in one folder** (default `/docs`), never paths. `/`, `..`, leading dots, `.tmp` names and control characters are refused, so boot scripts, fonts and other system files can't be reached.
+  - Loading refuses non-UTF-8 files, files containing NUL, and files too large for the document.
+  - LF or CRLF line endings and a UTF-8 BOM are kept as the file had them.
+- **Saving:**
+  1. Check that the free space covers the file plus a 4 KB margin.
+  2. Write `NAME.tmp` and close it.
+  3. Check its size.
+  4. Rename it over `NAME`.
+
+  On littlefs (the board's filesystem) the rename replaces the target, as checked on the RP2040 below. An interrupted save therefore leaves either the old file or the new one; no further power-loss safety is claimed beyond littlefs' own. On a filesystem that refuses to rename over a file, the old file is removed first, so that save is not atomic. A failed save keeps the document in memory and says why.
+- **`ram_docs()`** puts the documents on a littlefs in RAM. Demos and tests on the board then never write to flash.
+
+Measured on the RP2040 from RAM, with firmware 1c9c234 and the file layer on a RAM littlefs (`tools/kagura-editor-device.py`, log in `docs/hardware/editor-files-ram-1c9c234.txt`):
+- CRLF and BOM round trips are exact.
+- littlefs `rename` replaces an existing file.
+- A save larger than the free space is refused, the old file is kept and no `.tmp` is left.
+- Unsafe names are refused.
+- An 8,160-byte Japanese document saves in 55 ms and loads in 38 ms.
+
+The editor's per-keystroke timing on the board needs firmware with the editor.
+
 ## Keyboard input
 
 `software/micropython/kagura/keyinput.py` connects a keyboard to the desktop in two parts. Either part can be replaced.
 
 - **`TerminalKeys`** decodes VT/xterm terminal bytes into the desktop's normalized calls: `key(KEY_*, ch, MOD_*)` for keys and `text(buffer)` for UTF-8. It handles printable ASCII, UTF-8, Enter (CRLF counted once), Tab, Backspace, Ctrl+letters, arrows, Home/End, Insert/Delete, F6 and F10, with Shift, Ctrl and Alt from xterm modifier parameters. A lone Escape is reported after 50 ms. Other sequences are consumed and counted. `feed()` allocates nothing. A future USB HID-to-UART bridge (a XIAO RP2040 is planned) needs only to send the same sequences, or to come with its own decoder that makes the same two calls.
 - **`StdinSource`** reads stdin without blocking, at most 64 bytes per `pump()`. On the board, stdin is the console's stream: UART RX through dupterm, plus USB CDC. The console stays the only reader of the UART, and nothing else consumes those bytes.
+- **Keys are handled in order.** `pump(keys, each=True)` returns after every decoded key. The application handles its events before the next key is routed: when Ctrl+S opens a dialog, the name typed right after it goes into the dialog, however fast the bytes arrive. The demos and the editor present one frame per batch, not per key.
 - **Key repeat.** Terminals send key presses only, never releases. Auto-repeat arrives as repeated bytes, so the decoder has no repeat timer.
 - **Ctrl+C is untouched.** It raises KeyboardInterrupt before any of this code sees it, and `kbd_intr` is never changed. An application's `finally: desk.close()` brings the console back.
 - **Clipboard keys.** Ctrl+Insert, Shift+Insert and Shift+Delete arrive as `ESC [2;5~`, `ESC [2;2~` and `ESC [3;2~`. Many terminal programs keep Shift+Insert for their own paste and send the pasted text instead, which then arrives as typing. The 編集 menu offers the same commands either way.

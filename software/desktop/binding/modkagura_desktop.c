@@ -738,6 +738,41 @@ static mp_obj_t window_edit(mp_obj_t self, mp_obj_t id, mp_obj_t cmd) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_3(window_edit_obj, window_edit);
 
+// editor(x, y, w, h, text='', font=0) -> item id: the multiline editor (one
+// per desktop), holding at most DOC_BYTES bytes of UTF-8; CRLF becomes LF.
+static mp_obj_t window_editor(size_t n_args, const mp_obj_t *a) {
+    int slot = win_arg(a[0]);
+    const char *s = "";
+    size_t len = n_args > 5 ? text_arg(a[5], &s) : 0;
+    return ret_id(kdm_add_editor(&state, slot, i16(a[1]), i16(a[2]), i16(a[3]), i16(a[4]), s, len,
+                                 int_arg(n_args, a, 6, 0)));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_editor_obj, 5, 7, window_editor);
+
+// caret(id) -> (line, column), both from 0, the column in characters.
+static mp_obj_t window_caret(mp_obj_t self, mp_obj_t id) {
+    const kd_edit *e = field_arg(win_arg(self), id);
+    size_t line = kd_edit_line_index(e, e->caret);
+    mp_obj_t t[2] = {MP_OBJ_NEW_SMALL_INT(line),
+                     MP_OBJ_NEW_SMALL_INT(kd_edit_count(e, kd_edit_line_start(e, e->caret), e->caret))};
+    return mp_obj_new_tuple(2, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_caret_obj, window_caret);
+
+// version(id) -> int that changes with every change of the text (by keys,
+// edit() or set_text()); compare it with the value at the last save.
+static mp_obj_t window_version(mp_obj_t self, mp_obj_t id) {
+    const kd_edit *e = field_arg(win_arg(self), id);
+    return mp_obj_new_int_from_uint(e->version);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_version_obj, window_version);
+
+// length(id) -> bytes of UTF-8 text (the limit is FIELD_BYTES or DOC_BYTES).
+static mp_obj_t window_length(mp_obj_t self, mp_obj_t id) {
+    return MP_OBJ_NEW_SMALL_INT(field_arg(win_arg(self), id)->len);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_length_obj, window_length);
+
 // focus(id): focuses a field or focusable button; focus(None) clears the focus.
 static mp_obj_t window_focus(mp_obj_t self, mp_obj_t id) {
     int slot = win_arg(self);
@@ -895,6 +930,10 @@ static const mp_rom_map_elem_t window_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&window_sprite_obj)},
     {MP_ROM_QSTR(MP_QSTR_icon), MP_ROM_PTR(&window_icon_obj)},
     {MP_ROM_QSTR(MP_QSTR_field), MP_ROM_PTR(&window_field_obj)},
+    {MP_ROM_QSTR(MP_QSTR_editor), MP_ROM_PTR(&window_editor_obj)},
+    {MP_ROM_QSTR(MP_QSTR_caret), MP_ROM_PTR(&window_caret_obj)},
+    {MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&window_version_obj)},
+    {MP_ROM_QSTR(MP_QSTR_length), MP_ROM_PTR(&window_length_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_text), MP_ROM_PTR(&window_get_text_obj)},
     {MP_ROM_QSTR(MP_QSTR_selection), MP_ROM_PTR(&window_selection_obj)},
     {MP_ROM_QSTR(MP_QSTR_select), MP_ROM_PTR(&window_select_obj)},
@@ -1044,6 +1083,8 @@ static const mp_rom_map_elem_t module_table[] = {
     CONST(KEY_ESCAPE, KD_KEY_ESCAPE), CONST(KEY_TAB, KD_KEY_TAB), CONST(KEY_BACKSPACE, KD_KEY_BACKSPACE),
     CONST(KEY_DELETE, KD_KEY_DELETE), CONST(KEY_HOME, KD_KEY_HOME), CONST(KEY_END, KD_KEY_END),
     CONST(KEY_F6, KD_KEY_F6), CONST(KEY_F10, KD_KEY_F10), CONST(KEY_INSERT, KD_KEY_INSERT),
+    CONST(KEY_PGUP, KD_KEY_PGUP), CONST(KEY_PGDN, KD_KEY_PGDN), CONST(DOC_BYTES, KDM_DOC_BYTES - 1),
+    CONST(LINE_H, KDM_LINE_H),
     CONST(CHANGE, KDM_EV_CHANGE), CONST(ACTIVATE, KDM_EV_ACTIVATE),
     CONST(EDIT_COPY, KDM_EDIT_COPY), CONST(EDIT_CUT, KDM_EDIT_CUT), CONST(EDIT_PASTE, KDM_EDIT_PASTE),
     CONST(EDIT_SELECT_ALL, KDM_EDIT_SELECT_ALL), CONST(FIELD_H, KDM_FIELD_H), CONST(FIELD_BYTES, KDM_FIELD_BYTES - 1),

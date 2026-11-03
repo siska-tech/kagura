@@ -1,0 +1,27 @@
+HEAP before 132416 after_desktop 132048 alloc 59952
+HEAP after_app 131920
+SCENE 1 desktop 1a27e331 312 35894 855b9d6c 0 121776
+SCENE 2 files 851ad4ee 400 47256 c90e901f 0 112256
+SCENE 3 menu 67a04804 42 13814 f6d8dc42 0 103376
+SCENE 4 about 3da90048 313 38454 34b04fb7 0 94064
+SCENE 5 ok-pressed 7ec40e9d 21 11041 d76f1925 0 84992
+SCENE 6 about-closed 7600c8b4 271 33740 d74143ad 0 75872
+SCENE 7 studio 3986f03e 459 55929 0efa16d3 0 66480
+SCENE 8 paint 4ece6c58 44 15530 c413de4e 0 56480
+SCENE 9 import 597865ff 311 35886 89cfe118 0 47504
+SCENE 10 move 8b36e887 576 111041 abfa985e 0 38192
+SCENE 11 closed c21f8d5b 443 45596 2285aec6 0 28816
+FRAME label 5328 us
+FRAME sprite_pixel 448 us
+FRAME window_activate 12457 us
+FRAME window_move 35328 us
+FRAME full_redraw 28805 us
+SOAK progress 2000 updates, 0 failed, free 130080
+SOAK progress 4000 updates, 0 failed, free 130080
+SOAK progress 6000 updates, 0 failed, free 130080
+SOAK progress 8000 updates, 0 failed, free 130080
+SOAK 9973 updates, 49 checks, 0 failed, lowest free heap 129936 B
+CONSISTENT True error_code 0
+CLOSED console paused False last_error None
+SOFT_RESET ALIVE True None 80928
+HARD_RESET ALIVE True None 79648
