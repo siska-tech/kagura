@@ -191,7 +191,7 @@ def main(desk=None, docs=None, out=print, pace=1.0, dump=None):
         from kagura.desktop import Desktop
         desk = Desktop(menus=MENUS, cursor=False)
         if docs is None:
-            docs = de.ram_docs()                         # never flash
+            docs = de.ram_docs(blocks=32)                # 16 KB in RAM: never flash
     scenes = [0]
 
     def step(name):
@@ -220,6 +220,7 @@ if __name__ == '__main__':
     if '--host' in sys.argv:
         folder = sys.argv[sys.argv.index('--host') + 1]
         dump = sys.argv[sys.argv.index('--dump') + 1] if '--dump' in sys.argv else None
-        main(desk=de.HostDesktop(MENUS), docs=de.Documents(folder), dump=dump)
+        # Labelled as on the board (ram_docs), so host and board frames are identical.
+        main(desk=de.HostDesktop(MENUS), docs=de.Documents(folder, '/ramdocs/docs'), dump=dump)
     else:
         main()
