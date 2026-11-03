@@ -1,0 +1,21 @@
+SCENE 1 desktop 1a27e331 312 33358 855b9d6c 0 80128
+SCENE 2 files 851ad4ee 400 42430 c90e901f 0 70608
+SCENE 3 menu 67a04804 42 14416 f6d8dc42 0 61728
+SCENE 4 about 3da90048 313 36894 34b04fb7 0 52432
+SCENE 5 ok-pressed 7ec40e9d 21 11190 d76f1925 0 43360
+SCENE 6 about-closed 7600c8b4 271 28874 d74143ad 0 34240
+SCENE 7 studio 3986f03e 459 51664 0efa16d3 0 24848
+SCENE 8 paint 4ece6c58 44 15612 c413de4e 0 14848
+SCENE 9 import 597865ff 311 35149 89cfe118 0 5872
+SCENE 10 move 8b36e887 576 84610 abfa985e 0 84976
+SCENE 11 closed c21f8d5b 443 41636 2285aec6 0 75600
+FRAME label 5299 us
+FRAME sprite_pixel 438 us
+FRAME window_activate 11582 us
+FRAME window_move 31128 us
+FRAME full_redraw 19291 us
+SOAK 10827 updates, 54 checks, 0 failed, lowest free heap 88192 B
+CONSISTENT True error_code 0
+CLOSED console paused False last_error None
+SOFT_RESET ALIVE True None 77840
+HARD_RESET ALIVE True None 76768
