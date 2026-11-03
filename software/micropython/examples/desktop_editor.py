@@ -228,17 +228,24 @@ class Dialog:
 
 
 class Editor:
-    def __init__(self, desk, docs, source='キーボード', frame=(0, 11, 320, 189)):
+    def __init__(self, desk, docs, source='キーボード', frame=(0, 11, 320, 189), ime=None):
         self.desk, self.docs = desk, docs
         self.quit = False
         self.name = None
         self.crlf = self.bom = False
         self.dialog = None
         self.status_was = None
+        self.ime = ime                               # a kagura.skk.SkkEngine, or None
+        self.ime_was = None
         w = self.win = desk.create_window(UNTITLED, *frame, closable=False, movable=False)
         ww, wh = w.work()[2:]
-        rows = (wh - 20) // kd.LINE_H                # whole rows, then a status line
+        # Whole rows, then (with an input method) a candidate line, then a status line.
+        rows = (wh - 20 - (kd.LINE_H if ime else 0)) // kd.LINE_H
         self.ed = w.editor(2, 2, ww - 4, rows * kd.LINE_H + 4)
+        if ime:
+            self.cands = w.text(4, rows * kd.LINE_H + 8, ' ', 5, 2)
+            self.ime_mode = w.text(ww - 96, rows * kd.LINE_H + 10 + kd.LINE_H, '[A]', 1, 2)
+            rows += 1                                # the status line moves down one row
         # Status: fixed fields, the numbers as ASCII records so that a keystroke
         # redraws only the digit cells that changed, not the whole line.
         sy = rows * kd.LINE_H + 10
@@ -252,6 +259,29 @@ class Editor:
         self.source = w.text(ww - 68, rows * kd.LINE_H + 10, source, 5, 2)
         self.saved_version = w.version(self.ed)
         self.refresh()
+
+    # ---- input method ----
+
+    def ime_changed(self, e):
+        """Mode label and candidate line after every key (SkkInput's callback)."""
+        mode = {'ascii': '[A]', 'hira': '[あ]', 'kata': '[ア]'}[e.mode]
+        page = e.candidates()
+        if page:
+            items, n, pages = page
+            line = ' '.join(k + c for k, c in items) + ' %d/%d' % (n, pages)
+        else:
+            line = e.message or ' '
+        if (mode, line) == self.ime_was:
+            return
+        data = line.encode()
+        if len(data) > 63:                           # a text record holds 63 bytes
+            n = 63
+            while n and data[n] & 0xC0 == 0x80:
+                n -= 1
+            line = data[:n].decode()
+        self.win.set_text(self.ime_mode, mode)
+        self.win.set_text(self.cands, line)
+        self.ime_was = (mode, line)
 
     # ---- state ----
 
@@ -446,9 +476,22 @@ def sleep_ms(ms):
             time.sleep(ms / 1000)
 
 
+def input_chain(app, clock=None):
+    """The terminal decoder, with the SKK input method in front of the desktop
+    when the editor has one (a lone LF is then Ctrl+J, the SKK mode key)."""
+    from kagura.keyinput import TerminalKeys
+    if app.ime is None:
+        return TerminalKeys(app.desk) if clock is None else TerminalKeys(app.desk, clock=clock)
+    from kagura.skk import SkkInput
+    sink = SkkInput(app.desk, app.ime, app.ime_changed)
+    if clock is None:
+        return TerminalKeys(sink, lone_lf_ctrl_j=True)
+    return TerminalKeys(sink, clock=clock, lone_lf_ctrl_j=True)
+
+
 def keyboard(app, source=None, idle_ms=5):
-    from kagura.keyinput import StdinSource, TerminalKeys
-    keys = TerminalKeys(app.desk)
+    from kagura.keyinput import StdinSource
+    keys = input_chain(app)
     src = source if source is not None else StdinSource()
     try:
         while not app.quit:
