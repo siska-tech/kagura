@@ -23,7 +23,8 @@ allocate nothing.
 Decoded keys:
   printable ASCII            KEY_CHAR + ch
   UTF-8 (2..4 bytes)         text()
-  CR, LF, CRLF               KEY_ENTER (CRLF once)
+  CR, LF, CRLF               KEY_ENTER (CRLF once); with lone_lf_ctrl_j, a lone LF
+                             is Ctrl+J (KEY_CHAR + j, MOD_CTRL) for SKK
   Tab, BS or DEL             KEY_TAB, KEY_BACKSPACE
   Ctrl+letter (0x01..0x1A)   KEY_CHAR + letter, MOD_CTRL (e.g. Ctrl+A, Ctrl+W)
   ESC [ A B C D / H F        arrows / Home End, with ;mod (1;2A is Shift+Up)
@@ -59,8 +60,10 @@ def _diff(a, b):
 
 
 class TerminalKeys:
-    def __init__(self, sink, esc_ms=50, clock=_ms):
+    def __init__(self, sink, esc_ms=50, clock=_ms, lone_lf_ctrl_j=False):
         self.sink, self.esc_ms, self.clock = sink, esc_ms, clock
+        # Terminals send CR for Enter: a lone LF is then Ctrl+J (the SKK key).
+        self.lone_lf_ctrl_j = lone_lf_ctrl_j
         self._state = _NORMAL
         self._since = 0
         self._p = [0, 0]          # CSI parameters
@@ -173,7 +176,10 @@ class TerminalKeys:
             self._key(kd.KEY_ENTER)
         elif b == 0x0A:
             if not cr:
-                self._key(kd.KEY_ENTER)
+                if self.lone_lf_ctrl_j:
+                    self._key(kd.KEY_CHAR, 0x6A, kd.MOD_CTRL)
+                else:
+                    self._key(kd.KEY_ENTER)
         elif b == 0x09:
             self._key(kd.KEY_TAB)
         elif b == 0x08:
