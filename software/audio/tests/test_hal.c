@@ -306,6 +306,57 @@ static void test_render(void) {
     ka_set_enable(&a, 4, false);
     CHECK_EQ(ka_render(&a, 0x3F, out, 64, 64), 0x01);
     CHECK_EQ(out[0], 127);                                    // one voice: its own level
+    // Against a sample-by-sample reference: random voices, 512 samples over 64 points.
+    uint32_t seed = 31;
+    for (unsigned round = 0; round < 200; round++) {
+        for (unsigned v = 0; v < KA_VOICES; v++) {
+            ka_set_pitch(&a, v, 20 + ka_rand(&seed) % 90, ka_rand(&seed) % 64);
+            ka_set_gain(&a, v, (uint8_t)ka_rand(&seed), (uint8_t)ka_rand(&seed));
+            ka_set_enable(&a, v, ka_rand(&seed) % 3 != 0);
+            if (v < 3) ka_set_duty(&a, v, (uint8_t)ka_rand(&seed));
+        }
+        ka_set_noise_period(&a, (uint16_t)(ka_rand(&seed) % 40));
+        uint8_t mask = (uint8_t)(ka_rand(&seed) % 64);
+        int8_t got[64], want[64];
+        unsigned drawn = ka_render(&a, mask, got, 64, 512);
+        // Reference: every sample in turn.
+        unsigned active = 0;
+        for (unsigned v = 0; v < KA_VOICES; v++)
+            if ((mask >> v & 1u) && (a.want[v][6] & 1u)) active |= 1u << v;
+        CHECK_EQ(drawn, active);
+        int32_t div = (active & (active - 1)) == 0 ? 255 : 510;
+        uint32_t ph[KA_VOICES] = {0}, cnt = 0;
+        uint16_t lfsr = 1;
+        uint32_t period = a.want[3][8] | a.want[3][9] << 8;
+        unsigned at = 0;
+        for (uint32_t s = 0; s < 512 && at < 64; s++) {
+            int32_t acc = 0;
+            for (unsigned v = 0; v < KA_VOICES; v++) {
+                const uint8_t *r = a.want[v];
+                int x;
+                if (v == 3) {
+                    x = (lfsr >> 14 & 1u) ? 127 : -127;
+                    if (cnt == 0) {
+                        lfsr = (uint16_t)(((lfsr << 1) | ((lfsr >> 14 ^ lfsr >> 13) & 1u)) & 0x7FFF);
+                        cnt = period;
+                    } else {
+                        cnt--;
+                    }
+                } else {
+                    x = v < 3 ? ((ph[v] >> 16 & 255) < r[3] ? 127 : -127)
+                              : (int8_t)a.wave[v - 4][ph[v] >> (24 - r[7])];
+                    ph[v] = (ph[v] + (r[0] | (uint32_t)r[1] << 8 | (uint32_t)r[2] << 16)) & 0xFFFFFFu;
+                }
+                if (active >> v & 1u) acc += x * ((r[4] + r[5]) / 2);
+            }
+            while (at < 64 && at * 512u / 64u == s) {
+                int32_t y = acc / div;
+                want[at++] = (int8_t)(y > 127 ? 127 : y < -127 ? -127 : y);
+            }
+        }
+        if (!active) memset(want, 0, sizeof want);
+        CHECK(!memcmp(got, want, sizeof got));
+    }
     // Rendering never sends anything.
     ka_flush(&a, &f);
     ka_audio before = a;

@@ -52,7 +52,7 @@ VISIBLE_TRACKS = 4
 FIELD_CH = (0, 4, 5, 7, 9, 10, 11)  # character of each cursor field in a cell
 FIELD_W = (3, 1, 1, 1, 1, 1, 1)
 PANEL_X = 228
-PANEL_INSTS = 4                  # instrument lines; the scope is below them
+PANEL_INSTS = 3                  # instrument lines; the scope is below them
 # Piano keys: offset in semitones from C of the current octave.
 PIANO = {}
 for _i, _c in enumerate('zsxdcvgbhnjm,l.;/'):
@@ -185,12 +185,18 @@ def ram_songs(mount='/ramsongs', blocks=32, block_size=512):
 
 
 WAVE_X, WAVE_Y = 8, 4            # the wave editor's canvas: 256 x 128 in the work area
-# The scope in the panel: 28 points, 3 px each, over 512 samples (10.7 ms).
-SCOPE_X, SCOPE_Y, SCOPE_W, SCOPE_H = PANEL_X + 1, 134, 84, 30
-SCOPE_POINTS, SCOPE_SPAN, SCOPE_PX = 28, 512, 3
-SCOPE_RATES_MS = (66, 133, 266, 533)      # about 15, 7.5, 3.8 and 1.9 updates a second
+# The scope in the panel: 4 x 2 sprites (64 x 32 px), 64 points over 512
+# samples (10.7 ms), drawn in C by Desktop.trace(). Placed on the screen's
+# 8 px tile grid (the work area starts at 1, 23), so a change touches 8 x 4
+# tiles and no more.
+SCOPE_X, SCOPE_Y, SCOPE_COLS, SCOPE_ROWS = 231, 129, 4, 2
+SCOPE_W, SCOPE_H = 16 * SCOPE_COLS, 16 * SCOPE_ROWS
+SCOPE_POINTS, SCOPE_SPAN = 64, 512
+SCOPE_FG, SCOPE_BG = 8, 2
+SCOPE_RATES_MS = (100, 200, 400, 800)     # 10, 5, 2.5 and 1.25 updates a second
 SCOPE_BUDGET_US = 6000                    # an average update cost above this slows the scope down
 SCOPE_LATE_US = 3000                      # so does music running this late on average
+SCOPE_SETTLE = 10                         # updates before the lateness counts
 SCOPE_NAMES = ('P1', 'P2', 'P3', 'NO', 'W1', 'W2')
 
 
@@ -203,26 +209,26 @@ class Scope:
     to read its audio output back without RTL changes; the label says SYNTH.
 
     Views: the mix, one track, or off (再生 > スコープ cycles). At most about
-    15 updates a second. When the running average of its update cost exceeds
+    10 updates a second. When the running average of its update cost exceeds
     SCOPE_BUDGET_US, or the running average of the music's lateness exceeds
     SCOPE_LATE_US, the rate halves, down to off (shown as OFF(auto)); ten
     cheap updates in a row bring it back up a step. Single slow updates do
     not count: the average does.
 
-    Drawing: the trace is fill records (each costs about 0.5 ms to replace on
-    the RP2040), one per column but a flat run of columns as one record, so
-    silence is one record and a pulse wave a few; an unchanged picture is not
-    touched. While a dialog is open the scope is hidden and its records freed."""
+    Drawing: the trace goes into 8 sprites (4 x 2, 64 x 32 px) through
+    Desktop.trace(), which draws the line in C and redraws only the pixels
+    that changed; kagura_audio.render() fills the points, also in C. While a
+    dialog is open the scope is hidden: its sprite records are removed, as
+    the wave editor may need nearly all of the desktop's records."""
 
     def __init__(self, app):
         self.app = app
         w = app.win
-        self.label = w.text(PANEL_X, 125, '', 4, -1, 1)
+        self.label = w.text(PANEL_X, 117, '', 4, -1, 1)
         w.rect(SCOPE_X - 1, SCOPE_Y - 1, SCOPE_W + 2, SCOPE_H + 2, 4)
-        w.hline(SCOPE_X, SCOPE_Y + SCOPE_H // 2, SCOPE_W, 3)
+        self.sprites = [app.desk.sprite() for _ in range(SCOPE_COLS * SCOPE_ROWS)]
         self.pts = bytearray(SCOPE_POINTS)
-        self.ids = []                  # the trace's records
-        self.rects = None              # what they show: a tuple of (x, y, w, h)
+        self.ids = []                  # the sprites' records in the window, when shown
         self.view = 0                  # 0 the mix, 1.. a track (index + 1), None off
         self.level = 0                 # index into SCOPE_RATES_MS; past the end: off (auto)
         self.next_ms = 0
@@ -233,6 +239,7 @@ class Scope:
         self.updates, self.cost_max_us, self.cost_sum_us = 0, 0, 0
         self.cost_avg = 0              # running average of the update cost (us)
         self.late_avg = 0              # running average of the music's lateness (us)
+        self.seen = 0                  # measured updates since the scope was shown
         self.show_label()
 
     def mask(self):
@@ -254,35 +261,15 @@ class Scope:
     def clear(self):
         for i in self.ids:
             self.app.win.remove(i)
-        self.ids, self.rects = [], None
+        self.ids = []
         self.warm = False
+        self.seen = 0
+        self.late_avg = 0
 
-    def trace(self):
-        """The rectangles of the trace: per column the segment from the
-        previous point, consecutive flat columns at one height merged."""
-        half, mid = SCOPE_H // 2 - 1, SCOPE_Y + SCOPE_H // 2
-        out, prev = [], None
-        run_x = run_y = None
-        for i in range(SCOPE_POINTS):
-            v = self.pts[i]
-            y = mid - ((v - 256 if v > 127 else v) * half) // 127
-            a = y if prev is None else prev
-            prev = y
-            x = SCOPE_X + SCOPE_PX * i
-            if a == y:                                  # flat: extend or start a run
-                if run_y == y:
-                    continue
-                if run_x is not None:
-                    out.append((run_x, run_y, x - run_x, 1))
-                run_x, run_y = x, y
-                continue
-            if run_x is not None:
-                out.append((run_x, run_y, x - run_x, 1))
-                run_x = run_y = None
-            out.append((x, min(a, y), SCOPE_PX, abs(a - y) + 1))
-        if run_x is not None:
-            out.append((run_x, run_y, SCOPE_X + SCOPE_PX * SCOPE_POINTS - run_x, 1))
-        return tuple(out)
+    def place(self):
+        w = self.app.win
+        self.ids = [w.sprite(SCOPE_X + 16 * (k % SCOPE_COLS), SCOPE_Y + 16 * (k // SCOPE_COLS), sp, 1)
+                    for k, sp in enumerate(self.sprites)]
 
     def cycle(self):
         n = self.app.song.tracks
@@ -306,14 +293,10 @@ class Scope:
         if time.ticks_diff(now_ms, self.next_ms) < 0:
             return
         t0 = time.ticks_us()
+        if not self.ids:
+            self.place()
         ka.render(self.mask(), self.pts, SCOPE_SPAN)
-        rects = self.trace()
-        if rects != self.rects:
-            w = self.app.win
-            for i in self.ids:
-                w.remove(i)
-            self.ids = [w.fill_rect(x, y, rw, rh, 8) for x, y, rw, rh in rects]
-            self.rects = rects
+        self.app.desk.trace(self.sprites, SCOPE_COLS, self.pts, SCOPE_FG, SCOPE_BG)
         cost = time.ticks_diff(time.ticks_us(), t0)
         self.updates += 1
         if self.warm:
@@ -334,13 +317,17 @@ class Scope:
         calls, late = st['calls'] - self.calls, st['late_sum_us'] - self.late_sum
         self.calls, self.late_sum = st['calls'], st['late_sum_us']
         self.late_avg = (3 * self.late_avg + (late // calls if calls > 0 else 0)) // 4
-        if self.cost_avg > SCOPE_BUDGET_US or self.late_avg > SCOPE_LATE_US:
+        self.seen += 1
+        # Lateness counts after a few updates: the first ones follow whatever
+        # started the music (a song load, a whole page drawn), not the scope.
+        late_bad = self.seen > SCOPE_SETTLE and self.late_avg > SCOPE_LATE_US
+        if self.cost_avg > SCOPE_BUDGET_US or late_bad:
             self.level += 1
             self.good = 0
             self.cost_avg //= 2        # judge the slower rate afresh
             if self.level >= len(SCOPE_RATES_MS):
                 self.clear()
-        elif self.level and self.cost_avg < SCOPE_BUDGET_US // 3 and self.late_avg < SCOPE_LATE_US // 3:
+        elif self.level and self.cost_avg < SCOPE_BUDGET_US // 2 and self.late_avg < SCOPE_LATE_US * 2 // 3:
             self.good += 1
             if self.good >= 10:
                 self.level -= 1

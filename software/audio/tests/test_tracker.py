@@ -379,31 +379,38 @@ def test_scope():
     app.now_ms = lambda: 0          # handle() keeps the scope at time 0; the test drives it
     sc = app.scope
     sc.update(0)
-    check(app.shown.get('scope') == 'SYNTH MIX 15Hz', 'label: %r' % app.shown.get('scope'))
-    mid = T.SCOPE_Y + T.SCOPE_H // 2
-    check(sc.rects == ((T.SCOPE_X, mid, T.SCOPE_W, 1),), 'silence: one flat record at the centre: %r' % (sc.rects,))
-    check(len(sc.ids) == 1, 'one record for silence')
+    check(app.shown.get('scope') == 'SYNTH MIX 10Hz', 'label: %r' % app.shown.get('scope'))
+    def lit_rows():                                 # canvas rows holding trace pixels
+        rows = set()
+        for k, sp in enumerate(sc.sprites):
+            for y in range(16):
+                for x in range(16):
+                    if sp.get(x, y) == T.SCOPE_FG:
+                        rows.add(16 * (k // T.SCOPE_COLS) + y)
+        return rows
+    check(len(sc.ids) == T.SCOPE_COLS * T.SCOPE_ROWS, 'one sprite record per sprite')
+    check(lit_rows() == {T.SCOPE_H // 2}, 'silence: a flat line at the centre: %r' % (sorted(lit_rows()),))
     # A sounding note shows a waveform.
     typ(app, 'z')                                   # previews C-4 on PULSE1
     audio.pump()
     sc.update(1000)
-    check(any(r[3] > 1 for r in sc.rects), 'a pulse wave is drawn')
-    check(len(sc.ids) == len(sc.rects) <= T.SCOPE_POINTS, 'at most one record per column')
-    check(all(T.SCOPE_X <= r[0] and r[0] + r[2] <= T.SCOPE_X + T.SCOPE_W and
-              T.SCOPE_Y <= r[1] and r[1] + r[3] <= T.SCOPE_Y + T.SCOPE_H for r in sc.rects), 'inside the box')
+    rows = lit_rows()
+    mid = T.SCOPE_H // 2
+    check(min(rows) < mid - 4 and max(rows) > mid + 4, 'a pulse wave above and below the centre: %r'
+          % (sorted(rows),))
     check(sc.updates == 2, 'updates %d' % sc.updates)
-    sc.update(1010)                                 # within 66 ms: no update
-    check(sc.updates == 2, 'at most about 15 updates a second')
-    sc.update(1070)
-    check(sc.updates == 3, 'and again after 66 ms')
+    sc.update(1050)                                 # within 100 ms: no update
+    check(sc.updates == 2, 'at most 10 updates a second')
+    sc.update(1100)
+    check(sc.updates == 3, 'and again after 100 ms')
     # Views: the mix, each track, off.
     names = []
     for _ in range(app.song.tracks + 2):
         app.menu(2, 6)                              # 再生 > スコープ
         names.append(app.shown.get('scope'))
-    check(names[:2] == ['SYNTH P1 15Hz', 'SYNTH P2 15Hz'] and names[4] == 'SYNTH W1 15Hz', 'views %r' % (names,))
+    check(names[:2] == ['SYNTH P1 10Hz', 'SYNTH P2 10Hz'] and names[4] == 'SYNTH W1 10Hz', 'views %r' % (names,))
     check(names[6] == 'SYNTH OFF' and not sc.ids, 'off frees the records')
-    check(names[7] == 'SYNTH MIX 15Hz', 'back to the mix')
+    check(names[7] == 'SYNTH MIX 10Hz', 'back to the mix')
     # Hidden under a dialog: records freed for it, shown again afterwards.
     sc.update(5000)
     app.menu(2, 5)                                  # 設定… (song dialog)
@@ -416,7 +423,7 @@ def test_scope():
     t = 10000
     sc.cost_avg = 0
     sc.measured(t, 3 * T.SCOPE_BUDGET_US)
-    check(app.shown.get('scope').endswith('15Hz'), 'a single slow update does not slow the scope')
+    check(app.shown.get('scope').endswith('10Hz'), 'a single slow update does not slow the scope')
     seen = []
     for _ in range(40):
         sc.measured(t, 3 * T.SCOPE_BUDGET_US)
@@ -426,7 +433,7 @@ def test_scope():
             seen.append(label)
         if label == 'OFF(auto)':
             break
-    check(seen == ['15Hz', '7Hz', '3Hz', '1Hz', 'OFF(auto)'][-len(seen):] and seen[-1] == 'OFF(auto)',
+    check(seen == ['10Hz', '5Hz', '2Hz', '1Hz', 'OFF(auto)'][-len(seen):] and seen[-1] == 'OFF(auto)',
           'throttled step by step to off: %r' % (seen,))
     check(not sc.ids, 'auto-off frees the records')
     n = sc.updates
