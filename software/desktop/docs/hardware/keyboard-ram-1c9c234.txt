@@ -1,0 +1,47 @@
+== probe
+PROBE text False insert False free 153504 console True paused False
+== decode
+READY
+K 1 72 0
+K 1 105 0
+T e7a59e
+T e6a5bd
+K 4 0 1
+K 15 0 2
+K 15 0 1
+K 10 0 1
+K 13 0 0
+K 14 0 0
+K 8 0 1
+K 8 0 0
+K 6 0 0
+K 9 0 0
+K 1 97 2
+K 1 119 2
+K 7 0 0
+K 1 113 4
+DECODED 16 2 0 0
+DECODE ok 18 events
+== burst
+READY
+BURST 2000 948651
+BURST received 2000 of 2000, host 977 ms
+== bench
+BENCH decode_us_per_byte 123.16 bytes 8750 heap_delta 960
+BENCH heap_locked_feed ok
+BENCH idle_pump_us 250.2
+BENCH memmove 1 us 53.5
+BENCH memmove 1024 us 111.0
+BENCH memmove 4096 us 285.1
+BENCH memmove 8192 us 516.2
+BENCH memmove 16384 us 978.8
+BENCH free 144240
+== ctrl-c
+READY
+K 1 97 0
+K 1 98 0
+LOOP_ENDED
+CTRLC interrupted True
+ALIVE 42
+PROBE text False insert False free 145776 console True paused False
+ALL OK

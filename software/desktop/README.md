@@ -93,6 +93,33 @@ while (ev := desk.poll()) is not None:
 
 The font data (`software/micropython/fonts/misaki8.kfnt`, 71,718 B, 7,171 glyphs) is © Num Kadoma and licensed separately; see `text/NOTICE.md` and `software/micropython/fonts/README.md`.
 
+## Keyboard input
+
+`software/micropython/kagura/keyinput.py` connects a keyboard to the desktop in two parts. Either part can be replaced.
+
+- **`TerminalKeys`** decodes VT/xterm terminal bytes into the desktop's normalized calls: `key(KEY_*, ch, MOD_*)` for keys and `text(buffer)` for UTF-8. It handles printable ASCII, UTF-8, Enter (CRLF counted once), Tab, Backspace, Ctrl+letters, arrows, Home/End, Insert/Delete, F6 and F10, with Shift, Ctrl and Alt from xterm modifier parameters. A lone Escape is reported after 50 ms. Other sequences are consumed and counted. `feed()` allocates nothing. A future USB HID-to-UART bridge (a XIAO RP2040 is planned) needs only to send the same sequences, or to come with its own decoder that makes the same two calls.
+- **`StdinSource`** reads stdin without blocking, at most 64 bytes per `pump()`. On the board, stdin is the console's stream: UART RX through dupterm, plus USB CDC. The console stays the only reader of the UART, and nothing else consumes those bytes.
+- **Key repeat.** Terminals send key presses only, never releases. Auto-repeat arrives as repeated bytes, so the decoder has no repeat timer.
+- **Ctrl+C is untouched.** It raises KeyboardInterrupt before any of this code sees it, and `kbd_intr` is never changed. An application's `finally: desk.close()` brings the console back.
+- **Clipboard keys.** Ctrl+Insert, Shift+Insert and Shift+Delete arrive as `ESC [2;5~`, `ESC [2;2~` and `ESC [3;2~`. Many terminal programs keep Shift+Insert for their own paste and send the pasted text instead, which then arrives as typing. The 編集 menu offers the same commands either way.
+
+`examples/desktop_keys.py` with `main(script=False)` is the keyboard session, labelled キーボード.
+
+Measured on the RP2040 from RAM, with firmware 1c9c234 and no flashing (`tools/kagura-keyboard-device.py`, log in `docs/hardware/keyboard-ram-1c9c234.txt`):
+
+| check | result |
+|---|---|
+| terminal sequences over USB CDC, split across packets mid-UTF-8 and mid-CSI | 18 of 18 events exact |
+| 2,000 bytes sent at once | 2,000 received, about 2.1 kB/s |
+| decoder | 123 µs per byte; `feed()` passes under `heap_lock` |
+| idle `pump()` (nothing to read) | 250 µs |
+| `memmove` up by one byte, net of 54 µs call cost: 1 / 4 / 8 / 16 KB | 58 / 232 / 463 / 925 µs |
+| Ctrl+C during the input loop | KeyboardInterrupt, `finally` ran, REPL answers, console attached |
+
+A keystroke is at most about 6 bytes (an escape sequence), so decoding costs under 1 ms. That is well inside a frame, since a tile-transfer run costs about 1.1 ms.
+
+These checks cover USB CDC only. The UART RX path and a physical keyboard have not been tested yet.
+
 ## Ownership and memory
 
 - **One static C state owns everything.** The framebuffer, windows and all pools live outside the GC heap, about 46 KB on the RP2040.
