@@ -28,7 +28,7 @@ A complete application is `software/micropython/examples/desktop_ja.py`. It has 
 | `text/` | `kj_text`: strict UTF-8 decoding, KJ8F glyph lookup and measurement (from PR #71, without Wren); `kj_misaki8`: the repository's Misaki font, embedded unchanged in read-only memory; `kd_edit`: the bounded UTF-8 editing core | C11 |
 | `retained/` | `kdm`: retained display lists for script-driven windows, fixed pools, event ring, menus | core |
 | `binding/` | `kagura_desktop`, the MicroPython user C module (handles, errors, sinks) | kdm, MicroPython |
-| `tests/` | C tests (text, editing core with 4 mutants, kdm with 7 mutants) and MicroPython tests (binding, hardware session) | |
+| `tests/` | C tests (text, editing core with 4 mutants, kdm with 9 mutants) and MicroPython tests (binding, hardware session) | |
 | `tools/` | `test.sh`, `build_unix.sh`, `build_firmware.sh` | |
 
 The hardware session is `software/micropython/kagura/desktop.py`, frozen into the firmware. It uses the console's SDK device, so the board has one hardware owner and one transport.
@@ -60,6 +60,36 @@ Flat buffer or gap buffer, from `kd_edit_bench` on the host (ns per edit):
 | 16 KB | 187 / 0.6 | 98 / 35 |
 
 The flat buffer's worst case is one `memmove` of the document per keystroke. It grows linearly and stays far below the cost of a tile transfer, which is about 1.1 ms per run. A gap buffer would need every view to draw two spans, or close the gap first. The RP2040 figure for this worst case is still to be measured on the board (PR C).
+
+## Fields and keyboard
+
+```python
+w = desk.create_window('名前を付けて保存', 60, 60, 200, 72)
+name = w.field(6, 18, 186, 'メモ.TXT')              # single-line field, focused first
+ok = w.button(36, 38, 56, 16, '保存', kd.BTN_DEFAULT, True)   # True: focusable
+desk.key(kd.KEY_CHAR, 'a')        # keys as before
+desk.text('日本語')               # UTF-8 text, as an input method commits it
+while (ev := desk.poll()) is not None:
+    if ev[0] == kd.ACTIVATE and ev[2] == ok:        # Enter in the field, or Enter/Space on 保存
+        save(w.get_text(name))
+    elif ev[0] == kd.CHANGE:                        # a key edited field ev[2]
+        ...
+```
+
+- **Fields** are retained records like the others. Each one draws itself, with its caret and selection, inside the window's draw. A keystroke invalidates only what changed: the text from the first changed character to the field's edge, and the old and new caret or selection. If the text scrolls, the inside of the field is invalidated. The caret is visible only in the focused field of the active window. It does not blink yet.
+- **Limits.** A field holds 63 bytes of UTF-8 (`kd.FIELD_BYTES`), and up to 8 fields exist at once. Long text scrolls horizontally. `w.selection(id)` and `w.select(id, a, b)` count characters, as Python's `str` does.
+- **Keys go to the desktop first:** an open menu, F10, F6 or Ctrl+Tab, Ctrl+W, and Ctrl+arrows on movable windows.
+- **Then to the active window**, in this order:
+  1. Tab and Shift+Tab move between the window's fields and focusable buttons.
+  2. A focused field edits: printable ASCII, Backspace, Delete, Left, Right, Home and End (Shift selects), Ctrl+A, Ctrl+Insert (copy), Shift+Insert (paste) and Shift+Delete (cut).
+  3. Enter or Space on a focused button queues `ACTIVATE`. Enter elsewhere activates a focusable default button.
+  4. Everything else (Escape, Up, Down and the other keys) is queued for the application as before.
+
+  A window without focusable controls therefore behaves exactly as before.
+- **Ctrl+C stays MicroPython's KeyboardInterrupt.** It is never a clipboard key. `Window.edit(id, kd.EDIT_COPY | EDIT_CUT | EDIT_PASTE | EDIT_SELECT_ALL)` gives menus the same commands. The clipboard, 255 bytes, is shared by all fields (`desk.clipboard()`, `desk.set_clipboard(s)`).
+- **No allocation while typing.** `key`, `text`, `poll_into` and `present` allocate nothing, so typing runs under `heap_lock()`.
+
+`software/micropython/examples/desktop_keys.py` is a keyboard-only tour covering menus, window switching, fields, Japanese text, copy and paste, scrolling and a dialog. It is deterministic and writes no files. On the board it is paced for watching (`key_ms`, `step_ms`). The window says whether the input is scripted (スクリプト) or comes from a keyboard (キーボード).
 
 The font data (`software/micropython/fonts/misaki8.kfnt`, 71,718 B, 7,171 glyphs) is © Num Kadoma and licensed separately; see `text/NOTICE.md` and `software/micropython/fonts/README.md`.
 
