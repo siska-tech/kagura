@@ -105,6 +105,34 @@
 
 ![wave editor, host render](hardware/wave-editor-host.png)
 
+## Tracker playback timing and the scope (firmware with `kagura_audio.render`)
+
+`tools/kagura-audio-board.py scope` ([click](hardware/scope-click-scopedev.txt), [with the demo song](hardware/scope-scopedev.txt)) plays a song in the real tracker loop (`handle`, `present`, `pump`) for 15 s, with the scope off and then on.
+
+**The tracker's own loop was the larger problem.** Before this change it re-formatted all 16 grid rows on every `handle()`.
+
+| click song | loop | late mean / max | folded | HDMI onset jitter p50 / p95 / max |
+|---|---|---|---|---|
+| before | 52 ms | 22.7 / 75 ms | 451 | 3.0 / 7.7 / 8.3 ms |
+| redraw only on change, 4 rows per loop while playing | 3 ms | 1.2 / 23 ms | 5 | 0.47 / 1.1 / 7.9 ms |
+
+**Scope cost:**
+
+| song | scope | updates in 15 s | cost mean / max | late mean | HDMI jitter p95 / max | final state |
+|---|---|---|---|---|---|---|
+| click (1 track) | off | — | — | 1.12 ms | 1.1 / 7.9 ms | |
+| click | MIX | 92–220 (6–15 Hz) | 1.9–2.7 / 21 ms | 1.3–1.5 ms | 1.0–2.2 / 7.7–8.2 ms | 3–15 Hz |
+| demo (4 tracks) | MIX | 5 | 9.8 / 12.8 ms | 1.5 ms | — | OFF(auto) |
+
+**Reading the tables:**
+
+- **The protection works.** The scope never made the music fall behind: the throttle stepped it down, or off, first.
+- **It is too slow for dense music.** For the demo song, a full-mix trace needs about 20 fill records, and replacing one costs about 0.5 ms on the RP2040, so it switches itself off.
+- **The way out:** rasterize the trace in C (a polyline into sprite pixels) instead of one record per segment. That is an addition to the desktop's C graphics API and is left open in this PR.
+- **The remaining ~20 ms spikes** happen with the scope off too: they come from `present()` after grid redraws.
+
+**Tracker session with the scope:** 11 of 12 scene CRCs equal the host, scene 7 being live playback ([board](hardware/tracker-scopedev.txt), [host](hardware/tracker-host-scenes-scope.txt)). The tour keeps the scope off for its scenes, because the picture depends on what is sounding at that instant, and turns it on through the menu while the song plays.
+
 ## Long playback and recovery
 
 **Soak** (`soak --seconds 600`, [log](hardware/soak-9759a49.txt)): the demo song for 10 minutes, with a window moving and a Japanese character typed on every loop.

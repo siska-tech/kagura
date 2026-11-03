@@ -1,0 +1,7 @@
+HOST_START scope 2026-11-03T23:30:46
+FREE 139488
+MPY desktop_tracker.mpy 25264 bytes
+TRACKER_LOADED free 65408
+SCOPE off ticks 902 late_max_us 19298 late_mean_us 1124 folded 5 loops 4979 present_max_us 50815 updates 0 cost_mean_us 0 cost_max_us 0 cost_avg 0 late_avg 0 label SYNTH_OFF error_code 0 audio_status 0x00
+SCOPE mix ticks 901 late_max_us 20633 late_mean_us 1418 folded 4 loops 4545 present_max_us 54127 updates 92 cost_mean_us 2745 cost_max_us 20604 cost_avg 4471 late_avg 1444 label SYNTH_MIX_3Hz error_code 0 audio_status 0x00
+SCOPE demo-mix ticks 842 late_max_us 36979 late_mean_us 1524 folded 8 loops 4548 present_max_us 81135 updates 5 cost_mean_us 9839 cost_max_us 12813 cost_avg 2527 late_avg 3405 label SYNTH_OFF(auto) error_code 0 audio_status 0x00

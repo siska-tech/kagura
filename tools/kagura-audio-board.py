@@ -23,6 +23,10 @@ PCM) and tools/kagura-audio-timing.py measures the note timing on it.
            note on WAVE1 with silence between, and its table printed. With
            --wav, tools/kagura-audio-wave.py checks that the recorded HDMI
            audio has each table's shape.
+  scope    the tracker plays the click song for 15 s with its scope off,
+           then 15 s with it on (MIX, up to 15 Hz): update cost, present()
+           cost, the player's lateness, the scope's final rate; with --wav,
+           the click timing of both on the HDMI audio.
   soak     the demo song for --seconds with window moves and typing: ticks
            against the exact tempo, heap low-water mark, FPGA errors.
   reset    soft reset (kagura_audio state dropped, init works again, the
@@ -450,6 +454,65 @@ audio.close()
 """
 
 
+SCOPE = r"""
+from kagura.desktop import Desktop
+desk = Desktop(menus=DT.MENUS, cursor=False)
+audio = DT.AudioSession(d)
+desk.audio = audio
+app = DT.Tracker(desk, audio, files, 'スクリプト')
+app.song = DT.Song.from_bytes(CLICK)
+app.dirty_song = True
+app.version += 1
+desk.present()
+time.sleep_ms(2500)
+
+def run(name, seconds):
+    ka.reset_stats()
+    sc = app.scope
+    sc.updates = sc.cost_sum_us = sc.cost_max_us = 0
+    sc.calls = sc.late_sum = 0
+    app.play()
+    t0 = time.ticks_ms()
+    top = loops = 0
+    while time.ticks_diff(time.ticks_ms(), t0) < seconds * 1000:
+        app.handle()
+        a = time.ticks_us()
+        desk.present()
+        dt = time.ticks_diff(time.ticks_us(), a)
+        if dt > top:
+            top = dt
+        audio.pump()
+        loops += 1
+    st = ka.stats()
+    app.stop()
+    err, ast = fpga()
+    print('SCOPE %s ticks %d late_max_us %d late_mean_us %d folded %d loops %d present_max_us %d '
+          'updates %d cost_mean_us %d cost_max_us %d cost_avg %d late_avg %d label %s error_code %d '
+          'audio_status 0x%02x' % (
+              name, st['ticks'], st['late_max_us'], st['late_sum_us'] // max(1, st['calls']), st['folded'],
+              loops, top, sc.updates, sc.cost_sum_us // max(1, sc.updates), sc.cost_max_us, sc.cost_avg,
+              sc.late_avg, app.shown.get('scope', '').replace(' ', '_'), err, ast))
+    time.sleep_ms(2500)
+
+while app.scope.view is not None:
+    app.scope.cycle()                               # round to OFF
+run('off', 15)
+app.scope.cycle()                                   # MIX
+run('mix', 15)
+# The demo song (four tracks, the tour's song): denser than the click.
+app.song = DT.Song.from_bytes(DEMO)
+app.dirty_song = True
+app.version += 1
+app.scope.cycle()
+while app.scope.view != 0:
+    app.scope.cycle()
+run('demo-mix', 15)
+desk.audio = None
+desk.close()
+audio.close()
+"""
+
+
 def record(args, wav=None, video=None):
     src = 'video=UGREEN 15390:audio=' + AUDIO_DEVICE
     cmd = [args.ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-rtbufsize', '512M', '-f', 'dshow',
@@ -470,7 +533,7 @@ def record(args, wav=None, video=None):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('phase', choices=('bench', 'tracker', 'wave', 'soak', 'reset'))
+    p.add_argument('phase', choices=('bench', 'tracker', 'wave', 'scope', 'soak', 'reset'))
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--wav', type=Path)
     p.add_argument('--video', type=Path)
@@ -510,7 +573,7 @@ def main():
     free = "import gc\ngc.collect()\nprint('FREE', gc.mem_free())\n"
     try:
         run(b, log, free)
-        run(b, log, common if args.phase != 'tracker' else COMMON % {'click': '', 'demo': ''})
+        run(b, log, common if args.phase not in ('tracker', 'wave') else COMMON % {'click': '', 'demo': ''})
         if args.phase == 'bench':
             run(b, log, BENCH, timeout=600)
         elif args.phase == 'soak':
@@ -524,6 +587,8 @@ def main():
             run(b, log, LIBLOAD)
             if args.phase == 'wave':
                 run(b, log, WAVE, timeout=300)
+            elif args.phase == 'scope':
+                run(b, log, SCOPE, timeout=300)
             else:
                 run(b, log, TRACKER % {'key_ms': args.key_ms, 'step_ms': args.step_ms}, timeout=1800)
         time.sleep(3)
@@ -538,7 +603,7 @@ def main():
         for line in r.stdout.splitlines():
             log(line)
     elif args.wav:
-        bpm = '150' if args.phase == 'bench' else '140'
+        bpm = '150' if args.phase in ('bench', 'scope') else '140'
         r = subprocess.run([sys.executable, '-I', str(ROOT / 'tools/kagura-audio-timing.py'), str(args.wav),
                             '--bpm', bpm, '--min-onsets', '50'], capture_output=True, text=True)
         for line in r.stdout.splitlines():

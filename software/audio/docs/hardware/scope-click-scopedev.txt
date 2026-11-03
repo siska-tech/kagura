@@ -1,0 +1,9 @@
+HOST_START scope 2026-11-03T23:25:20
+FREE 139488
+MPY desktop_tracker.mpy 25156 bytes
+TRACKER_LOADED free 65536
+SCOPE off ticks 902 late_max_us 22653 late_mean_us 1172 folded 5 loops 4975 present_max_us 50542 updates 0 cost_mean_us 0 cost_max_us 0 label SYNTH_OFF error_code 0 audio_status 0x00
+SCOPE mix ticks 901 late_max_us 19094 late_mean_us 1296 folded 3 loops 4537 present_max_us 53673 updates 136 cost_mean_us 2143 cost_max_us 20588 label SYNTH_MIX_7Hz error_code 0 audio_status 0x00
+FILE build\phase6\scope-final.wav seconds 48.5 rate 48000 onsets 300 nominal_tick_us 16666.7
+SECTION 0 start 9.78 end 24.77 onsets 151 span_ticks 900 tick_us 16666.107 tempo_error_ppm -34 jitter_us p50 471 p95 1083 max 7924 rms 1240
+SECTION 1 start 27.34 end 42.34 onsets 149 span_ticks 900 tick_us 16666.102 tempo_error_ppm -34 jitter_us p50 480 p95 2199 max 8192 rms 1227

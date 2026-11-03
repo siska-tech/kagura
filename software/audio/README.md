@@ -218,6 +218,11 @@ The cursor, its field and the playback row are movable fills under transparent t
   - **Pointer:** pressing and dragging in the canvas draws, with interpolated lines. It is wired to POINTER_DOWN/MOVE/UP and tested by injecting them, so it works when a pointer is connected.
   - **Drawing cost:** one fill record per sample, so an edit redraws that column only (a few tiles). A 256-sample wave uses 256 of the desktop's 320 records. No framebuffer is allocated.
   - **Saving:** waves are saved in the song (KSNG wave records) and reload byte for byte.
+- **The scope** (lower right) shows a synthesized waveform: the mix, one track, or off (再生 > スコープ cycles).
+  - `kagura_audio.render()` draws what the HAL has set the voices to play, each from phase 0. It is **not** captured audio: the hardware has no read-back path without RTL changes, and the label says SYNTH.
+  - It updates at up to about 15 Hz, as fill records (flat runs merged). The rate halves when the running average of its cost exceeds 6 ms, or the music's average lateness exceeds 3 ms, down to OFF(auto).
+  - It is hidden while a dialog is open.
+- **Redrawing during playback**: the grid's text is rebuilt only when what it shows changes. While music plays, a page turn is drawn 4 rows per loop.
 - **Files**: `NAME.KSN` in one folder with write-then-rename. 書き出し also writes `NAME.H`. `ram_songs()` keeps them in RAM.
   - File I/O goes in 512-byte pieces with the audio pumped between them, so a save while the music plays is mostly in time; single littlefs operations can still take tens of ms.
 - **A scripted session** (`main(script=True)`, `--host` on a PC) composes the demo song with the tracker's own keys. It plays two loops, saves, reopens and exports, printing a CRC per scene.

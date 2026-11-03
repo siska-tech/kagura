@@ -7,6 +7,7 @@ set(KA_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
 target_sources(usermod_kagura_audio INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modkagura_audio.c
     ${KA_ROOT}/hal/ka_audio.c
+    ${KA_ROOT}/hal/ka_render.c
     ${KA_ROOT}/seq/ks_song.c
     ${KA_ROOT}/seq/ks_player.c
 )

@@ -14,7 +14,7 @@ if(KA_SANITIZE)
     add_link_options(-fsanitize=address,undefined)
 endif()
 
-add_library(ka_audio STATIC hal/ka_audio.c)
+add_library(ka_audio STATIC hal/ka_audio.c hal/ka_render.c)
 target_include_directories(ka_audio PUBLIC hal)
 
 enable_testing()
