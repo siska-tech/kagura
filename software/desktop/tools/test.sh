@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Tests of the native desktop library, from the repository root (WSL/Linux):
-#   1. host build: text engine (UTF-8, all Misaki glyphs), kdm and 7 mutants;
+#   1. host build: text engine (UTF-8, all Misaki glyphs), editing core and
+#      4 mutants, kdm and 7 mutants;
 #   2. the unix MicroPython port with the kagura_desktop module;
 #   3. tests/test_binding.py on it (API, lifetimes, GC, errors, Japanese),
 #      tests/test_session.py (kagura.desktop against a recording device) and
