@@ -9,7 +9,8 @@
 #      tests/test_keyinput.py (terminal keyboard decoding, end to end),
 #      tests/test_editor.py (the text editor: files, dialogs, sessions), and
 #      the Japanese desktop demo (examples/desktop_ja.py) and the keyboard
-#      demo (examples/desktop_keys.py) without hardware.
+#      demo (examples/desktop_keys.py) and the video showcase
+#      (examples/desktop_showcase.py) without hardware.
 #   bash software/desktop/tools/test.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -24,3 +25,7 @@ MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/tes
 MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_editor.py"
 "$MP" "$ROOT/software/micropython/examples/desktop_ja.py" --host
 "$MP" "$ROOT/software/micropython/examples/desktop_keys.py" --host
+SHOW_DOCS="$(mktemp -d)"
+MICROPYPATH="$ROOT/software/micropython:$ROOT/software/micropython/examples" "$MP" \
+    "$ROOT/software/micropython/examples/desktop_showcase.py" --host "$SHOW_DOCS"
+rm -rf "$SHOW_DOCS"

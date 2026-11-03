@@ -135,6 +135,20 @@ Measured on the RP2040 from RAM, with firmware 1c9c234 and the file layer on a R
 
 The editor's per-keystroke timing on the board needs firmware with the editor.
 
+## Showcase for video
+
+`software/micropython/examples/desktop_showcase.py` is a paced tour made to be filmed from the HDMI output. It runs about 2 minutes; `main(pace=1.5)` is slower.
+
+- **Layout:**
+  - One subject at a time, with no cascade of overlapping windows.
+  - A cream caption band at the bottom says what is happening.
+  - Each chapter opens with a title card.
+  - Only the 8×8 font is used, black on white or cream.
+- **Chapters:** menus by keyboard; Japanese editing (typing, selecting and replacing, scrolling); saving and reopening through the dialogs; two windows side by side switched with F6; an end card.
+- **Scripted input is labelled as such:** 入力:スクリプト. For real typing, film `desktop_editor.main()`, which says キーボード.
+- **No flash writes:** documents go to `ram_docs()`.
+- **Same frames on host and board:** each scene prints a CRC, and the host run (`tools/test.sh`) must match the board. Pacing changes only the timing.
+
 ## Keyboard input
 
 `software/micropython/kagura/keyinput.py` connects a keyboard to the desktop in two parts. Either part can be replaced.
