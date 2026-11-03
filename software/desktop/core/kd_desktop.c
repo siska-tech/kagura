@@ -643,17 +643,18 @@ static void compose_exact(kd_desktop *d, kd_rect area) {
     int tx0 = area.x >> 3, tx1 = (area.x + area.w - 1) >> 3;
     int ty0 = area.y >> 3, ty1 = (area.y + area.h - 1) >> 3;
     int cols = tx1 - tx0 + 1, rows_per_pass = KD_SNAP_TILES / cols;
+    int span = cols * 4;   // bytes of a pixel row across the band's tiles
     bool was[KD_SNAP_TILES];
     for (int ty = ty0; ty <= ty1; ty += rows_per_pass) {
         int tyn = ty + rows_per_pass - 1 < ty1 ? ty + rows_per_pass - 1 : ty1;
         kd_rect band = kd_rect_intersect(area, kd_rect_make(0, ty * 8, KD_W, (tyn - ty + 1) * 8));
+        // Snapshot the band's pixel rows: one copy per row (a copy per tile
+        // row cost thousands of small library calls per pass on the RP2040).
+        const uint8_t *src = fb->px + ty * 8 * KD_STRIDE + tx0 * 4;
+        for (int r = 0; r < (tyn - ty + 1) * 8; r++) memcpy(d->snap + r * span, src + r * KD_STRIDE, (size_t)span);
         int k = 0;
         for (int y = ty; y <= tyn; y++)
-            for (int x = tx0; x <= tx1; x++, k++) {
-                unsigned t = (unsigned)(y * KD_TILE_COLS + x);
-                kd_tile4_pack_tile(fb, t, d->snap + k * 32);
-                was[k] = kd_fb_tile_dirty(fb, t);
-            }
+            for (int x = tx0; x <= tx1; x++, k++) was[k] = kd_fb_tile_dirty(fb, (unsigned)(y * KD_TILE_COLS + x));
         d->stats.passes++;
         if (d->painter) compose_painter(d, band);
         else compose_region(d, band);
@@ -661,9 +662,11 @@ static void compose_exact(kd_desktop *d, kd_rect area) {
         for (int y = ty; y <= tyn; y++)
             for (int x = tx0; x <= tx1; x++, k++) {
                 unsigned t = (unsigned)(y * KD_TILE_COLS + x);
-                uint8_t now[32];
-                kd_tile4_pack_tile(fb, t, now);
-                bool changed = memcmp(now, d->snap + k * 32, 32) != 0;
+                const uint8_t *now = fb->px + y * 8 * KD_STRIDE + x * 4;
+                const uint8_t *old = d->snap + (y - ty) * 8 * span + (x - tx0) * 4;
+                bool changed = false;
+                for (int r = 0; r < 8 && !changed; r++, now += KD_STRIDE, old += span)
+                    changed = now[0] != old[0] || now[1] != old[1] || now[2] != old[2] || now[3] != old[3];
                 if (!was[k] && !changed && kd_fb_tile_dirty(fb, t)) d->stats.suppressed++;
                 kd_fb_set_tile_dirty(fb, t, was[k] || changed);
             }
