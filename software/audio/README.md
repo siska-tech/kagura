@@ -1,6 +1,6 @@
 # KAGURA audio: HAL, KSNG songs and player
 
-Native C audio for KAGURA-9. It is reusable by standalone C programs and built into the KAGURA MicroPython firmware as `kagura_audio`.
+Native C audio for KAGURA-9. It is reusable by standalone C programs and built into the KAGURA MicroPython firmware as `kagura_audio`. 神楽トラッカー (`software/micropython/examples/desktop_tracker.py`) is built on it.
 
 | Directory | Contents | Depends on |
 |---|---|---|
@@ -9,8 +9,8 @@ Native C audio for KAGURA-9. It is reusable by standalone C programs and built i
 | `backend/` | `ka_kagura_host`: sends frames over the RP2040 C host driver (`software/pico/kagura_host.c`) | hal, Pico SDK |
 | `binding/` | `kagura_audio`, the MicroPython user C module | hal, seq, MicroPython |
 | `pico/` | a standalone C program, run from SRAM: test melody, demo song, timing probe | everything above |
-| `songs/` | `demo.ksn`/`.h` (a two-pattern demo song), `click.ksn`/`.h` (a timing probe) | |
-| `tests/` | C tests (HAL against an FPGA model, parser, player, mutants), the MicroPython binding test | |
+| `songs/` | `demo.ksn`/`.h` (composed with the tracker's keys), `click.ksn`/`.h` (a timing probe) | |
+| `tests/` | C tests (HAL against an FPGA model, parser, player, mutants), MicroPython tests (binding, tracker) | |
 | `tools/` | `test.sh`; `make_fixtures.py` | |
 
 Python side: `software/micropython/kagura/music.py` (frozen) has `AudioSession`, which sends frames over the console's SDK device, and `Song`, the editable song model.
@@ -133,7 +133,7 @@ finally:
 - `kagura_audio.voices(mask)` gives voices back to the game for sound effects; the player never writes them.
 - `kagura_audio.mute(mask)` silences tracks.
 
-C (a song as a C array, as `songs/demo.h`):
+C (the tracker's 書き出し writes `NAME.H`, a song as a C array, as `songs/demo.h`):
 
 ```c
 #include "demo.h"                  // static const uint8_t ksng_demo[]
@@ -187,5 +187,25 @@ bash software/audio/tools/test.sh      # WSL/Linux, from the repository root
 - **Parser:** every malformation, every truncation, 200,000 random corruptions, all under ASan/UBSan.
 - **Player:** exact tick times at five tempos across the 32-bit wrap; the same music whether pumps are on time, erratic or folded; flow effects, envelopes, pitch effects, pan, pause, preview, reload, voice masks.
 - **Mutants:** six that the tests must catch.
-- **MicroPython:** the binding on the unix port.
-- **Fixtures:** `tools/make_fixtures.py` must write `songs/click.ksn` byte for byte again.
+- **MicroPython:** the binding and the tracker on the unix port.
+- **Fixtures:** the tracker's scripted session must compose `songs/demo.ksn` byte for byte again, and `tools/make_fixtures.py` must write `songs/click.ksn` again.
+
+## 神楽トラッカー
+
+`software/micropython/examples/desktop_tracker.py`, a music tracker in the native desktop's visual language. One window holds:
+
+- **The pattern grid** (4×8 font): 16 rows and 4 of the 6 tracks at a time. The view pages to follow the cursor, and the playing row during playback.
+- **The order list and the instruments** (8×8 font).
+- **A status line**: state, BPM, speed, octave, instrument.
+
+The cursor, its field and the playback row are movable fills under transparent text, so moving the cursor redraws a few tiles.
+
+- **Keys** (FastTracker II layout): `z s x … /` and `q 2 w … p` are notes, `1` is note off, and hex digits fill the instrument, volume and effect fields. Delete clears a field; Insert and Backspace insert and delete rows.
+  - `[ ]` change the octave and `- =` the instrument; Space plays the song and Enter the pattern, Esc stops.
+  - Ctrl+Left/Right move through the order list, Ctrl+Up/Down change its pattern.
+  - Ctrl+S, Ctrl+O and Ctrl+N save, open and start anew; F10 opens the menus.
+- **Editing while playing** reloads the song at once, keeping the position.
+- **Dialogs**: an instrument editor (kind, duty or wave, volume, pan, ADSR, wave shape) and song settings (tempo, speed, loop, loop order, pattern length).
+- **Files**: `NAME.KSN` in one folder with write-then-rename. 書き出し also writes `NAME.H`. `ram_songs()` keeps them in RAM.
+  - File I/O goes in 512-byte pieces with the audio pumped between them, so a save while the music plays is mostly in time; single littlefs operations can still take tens of ms.
+- **A scripted session** (`main(script=True)`, `--host` on a PC) composes the demo song with the tracker's own keys. It plays two loops, saves, reopens and exports, printing a CRC per scene.
