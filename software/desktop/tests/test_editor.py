@@ -281,6 +281,44 @@ def test_skk_dialog_and_menus():
     a.desk.close()
 
 
+def test_status_bar_geometry():
+    """The thin status bar: a 1 px border, one 8 px line with 2 px above and
+    below, the same editor viewport as before, no 変更あり label."""
+    a = app(fresh('bar'))
+    d, w = a.desk, a.win
+    wx, wy, ww, wh = w.work()
+    sy = wy + a.status_y
+    check(a.status_y == wh - de.STATUS_H and de.STATUS_H == 13)
+    check((a.status_y - 7) // kd.LINE_H == (wh - 20) // kd.LINE_H == 15)   # 15 rows, as before
+    buf = bytearray(32000)
+
+    def px(x, y):
+        b = buf[y * 160 + x // 2]
+        return b >> 4 if x % 2 == 0 else b & 15
+
+    def row(y):
+        return [px(x, y) for x in range(wx, wx + ww)]
+
+    d.present()
+    d.snapshot(buf)
+    check(row(sy) == [1] * ww)                       # the top border, full width
+    for y in (sy + 1, sy + 2, sy + 11, sy + 12):      # padding: background only
+        check(set(row(y)) == {2}, y)
+    check(1 in row(sy + 4))                          # the digits and 行 列 B
+    check(sy + 13 == wy + wh)                        # flush with the bottom of the work area
+    check(all(set(row(y)) == {2} for y in range(wy + 2 + 154, sy)))   # editor's bottom to the border: blank
+    # Modified: the title's '* ', nothing red in the bar; the frame stays exact.
+    d.text('神楽')
+    a.handle()
+    d.present()
+    d.snapshot(buf)
+    check(all(6 not in row(y) for y in range(sy, sy + 13)))
+    check(a.modified())                              # shown as the title's '* '
+    d.invalidate(0, 0, 320, 200)
+    check(d.present() == 0)                          # dirty regions were exact
+    a.desk.close()
+
+
 def main():
     global failed, run
     only = sys.argv[1] if len(sys.argv) > 1 else None

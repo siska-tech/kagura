@@ -227,6 +227,9 @@ class Dialog:
             self.win.close()
 
 
+STATUS_H = 13                                    # status bar: border, 2 px, 8 px text, 2 px
+
+
 class Editor:
     def __init__(self, desk, docs, source='キーボード', frame=(0, 11, 320, 189), ime=None):
         self.desk, self.docs = desk, docs
@@ -241,20 +244,24 @@ class Editor:
         self.ime = ime
         w = self.win = desk.create_window(UNTITLED, *frame, closable=False, movable=False)
         ww, wh = w.work()[2:]
-        # Whole rows, then a status line.
-        rows = (wh - 20) // kd.LINE_H
+        # Whole rows (2 px margin, the editor's 4 px of frame and padding, a
+        # 1 px gap), then the status bar at the bottom of the work area.
+        self.status_y = sy = wh - STATUS_H
+        rows = (sy - 7) // kd.LINE_H
         self.ed = w.editor(2, 2, ww - 4, rows * kd.LINE_H + 4)
-        # Status: fixed fields, the numbers as ASCII records so that a keystroke
-        # redraws only the digit cells that changed, not the whole line.
-        sy = rows * kd.LINE_H + 10
-        self.n_line = w.text(4, sy, '   1', 1, 2)
-        w.text(36, sy, '行', 1, 2)
-        self.n_col = w.text(48, sy, '  1', 1, 2)
-        w.text(72, sy, '列', 1, 2)
-        self.n_size = w.text(88, sy, '   0', 1, 2)
-        w.text(120, sy, '/%dB' % kd.DOC_BYTES, 1, 2)
-        self.flag = w.text(176, sy, ' ', 6, 2)
-        self.source = w.text(ww - 68, rows * kd.LINE_H + 10, source, 5, 2)
+        # Status bar: a 1 px top border, then one line of the 8 px font with
+        # 2 px above and below. Fixed fields, the numbers as ASCII records so
+        # that a keystroke redraws only the digit cells that changed. Modified
+        # shows as the title's '* '.
+        w.fill_rect(0, sy, ww, 1, 1)
+        ty = sy + 3
+        self.n_line = w.text(4, ty, '   1', 1, 2)
+        w.text(36, ty, '行', 1, 2)
+        self.n_col = w.text(48, ty, '  1', 1, 2)
+        w.text(72, ty, '列', 1, 2)
+        self.n_size = w.text(88, ty, '   0', 1, 2)
+        w.text(120, ty, '/%dB' % kd.DOC_BYTES, 1, 2)
+        self.source = w.text(ww - 68, ty, source, 5, 2)
         self.saved_version = w.version(self.ed)
         self.refresh()
 
@@ -273,7 +280,6 @@ class Editor:
         w = self.win
         if was[3:] != state[3:]:
             w.set_title(('* ' if mod else '') + (self.name or UNTITLED) + ' - 神楽メモ帳')
-            w.set_text(self.flag, '変更あり' if mod else ' ')
         if was[0] != line:
             w.set_text(self.n_line, '%4d' % (line + 1))
         if was[1] != col:
