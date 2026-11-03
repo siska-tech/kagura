@@ -25,6 +25,8 @@
 //      Right, Home, End (Shift extends the selection), Ctrl+A (select all),
 //      Ctrl+Insert (copy), Shift+Insert (paste), Shift+Delete (cut).
 //      Ctrl+C stays MicroPython's interrupt and is never an editing key.
+//      The editor (multiline) also takes Enter (a line break), Up, Down,
+//      PgUp, PgDn (Shift selects) and Ctrl+Home / Ctrl+End.
 //   3. A focused button consumes Enter and Space and queues KDM_EV_ACTIVATE.
 //   4. Enter not consumed above activates the window's focusable default
 //      button (KD_BTN_DEFAULT), if any.
@@ -64,11 +66,15 @@
 #endif
 #define KDM_FIELD_BYTES 64         // field text with its NUL: 63 bytes
 #define KDM_FIELD_H 12             // field height: border, padding, 8 px text
+#ifndef KDM_DOC_BYTES
+#define KDM_DOC_BYTES 8192         // the editor's document with its NUL: 8,191 bytes
+#endif
+#define KDM_LINE_H 10              // editor line pitch: 8 px text, 1 px above and below
 #ifndef KDM_CLIP_BYTES
 #define KDM_CLIP_BYTES 256         // clipboard, NUL included
 #endif
 
-#if KDM_MAX_ITEMS > (1 << KDM_ITEM_BITS) || KDM_TEXT_BYTES > 0xFFFF
+#if KDM_MAX_ITEMS > (1 << KDM_ITEM_BITS) || KDM_TEXT_BYTES > 0xFFFF || KDM_DOC_BYTES > 0xFFFF
 #error "kdm pool sizes out of range"
 #endif
 
@@ -97,7 +103,7 @@ enum { KDM_EDIT_COPY, KDM_EDIT_CUT, KDM_EDIT_PASTE, KDM_EDIT_SELECT_ALL };
 enum {
     KDM_OP_FREE, KDM_OP_FILL, KDM_OP_RECT, KDM_OP_HLINE, KDM_OP_VLINE,
     KDM_OP_TEXT, KDM_OP_TEXT_SMALL, KDM_OP_BUTTON, KDM_OP_SPRITE, KDM_OP_ICON,
-    KDM_OP_FIELD,
+    KDM_OP_FIELD, KDM_OP_EDITOR,
 };
 
 #define KDM_NO_BG 0xFF   // text: transparent background; sprite: no key
@@ -132,11 +138,15 @@ typedef struct {
     int8_t win;          // window slot, -1 for desktop events (menus)
 } kdm_event;
 
-// An editable single-line field; its record's aux is the pool index.
+// An editable field, or the multiline editor (pool slot KDM_FIELDS, whose
+// text is kdm.doc); the record's aux is the pool index.
 typedef struct {
     kd_edit ed;          // text points into text[] below (static state)
     uint16_t item;       // owning record, KDM_NONE: free
     int16_t scroll;      // pixels of text hidden on the left
+    uint16_t top;        // editor: first visible line
+    uint16_t top_off;    // editor: its byte offset
+    uint16_t lines;      // editor: logical lines (LF count + 1)
     uint8_t text[KDM_FIELD_BYTES];
 } kdm_field;
 
@@ -159,7 +169,8 @@ typedef struct kdm {
     uint16_t text_top;          // arena allocation pointer
     char text[KDM_TEXT_BYTES];
     kdm_sprite sprites[KDM_MAX_SPRITES];
-    kdm_field fields[KDM_FIELDS];
+    kdm_field fields[KDM_FIELDS + 1];  // the last one is the editor's
+    uint8_t doc[KDM_DOC_BYTES];       // the editor's document
     char clip[KDM_CLIP_BYTES];  // clipboard, NUL-terminated UTF-8
     uint16_t clip_len;
     kdm_event ring[KDM_EVENTS];
@@ -216,6 +227,10 @@ int kdm_item_remove(kdm *m, int slot, int id);
 // Fields and focus. font 0: system 8x8, 1: small 4x8 ASCII. Height KDM_FIELD_H.
 // The first focusable control added to a window takes the focus.
 int kdm_add_field(kdm *m, int slot, int x, int y, int w, const char *s, size_t len, int font);
+// The multiline editor: one per desktop (KDM_ENOFIELD if it exists), its text in
+// kdm.doc (KDM_DOC_BYTES - 1 bytes). Lines are not wrapped: the view scrolls
+// both ways to keep the caret visible. Line pitch KDM_LINE_H; h >= 16.
+int kdm_add_editor(kdm *m, int slot, int x, int y, int w, int h, const char *s, size_t len, int font);
 // Text of a field or text record; valid until the next change of the record.
 int kdm_item_get_text(kdm *m, int slot, int id, const char **s, size_t *len);
 const kd_edit *kdm_field_editor(kdm *m, int slot, int id);   // NULL: not a live field

@@ -80,6 +80,7 @@ def test_escape_sequences():
         (b'\x1bOA', kd.KEY_UP, 0), (b'\x1bOH', kd.KEY_HOME, 0), (b'\x1bOF', kd.KEY_END, 0),
         (b'\x1b[1~', kd.KEY_HOME, 0), (b'\x1b[7~', kd.KEY_HOME, 0), (b'\x1b[4~', kd.KEY_END, 0),
         (b'\x1b[8~', kd.KEY_END, 0), (b'\x1b[2~', kd.KEY_INSERT, 0), (b'\x1b[3~', kd.KEY_DELETE, 0),
+        (b'\x1b[5~', kd.KEY_PGUP, 0), (b'\x1b[6;2~', kd.KEY_PGDN, kd.MOD_SHIFT),
         (b'\x1b[17~', kd.KEY_F6, 0), (b'\x1b[21~', kd.KEY_F10, 0), (b'\x1b[Z', kd.KEY_TAB, kd.MOD_SHIFT),
         (b'\x1b[1;2D', kd.KEY_LEFT, kd.MOD_SHIFT), (b'\x1b[1;2H', kd.KEY_HOME, kd.MOD_SHIFT),
         (b'\x1b[1;5C', kd.KEY_RIGHT, kd.MOD_CTRL), (b'\x1b[1;3A', kd.KEY_UP, kd.MOD_ALT),

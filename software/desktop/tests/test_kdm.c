@@ -766,7 +766,210 @@ static void t_field_random(void) {
     }
 }
 
+// ---- the multiline editor ----
+
+static const kdm_field *editor_state(void) { return &M.fields[KDM_FIELDS]; }
+
+static bool editor_view_ok(void) {
+    const kdm_field *f = editor_state();
+    const kdm_item *it = &M.items[f->item];
+    size_t rows = (size_t)(it->h - 4) / KDM_LINE_H, lines = 1, line = 0;
+    for (size_t i = 0; i < f->ed.len; i++) lines += f->ed.buf[i] == '\n';
+    for (size_t i = 0; i < f->ed.caret; i++) line += f->ed.buf[i] == '\n';
+    size_t off = 0;
+    for (size_t l = 0; l < f->top; l++) off = kd_edit_line_end(&f->ed, off) + 1;
+    return f->lines == lines && f->top_off == off && line >= f->top && line < f->top + rows &&
+           kd_edit_valid(&f->ed);
+}
+
+static void t_editor_lines(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(10, 20, 280, 150), KD_WF_CLOSE | KD_WF_MOVE, 2);
+    int ed = kdm_add_editor(&M, w, 4, 4, 260, 104, "", 0, 0);
+    int ok = kdm_add_button(&M, w, 4, 112, 40, 14, "OK", 2, KD_BTN_DEFAULT);
+    kdm_item_set_focusable(&M, w, ok, true);
+    CHECK(ed >= 0 && kdm_focused(&M, w) == ed);
+    present();
+    drain();
+    type("abc");
+    key(KD_KEY_ENTER, 0, 0);            // a line break, not the default button
+    kdm_text_input(&M, "神楽\n", 7);
+    CHECK(field_is(w, ed, "abc\n神楽\n"));
+    CHECK_EQ(count_events(KDM_EV_ACTIVATE, -1), 0);
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+    // Up and Down keep the visual column: 神楽| is x 16, which is "ab|" above.
+    key(KD_KEY_UP, 0, 0);
+    key(KD_KEY_END, 0, 0);
+    CHECK_EQ(kdm_field_editor(&M, w, ed)->caret, 10);
+    key(KD_KEY_UP, 0, 0);
+    CHECK_EQ(kdm_field_editor(&M, w, ed)->caret, 2);
+    key(KD_KEY_DOWN, 0, KD_MOD_SHIFT);  // select down to 神楽 end
+    const kd_edit *e = kdm_field_editor(&M, w, ed);
+    CHECK(e->anchor == 2 && e->caret == 10);
+    present();
+    CHECK(equals_full_redraw());
+    CHECK_EQ(count_events(KD_EV_KEY, -1), 0);   // all consumed by the editor
+    // Typing over a selection that spans a line break joins the lines.
+    type("X");
+    CHECK(field_is(w, ed, "abX\n"));
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+    // Backspace at a line start joins it with the line above.
+    kdm_text_input(&M, "1\n2\n3", 5);
+    key(KD_KEY_HOME, 0, 0);
+    key(KD_KEY_BACKSPACE, 0, 0);
+    CHECK(field_is(w, ed, "abX1\n23\n"));
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+    key(KD_KEY_HOME, 0, KD_MOD_CTRL);
+    CHECK_EQ(kdm_field_editor(&M, w, ed)->caret, 0);
+    key(KD_KEY_END, 0, KD_MOD_CTRL | KD_MOD_SHIFT);
+    CHECK(kdm_field_editor(&M, w, ed)->caret == 8 && kdm_field_editor(&M, w, ed)->anchor == 0);
+    present();
+    CHECK(equals_full_redraw());
+    // Inserting a line break in the middle moves every line below.
+    kdm_field_select(&M, w, ed, 2, 2);
+    present();
+    key(KD_KEY_ENTER, 0, 0);
+    CHECK(field_is(w, ed, "ab\nX1\n23\n"));
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+    // Caret pixel: row 1, after nothing: column 4 + 2, rows start 4 + 2 + 10.
+    kd_rect work = kd_window_work(&M.desk.win[w]);
+    CHECK_EQ(px(work.x + 6, work.y + 16), KD_C_BLACK);
+    // A click places the caret on the clicked line.
+    click(work.x + 4 + 2 + 9, work.y + 4 + 2 + 2 * KDM_LINE_H + 3);   // line 2, after "2"
+    CHECK_EQ(kdm_field_editor(&M, w, ed)->caret, 7);
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+}
+
+static void t_editor_scrolling(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(10, 20, 200, 120), KD_WF_MOVE, 2);
+    char doc[1024];
+    size_t n = 0;
+    for (int i = 0; i < 40; i++) n += (size_t)snprintf(doc + n, sizeof doc - n, "line %02d\n", i);
+    int ed = kdm_add_editor(&M, w, 2, 2, 120, 64, doc, n, 0);   // 6 rows
+    const kdm_field *f = editor_state();
+    CHECK(f->lines == 41 && f->top == 0);
+    present();
+    key(KD_KEY_END, 0, KD_MOD_CTRL);
+    CHECK(f->top == 41 - 6 && editor_view_ok());
+    present();
+    CHECK(equals_full_redraw());
+    key(KD_KEY_PGUP, 0, 0);
+    CHECK(kd_edit_line_index(&f->ed, f->ed.caret) == 35 && editor_view_ok());
+    key(KD_KEY_PGUP, 0, 0);
+    key(KD_KEY_PGUP, 0, 0);
+    CHECK(kd_edit_line_index(&f->ed, f->ed.caret) == 25 && f->top == 25 && editor_view_ok());
+    present();
+    CHECK(equals_full_redraw());
+    key(KD_KEY_PGDN, 0, KD_MOD_SHIFT);
+    CHECK(kd_edit_line_index(&f->ed, f->ed.caret) == 30 && editor_view_ok());
+    present();
+    CHECK(equals_full_redraw());
+    // A long line scrolls sideways; moving to a short line scrolls back.
+    key(KD_KEY_HOME, 0, KD_MOD_CTRL);
+    key(KD_KEY_END, 0, 0);
+    type(" and a lot more text on the first line");
+    CHECK(f->scroll > 0);
+    present();
+    CHECK(equals_full_redraw());
+    key(KD_KEY_DOWN, 0, 0);
+    CHECK(f->scroll == 0 && editor_view_ok());
+    present();
+    CHECK(equals_full_redraw());
+    // Deleting lines near the end pulls the view down: no empty rows.
+    kdm_field_select(&M, w, ed, 0, 0);
+    key(KD_KEY_END, 0, KD_MOD_CTRL);
+    for (int i = 0; i < 9 * 10; i++) key(KD_KEY_BACKSPACE, 0, 0);
+    CHECK(f->top == f->lines - 6 && editor_view_ok());
+    present();
+    CHECK(equals_full_redraw());
+}
+
+static void t_editor_capacity(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(10, 20, 200, 120), 0, 2);
+    static char big[KDM_DOC_BYTES + 1];
+    memset(big, 'x', sizeof big);
+    for (size_t i = 79; i < sizeof big; i += 80) big[i] = '\n';
+    CHECK_EQ(kdm_add_editor(&M, w, 0, 0, 180, 80, big, KDM_DOC_BYTES, 0), KDM_ETOOLONG);
+    CHECK_EQ(kdm_add_editor(&M, w, 0, 0, 180, 80, "\xE7\xA5", 2, 0), KDM_EINVAL);
+    CHECK_EQ(kdm_add_editor(&M, w, 0, 0, 180, 10, "", 0, 0), KDM_EINVAL);
+    int ed = kdm_add_editor(&M, w, 0, 0, 180, 80, big, KDM_DOC_BYTES - 1, 0);
+    CHECK(ed >= 0 && editor_view_ok());
+    CHECK_EQ(kdm_add_editor(&M, w, 0, 90, 180, 20, "", 0, 0), KDM_ENOFIELD);   // one per desktop
+    present();
+    key(KD_KEY_END, 0, KD_MOD_CTRL);
+    type("y");                                        // full: nothing changes
+    kdm_text_input(&M, "\n", 1);
+    CHECK_EQ(kdm_field_editor(&M, w, ed)->len, KDM_DOC_BYTES - 1);
+    CHECK_EQ(kdm_text_input(&M, "z", 1), KDM_ETOOLONG);
+    key(KD_KEY_BACKSPACE, 0, 0);
+    CHECK_EQ(kdm_text_input(&M, "\r\n", 2), 1);       // CRLF stored as LF
+    present();
+    CHECK(equals_full_redraw() && editor_view_ok());
+    // CRLF documents load as LF.
+    CHECK_EQ(kdm_item_set_text(&M, w, ed, "a\r\nb\r\n", 6), KDM_OK);
+    CHECK(field_is(w, ed, "a\nb\n") && editor_state()->lines == 3 && editor_state()->ed.caret == 0);
+    present();
+    CHECK(equals_full_redraw());
+    // The editor's slot comes back with its window.
+    kdm_window_close(&M, w);
+    int v = kdm_window_open(&M, "Again", kd_rect_make(10, 20, 200, 120), 0, 2);
+    CHECK(kdm_add_editor(&M, v, 0, 0, 180, 80, "ok", 2, 0) >= 0);
+}
+
+static void t_editor_random(void) {
+    uint32_t r = 777;
+    kdm_menu_def def = {1, {"M"}, {{"A", "B"}}, {2}};
+    kdm_init(&M, &def);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(8, 16, 220, 140), KD_WF_MOVE, 2);
+    int ed = kdm_add_editor(&M, w, 2, 2, 200, 94, "", 0, 0);
+    int f = kdm_add_field(&M, w, 2, 100, 120, "", 0, 0);
+    int v = kdm_window_open(&M, "Over", kd_rect_make(150, 100, 120, 70), KD_WF_MOVE, 3);
+    kdm_add_field(&M, v, 2, 2, 100, "", 0, 0);
+    (void)f;
+    kdm_window_activate(&M, w);
+    static const char *const words[] = {"a", "神", "é", "word ", "\n", "x\ny", "長い行のテキストです", "😀", "\r\n"};
+    static const uint8_t keys[] = {KD_KEY_LEFT, KD_KEY_RIGHT, KD_KEY_UP, KD_KEY_DOWN, KD_KEY_HOME, KD_KEY_END,
+                                   KD_KEY_PGUP, KD_KEY_PGDN, KD_KEY_BACKSPACE, KD_KEY_DELETE, KD_KEY_ENTER,
+                                   KD_KEY_TAB, KD_KEY_INSERT, KD_KEY_F6};
+    for (int step = 0; step < 4000; step++) {
+        int op = kd_rand_range(&r, 0, 9);
+        if (op <= 3) {
+            const char *s = words[kd_rand_range(&r, 0, 8)];
+            kdm_text_input(&M, s, strlen(s));
+        } else if (op <= 4) {
+            key(KD_KEY_CHAR, (char)kd_rand_range(&r, 0x20, 0x7E), 0);
+        } else if (op <= 8) {
+            uint8_t mods = (uint8_t)(kd_rand_range(&r, 0, 3) & (KD_MOD_SHIFT | KD_MOD_CTRL));
+            key(keys[kd_rand_range(&r, 0, 13)], 0, mods);
+        } else if (kd_rand_range(&r, 0, 3) == 0) {
+            kdm_window_move(&M, kd_rand_range(&r, 0, 1) ? w : v, kd_rand_range(&r, -30, 250), kd_rand_range(&r, 0, 150));
+        }
+        drain();
+        if (step % 25 == 0) {
+            present();
+            if (!equals_full_redraw() || !editor_view_ok()) {
+                char msg[48];
+                snprintf(msg, sizeof msg, "editor differs at step %d", step);
+                kd_test_fail(__FILE__, __LINE__, msg);
+                return;
+            }
+        }
+    }
+    CHECK(kdm_field_editor(&M, w, ed) != NULL);
+}
+
 static const kd_test_case tests[] = {
+    {"editor_lines", t_editor_lines},
+    {"editor_scrolling", t_editor_scrolling},
+    {"editor_capacity", t_editor_capacity},
+    {"editor_random", t_editor_random},
     {"field_typing", t_field_typing},
     {"field_utf8_input", t_field_utf8_input},
     {"field_scrolling_and_clipping", t_field_scrolling_and_clipping},
