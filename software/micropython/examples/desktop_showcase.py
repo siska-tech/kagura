@@ -13,6 +13,7 @@ switched with F6 -> end card.
 On KAGURA-9 (the HDMI console running, firmware with the editor):
     import desktop_showcase; desktop_showcase.main()                  # about 2 minutes
     desktop_showcase.main(pace=1.5)                                  # slower
+    desktop_showcase.main(music=True)                                # with PSG background music
 On a PC (unix port):
     micropython desktop_showcase.py --host DIR [--dump D]           # a CRC per scene
 
@@ -39,9 +40,36 @@ def sleep_ms(ms):
             time.sleep(ms / 1000)
 
 
+class Bgm:
+    """Background music from showcase_music (PSG on the FPGA, while the GUI
+    runs). The music only changes notes when play() is called, so the show
+    calls it every frame and every 5 ms while it waits; how late each note
+    starts is recorded."""
+    def __init__(self, music):
+        self.music = music
+        self.notes = self.late_max = self.late_sum = self.late_over = 0
+
+    def play(self):
+        late = time.ticks_diff(time.ticks_us(), self.music.next)
+        if late < 0:
+            return
+        self.music.play()
+        self.notes += 1
+        self.late_sum += late
+        if late > self.late_max:
+            self.late_max = late
+        if late > 20000:
+            self.late_over += 1
+
+    def report(self):
+        n = self.notes or 1
+        return 'MUSIC notes %d late_mean %.1f ms late_max %.1f ms over_20ms %d' % (
+            self.notes, self.late_sum / n / 1000, self.late_max / 1000, self.late_over)
+
+
 class Show:
-    def __init__(self, desk, docs, step, pace=1.0, key_ms=90, hold_ms=1800):
-        self.desk, self.docs, self.step = desk, docs, step
+    def __init__(self, desk, docs, step, pace=1.0, key_ms=90, hold_ms=1800, bgm=None):
+        self.desk, self.docs, self.step, self.bgm = desk, docs, step, bgm
         self.key_ms, self.hold_ms = key_ms * pace, hold_ms * pace
         c = self.cap = desk.create_window('', *CAPTION, closable=False, movable=False)
         c.fill_rect(0, 0, 318, 21, 15)
@@ -52,11 +80,22 @@ class Show:
 
     # ---- pacing ----
 
+    def wait(self, ms):
+        """Sleeps ms, keeping the music going."""
+        if self.bgm is None:
+            sleep_ms(ms)
+            return
+        end = time.ticks_add(time.ticks_ms(), int(ms))
+        while time.ticks_diff(end, time.ticks_ms()) > 0:
+            self.bgm.play()
+            sleep_ms(min(5, time.ticks_diff(end, time.ticks_ms())))
+        self.bgm.play()
+
     def frame(self, ms=None):
         if self.editor is not None:
             self.editor.handle()
         self.desk.present()
-        sleep_ms(self.key_ms if ms is None else ms)
+        self.wait(self.key_ms if ms is None else ms)
 
     def key(self, code, ch=0, mods=0):
         self.desk.key(code, ch, mods)
@@ -76,7 +115,7 @@ class Show:
         if self.editor is not None:
             self.editor.handle()
         self.step(name)
-        sleep_ms(self.hold_ms * hold)
+        self.wait(self.hold_ms * hold)
 
     def caption(self, first, second=''):
         self.cap.set_text(self.line1, first)
@@ -185,7 +224,7 @@ def chapters(s):
     s.card('end', 'ありがとうございました', 'C言語の編集エンジン + MicroPython')
 
 
-def main(desk=None, docs=None, out=print, pace=1.0, dump=None):
+def main(desk=None, docs=None, out=print, pace=1.0, dump=None, music=False):
     own = desk is None
     if own:
         from kagura.desktop import Desktop
@@ -207,10 +246,17 @@ def main(desk=None, docs=None, out=print, pace=1.0, dump=None):
             with open('%s/%02d-%s.raw' % (dump, scenes[0], name), 'wb') as f:
                 f.write(buf)
 
+    bgm = None
+    if music and own:                                    # needs the board's audio
+        from showcase_music import Music
+        bgm = Bgm(Music(desk.device))
     try:
         desk.present()
-        chapters(Show(desk, docs, step, pace if own else 0))
+        chapters(Show(desk, docs, step, pace if own else 0, bgm=bgm))
     finally:
+        if bgm is not None:
+            bgm.music.stop()
+            out(bgm.report())
         if own:
             desk.close()
 
