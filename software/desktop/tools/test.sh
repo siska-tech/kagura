@@ -7,7 +7,8 @@
 #   3. tests/test_binding.py on it (API, lifetimes, GC, errors, Japanese),
 #      tests/test_session.py (kagura.desktop against a recording device),
 #      tests/test_keyinput.py (terminal keyboard decoding, end to end),
-#      tests/test_editor.py (the text editor: files, dialogs, sessions), and
+#      tests/test_editor.py (the text editor: files, dialogs, sessions, SKK),
+#      tests/test_skk.py (the SKK input method), and
 #      the Japanese desktop demo (examples/desktop_ja.py) and the keyboard
 #      demo (examples/desktop_keys.py) and the video showcase
 #      (examples/desktop_showcase.py) without hardware.
@@ -23,8 +24,11 @@ MP="$(bash "$ROOT/software/desktop/tools/build_unix.sh")"
 MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_session.py"
 MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_keyinput.py"
 MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_editor.py"
+MICROPYPATH="$ROOT/software/micropython" "$MP" "$ROOT/software/desktop/tests/test_skk.py"
 "$MP" "$ROOT/software/micropython/examples/desktop_ja.py" --host
 "$MP" "$ROOT/software/micropython/examples/desktop_keys.py" --host
+MICROPYPATH="$ROOT/software/micropython:$ROOT/software/micropython/examples" "$MP" \
+    "$ROOT/software/micropython/examples/desktop_skk.py" --host
 SHOW_DOCS="$(mktemp -d)"
 MICROPYPATH="$ROOT/software/micropython:$ROOT/software/micropython/examples" "$MP" \
     "$ROOT/software/micropython/examples/desktop_showcase.py" --host "$SHOW_DOCS"

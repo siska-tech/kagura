@@ -559,6 +559,46 @@ def test_field_heap_locked_typing():
     check(len(w.get_text(f)) == 19)
 
 
+def test_preedit_api():
+    d = kd.Desktop(menus=(('M', ('a', 'b')),))
+    w = d.create_window('E', 0, 11, 320, 189)
+    e = w.editor(2, 2, 300, 104, 'ab')
+    w.select(e, 1)
+    check(d.input_target() == (w, e))
+    x0, y0, h = w.caret_xy(e)
+    w.set_preedit(e, '▼漢字', 1, 3)                 # characters, highlight 漢字
+    x1, y1, _ = w.caret_xy(e)
+    check(x1 == x0 + 24 and y1 == y0 and h == kd.LINE_H, (x0, x1))
+    check(w.get_text(e) == 'ab')                     # the document is untouched
+    check(raises(ValueError, w.set_preedit, e, 'a\nb'))
+    check(raises(ValueError, w.set_preedit, e, 'x' * (kd.PREEDIT_BYTES + 1)))
+    t = w.text(0, 120, 'label')
+    check(raises(ValueError, w.set_preedit, t, 'x'))
+    w.set_preedit(e, '')
+    check(w.caret_xy(e)[0] == x0)
+    b = w.button(0, 140, 40, 14, 'OK', 0, True)
+    w.focus(b)
+    check(d.input_target() is None)                  # a button: no input target
+    w.focus(e)
+    d.key(kd.KEY_F10)
+    check(d.input_target() is None)                  # menus open
+    d.key(kd.KEY_ESCAPE)
+    mirror = bytearray(32000)
+    d.present(mirror)
+    micropython.heap_lock()
+    try:
+        w.set_preedit(e, '▽かな', 0, 0)                # no allocation while composing
+        d.present(mirror)
+        ok = True
+    except MemoryError:
+        ok = False
+    micropython.heap_unlock()
+    check(ok, 'set_preedit allocates')
+    w.close()
+    check(raises(ValueError, w.set_preedit, e, 'x'))
+    check(d.input_target() is None)
+
+
 def main():
     global failed, run
     tests = [(k, v) for k, v in globals().items() if k.startswith('test_')]

@@ -243,6 +243,42 @@ def test_tour_reopens_identically():
     check(docs.names() == ['demo.txt'])
 
 
+def test_skk_in_the_editor():
+    import desktop_skk as ds
+    lines = []
+    text = ds.main(desk=de.HostDesktop(de.MENUS), out=lines.append)
+    check(text == ds.FINAL_TEXT, text)
+    check(lines[-1].startswith('TEXT ok'), lines[-1])
+    check(len([l for l in lines if l.startswith('SCENE')]) == 12)
+    # Same script, same frames: the input path is deterministic.
+    again = []
+    ds.main(desk=de.HostDesktop(de.MENUS), out=again.append)
+    check(again == lines)
+
+
+def test_skk_dialog_and_menus():
+    from kagura import skk
+    from kagura.keyinput import TerminalKeys
+    docs = fresh('skkdlg')
+    a = de.Editor(de.HostDesktop(de.MENUS), docs, ime=skk.SkkEngine(skk.test_dictionary()))
+    keys = de.input_chain(a)
+    def feed(data):
+        for b in data:
+            keys.feed(bytes((b,)))
+            a.handle()
+    feed(b'\nKanji ')                                # かな mode, ▼漢字
+    feed(b'\x13')                                    # Ctrl+S commits, then Save As opens
+    check(a.dialog is not None and a.win.get_text(a.ed) == '漢字', a.win.get_text(a.ed))
+    feed(b'\x7f' * 8 + b'Memo \r')                   # the dialog's field gets SKK too: ▼メモ, Enter
+    check(a.dialog.win.get_text(a.dialog.field) == 'メモ', a.dialog.win.get_text(a.dialog.field))
+    feed(b'l.txt\r')                                 # l: ASCII; Enter: 保存
+    check(a.dialog is None and docs.load('メモ.txt')[0] == '漢字', docs.names())
+    feed(b'\x1b[21~')                                # F10: menus take the arrows, not SKK
+    feed(b'\x1b[C\x1b[B\r')                          # 編集 > コピー (nothing selected)
+    check(a.win.get_text(a.ed) == '漢字')
+    a.desk.close()
+
+
 def main():
     global failed, run
     only = sys.argv[1] if len(sys.argv) > 1 else None

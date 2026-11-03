@@ -181,9 +181,106 @@ main(pace=%r, music=%r)
 print('SHOWCASE done; console paused', kagura_console.paused)
 '''
 
+SKK = r'''
+print('\n' * 30)
+import gc
+gc.collect()
+print('FREE before', gc.mem_free())
+main(key_ms=%d, step_ms=%d)
+gc.collect()
+print('SKK done; free', gc.mem_free(), 'console paused', kagura_console.paused)
+'''
+
+SKK_LIVE = r'''
+import gc
+from kagura.desktop import Desktop
+from kagura import skk
+desk = Desktop(menus=de.MENUS, cursor=False)
+try:
+    app = de.Editor(desk, de.Documents('/docs'), 'キーボード', ime=skk.SkkEngine(skk.test_dictionary()))
+    desk.present()
+    print('READY')
+    keyboard(app)
+    print('TEXT', 'ok' if app.win.get_text(app.ed) == FINAL_TEXT else 'MISMATCH', repr(app.win.get_text(app.ed)))
+finally:
+    desk.close()
+gc.collect()
+print('CLOSED free', gc.mem_free(), 'console_paused', kagura_console.paused)
+'''
+
+# Continuous SKK typing on the board for a time, fed through the decoder:
+# per-key time (in a fixed array, so measuring allocates nothing), heap after
+# GC, a full recomposition that must change nothing, and ERROR_CODE.
+SKK_SOAK = r'''
+import gc, time
+from array import array
+from kagura.desktop import Desktop
+from kagura import skk, regs as R
+desk = Desktop(menus=de.MENUS, cursor=False)
+try:
+    app = de.Editor(desk, de.Documents('/docs'), 'ソーク', ime=skk.SkkEngine(skk.test_dictionary()))
+    keys = de.input_chain(app, clock=FakeClock())
+    w, ed = app.win, app.ed
+    desk.present()
+    rotation = [d for d, _ in SCRIPT] + [b'\r', b'Kanji      s', b'ToKu', b'\x1b\x1b', b'\r']
+    hist = array('I', [0] * 200)                     # 0.5 ms buckets: no allocation while measuring
+    worst = 0
+    n = keys_total = checks = bad = 0
+    lo = 10 ** 9
+    end = time.ticks_add(time.ticks_ms(), %d * 1000)
+    while time.ticks_diff(end, time.ticks_ms()) > 0:
+        for chunk in rotation:
+            for b in chunk:
+                t0 = time.ticks_us()
+                keys.feed(bytes((b,)))
+                keys.expire()
+                app.handle()
+                desk.present()
+                dt = time.ticks_diff(time.ticks_us(), t0)
+                hist[min(199, dt // 500)] += 1
+                worst = max(worst, dt)
+                keys_total += 1
+        n += 1
+        if w.length(ed) > 6000:                      # keep the document bounded
+            w.set_text(ed, '')
+        if n %% 5 == 0:
+            desk.invalidate(0, 0, 320, 200)
+            ok = desk.present() == 0 and desk.device.read_reg(R.REG_ERROR_CODE) == 0 and not app.ime.active()
+            checks += 1
+            bad += not ok
+            gc.collect()
+            lo = min(lo, gc.mem_free())
+            if checks %% 10 == 0:
+                print('SOAK progress %%d rounds, %%d keys, %%d failed, free %%d' %% (n, keys_total, bad, gc.mem_free()))
+    def pct(q):
+        need, acc = keys_total * q // 100, 0
+        for i in range(200):
+            acc += hist[i]
+            if acc > need:
+                return (i + 1) * 500
+        return worst
+    print('SOAK %%d rounds, %%d keys, %%d checks, %%d failed, lowest free heap %%d B' %% (n, keys_total, checks, bad, lo))
+    print('KEYS p50 <%%d p95 <%%d max %%d us (all %%d keys, 0.5 ms buckets)' %% (pct(50), pct(95), worst, keys_total))
+    print('STATS', desk.stats())
+finally:
+    desk.close()
+gc.collect()
+print('CLOSED free', gc.mem_free(), 'console paused', kagura_console.paused)
+'''
+
 TEXT = ('神楽メモ帳でキーボードから入力しています。\n'
         'RP2040とFPGAの小さなコンピュータ、KAGURA-9です。\n'
         'Shift+矢印で選択、Ctrl+Sで保存します。\n')
+
+
+def skk_script_bytes():
+    """The byte chunks of desktop_skk.SCRIPT, read as a literal (not executed)."""
+    import ast
+    tree = ast.parse((ROOT / 'software/micropython/examples/desktop_skk.py').read_text(encoding='utf8'))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], 'id', '') == 'SCRIPT':
+            return [data for data, _ in ast.literal_eval(node.value)]
+    raise SystemExit('SCRIPT not found in desktop_skk.py')
 
 
 def send(board, data, cps):
@@ -203,7 +300,8 @@ def units(text):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('phase', choices=('bench', 'live', 'showcase'))
+    p.add_argument('phase', choices=('bench', 'live', 'showcase', 'skk', 'skk-live', 'skk-soak'))
+    p.add_argument('--seconds', type=int, default=300, help='skk-soak duration')
     p.add_argument('--pace', type=float, default=1.0, help='showcase pacing (1.0: about 2 minutes)')
     p.add_argument('--reset', action='store_true', help='soft reset first: a clean heap and console')
     p.add_argument('--music', action='store_true', help='showcase with PSG background music')
@@ -246,6 +344,34 @@ def main():
             b.run(lib)
             b.run(free)
             b.run(BENCH, timeout=300)
+        elif args.phase.startswith('skk'):
+            # desktop_skk imports desktop_editor; from RAM, the editor's globals
+            # stand in for it (kagura.skk is frozen in the firmware).
+            demo = example('desktop_skk.py').replace('import desktop_editor as de\n', SHOWCASE_NS)
+            b.run(free)
+            b.run(lib)
+            b.run(free)
+            b.run(demo)
+            b.run(free)
+            if args.phase == 'skk':
+                b.run(SKK % (int(70 * args.pace), int(1500 * args.pace)), timeout=900)
+            elif args.phase == 'skk-soak':
+                b.run(SKK_SOAK % args.seconds, timeout=args.seconds + 300)
+            else:
+                b.start(SKK_LIVE)
+                b.lines('READY', timeout=30)
+                time.sleep(2)
+                for data in skk_script_bytes():
+                    send(b, [bytes((c,)) for c in data], args.cps)
+                    time.sleep(0.6)
+                send(b, [b'\x1b[21~'] + [b'\x1b[B'] * 4 + [b'\r'], 3)      # F10 > 終了
+                time.sleep(1)
+                send(b, [b'\t', b'\r'], 2)                                    # 破棄 (the text is modified)
+                b.lines('CLOSED', timeout=60)
+                out, err = b.finish()
+                if err.strip():
+                    raise SystemExit('device error: ' + err.strip().splitlines()[-1])
+            time.sleep(4)
         elif args.phase == 'showcase':
             # desktop_showcase imports desktop_editor; from RAM, the editor's
             # globals (sent just before) stand in for that module.

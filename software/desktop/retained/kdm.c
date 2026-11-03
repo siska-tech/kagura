@@ -21,6 +21,7 @@ enum {
     KDM_FAULT_FIELD_TEXT = 8,      // a field edit does not invalidate the changed text
     KDM_FAULT_FIELD_CARET = 9,     // a field motion does not invalidate the old caret
     KDM_FAULT_EDITOR_ROWS = 10,    // an editor line break does not redraw the lines below
+    KDM_FAULT_PREEDIT = 11,        // a preedit change invalidates nothing
 };
 
 static const kd_art *const icon_art[] = {
@@ -195,6 +196,10 @@ static void item_release(kdm *m, int i) {
     kdm_item *it = &m->items[i];
     if (has_text(it)) text_free(m, it->aux);
     if (it->op == KDM_OP_FIELD || it->op == KDM_OP_EDITOR) m->fields[it->aux].item = KDM_NONE;
+    if (m->preedit_item == i) {
+        m->preedit_item = KDM_NONE;
+        m->preedit_len = 0;
+    }
     if (m->win[it->win].focus == i) m->win[it->win].focus = KDM_NONE;
     it->op = KDM_OP_FREE;
     it->next = m->free_item;
@@ -251,13 +256,40 @@ static int advance(void *ctx, uint32_t c) { return c < 0x80 ? ((const kd_font *)
 
 static kd_rect field_inner(const kdm_item *it) { return kd_rect_make(it->x + 1, it->y + 1, it->w - 2, KDM_FIELD_H - 2); }
 
+// ---- input method preedit (kdm_set_preedit) ----
+
+static bool has_preedit(const kdm *m, const kdm_item *it) {
+    return m->preedit_item != KDM_NONE && &m->items[m->preedit_item] == it;
+}
+
+static int preedit_px(const kdm *m, const kdm_item *it) {
+    return has_preedit(m, it) ? kd_text_width_n(field_font(it), m->preedit, m->preedit_len) : 0;
+}
+
+// Draws the preedit at screen (x, y) (the glyph row), underlined from y + 8,
+// its highlight inverted over rows [top, top + h); returns its width.
+static int draw_preedit(const kdm *m, kd_fb *fb, const kd_font *font, int x, int y, int top, int h) {
+    int pw = kd_text_width_n(font, m->preedit, m->preedit_len);
+    kd_text_n(fb, font, x, y, m->preedit, m->preedit_len, KD_C_BLACK, KD_NO_KEY);
+    kd_fb_hline(fb, x, y + 8, pw, KD_C_BLACK);
+    if (m->preedit_hl_b > m->preedit_hl_a) {
+        int xa = kd_text_width_n(font, m->preedit, m->preedit_hl_a);
+        int xb = kd_text_width_n(font, m->preedit, m->preedit_hl_b);
+        kd_fb_fill_rect(fb, x + xa, top, xb - xa, h, KD_C_BLACK);
+        kd_text_n(fb, font, x + xa, y, m->preedit + m->preedit_hl_a, m->preedit_hl_b - m->preedit_hl_a,
+                  KD_C_WHITE, KD_NO_KEY);
+    }
+    return pw;
+}
+
 // Keeps the caret column inside the field, and no blank space on the right
 // while text is hidden on the left.
-static void field_scroll(kdm_field *f, const kdm_item *it) {
+// pw: the width of a preedit shown at the caret (the caret follows it).
+static void field_scroll(kdm_field *f, const kdm_item *it, int pw) {
     const kd_font *font = field_font(it);
     int view = it->w - 5;   // caret columns 0..view
-    int cx = kd_edit_x(&f->ed, f->ed.caret, advance, (void *)font);
-    int tw = kd_edit_x(&f->ed, f->ed.len, advance, (void *)font);
+    int cx = kd_edit_x(&f->ed, f->ed.caret, advance, (void *)font) + pw;
+    int tw = kd_edit_x(&f->ed, f->ed.len, advance, (void *)font) + pw;
     int s = f->scroll;
     if (cx < s) s = cx;
     if (cx - s > view) s = cx - view;
@@ -324,9 +356,9 @@ static size_t line_offset(const kd_edit *e, size_t line) {
 
 // Keeps the caret's line and column in view, and no empty rows below the
 // last line while lines are hidden above.
-static void editor_scroll(kdm_field *f, const kdm_item *it) {
+static void editor_scroll(kdm_field *f, const kdm_item *it, int pw) {
     const kd_edit *e = &f->ed;
-    int view = it->w - 5, cx = kd_edit_x(e, e->caret, advance, (void *)field_font(it));
+    int view = it->w - 5, cx = kd_edit_x(e, e->caret, advance, (void *)field_font(it)) + pw;
     int s = f->scroll;
     if (cx < s) s = cx - view / 2;   // back left: with half a view of context
     if (cx - s > view) s = cx - view + view / 4;   // past the right edge: a quarter view ahead,
@@ -361,8 +393,8 @@ static void editor_after(kdm *m, int slot, kdm_item *it, field_was was, bool not
     size_t damage = kd_edit_take_damage(e);
     uint16_t lines = f->lines, top = f->top;
     if (damage != KD_EDIT_NO_DAMAGE) f->lines = (uint16_t)count_lines(e);
-    editor_scroll(f, it);
-    if (f->scroll != was.scroll || f->top != top) {
+    editor_scroll(f, it, preedit_px(m, it));
+    if (f->scroll != was.scroll || f->top != top || has_preedit(m, it)) {   // a preedit follows the caret
         invalidate(m, slot, editor_inner(it));
     } else {
         if (damage != KD_EDIT_NO_DAMAGE && !KDM_FAULTY(KDM_FAULT_FIELD_TEXT)) {
@@ -413,7 +445,7 @@ static void draw_editor(kdm *m, const kd_draw *d, int slot, int i) {
     kd_draw_rect(d, it->x, it->y, it->w, it->h, KD_C_BLACK);
     kd_rect clip = d->fb->clip, inner = editor_inner(it);
     kd_fb_set_clip(d->fb, kd_rect_intersect(clip, kd_rect_make(d->ox + inner.x, d->oy + inner.y, inner.w, inner.h)));
-    bool focus = shows_focus(m, slot, i);
+    bool focus = shows_focus(m, slot, i), preedit = has_preedit(m, it);
     size_t a, b;
     kd_edit_selection(e, &a, &b);
     int tx = d->ox + it->x + 2 - f->scroll, bottom = d->oy + inner.y + inner.h;
@@ -422,7 +454,15 @@ static void draw_editor(kdm *m, const kd_draw *d, int slot, int i) {
     for (int ry = d->oy + it->y + 2; ry < bottom; ry += KDM_LINE_H) {
         size_t end = kd_edit_line_end(e, pos);
         // Rows outside the clip cost only the line scan.
-        if (ry + KDM_LINE_H > d->fb->clip.y && ry < d->fb->clip.y + d->fb->clip.h) {
+        bool caret_row = e->caret >= pos && e->caret <= end;
+        if (focus && preedit && caret_row && ry + KDM_LINE_H > d->fb->clip.y && ry < d->fb->clip.y + d->fb->clip.h) {
+            size_t c = e->caret;
+            int xc = kd_edit_x(e, c, advance, font);
+            kd_text_n(d->fb, font, tx, ry + 1, s + pos, (int)(c - pos), KD_C_BLACK, KD_NO_KEY);
+            int pw = draw_preedit(m, d->fb, font, tx + xc, ry + 1, ry, KDM_LINE_H);
+            kd_text_n(d->fb, font, tx + xc + pw, ry + 1, s + c, (int)(end - c), KD_C_BLACK, KD_NO_KEY);
+            kd_fb_vline(d->fb, tx + xc + pw, ry, KDM_LINE_H, KD_C_BLACK);
+        } else if (ry + KDM_LINE_H > d->fb->clip.y && ry < d->fb->clip.y + d->fb->clip.h) {
             kd_text_n(d->fb, font, tx, ry + 1, s + pos, (int)(end - pos), KD_C_BLACK, KD_NO_KEY);
             if (focus && a != b && a <= end && b > pos) {
                 size_t s0 = a > pos ? a : pos, s1 = b < end ? b : end;
@@ -450,9 +490,9 @@ static void field_after(kdm *m, int slot, kdm_item *it, field_was was, bool noti
     }
     kdm_field *f = &m->fields[it->aux];
     size_t damage = kd_edit_take_damage(&f->ed);
-    field_scroll(f, it);
+    field_scroll(f, it, preedit_px(m, it));
     kd_rect inner = field_inner(it);
-    if (f->scroll != was.scroll) {
+    if (f->scroll != was.scroll || has_preedit(m, it)) {   // a preedit follows the caret
         invalidate(m, slot, inner);
     } else {
         if (damage != KD_EDIT_NO_DAMAGE && !KDM_FAULTY(KDM_FAULT_FIELD_TEXT)) {
@@ -479,6 +519,16 @@ static void draw_field(kdm *m, const kd_draw *d, int slot, int i) {
     kd_fb_set_clip(d->fb, kd_rect_intersect(clip, kd_rect_make(d->ox + inner.x, d->oy + inner.y, inner.w, inner.h)));
     int tx = d->ox + it->x + 2 - f->scroll, ty = d->oy + it->y + 2;
     const char *s = (const char *)f->ed.buf;
+    if (shows_focus(m, slot, i) && has_preedit(m, it)) {   // text, preedit at the caret, text, caret
+        size_t c = f->ed.caret;
+        int xc = kd_edit_x(&f->ed, c, advance, (void *)font);
+        kd_text_n(d->fb, font, tx, ty, s, (int)c, KD_C_BLACK, KD_NO_KEY);
+        int pw = draw_preedit(m, d->fb, font, tx + xc, ty, d->oy + inner.y, inner.h);
+        kd_text_n(d->fb, font, tx + xc + pw, ty, s + c, (int)(f->ed.len - c), KD_C_BLACK, KD_NO_KEY);
+        kd_fb_vline(d->fb, tx + xc + pw, d->oy + inner.y, inner.h, KD_C_BLACK);
+        kd_fb_set_clip(d->fb, clip);
+        return;
+    }
     kd_text_n(d->fb, font, tx, ty, s, (int)f->ed.len, KD_C_BLACK, KD_NO_KEY);
     if (shows_focus(m, slot, i)) {
         size_t a, b;
@@ -779,6 +829,7 @@ int kdm_init(kdm *m, const kdm_menu_def *menus) {
     for (int i = 0; i < KDM_MAX_ITEMS; i++) m->items[i].next = i + 1 < KDM_MAX_ITEMS ? (uint16_t)(i + 1) : KDM_NONE;
     for (int s = 0; s < KD_MAX_WINDOWS; s++) m->win[s].head = m->win[s].tail = m->win[s].focus = KDM_NONE;
     for (int f = 0; f <= KDM_FIELDS; f++) m->fields[f].item = KDM_NONE;
+    m->preedit_item = KDM_NONE;
     kd_shell_hooks hooks = {menu_hook, NULL, m};
     kd_desktop_init(&m->desk, m->menus, NULL, 0, hooks);
     return rc;
@@ -1088,7 +1139,7 @@ int kdm_add_field(kdm *m, int slot, int x, int y, int w, const char *s, size_t l
     kd_edit_init(&f->ed, f->text, KDM_FIELD_BYTES, KD_EDIT_SINGLE_LINE);
     kd_edit_set(&f->ed, (const uint8_t *)s, len);   // measured above: cannot fail
     kd_edit_take_damage(&f->ed);
-    field_scroll(f, it);
+    field_scroll(f, it, 0);
     if (m->win[slot].focus == KDM_NONE) m->win[slot].focus = (uint16_t)i;
     invalidate(m, slot, item_box(m, it));
     return item_id(m, i);
@@ -1119,7 +1170,7 @@ int kdm_add_editor(kdm *m, int slot, int x, int y, int w, int h, const char *s, 
     kd_edit_select(&f->ed, 0, 0);
     kd_edit_take_damage(&f->ed);
     f->lines = (uint16_t)count_lines(&f->ed);
-    editor_scroll(f, it);
+    editor_scroll(f, it, 0);
     if (m->win[slot].focus == KDM_NONE) m->win[slot].focus = (uint16_t)i;
     invalidate(m, slot, item_box(m, it));
     return item_id(m, i);
@@ -1231,6 +1282,99 @@ int kdm_set_clipboard(kdm *m, const char *s, size_t len) {
     kd_edit_init(&e, (uint8_t *)m->clip, KDM_CLIP_BYTES, 0);
     kd_edit_set(&e, (const uint8_t *)s, len);
     m->clip_len = (uint16_t)e.len;
+    return KDM_OK;
+}
+
+// ---- input methods ----
+
+// The part of an editable record a preedit can cover: from the caret to the
+// right edge of its row (the text after the caret moves with the preedit).
+static void preedit_damage(kdm *m, int slot, const kdm_item *it) {
+    if (KDM_FAULTY(KDM_FAULT_PREEDIT)) return;
+    const kdm_field *f = &m->fields[it->aux];
+    int xc = it->x + 2 - f->scroll + kd_edit_x(&f->ed, f->ed.caret, advance, (void *)field_font(it));
+    if (it->op == KDM_OP_EDITOR) {
+        kd_rect inner = editor_inner(it);
+        int y = it->y + 2 + (int)view_row(&f->ed, f, f->ed.caret) * KDM_LINE_H;
+        invalidate(m, slot, kd_rect_intersect(kd_rect_make(xc, y, inner.x + inner.w - xc, KDM_LINE_H), inner));
+    } else {
+        kd_rect inner = field_inner(it);
+        invalidate(m, slot, kd_rect_intersect(kd_rect_make(xc, inner.y, inner.x + inner.w - xc, inner.h), inner));
+    }
+}
+
+// Scroll for the record's current preedit; the whole inside if it moved.
+static void preedit_rescroll(kdm *m, int slot, const kdm_item *it) {
+    kdm_field *f = &m->fields[it->aux];
+    int16_t scroll = f->scroll;
+    uint16_t top = f->top;
+    if (it->op == KDM_OP_EDITOR) editor_scroll(f, it, preedit_px(m, it));
+    else field_scroll(f, it, preedit_px(m, it));
+    if (f->scroll != scroll || f->top != top)
+        invalidate(m, slot, it->op == KDM_OP_EDITOR ? editor_inner(it) : field_inner(it));
+    else
+        preedit_damage(m, slot, it);
+}
+
+int kdm_set_preedit(kdm *m, int slot, int id, const char *s, size_t len, int hl_a, int hl_b) {
+    if (!window_ok(m, slot)) return KDM_ESTALE;
+    kdm_item *it = item_get(m, slot, id);
+    if (!it) return KDM_ESTALE;
+    if (!editable(it)) return KDM_EINVAL;
+    if (len >= KDM_PREEDIT_BYTES) return KDM_ETOOLONG;
+    if (kd_edit_measure((const uint8_t *)s, len, KD_EDIT_SINGLE_LINE) != (long)len) return KDM_EINVAL;
+    if (hl_a < 0 || hl_a == hl_b) {
+        hl_a = hl_b = 0;
+    } else if (hl_a > hl_b || (size_t)hl_b > len || ((unsigned char)s[hl_a] & 0xC0) == 0x80 ||
+               ((size_t)hl_b < len && ((unsigned char)s[hl_b] & 0xC0) == 0x80)) {
+        return KDM_EINVAL;                                   // not on character boundaries
+    }
+    int i = (int)(it - m->items);
+    if (m->preedit_item != KDM_NONE && m->preedit_item != i) {   // it moves from another record
+        kdm_item *old = &m->items[m->preedit_item];
+        int old_slot = old->win;
+        preedit_damage(m, old_slot, old);
+        m->preedit_item = KDM_NONE;
+        m->preedit_len = 0;
+        preedit_rescroll(m, old_slot, old);
+    }
+    if (has_preedit(m, it)) preedit_damage(m, slot, it);     // where the old one was
+    memcpy(m->preedit, s, len);
+    m->preedit[len] = 0;
+    m->preedit_len = (uint8_t)len;
+    m->preedit_hl_a = (uint8_t)hl_a;
+    m->preedit_hl_b = (uint8_t)hl_b;
+    m->preedit_item = len ? (uint16_t)i : KDM_NONE;
+    preedit_rescroll(m, slot, it);
+    return KDM_OK;
+}
+
+int kdm_input_target(const kdm *m, int *slot) {
+    kd_window *top = kd_desktop_top((kd_desktop *)&m->desk);
+    if (!top || m->desk.menu_open >= 0) return KDM_ENONE;
+    int s = slot_of(m, top);
+    uint16_t i = m->win[s].focus;
+    if (i == KDM_NONE || !editable(&m->items[i])) return KDM_ENONE;
+    *slot = s;
+    return item_id(m, i);
+}
+
+int kdm_caret_xy(kdm *m, int slot, int id, int *x, int *y, int *h) {
+    if (!window_ok(m, slot)) return KDM_ESTALE;
+    kdm_item *it = item_get(m, slot, id);
+    if (!it) return KDM_ESTALE;
+    if (!editable(it)) return KDM_EINVAL;
+    const kdm_field *f = &m->fields[it->aux];
+    kd_rect work = kd_window_work(&m->desk.win[slot]);
+    *x = work.x + it->x + 2 - f->scroll + kd_edit_x(&f->ed, f->ed.caret, advance, (void *)field_font(it)) +
+         preedit_px(m, it);
+    if (it->op == KDM_OP_EDITOR) {
+        *y = work.y + it->y + 2 + (int)view_row(&f->ed, f, f->ed.caret) * KDM_LINE_H;
+        *h = KDM_LINE_H;
+    } else {
+        *y = work.y + it->y + 1;
+        *h = KDM_FIELD_H - 2;
+    }
     return KDM_OK;
 }
 

@@ -1005,7 +1005,172 @@ static void t_mono_matches_pixels(void) {
     }
 }
 
+// ---- input method preedit ----
+
+static void t_preedit_field(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "W", kd_rect_make(10, 20, 220, 100), KD_WF_MOVE, 2);
+    int f = kdm_add_field(&M, w, 8, 8, 200, "abcd", 4, 0);
+    kdm_field_select(&M, w, f, 2, 2);
+    present();
+    uint32_t crc0 = fb_crc();
+    uint32_t v = kdm_field_editor(&M, w, f)->version;
+    kd_rect work = kd_window_work(&M.desk.win[w]);
+    int x, y, h;
+    CHECK_EQ(kdm_caret_xy(&M, w, f, &x, &y, &h), KDM_OK);
+    CHECK(x == work.x + 8 + 2 + 16 && y == work.y + 9 && h == 10);
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "▽かな", 9, -1, -1), KDM_OK);   // 3 glyphs, 24 px
+    present();
+    CHECK(equals_full_redraw());
+    CHECK(field_is(w, f, "abcd") && kdm_field_editor(&M, w, f)->version == v);   // the text is untouched
+    CHECK_EQ(kdm_caret_xy(&M, w, f, &x, &y, &h), KDM_OK);
+    CHECK_EQ(x, work.x + 8 + 2 + 16 + 24);                // the caret follows the preedit
+    CHECK_EQ(px(x, work.y + 10), KD_C_BLACK);
+    CHECK_EQ(px(work.x + 8 + 2 + 16 + 3, work.y + 18), KD_C_BLACK);   // underline (glyph row + 8)
+    // Highlight: ▼漢字 with 漢字 inverted.
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "▼漢字", 9, 3, 9), KDM_OK);
+    present();
+    CHECK(equals_full_redraw());
+    CHECK_EQ(px(work.x + 8 + 2 + 16 + 8, work.y + 9), KD_C_BLACK);    // inverted background
+    CHECK_EQ(px(work.x + 8 + 2 + 16 + 2, work.y + 9), KD_C_WHITE);    // ▼ not inverted
+    // Clearing leaves no trace.
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "", 0, -1, -1), KDM_OK);
+    present();
+    CHECK_EQ(fb_crc(), crc0);
+    // Invalid input changes nothing.
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "a\nb", 3, -1, -1), KDM_EINVAL);
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "\xE7\xA5", 2, -1, -1), KDM_EINVAL);
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "▼漢字", 9, 3, 5), KDM_EINVAL);   // inside 漢
+    CHECK_EQ(kdm_set_preedit(&M, w, f, "▼漢字", 9, 6, 3), KDM_EINVAL);
+    static char big[KDM_PREEDIT_BYTES];
+    memset(big, 'x', sizeof big);
+    CHECK_EQ(kdm_set_preedit(&M, w, f, big, sizeof big, -1, -1), KDM_ETOOLONG);
+    int t = kdm_add_text(&M, w, 0, 40, "label", 5, 1, -1, 0);
+    CHECK_EQ(kdm_set_preedit(&M, w, t, "x", 1, -1, -1), KDM_EINVAL);   // not editable
+    CHECK(present() <= 6);                                 // only the label was drawn
+    CHECK(equals_full_redraw());
+}
+
+static void t_preedit_editor_and_targets(void) {
+    kdm_menu_def def = {1, {"M"}, {{"A", "B"}}, {2}};
+    kdm_init(&M, &def);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(0, 11, 320, 189), 0, 2);
+    static const char doc[] = "line one\nline two\nline three";
+    int ed = kdm_add_editor(&M, w, 2, 2, 314, 154, doc, sizeof doc - 1, 0);
+    int fw = kdm_window_open(&M, "Dlg", kd_rect_make(60, 60, 200, 60), 0, 2);
+    int fl = kdm_add_field(&M, fw, 4, 4, 180, "", 0, 0);
+    int ok = kdm_add_button(&M, fw, 4, 24, 40, 14, "OK", 2, 0);
+    kdm_item_set_focusable(&M, fw, ok, true);
+    int slot = -1;
+    CHECK_EQ(kdm_input_target(&M, &slot), fl);            // the dialog's field
+    CHECK_EQ(slot, fw);
+    kdm_focus(&M, fw, ok);
+    CHECK_EQ(kdm_input_target(&M, &slot), KDM_ENONE);     // a button has the focus
+    kdm_window_activate(&M, w);
+    CHECK(kdm_input_target(&M, &slot) == ed && slot == w);
+    key(KD_KEY_F10, 0, 0);
+    CHECK_EQ(kdm_input_target(&M, &slot), KDM_ENONE);     // menus open
+    key(KD_KEY_ESCAPE, 0, 0);
+    drain();
+    kdm_field_select(&M, w, ed, 14, 14);                  // line two, after "line "
+    present();
+    uint32_t crc0 = fb_crc();
+    CHECK_EQ(kdm_set_preedit(&M, w, ed, "▽にほんご", 15, -1, -1), KDM_OK);
+    present();
+    CHECK(equals_full_redraw());
+    int x, y, h;
+    kdm_caret_xy(&M, w, ed, &x, &y, &h);
+    kd_rect work = kd_window_work(&M.desk.win[w]);
+    CHECK(x == work.x + 2 + 2 + 5 * 8 + 5 * 8 && y == work.y + 2 + 2 + KDM_LINE_H && h == KDM_LINE_H);
+    CHECK(field_is(w, ed, "line one\nline two\nline three"));
+    // The preedit moves to another record: the editor is restored exactly.
+    kdm_window_activate(&M, fw);
+    kdm_focus(&M, fw, fl);
+    CHECK_EQ(kdm_set_preedit(&M, fw, fl, "▼日本語", 12, 3, 12), KDM_OK);
+    present();
+    CHECK(equals_full_redraw());
+    kdm_window_activate(&M, w);
+    kdm_window_activate(&M, fw);
+    CHECK_EQ(kdm_set_preedit(&M, fw, fl, "", 0, -1, -1), KDM_OK);
+    kdm_window_close(&M, fw);
+    present();
+    CHECK_EQ(fb_crc(), crc0);
+    // A long preedit at the right edge scrolls the editor; clearing it is exact.
+    kdm_field_select(&M, w, ed, 28, 28);
+    present();
+    static const char long_pre[] = "▽ながいながいながいながいながいながいながいながいながいながい";   // 31 glyphs, 93 bytes
+    int rc = kdm_set_preedit(&M, w, ed, long_pre, sizeof long_pre - 1, -1, -1);
+    CHECK_EQ(rc, KDM_OK);
+    CHECK(M.fields[KDM_FIELDS].scroll > 0);
+    present();
+    CHECK(equals_full_redraw());
+    // Closing the window drops the preedit.
+    kdm_window_close(&M, w);
+    CHECK_EQ(M.preedit_item, KDM_NONE);
+    present();
+    CHECK(equals_full_redraw());
+}
+
+static void t_preedit_random(void) {
+    uint32_t r = 31337;
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "Doc", kd_rect_make(0, 11, 300, 160), KD_WF_MOVE, 2);
+    int ed = kdm_add_editor(&M, w, 2, 2, 200, 94, "", 0, 0);
+    int fl = kdm_add_field(&M, w, 2, 110, 150, "", 0, 0);
+    static const char *const pre[] = {"", "k", "▽か", "▽かんじ", "▼漢字", "▽ながいよみがなのれい", "▼候補"};
+    static const char *const words[] = {"a", "神", "abc ", "\n", "日本語の文章"};
+    for (int step = 0; step < 3000; step++) {
+        int target = kd_rand_range(&r, 0, 1) ? ed : fl;
+        int op = kd_rand_range(&r, 0, 9);
+        if (op <= 3) {
+            const char *s = pre[kd_rand_range(&r, 0, 6)];
+            int hl = s[0] && !strncmp(s, "▼", 3);
+            kdm_focus(&M, w, target);
+            kdm_set_preedit(&M, w, target, s, strlen(s), hl ? 3 : -1, hl ? (int)strlen(s) : -1);
+        } else if (op <= 6) {
+            kdm_set_preedit(&M, w, target, "", 0, -1, -1);   // the IME clears before committing
+            const char *s = words[kd_rand_range(&r, 0, 4)];
+            kdm_text_input(&M, s, strlen(s));
+        } else if (op == 7) {
+            static const uint8_t keys[] = {KD_KEY_LEFT, KD_KEY_RIGHT, KD_KEY_UP, KD_KEY_END, KD_KEY_BACKSPACE};
+            key(keys[kd_rand_range(&r, 0, 4)], 0, 0);
+        } else if (op == 8) {
+            kdm_window_move(&M, w, kd_rand_range(&r, -20, 60), kd_rand_range(&r, 0, 50));
+        } else {
+            kdm_focus(&M, w, kd_rand_range(&r, 0, 1) ? ed : fl);
+        }
+        drain();
+        if (step % 20 == 0) {
+            present();
+            if (!equals_full_redraw()) {
+                char msg[48];
+                snprintf(msg, sizeof msg, "preedit frame differs at step %d", step);
+                kd_test_fail(__FILE__, __LINE__, msg);
+                return;
+            }
+        }
+    }
+}
+
+// F10 on a desktop without menus read menus[-1] (found by the preedit tests).
+static void t_f10_without_menus(void) {
+    kdm_init(&M, NULL);
+    int w = kdm_window_open(&M, "W", kd_rect_make(10, 20, 100, 60), 0, 2);
+    (void)w;
+    key(KD_KEY_F10, 0, 0);
+    CHECK_EQ(M.desk.menu_open, -1);
+    key(KD_KEY_RIGHT, 0, 0);
+    key(KD_KEY_ENTER, 0, 0);
+    CHECK_EQ(M.desk.menu_open, -1);
+    present();
+    CHECK(equals_full_redraw());
+}
+
 static const kd_test_case tests[] = {
+    {"f10_without_menus", t_f10_without_menus},
+    {"preedit_field", t_preedit_field},
+    {"preedit_editor_and_targets", t_preedit_editor_and_targets},
+    {"preedit_random", t_preedit_random},
     {"mono_matches_pixels", t_mono_matches_pixels},
     {"editor_lines", t_editor_lines},
     {"editor_scrolling", t_editor_scrolling},
