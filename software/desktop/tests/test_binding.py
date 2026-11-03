@@ -424,6 +424,141 @@ def test_crc_matches_snapshot():
     check(binascii.crc32(buf) == d.crc())
 
 
+def kinds(events, kind):
+    return [e for e in events if e[0] == kind]
+
+
+def test_field_api():
+    d = kd.Desktop()
+    w = d.create_window('入力', 10, 20, 220, 120)
+    f = w.field(8, 8, 150, '神楽')
+    check(w.focused() == f and w.get_text(f) == '神楽')
+    check(w.selection(f) == (2, 2))             # characters, not bytes
+    d.present()
+    drain(d)
+    for c in 'ab':
+        d.key(kd.KEY_CHAR, c)
+    check(d.text('デスク') is True)
+    check(w.get_text(f) == '神楽abデスク')
+    ch = kinds(drain(d), kd.CHANGE)
+    check(len(ch) == 3 and all(e[1] == w and e[2] == f for e in ch))
+    d.key(kd.KEY_HOME, 0, kd.MOD_SHIFT)
+    check(w.selection(f) == (7, 0))
+    w.select(f, 1, 3)
+    check(w.selection(f) == (1, 3))
+    check(w.edit(f, kd.EDIT_CUT) and d.clipboard() == '楽a')
+    check(w.get_text(f) == '神bデスク')
+    check(w.edit(f, kd.EDIT_PASTE) and w.get_text(f) == '神楽abデスク')
+    d.set_clipboard('x\r\ny')
+    check(d.clipboard() == 'x\ny')
+    check(not w.edit(f, kd.EDIT_PASTE))          # a line break does not fit a field
+    check(raises(ValueError, w.select, f, 99))
+    check(raises(ValueError, w.select, f, -1))
+    check(raises(ValueError, d.text, 'a\nb'))
+    check(raises(ValueError, d.text, b'\xe7\xa5'))
+    check(d.text(b'\xe7\xa5\x9e') is True)       # bytes are accepted when valid
+    w.set_text(f, '')
+    check(d.text('x' * (kd.FIELD_BYTES + 1)) is False)  # too long: nothing changes
+    check(w.get_text(f) == '')
+    check(raises(ValueError, w.set_text, f, 'x' * (kd.FIELD_BYTES + 1)))
+    check(raises(ValueError, w.field, 0, 0, 100, 'a\nb'))
+    t = w.text(0, 40, 'label')
+    check(w.get_text(t) == 'label')
+    check(raises(ValueError, w.selection, t))    # not a field
+    check(raises(ValueError, w.focus, t))
+    check(raises(ValueError, w.focus, 0x1FFFFFF))
+    w.focus(None)
+    check(w.focused() is None and d.text('z') is False)
+    w.focus(f)
+    check(d.text('z') is True)
+
+
+def test_field_buttons_and_tab():
+    d = kd.Desktop()
+    w = d.create_window('Save As', 10, 20, 220, 120)
+    name = w.field(8, 8, 150, 'memo.txt')
+    ok = w.button(8, 40, 50, 16, 'OK', kd.BTN_DEFAULT, True)
+    cancel = w.button(70, 40, 60, 16, 'Cancel', 0, True)
+    plain = w.button(140, 40, 50, 16, 'Info')
+    drain(d)
+    d.key(kd.KEY_ENTER)                          # Enter in the field: default button
+    ev = kinds(drain(d), kd.ACTIVATE)
+    check(len(ev) == 1 and ev[0][2] == ok)
+    d.key(kd.KEY_TAB)
+    d.key(kd.KEY_TAB)
+    check(w.focused() == cancel)
+    d.key(kd.KEY_CHAR, ' ')
+    check([e[2] for e in kinds(drain(d), kd.ACTIVATE)] == [cancel])
+    d.key(kd.KEY_TAB, 0, kd.MOD_SHIFT)
+    d.key(kd.KEY_TAB, 0, kd.MOD_SHIFT)
+    check(w.focused() == name)
+    d.key(kd.KEY_ESCAPE)                         # left to the application
+    e = drain(d)
+    check(len(e) == 1 and e[0][0] == kd.KEY and e[0][4] == kd.KEY_ESCAPE)
+    check(plain != w.focused())
+    d.present()
+    check(d.crc() == d.crc())
+
+
+def test_field_lifetimes():
+    d = kd.Desktop()
+    w = d.create_window('A', 10, 20, 200, 100)
+    f = w.field(4, 4, 100, 'one')
+    w.close()
+    check(raises(ValueError, w.get_text, f))
+    check(raises(ValueError, w.field, 0, 0, 50))
+    check(d.text('x') is False)                  # no window: nothing focused
+    # Field slots come back when windows close, over many rounds.
+    for r in range(20):
+        v = d.create_window('B', 10, 20, 200, 160)
+        ids = [v.field(0, i * 14, 80, 'f%d' % i) for i in range(8)]   # KDM_FIELDS
+        check(raises(MemoryError, v.field, 0, 0, 80))
+        check(v.get_text(ids[-1]) == 'f7')
+        v.close()
+    v = d.create_window('C', 10, 20, 200, 100)
+    g = v.field(0, 0, 80, 'gc')
+    gc.collect()
+    for i in range(50):
+        v.set_text(g, ''.join(['%d' % i, '漢']))
+        gc.collect()
+    check(v.get_text(g) == '49漢')
+    d2 = kd.Desktop()                            # replaces the native state
+    check(raises(ValueError, v.get_text, g))
+    check(raises(ValueError, d.text, 'x'))
+    w2 = d2.create_window('D', 10, 20, 200, 100)
+    h = w2.field(0, 0, 80)
+    check(w2.get_text(h) == '' and d2.clipboard() == '')
+
+
+def test_field_heap_locked_typing():
+    d = kd.Desktop()
+    w = d.create_window('W', 10, 20, 220, 100)
+    f = w.field(4, 4, 200)
+    mirror = bytearray(32000)
+    lst = [None] * 8
+    words = ['神', 'a', '楽']
+    d.present(mirror)
+    drain(d)
+    micropython.heap_lock()
+    try:
+        for i in range(12):
+            d.key(kd.KEY_CHAR, 65 + i, 0, 10 * i)
+            d.text(words[i % 3])
+            if i % 4 == 3:
+                d.key(kd.KEY_BACKSPACE, 0, 0, 10 * i + 5)
+                d.key(kd.KEY_LEFT, 0, kd.MOD_SHIFT, 10 * i + 6)
+            while d.poll_into(lst):
+                pass
+            d.present(mirror)
+        ok = True
+    except MemoryError:
+        ok = False
+    micropython.heap_unlock()
+    check(ok, 'typing allocates nothing')
+    # 24 typed, 3 backspaces, 2 selections replaced by the next key
+    check(len(w.get_text(f)) == 19)
+
+
 def main():
     global failed, run
     tests = [(k, v) for k, v in globals().items() if k.startswith('test_')]

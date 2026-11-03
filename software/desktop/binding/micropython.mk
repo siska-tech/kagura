@@ -5,7 +5,7 @@ KD_MOD_DIR := $(USERMOD_DIR)
 KD_ROOT := $(KD_MOD_DIR)/..
 
 SRC_USERMOD_C += $(KD_MOD_DIR)/modkagura_desktop.c
-SRC_USERMOD_LIB_C += $(KD_ROOT)/retained/kdm.c $(KD_ROOT)/text/kj_text.c $(KD_ROOT)/text/kj_misaki8.c
+SRC_USERMOD_LIB_C += $(KD_ROOT)/retained/kdm.c $(KD_ROOT)/text/kj_text.c $(KD_ROOT)/text/kd_edit.c $(KD_ROOT)/text/kj_misaki8.c
 SRC_USERMOD_LIB_C += $(addprefix $(KD_ROOT)/core/, \
 	kd_fb.c kd_region.c kd_tile4.c kd_font.c kd_font_data.c kd_sprite.c kd_gfx.c kd_app.c kd_desktop.c)
 

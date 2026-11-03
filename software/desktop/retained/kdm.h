@@ -14,12 +14,31 @@
 //
 // Errors are atomic: a call that returns an error has changed nothing.
 // No allocation, no globals; all state lives in the caller's kdm.
+//
+// Keyboard (Phase 4). Each window has at most one focused control: an
+// editable field, or a button made focusable. Keys reach a window only after
+// the desktop's own keys (open menu, F10, F6/Ctrl+Tab, Ctrl+W, Ctrl+arrows on
+// movable windows; see kd_desktop.c). Then, in this order:
+//   1. Tab / Shift+Tab move the focus through the window's focusable
+//      controls in display-list order, wrapping. Without any, Tab is queued.
+//   2. A focused field consumes printable ASCII, Backspace, Delete, Left,
+//      Right, Home, End (Shift extends the selection), Ctrl+A (select all),
+//      Ctrl+Insert (copy), Shift+Insert (paste), Shift+Delete (cut).
+//      Ctrl+C stays MicroPython's interrupt and is never an editing key.
+//   3. A focused button consumes Enter and Space and queues KDM_EV_ACTIVATE.
+//   4. Enter not consumed above activates the window's focusable default
+//      button (KD_BTN_DEFAULT), if any.
+//   5. Everything else is queued as before (Escape, Up, Down, F keys, ...).
+// A window without focusable controls therefore behaves exactly as before.
+// Non-ASCII text enters through kdm_text_input (UTF-8), never through the
+// one-byte kd_event.ch. Edits by keys queue KDM_EV_CHANGE; API calls do not.
 #ifndef KDM_H
 #define KDM_H
 
 #include <stddef.h>
 
 #include "kd_desktop.h"
+#include "kd_edit.h"
 #include "kd_tile4.h"
 
 #ifndef KDM_MAX_ITEMS
@@ -40,6 +59,14 @@
 #define KDM_TEXT_MAX 63            // characters per record
 #define KDM_ITEM_BITS 9
 #define KDM_NONE 0xFFFFu
+#ifndef KDM_FIELDS
+#define KDM_FIELDS 8               // editable fields, all windows together
+#endif
+#define KDM_FIELD_BYTES 64         // field text with its NUL: 63 bytes
+#define KDM_FIELD_H 12             // field height: border, padding, 8 px text
+#ifndef KDM_CLIP_BYTES
+#define KDM_CLIP_BYTES 256         // clipboard, NUL included
+#endif
 
 #if KDM_MAX_ITEMS > (1 << KDM_ITEM_BITS) || KDM_TEXT_BYTES > 0xFFFF
 #error "kdm pool sizes out of range"
@@ -55,14 +82,22 @@ enum {
     KDM_ENOSPRITE = -6,   // sprite pool full
     KDM_ENOMENU = -7,     // menu definition too large
     KDM_ESINK = -8,       // present: the sink refused a run
+    KDM_ETOOLONG = -9,    // text longer than the field or clipboard holds
+    KDM_ENOFIELD = -10,   // field pool full
+    KDM_ENONE = -11,      // nothing focused
 };
 
 // Events added by kdm to the KD_EV_* set.
-enum { KDM_EV_CLOSE = 16, KDM_EV_MENU = 17 };
+// CHANGE: a key edited a field; ACTIVATE: a button was pressed by key.
+// Both carry the record id in ev.reserved.
+enum { KDM_EV_CLOSE = 16, KDM_EV_MENU = 17, KDM_EV_CHANGE = 18, KDM_EV_ACTIVATE = 19 };
+
+enum { KDM_EDIT_COPY, KDM_EDIT_CUT, KDM_EDIT_PASTE, KDM_EDIT_SELECT_ALL };
 
 enum {
     KDM_OP_FREE, KDM_OP_FILL, KDM_OP_RECT, KDM_OP_HLINE, KDM_OP_VLINE,
     KDM_OP_TEXT, KDM_OP_TEXT_SMALL, KDM_OP_BUTTON, KDM_OP_SPRITE, KDM_OP_ICON,
+    KDM_OP_FIELD,
 };
 
 #define KDM_NO_BG 0xFF   // text: transparent background; sprite: no key
@@ -80,6 +115,7 @@ typedef struct {
 typedef struct {
     uint32_t serial;     // 0: slot unused
     uint16_t head, tail; // display list, drawing order
+    uint16_t focus;      // focused record, KDM_NONE if none
     uint8_t bg;
     bool open;
 } kdm_window;
@@ -95,6 +131,14 @@ typedef struct {
     uint32_t serial;     // window serial at the time of the event (0: none)
     int8_t win;          // window slot, -1 for desktop events (menus)
 } kdm_event;
+
+// An editable single-line field; its record's aux is the pool index.
+typedef struct {
+    kd_edit ed;          // text points into text[] below (static state)
+    uint16_t item;       // owning record, KDM_NONE: free
+    int16_t scroll;      // pixels of text hidden on the left
+    uint8_t text[KDM_FIELD_BYTES];
+} kdm_field;
 
 typedef struct {
     uint32_t dropped;           // events lost because the ring was full
@@ -115,6 +159,9 @@ typedef struct kdm {
     uint16_t text_top;          // arena allocation pointer
     char text[KDM_TEXT_BYTES];
     kdm_sprite sprites[KDM_MAX_SPRITES];
+    kdm_field fields[KDM_FIELDS];
+    char clip[KDM_CLIP_BYTES];  // clipboard, NUL-terminated UTF-8
+    uint16_t clip_len;
     kdm_event ring[KDM_EVENTS];
     uint8_t ring_head, ring_count;
     int8_t api_closing;         // slot being closed by kdm_window_close
@@ -165,6 +212,24 @@ int kdm_item_set_color(kdm *m, int slot, int id, uint8_t color);
 int kdm_item_set_flags(kdm *m, int slot, int id, unsigned flags);
 int kdm_item_move(kdm *m, int slot, int id, int x, int y);
 int kdm_item_remove(kdm *m, int slot, int id);
+
+// Fields and focus. font 0: system 8x8, 1: small 4x8 ASCII. Height KDM_FIELD_H.
+// The first focusable control added to a window takes the focus.
+int kdm_add_field(kdm *m, int slot, int x, int y, int w, const char *s, size_t len, int font);
+// Text of a field or text record; valid until the next change of the record.
+int kdm_item_get_text(kdm *m, int slot, int id, const char **s, size_t *len);
+const kd_edit *kdm_field_editor(kdm *m, int slot, int id);   // NULL: not a live field
+int kdm_field_select(kdm *m, int slot, int id, size_t anchor, size_t caret);   // byte offsets
+int kdm_item_set_focusable(kdm *m, int slot, int id, bool on);   // buttons
+int kdm_focus(kdm *m, int slot, int id);      // id < 0: no focus
+int kdm_focused(const kdm *m, int slot);      // record id or KDM_ENONE
+// KDM_EDIT_*: returns 1 when the text, selection or clipboard changed.
+int kdm_edit(kdm *m, int slot, int id, int cmd);
+// UTF-8 text for the focused field of the top window (menus closed). Returns
+// 1 when inserted, 0 when no field has the focus, KDM_ETOOLONG when it does
+// not fit, KDM_EINVAL for invalid UTF-8 or a line break. Queues KDM_EV_CHANGE.
+int kdm_text_input(kdm *m, const char *s, size_t len);
+int kdm_set_clipboard(kdm *m, const char *s, size_t len);
 
 extern const char *const kdm_icon_names[];
 int kdm_icon_lookup(const char *name, size_t len);

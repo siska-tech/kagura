@@ -9,6 +9,7 @@ target_sources(usermod_kagura_desktop INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modkagura_desktop.c
     ${KD_ROOT}/retained/kdm.c
     ${KD_ROOT}/text/kj_text.c
+    ${KD_ROOT}/text/kd_edit.c
     ${KD_ROOT}/text/kj_misaki8.c
     ${KD_ROOT}/core/kd_fb.c
     ${KD_ROOT}/core/kd_region.c

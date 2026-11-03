@@ -44,6 +44,8 @@ static MP_NORETURN void raise_rc(int rc) {
     case KDM_ENOSPRITE: mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("kagura_desktop: sprite pool full"));
     case KDM_ENOMENU: mp_raise_ValueError(MP_ERROR_TEXT("menus too large"));
     case KDM_ESINK: mp_raise_OSError(MP_EIO);
+    case KDM_ETOOLONG: mp_raise_ValueError(MP_ERROR_TEXT("text too long"));
+    case KDM_ENOFIELD: mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("kagura_desktop: field pool full"));
     default: mp_raise_ValueError(MP_ERROR_TEXT("invalid argument"));
     }
 }
@@ -288,7 +290,9 @@ static mp_obj_t event_window(desktop_obj_t *d, const kdm_event *e) {
 static void event_fields(desktop_obj_t *d, const kdm_event *e, mp_obj_t out[8]) {
     out[0] = MP_OBJ_NEW_SMALL_INT(e->ev.type);
     out[1] = event_window(d, e);   // may allocate: before the event is dropped
-    out[2] = MP_OBJ_NEW_SMALL_INT(e->ev.x);
+    // CHANGE and ACTIVATE carry the record id in place of x (y is 0).
+    bool control = e->ev.type == KDM_EV_CHANGE || e->ev.type == KDM_EV_ACTIVATE;
+    out[2] = MP_OBJ_NEW_SMALL_INT(control ? (mp_int_t)e->ev.reserved : e->ev.x);
     out[3] = MP_OBJ_NEW_SMALL_INT(e->ev.y);
     out[4] = MP_OBJ_NEW_SMALL_INT(e->ev.key);
     out[5] = MP_OBJ_NEW_SMALL_INT((uint8_t)e->ev.ch);
@@ -326,6 +330,37 @@ static mp_obj_t desktop_poll_into(mp_obj_t self, mp_obj_t lst) {
     return mp_const_true;
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(desktop_poll_into_obj, desktop_poll_into);
+
+// text(s): UTF-8 text (str or bytes) for the focused field of the active
+// window. Returns False when no field has the focus or the text does not fit
+// (nothing changes); invalid UTF-8 or a line break raise ValueError.
+// Allocates nothing, so it may run under heap_lock().
+static mp_obj_t desktop_text(mp_obj_t self, mp_obj_t text) {
+    desk_arg(self);
+    size_t len;
+    const char *s = mp_obj_str_get_data(text, &len);
+    int rc = kdm_text_input(&state, s, len);
+    if (rc == KDM_ETOOLONG) return mp_const_false;
+    return mp_obj_new_bool(check(rc) == 1);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(desktop_text_obj, desktop_text);
+
+// clipboard() -> str and set_clipboard(s): one clipboard for all fields
+// (Ctrl+Insert, Shift+Insert, Shift+Delete, or Window.edit from a menu).
+static mp_obj_t desktop_clipboard(mp_obj_t self) {
+    desk_arg(self);
+    return mp_obj_new_str(state.clip, state.clip_len);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(desktop_clipboard_obj, desktop_clipboard);
+
+static mp_obj_t desktop_set_clipboard(mp_obj_t self, mp_obj_t text) {
+    desk_arg(self);
+    size_t len;
+    const char *s = mp_obj_str_get_data(text, &len);
+    check(kdm_set_clipboard(&state, s, len));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(desktop_set_clipboard_obj, desktop_set_clipboard);
 
 static mp_obj_t desktop_render(mp_obj_t self) {
     desk_arg(self);
@@ -505,6 +540,9 @@ static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&desktop_sprite_obj)},
     {MP_ROM_QSTR(MP_QSTR_pointer), MP_ROM_PTR(&desktop_pointer_obj)},
     {MP_ROM_QSTR(MP_QSTR_key), MP_ROM_PTR(&desktop_key_obj)},
+    {MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&desktop_text_obj)},
+    {MP_ROM_QSTR(MP_QSTR_clipboard), MP_ROM_PTR(&desktop_clipboard_obj)},
+    {MP_ROM_QSTR(MP_QSTR_set_clipboard), MP_ROM_PTR(&desktop_set_clipboard_obj)},
     {MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&desktop_poll_obj)},
     {MP_ROM_QSTR(MP_QSTR_poll_into), MP_ROM_PTR(&desktop_poll_into_obj)},
     {MP_ROM_QSTR(MP_QSTR_render), MP_ROM_PTR(&desktop_render_obj)},
@@ -587,15 +625,18 @@ static mp_obj_t window_text(size_t n_args, const mp_obj_t *a) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_text_obj, 4, 7, window_text);
 
-// button(x, y, w, h, label, flags=0)
+// button(x, y, w, h, label, flags=0, focusable=False); a focusable button takes
+// part in Tab navigation, and Enter or Space on it queue ACTIVATE.
 static mp_obj_t window_button(size_t n_args, const mp_obj_t *a) {
     int slot = win_arg(a[0]);
     const char *s;
     size_t len = text_arg(a[5], &s);
-    return ret_id(kdm_add_button(&state, slot, i16(a[1]), i16(a[2]), i16(a[3]),
-                                 i16(a[4]), s, len, (unsigned)int_arg(n_args, a, 6, 0)));
+    int id = check(kdm_add_button(&state, slot, i16(a[1]), i16(a[2]), i16(a[3]),
+                                  i16(a[4]), s, len, (unsigned)int_arg(n_args, a, 6, 0)));
+    if (n_args > 7 && mp_obj_is_true(a[7])) kdm_item_set_focusable(&state, slot, id, true);
+    return MP_OBJ_NEW_SMALL_INT(id);
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_button_obj, 6, 7, window_button);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_button_obj, 6, 8, window_button);
 
 // sprite(x, y, spr, zoom=1, key=-1)
 static mp_obj_t window_sprite(size_t n_args, const mp_obj_t *a) {
@@ -616,6 +657,94 @@ static mp_obj_t window_icon(size_t n_args, const mp_obj_t *a) {
                                n_args > 5 && mp_obj_is_true(a[5])));
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_icon_obj, 5, 6, window_icon);
+
+// field(x, y, w, text='', font=0) -> item id: a single-line editable field,
+// FIELD_H pixels high, holding at most FIELD_BYTES bytes of UTF-8.
+static mp_obj_t window_field(size_t n_args, const mp_obj_t *a) {
+    int slot = win_arg(a[0]);
+    const char *s = "";
+    size_t len = n_args > 4 ? text_arg(a[4], &s) : 0;
+    return ret_id(kdm_add_field(&state, slot, i16(a[1]), i16(a[2]), i16(a[3]), s, len,
+                                int_arg(n_args, a, 5, 0)));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_field_obj, 4, 6, window_field);
+
+// get_text(id) -> str of a field or text record.
+static mp_obj_t window_get_text(mp_obj_t self, mp_obj_t id) {
+    int slot = win_arg(self);
+    const char *s;
+    size_t len;
+    check(kdm_item_get_text(&state, slot, id_arg(id), &s, &len));
+    return mp_obj_new_str(s, len);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_get_text_obj, window_get_text);
+
+static const kd_edit *field_arg(int slot, mp_obj_t id) {
+    const kd_edit *e = kdm_field_editor(&state, slot, id_arg(id));
+    if (!e) {
+        const char *s;
+        size_t len;
+        check(kdm_item_get_text(&state, slot, id_arg(id), &s, &len));   // removed: ValueError
+        raise_rc(KDM_EINVAL);                                           // not a field
+    }
+    return e;
+}
+
+// Python indexes str by character, the native editor by byte.
+static size_t char_to_byte(const kd_edit *e, mp_obj_t o) {
+    mp_int_t n = mp_obj_get_int(o);
+    if (n < 0) raise_rc(KDM_EINVAL);
+    size_t pos = 0;
+    while (n-- > 0) {
+        if (pos >= e->len) raise_rc(KDM_EINVAL);
+        pos = kd_edit_next(e, pos);
+    }
+    return pos;
+}
+
+// selection(id) -> (anchor, caret) in characters; equal when nothing is selected.
+static mp_obj_t window_selection(mp_obj_t self, mp_obj_t id) {
+    const kd_edit *e = field_arg(win_arg(self), id);
+    mp_obj_t t[2] = {MP_OBJ_NEW_SMALL_INT(kd_edit_count(e, 0, e->anchor)),
+                     MP_OBJ_NEW_SMALL_INT(kd_edit_count(e, 0, e->caret))};
+    return mp_obj_new_tuple(2, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_selection_obj, window_selection);
+
+// select(id, anchor, caret=anchor), in characters.
+static mp_obj_t window_select(size_t n_args, const mp_obj_t *a) {
+    int slot = win_arg(a[0]);
+    const kd_edit *e = field_arg(slot, a[1]);
+    size_t anchor = char_to_byte(e, a[2]), caret = n_args > 3 ? char_to_byte(e, a[3]) : anchor;
+    check(kdm_field_select(&state, slot, id_arg(a[1]), anchor, caret));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_select_obj, 3, 4, window_select);
+
+// edit(id, cmd): EDIT_COPY, EDIT_CUT, EDIT_PASTE or EDIT_SELECT_ALL, for
+// menus. True when the text, the selection or the clipboard changed.
+static mp_obj_t window_edit(mp_obj_t self, mp_obj_t id, mp_obj_t cmd) {
+    int slot = win_arg(self);
+    return mp_obj_new_bool(check(kdm_edit(&state, slot, id_arg(id), i16(cmd))));
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(window_edit_obj, window_edit);
+
+// focus(id): focuses a field or focusable button; focus(None) clears the focus.
+static mp_obj_t window_focus(mp_obj_t self, mp_obj_t id) {
+    int slot = win_arg(self);
+    int i = id == mp_const_none ? -1 : id_arg(id);
+    if (id != mp_const_none && i < 0) raise_rc(KDM_ESTALE);   // out of range: no such record
+    check(kdm_focus(&state, slot, i));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_focus_obj, window_focus);
+
+// focused() -> item id, or None.
+static mp_obj_t window_focused(mp_obj_t self) {
+    int rc = kdm_focused(&state, win_arg(self));
+    return rc == KDM_ENONE ? mp_const_none : MP_OBJ_NEW_SMALL_INT(check(rc));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(window_focused_obj, window_focused);
 
 static mp_obj_t window_set_text(mp_obj_t self, mp_obj_t id, mp_obj_t text) {
     int slot = win_arg(self);
@@ -756,6 +885,13 @@ static const mp_rom_map_elem_t window_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_button), MP_ROM_PTR(&window_button_obj)},
     {MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&window_sprite_obj)},
     {MP_ROM_QSTR(MP_QSTR_icon), MP_ROM_PTR(&window_icon_obj)},
+    {MP_ROM_QSTR(MP_QSTR_field), MP_ROM_PTR(&window_field_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_text), MP_ROM_PTR(&window_get_text_obj)},
+    {MP_ROM_QSTR(MP_QSTR_selection), MP_ROM_PTR(&window_selection_obj)},
+    {MP_ROM_QSTR(MP_QSTR_select), MP_ROM_PTR(&window_select_obj)},
+    {MP_ROM_QSTR(MP_QSTR_edit), MP_ROM_PTR(&window_edit_obj)},
+    {MP_ROM_QSTR(MP_QSTR_focus), MP_ROM_PTR(&window_focus_obj)},
+    {MP_ROM_QSTR(MP_QSTR_focused), MP_ROM_PTR(&window_focused_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_text), MP_ROM_PTR(&window_set_text_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_color), MP_ROM_PTR(&window_set_color_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_flags), MP_ROM_PTR(&window_set_flags_obj)},
@@ -898,7 +1034,10 @@ static const mp_rom_map_elem_t module_table[] = {
     CONST(KEY_LEFT, KD_KEY_LEFT), CONST(KEY_RIGHT, KD_KEY_RIGHT), CONST(KEY_ENTER, KD_KEY_ENTER),
     CONST(KEY_ESCAPE, KD_KEY_ESCAPE), CONST(KEY_TAB, KD_KEY_TAB), CONST(KEY_BACKSPACE, KD_KEY_BACKSPACE),
     CONST(KEY_DELETE, KD_KEY_DELETE), CONST(KEY_HOME, KD_KEY_HOME), CONST(KEY_END, KD_KEY_END),
-    CONST(KEY_F6, KD_KEY_F6), CONST(KEY_F10, KD_KEY_F10),
+    CONST(KEY_F6, KD_KEY_F6), CONST(KEY_F10, KD_KEY_F10), CONST(KEY_INSERT, KD_KEY_INSERT),
+    CONST(CHANGE, KDM_EV_CHANGE), CONST(ACTIVATE, KDM_EV_ACTIVATE),
+    CONST(EDIT_COPY, KDM_EDIT_COPY), CONST(EDIT_CUT, KDM_EDIT_CUT), CONST(EDIT_PASTE, KDM_EDIT_PASTE),
+    CONST(EDIT_SELECT_ALL, KDM_EDIT_SELECT_ALL), CONST(FIELD_H, KDM_FIELD_H), CONST(FIELD_BYTES, KDM_FIELD_BYTES - 1),
     CONST(MOD_SHIFT, KD_MOD_SHIFT), CONST(MOD_CTRL, KD_MOD_CTRL), CONST(MOD_ALT, KD_MOD_ALT),
     CONST(BTN_DEFAULT, KD_BTN_DEFAULT), CONST(BTN_PRESSED, KD_BTN_PRESSED), CONST(BTN_FOCUS, KD_BTN_FOCUS),
     CONST(BTN_DISABLED, KD_BTN_DISABLED),
