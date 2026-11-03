@@ -371,6 +371,19 @@ static mp_obj_t desktop_set_clipboard(mp_obj_t self, mp_obj_t text) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(desktop_set_clipboard_obj, desktop_set_clipboard);
 
+// input_target() -> (Window, id) of the focused field or editor of the active
+// window, or None (menus open, a button focused, no window): where typed
+// text would go, for input methods.
+static mp_obj_t desktop_input_target(mp_obj_t self) {
+    desktop_obj_t *d = desk_arg(self);
+    int slot = -1;
+    int id = kdm_input_target(&state, &slot);
+    if (id < 0 || d->windows[slot] == mp_const_none) return mp_const_none;
+    mp_obj_t t[2] = {d->windows[slot], MP_OBJ_NEW_SMALL_INT(id)};
+    return mp_obj_new_tuple(2, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(desktop_input_target_obj, desktop_input_target);
+
 static mp_obj_t desktop_render(mp_obj_t self) {
     desk_arg(self);
     return mp_obj_new_bool(kdm_render(&state));
@@ -550,6 +563,7 @@ static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_pointer), MP_ROM_PTR(&desktop_pointer_obj)},
     {MP_ROM_QSTR(MP_QSTR_key), MP_ROM_PTR(&desktop_key_obj)},
     {MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&desktop_text_obj)},
+    {MP_ROM_QSTR(MP_QSTR_input_target), MP_ROM_PTR(&desktop_input_target_obj)},
     {MP_ROM_QSTR(MP_QSTR_clipboard), MP_ROM_PTR(&desktop_clipboard_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_clipboard), MP_ROM_PTR(&desktop_set_clipboard_obj)},
     {MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&desktop_poll_obj)},
@@ -773,6 +787,43 @@ static mp_obj_t window_length(mp_obj_t self, mp_obj_t id) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(window_length_obj, window_length);
 
+// Byte offset of character n in UTF-8 s[0..len) (n past the end: len).
+static size_t utf8_offset(const char *s, size_t len, mp_int_t n) {
+    size_t pos = 0;
+    while (n-- > 0 && pos < len) {
+        pos++;
+        while (pos < len && ((unsigned char)s[pos] & 0xC0) == 0x80) pos++;
+    }
+    return pos;
+}
+
+// set_preedit(id, text, start=-1, end=-1): an input method's preedit at the
+// caret of a field or the editor, characters [start, end) highlighted; ''
+// clears it. Shown while the record has the focus; its text is untouched.
+static mp_obj_t window_set_preedit(size_t n_args, const mp_obj_t *a) {
+    int slot = win_arg(a[0]);
+    const char *s;
+    size_t len = text_arg(a[2], &s);
+    mp_int_t hs = n_args > 3 ? mp_obj_get_int(a[3]) : -1, he = n_args > 4 ? mp_obj_get_int(a[4]) : -1;
+    int ba = -1, bb = -1;
+    if (hs >= 0 && he > hs) {
+        ba = (int)utf8_offset(s, len, hs);
+        bb = (int)utf8_offset(s, len, he);
+    }
+    check(kdm_set_preedit(&state, slot, id_arg(a[1]), s, len, ba, bb));
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(window_set_preedit_obj, 3, 5, window_set_preedit);
+
+// caret_xy(id) -> (x, y, h): the caret on the screen, after any preedit.
+static mp_obj_t window_caret_xy(mp_obj_t self, mp_obj_t id) {
+    int x, y, h;
+    check(kdm_caret_xy(&state, win_arg(self), id_arg(id), &x, &y, &h));
+    mp_obj_t t[3] = {MP_OBJ_NEW_SMALL_INT(x), MP_OBJ_NEW_SMALL_INT(y), MP_OBJ_NEW_SMALL_INT(h)};
+    return mp_obj_new_tuple(3, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(window_caret_xy_obj, window_caret_xy);
+
 // focus(id): focuses a field or focusable button; focus(None) clears the focus.
 static mp_obj_t window_focus(mp_obj_t self, mp_obj_t id) {
     int slot = win_arg(self);
@@ -930,6 +981,8 @@ static const mp_rom_map_elem_t window_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&window_sprite_obj)},
     {MP_ROM_QSTR(MP_QSTR_icon), MP_ROM_PTR(&window_icon_obj)},
     {MP_ROM_QSTR(MP_QSTR_field), MP_ROM_PTR(&window_field_obj)},
+    {MP_ROM_QSTR(MP_QSTR_set_preedit), MP_ROM_PTR(&window_set_preedit_obj)},
+    {MP_ROM_QSTR(MP_QSTR_caret_xy), MP_ROM_PTR(&window_caret_xy_obj)},
     {MP_ROM_QSTR(MP_QSTR_editor), MP_ROM_PTR(&window_editor_obj)},
     {MP_ROM_QSTR(MP_QSTR_caret), MP_ROM_PTR(&window_caret_obj)},
     {MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&window_version_obj)},
@@ -1084,7 +1137,7 @@ static const mp_rom_map_elem_t module_table[] = {
     CONST(KEY_DELETE, KD_KEY_DELETE), CONST(KEY_HOME, KD_KEY_HOME), CONST(KEY_END, KD_KEY_END),
     CONST(KEY_F6, KD_KEY_F6), CONST(KEY_F10, KD_KEY_F10), CONST(KEY_INSERT, KD_KEY_INSERT),
     CONST(KEY_PGUP, KD_KEY_PGUP), CONST(KEY_PGDN, KD_KEY_PGDN), CONST(DOC_BYTES, KDM_DOC_BYTES - 1),
-    CONST(LINE_H, KDM_LINE_H),
+    CONST(LINE_H, KDM_LINE_H), CONST(PREEDIT_BYTES, KDM_PREEDIT_BYTES - 1),
     CONST(CHANGE, KDM_EV_CHANGE), CONST(ACTIVATE, KDM_EV_ACTIVATE),
     CONST(EDIT_COPY, KDM_EDIT_COPY), CONST(EDIT_CUT, KDM_EDIT_CUT), CONST(EDIT_PASTE, KDM_EDIT_PASTE),
     CONST(EDIT_SELECT_ALL, KDM_EDIT_SELECT_ALL), CONST(FIELD_H, KDM_FIELD_H), CONST(FIELD_BYTES, KDM_FIELD_BYTES - 1),

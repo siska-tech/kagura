@@ -70,6 +70,7 @@
 #define KDM_DOC_BYTES 8192         // the editor's document with its NUL: 8,191 bytes
 #endif
 #define KDM_LINE_H 10              // editor line pitch: 8 px text, 1 px above and below
+#define KDM_PREEDIT_BYTES 96       // input method preedit with its NUL
 #ifndef KDM_CLIP_BYTES
 #define KDM_CLIP_BYTES 256         // clipboard, NUL included
 #endif
@@ -173,6 +174,11 @@ typedef struct kdm {
     uint8_t doc[KDM_DOC_BYTES];       // the editor's document
     char clip[KDM_CLIP_BYTES];  // clipboard, NUL-terminated UTF-8
     uint16_t clip_len;
+    // Input method preedit, drawn at the caret of one editable record (not
+    // stored in its text): UTF-8, highlight [hl_a, hl_b) in bytes (empty: none).
+    char preedit[KDM_PREEDIT_BYTES];
+    uint8_t preedit_len, preedit_hl_a, preedit_hl_b;
+    uint16_t preedit_item;      // record index, KDM_NONE: no preedit
     kdm_event ring[KDM_EVENTS];
     uint8_t ring_head, ring_count;
     int8_t api_closing;         // slot being closed by kdm_window_close
@@ -245,6 +251,19 @@ int kdm_edit(kdm *m, int slot, int id, int cmd);
 // not fit, KDM_EINVAL for invalid UTF-8 or a line break. Queues KDM_EV_CHANGE.
 int kdm_text_input(kdm *m, const char *s, size_t len);
 int kdm_set_clipboard(kdm *m, const char *s, size_t len);
+
+// Input methods. The preedit (an SKK reading, a candidate) is shown inline at
+// the caret of a field or the editor while it has the focus, the text after
+// the caret moved right, [hl_a, hl_b) inverted, the caret after it; the
+// record's text is not changed. One preedit at a time: setting it on another
+// record moves it; len 0 clears it. Valid UTF-8 without line breaks, at most
+// KDM_PREEDIT_BYTES - 1 bytes; hl_a < 0 or hl_a == hl_b: no highlight.
+int kdm_set_preedit(kdm *m, int slot, int id, const char *s, size_t len, int hl_a, int hl_b);
+// The focused field or editor of the active window, menus closed: its record
+// id, the window slot in *slot; KDM_ENONE if keys would not reach one.
+int kdm_input_target(const kdm *m, int *slot);
+// Screen position of a record's caret (after its preedit): x, top y, height.
+int kdm_caret_xy(kdm *m, int slot, int id, int *x, int *y, int *h);
 
 extern const char *const kdm_icon_names[];
 int kdm_icon_lookup(const char *name, size_t len);
