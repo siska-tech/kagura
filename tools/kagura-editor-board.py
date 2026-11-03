@@ -230,9 +230,9 @@ try:
     end = time.ticks_add(time.ticks_ms(), %d * 1000)
     while time.ticks_diff(end, time.ticks_ms()) > 0:
         for chunk in rotation:
-            for b in chunk:
+            for k in keystrokes(chunk):              # an escape sequence is one key
                 t0 = time.ticks_us()
-                keys.feed(bytes((b,)))
+                keys.feed(k)
                 keys.expire()
                 app.handle()
                 desk.present()
@@ -281,6 +281,21 @@ def skk_script_bytes():
         if isinstance(node, ast.Assign) and getattr(node.targets[0], 'id', '') == 'SCRIPT':
             return [data for data, _ in ast.literal_eval(node.value)]
     raise SystemExit('SCRIPT not found in desktop_skk.py')
+
+
+def keystrokes(data):
+    """The bytes of each key, as desktop_skk.keystrokes: ESC [ ... final is one."""
+    out, i = [], 0
+    while i < len(data):
+        j = i + 1
+        if data[i] == 0x1B and j < len(data) and data[j] == 0x5B:
+            j += 1
+            while j < len(data) and not 0x40 <= data[j] <= 0x7E:
+                j += 1
+            j += 1
+        out.append(data[i:j])
+        i = j
+    return out
 
 
 def send(board, data, cps):
@@ -354,7 +369,7 @@ def main():
             b.run(demo)
             b.run(free)
             if args.phase == 'skk':
-                b.run(SKK % (int(70 * args.pace), int(1500 * args.pace)), timeout=900)
+                b.run(SKK % (int(70 * args.pace), int(1500 * args.pace)), timeout=2400)   # 22 scenes, VRAM read back in each
             elif args.phase == 'skk-soak':
                 b.run(SKK_SOAK % args.seconds, timeout=args.seconds + 300)
             else:
@@ -362,7 +377,7 @@ def main():
                 b.lines('READY', timeout=30)
                 time.sleep(2)
                 for data in skk_script_bytes():
-                    send(b, [bytes((c,)) for c in data], args.cps)
+                    send(b, keystrokes(data), args.cps)
                     time.sleep(0.6)
                 send(b, [b'\x1b[21~'] + [b'\x1b[B'] * 4 + [b'\r'], 3)      # F10 > 終了
                 time.sleep(1)
