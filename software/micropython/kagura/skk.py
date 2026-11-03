@@ -22,6 +22,11 @@ Supported (SKK conventions):
   Space           converts (▼ first candidate); again: next candidate; after
                   the 4th, a list of 7 at a time, chosen with a s d f j k l
   x               previous candidate (or page)
+  (popup styles)  style='modern': the list (5 a page, chosen with 1-5) from
+                  the first conversion; style='classic': the first candidate
+                  inline, the list from the second Space. Space and Down: the
+                  next candidate, x and Up: the previous one, Enter commits the
+                  highlighted one. SkkInput shows the list in a native popup.
   Enter           commits the candidate (▼) or the reading (▽), no new line
   Escape, Ctrl+G  ▼ -> back to ▽; ▽ -> preedit discarded; pending romaji dropped
   Backspace       pending romaji, then okurigana, then the reading; in ▼, back to ▽
@@ -35,6 +40,8 @@ stripped), learning (candidate order is the dictionary's).
 NORMAL, PREEDIT, CONVERT = 0, 1, 2
 ASCII, HIRAGANA, KATAKANA = 'ascii', 'hira', 'kata'
 LIST_KEYS = 'asdfjkl'
+SKK, MODERN, CLASSIC = 'skk', 'modern', 'classic'
+_POPUP_INLINE = {MODERN: 0, CLASSIC: 1}
 
 _ROMAJI = {
     'a': 'あ', 'i': 'い', 'u': 'う', 'e': 'え', 'o': 'お',
@@ -192,9 +199,13 @@ class SortedFileDict:
 
 
 class SkkEngine:
-    def __init__(self, dictionary, inline=4, page=7, mode=ASCII):
+    def __init__(self, dictionary, inline=4, page=7, mode=ASCII, style=SKK):
         self.dic = dictionary
-        self.inline, self.page = inline, page
+        self.style = style
+        if style == SKK:
+            self.inline, self.page, self.keys = inline, page, LIST_KEYS
+        else:                                                # a popup: 5 a page, step by one
+            self.inline, self.page, self.keys = _POPUP_INLINE[style], 5, '12345'
         self.mode = mode
         self.romaji = Romaji()
         self.out = ''
@@ -237,9 +248,29 @@ class SkkEngine:
         if self.state != CONVERT or self.index < self.inline:
             return None
         first = self.inline + (self.index - self.inline) // self.page * self.page
-        items = [(LIST_KEYS[i], self.cands[first + i]) for i in range(min(self.page, len(self.cands) - first))]
+        items = [(self.keys[i], self.cands[first + i]) for i in range(min(self.page, len(self.cands) - first))]
         pages = (len(self.cands) - self.inline + self.page - 1) // self.page
         return items, (first - self.inline) // self.page + 1, pages
+
+    def popup(self):
+        """(candidates, selected, footer) for a candidate popup, or None: the
+        page holding the current candidate once the list is shown (popup
+        styles), the footer its page number (with more than one) or a message.
+        In the skk style, only messages."""
+        page = self.candidates() if self.style != SKK else None
+        if page is None:
+            return ([], -1, self.message) if self.message else None
+        items, n, pages = page
+        foot = self.message or ('%d/%d' % (n, pages) if pages > 1 else '')
+        return [c for _, c in items], (self.index - self.inline) % self.page, foot
+
+    def indicator(self):
+        """The input mode as a short label: A 直接, あ かな, ア カナ, ▽ 読み or ▼ 変換."""
+        if self.state == CONVERT:
+            return '▼ 変換'
+        if self.state == PREEDIT:
+            return '▽ 読み'
+        return {ASCII: 'A 直接', HIRAGANA: 'あ かな', KATAKANA: 'ア カナ'}[self.mode]
 
     def take(self):
         """Text committed since the last call."""
@@ -348,7 +379,7 @@ class SkkEngine:
 
     def _convert_char(self, c):
         if c == ' ':
-            if self.index < self.inline:                     # inline candidates, one by one
+            if self.index < self.inline or self.style != SKK:   # one by one
                 nxt = self.index + 1
             else:                                            # then pages: index is a page's first
                 nxt = self.inline + ((self.index - self.inline) // self.page + 1) * self.page
@@ -360,14 +391,14 @@ class SkkEngine:
         if c == 'x':
             if self.index == 0:
                 self._back_to_preedit()
-            elif self.index <= self.inline:
+            elif self.index <= self.inline or self.style != SKK:
                 self.index -= 1
             else:
                 self.index -= self.page
             return True
         page = self.candidates()
-        if page is not None and c in LIST_KEYS:
-            i = LIST_KEYS.index(c)
+        if page is not None and c in self.keys:
+            i = self.keys.index(c)
             if i < len(page[0]):
                 self._commit(page[0][i][1] + self._kana(self.okuri))
                 self._clear()
@@ -383,8 +414,10 @@ class SkkEngine:
         self.cands, self.index = [], 0
 
     def feed_key(self, name):
-        """A named key: 'enter', 'escape', 'ctrl-g', 'ctrl-j', 'backspace' or
-        'other'. True when the IME used it; otherwise the key goes on."""
+        """A named key: 'enter', 'escape', 'ctrl-g', 'ctrl-j', 'backspace',
+        'up', 'down' or 'other'. True when the IME used it; otherwise the key
+        goes on. Up and Down move in the list in the popup styles; otherwise
+        they are 'other'."""
         self.message = ''
         if name == 'ctrl-j':
             if self.mode == ASCII:
@@ -425,6 +458,12 @@ class SkkEngine:
                 self.reading = self.reading[:-1]
             else:
                 self._clear()                                # ▽ alone: leave the preedit
+            return True
+        if name in ('up', 'down') and self.state == CONVERT and self.style != SKK:
+            if name == 'down':
+                return self._convert_char(' ')
+            if self.index > 0:
+                self.index -= 1
             return True
         # Any other key: the preedit is committed and the key acts as usual.
         if self.active():
@@ -478,25 +517,45 @@ class SkkInput:
 
     Keys reach the engine while the active window's focused control is an
     editable field or editor; otherwise (menus open, a button focused, no
-    window) they go to the desktop as before. changed(engine) is called after
-    every key, for a mode and candidate display."""
-    def __init__(self, desk, engine, changed=None):
+    window) they go to the desktop as before. The candidates (engine.popup())
+    appear in a native popup under the preedit (Window.set_candidates) and,
+    with status, the mode in the menu bar (Desktop.set_status). changed(engine)
+    is called after every key."""
+    def __init__(self, desk, engine, changed=None, status=True):
         import kagura_desktop as kd
         self.kd, self.desk, self.engine, self.changed = kd, desk, engine, changed
         self.target = None          # (window, id) holding the preedit
+        self.cand = None            # (window, id) holding the popup
+        self.status = status
+        if status:
+            desk.set_status(engine.indicator())
+
+    @staticmethod
+    def _drop(held, clear):
+        if held is not None:
+            try:
+                clear(held)
+            except ValueError:                               # closed meanwhile
+                pass
 
     def _show(self, target):
         e, kd = self.engine, self.kd
         text, hl = e.preedit()
-        if self.target is not None and self.target != target:
-            try:
-                self.target[0].set_preedit(self.target[1], '')
-            except ValueError:                               # closed meanwhile
-                pass
+        if self.target != target:
+            self._drop(self.target, lambda t: t[0].set_preedit(t[1], ''))
         if target is not None:
             a, b = hl if hl else (-1, -1)
             target[0].set_preedit(target[1], text, a, b)
         self.target = target if text else None
+        p = e.popup()
+        if self.cand != target:
+            self._drop(self.cand, lambda t: t[0].set_candidates(t[1], ()))
+        if target is not None and (p or self.cand is not None):
+            items, sel, foot = p or ((), -1, '')
+            target[0].set_candidates(target[1], items, sel, foot)
+        self.cand = target if p else None
+        if self.status:
+            self.desk.set_status(e.indicator())
 
     def _flush(self, target):
         out = self.engine.take()
@@ -524,6 +583,8 @@ class SkkInput:
             used = e.feed_key('escape')
         elif k == kd.KEY_BACKSPACE and not mods:
             used = e.feed_key('backspace')
+        elif k in (kd.KEY_UP, kd.KEY_DOWN) and not mods:
+            used = e.feed_key('up' if k == kd.KEY_UP else 'down')
         else:
             used = e.feed_key('other')
         self._flush(target)

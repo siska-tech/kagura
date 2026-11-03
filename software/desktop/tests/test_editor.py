@@ -249,7 +249,9 @@ def test_skk_in_the_editor():
     text = ds.main(desk=de.HostDesktop(de.MENUS), out=lines.append)
     check(text == ds.FINAL_TEXT, text)
     check(lines[-1].startswith('TEXT ok'), lines[-1])
-    check(len([l for l in lines if l.startswith('SCENE')]) == 12)
+    scenes = {l.split()[2]: l.split()[3] for l in lines if l.startswith('SCENE')}
+    check(len(scenes) == 22, lines)
+    check(scenes['closed'] == scenes['final'])           # the popup and the corner window leave no trace
     # Same script, same frames: the input path is deterministic.
     again = []
     ds.main(desk=de.HostDesktop(de.MENUS), out=again.append)
@@ -260,7 +262,7 @@ def test_skk_dialog_and_menus():
     from kagura import skk
     from kagura.keyinput import TerminalKeys
     docs = fresh('skkdlg')
-    a = de.Editor(de.HostDesktop(de.MENUS), docs, ime=skk.SkkEngine(skk.test_dictionary()))
+    a = de.Editor(de.HostDesktop(de.MENUS), docs, ime=skk.SkkEngine(skk.test_dictionary(), style=skk.MODERN))
     keys = de.input_chain(a)
     def feed(data):
         for b in data:

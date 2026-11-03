@@ -197,7 +197,7 @@ from kagura.desktop import Desktop
 from kagura import skk
 desk = Desktop(menus=de.MENUS, cursor=False)
 try:
-    app = de.Editor(desk, de.Documents('/docs'), 'キーボード', ime=skk.SkkEngine(skk.test_dictionary()))
+    app = de.Editor(desk, de.Documents('/docs'), 'キーボード', ime=skk.SkkEngine(skk.test_dictionary(), style=skk.MODERN))
     desk.present()
     print('READY')
     keyboard(app)
@@ -218,7 +218,7 @@ from kagura.desktop import Desktop
 from kagura import skk, regs as R
 desk = Desktop(menus=de.MENUS, cursor=False)
 try:
-    app = de.Editor(desk, de.Documents('/docs'), 'ソーク', ime=skk.SkkEngine(skk.test_dictionary()))
+    app = de.Editor(desk, de.Documents('/docs'), 'ソーク', ime=skk.SkkEngine(skk.test_dictionary(), style=skk.MODERN))
     keys = de.input_chain(app, clock=FakeClock())
     w, ed = app.win, app.ed
     desk.present()
