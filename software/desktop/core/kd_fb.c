@@ -181,6 +181,53 @@ void kd_fb_pattern_rect(kd_fb *fb, int x, int y, int w, int h,
     }
 }
 
+// Four pixels of a 1bpp nibble (MSB left) as four 4-bit masks, left pixel
+// in the high nibble.
+static const uint16_t nib4[16] = {
+    0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 0x0F0F, 0x0FF0, 0x0FFF,
+    0xF000, 0xF00F, 0xF0F0, 0xF0FF, 0xFF00, 0xFF0F, 0xFFF0, 0xFFFF,
+};
+
+// Pixel mask of up to 8 pixels starting at x as framebuffer nibbles: byte j
+// (from x's byte) is (m >> (32 - 8 * j)) & 0xFF.
+static uint64_t nibble_mask(uint8_t pixels, bool odd) {
+    uint32_t m = (uint32_t)nib4[pixels >> 4] << 16 | nib4[pixels & 15];
+    return (uint64_t)m << (odd ? 4 : 8);
+}
+
+// Glyphs up to 8 pixels wide (every font of the desktop): each row updates
+// the 4 or 5 bytes it touches at once instead of pixel by pixel. Same
+// result, statistics and dirty tiles as the general loop.
+static void mono8(kd_fb *fb, int x, int y, int w, const uint8_t *bits, uint8_t fg, int bg,
+                  int x0, int y0, int x1, int y1) {
+    int base = x >= 0 ? x / 2 : -((1 - x) / 2);       // floor(x / 2)
+    bool odd = x - 2 * base != 0;
+    uint8_t keep = (uint8_t)(0xFFu << (8 - w));       // the glyph's w columns
+    uint8_t clip = (uint8_t)(keep & (0xFFu >> (x0 - x)) & (0xFFu << (7 - (x1 - x))));
+    uint64_t cm = nibble_mask(clip, odd);
+    uint8_t fgp = (uint8_t)(fg * 0x11), bgp = (uint8_t)((bg & 15) * 0x11);
+    int b0 = x0 >> 1, b1 = x1 >> 1;
+    for (int yy = y0; yy <= y1; yy++) {
+        uint8_t ink = bits[yy - y] & clip;
+        fb->stats.pixels += (uint32_t)__builtin_popcount(bg != KD_NO_KEY ? clip : ink);
+        if (!ink && bg == KD_NO_KEY) continue;
+        uint64_t im = nibble_mask(ink, odd);
+        uint8_t *row = fb->px + yy * KD_STRIDE;
+        unsigned trow = (unsigned)(yy >> 3) * KD_TILE_COLS;
+        for (int b = b0; b <= b1; b++) {
+            int sh = 32 - 8 * (b - base);
+            uint8_t m = (uint8_t)(im >> sh), c = (uint8_t)(cm >> sh);
+            uint8_t v = (uint8_t)((row[b] & ~m) | (fgp & m));
+            if (bg != KD_NO_KEY) v = (uint8_t)((v & ~(c & ~m)) | (bgp & c & ~m));
+            if (v != row[b]) {
+                row[b] = v;
+                mark(fb, trow + (unsigned)(b >> 2));
+                fb->stats.changed++;
+            }
+        }
+    }
+}
+
 void kd_fb_mono(kd_fb *fb, int x, int y, int w, int h, const uint8_t *bits,
                 uint8_t fg, int bg) {
     int x0, y0, x1, y1;
@@ -188,6 +235,10 @@ void kd_fb_mono(kd_fb *fb, int x, int y, int w, int h, const uint8_t *bits,
     fb->stats.calls++;
     int pitch = (w + 7) / 8;
     fg &= 15;
+    if (w <= 8 && !KD_FAULTY(KD_FAULT_NIBBLE_SWAP)) {
+        mono8(fb, x, y, w, bits, fg, bg, x0, y0, x1, y1);
+        return;
+    }
     for (int yy = y0; yy <= y1; yy++) {
         const uint8_t *row = bits + (yy - y) * pitch;
         for (int xx = x0; xx <= x1; xx++) {

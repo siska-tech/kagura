@@ -63,9 +63,14 @@ typedef struct {
     int32_t last_area;        // damage pixels of the last render
 } kd_compose_stats;
 
-// Compose passes snapshot at most this many tiles (1,280 B) to keep the
-// dirty map exact despite overdraw inside a pass.
-#define KD_SNAP_TILES KD_TILE_COLS
+// Compose passes snapshot at most this many tiles (3,840 B) to keep the
+// dirty map exact despite overdraw inside a pass. Three full tile rows per
+// pass: a 10 px editor line straddles fewer passes, and every pass repeats
+// the backgrounds of the layers it crosses (on the RP2040, a full editor
+// view cost 15 ms in passes alone with one tile row).
+#ifndef KD_SNAP_TILES
+#define KD_SNAP_TILES (3 * KD_TILE_COLS)
+#endif
 
 struct kd_desktop {
     kd_fb fb;

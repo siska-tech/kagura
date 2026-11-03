@@ -965,7 +965,48 @@ static void t_editor_random(void) {
     CHECK(kdm_field_editor(&M, w, ed) != NULL);
 }
 
+// kd_fb_mono's byte-wise path for glyphs up to 8 px against the pixel-by-
+// pixel definition: same pixels, same dirty tiles, at any position and clip.
+static kd_fb FA, FB;
+
+static void t_mono_matches_pixels(void) {
+    uint32_t r = 99;
+    for (int n = 0; n < 20000; n++) {
+        for (size_t i = 0; i < sizeof FA.px; i += 97) FA.px[i] = (uint8_t)kd_rand(&r);
+        if (n % 64 == 0)
+            for (size_t i = 0; i < sizeof FA.px; i++) FA.px[i] = (uint8_t)kd_rand(&r);
+        memset(FA.dirty, 0, sizeof FA.dirty);
+        int w = kd_rand_range(&r, 1, 8), h = kd_rand_range(&r, 1, 8);
+        int x = kd_rand_range(&r, -10, KD_W + 2), y = kd_rand_range(&r, -10, KD_H + 2);
+        kd_rect clip = kd_rect_make(kd_rand_range(&r, -5, KD_W), kd_rand_range(&r, -5, KD_H),
+                                    kd_rand_range(&r, 0, 40), kd_rand_range(&r, 0, 30));
+        if (n % 3 == 0) clip = kd_rect_make(x - 3, y - 3, 20, 20);
+        uint8_t bits[8];
+        for (int i = 0; i < 8; i++) bits[i] = (uint8_t)kd_rand(&r);
+        uint8_t fg = (uint8_t)kd_rand_range(&r, 0, 15);
+        int bg = kd_rand_range(&r, 0, 2) ? KD_NO_KEY : kd_rand_range(&r, 0, 15);
+        FB = FA;
+        kd_fb_set_clip(&FA, clip);
+        kd_fb_set_clip(&FB, clip);
+        kd_fb_mono(&FA, x, y, w, h, bits, fg, bg);
+        for (int yy = 0; yy < h; yy++)
+            for (int xx = 0; xx < w; xx++) {
+                bool ink = (bits[yy] >> (7 - xx)) & 1;
+                if (ink) kd_fb_pixel(&FB, x + xx, y + yy, fg);
+                else if (bg != KD_NO_KEY) kd_fb_pixel(&FB, x + xx, y + yy, (uint8_t)bg);
+            }
+        if (memcmp(FA.px, FB.px, sizeof FA.px) || memcmp(FA.dirty, FB.dirty, sizeof FA.dirty)) {
+            char msg[96];
+            snprintf(msg, sizeof msg, "case %d: x %d y %d w %d clip %d,%d %dx%d bg %d", n, x, y, w,
+                     clip.x, clip.y, clip.w, clip.h, bg);
+            kd_test_fail(__FILE__, __LINE__, msg);
+            return;
+        }
+    }
+}
+
 static const kd_test_case tests[] = {
+    {"mono_matches_pixels", t_mono_matches_pixels},
     {"editor_lines", t_editor_lines},
     {"editor_scrolling", t_editor_scrolling},
     {"editor_capacity", t_editor_capacity},
