@@ -568,6 +568,29 @@ static mp_obj_t desktop_is_open(mp_obj_t self) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(desktop_is_open_obj, desktop_is_open);
 
+// trace(sprites, cols, values, fg, bg=0): a line graph across a grid of
+// Sprites (a list or tuple, row-major, cols per row, at most 8), drawn in C:
+// values is a buffer of signed bytes (-127..127; kagura_audio.render fills
+// one), spread over the width, 0 at the middle. Only changed pixels are
+// redrawn. Returns the pixels changed. Allocates nothing.
+static mp_obj_t desktop_trace(size_t n_args, const mp_obj_t *a) {
+    desk_arg(a[0]);
+    size_t n;
+    mp_obj_t *objs;
+    mp_obj_get_array(a[1], &n, &objs);
+    mp_int_t cols = mp_obj_get_int(a[2]);
+    if (n < 1 || n > KDM_MAX_SPRITES || cols < 1 || n % (size_t)cols) raise_rc(KDM_EINVAL);
+    int slots[KDM_MAX_SPRITES];
+    for (size_t i = 0; i < n; i++) slots[i] = sprite_arg(objs[i]);
+    mp_buffer_info_t bi;
+    mp_get_buffer_raise(a[3], &bi, MP_BUFFER_READ);
+    if (bi.len < 1 || bi.len > 4096) raise_rc(KDM_EINVAL);
+    int bg = n_args > 5 ? (int)mp_obj_get_int(a[5]) : 0;
+    return MP_OBJ_NEW_SMALL_INT(check(kdm_sprite_trace(&state, slots, (int)cols, (int)(n / (size_t)cols),
+                                                       bi.buf, (int)bi.len, (int)mp_obj_get_int(a[4]), bg)));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(desktop_trace_obj, 5, 6, desktop_trace);
+
 static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_create_window), MP_ROM_PTR(&desktop_create_window_obj)},
     {MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&desktop_sprite_obj)},
@@ -587,6 +610,7 @@ static const mp_rom_map_elem_t desktop_locals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_windows), MP_ROM_PTR(&desktop_windows_obj)},
     {MP_ROM_QSTR(MP_QSTR_crc), MP_ROM_PTR(&desktop_crc_obj)},
     {MP_ROM_QSTR(MP_QSTR_snapshot), MP_ROM_PTR(&desktop_snapshot_obj)},
+    {MP_ROM_QSTR(MP_QSTR_trace), MP_ROM_PTR(&desktop_trace_obj)},
     {MP_ROM_QSTR(MP_QSTR_tile4), MP_ROM_PTR(&desktop_tile4_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_cursor), MP_ROM_PTR(&desktop_set_cursor_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_outline_drag), MP_ROM_PTR(&desktop_set_outline_drag_obj)},

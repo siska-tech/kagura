@@ -177,6 +177,18 @@ A keystroke is at most about 6 bytes (an escape sequence), so decoding costs und
 
 These checks cover USB CDC only. The UART RX path and a physical keyboard have not been tested yet.
 
+## Line graphs in sprites
+
+`desk.trace(sprites, cols, values, fg, bg=0)` draws a line graph in C across a grid of sprites (`kdm_sprite_trace`).
+
+- **Canvas:** the sprites form one canvas, row-major, `cols` per row, at most 8 sprites: 4×2 is 64×32 pixels.
+- **Values:** `values` is a buffer of signed bytes (−127..127), spread over the width, 0 at the middle. Consecutive points are joined by vertical segments in `fg` on `bg`.
+- **Redraw:** each sprite is loaded as `Sprite.load` does, so only the changed pixels are redrawn. If nothing changed, nothing is.
+- **Cost:** it allocates nothing, and one call replaces what would take dozens of fill records.
+- **Errors:** they change nothing.
+
+神楽トラッカー's scope uses it: `kagura_audio.render()` fills the values.
+
 ## Ownership and memory
 
 - **One static C state owns everything.** The framebuffer, windows and all pools live outside the GC heap, about 46 KB on the RP2040.

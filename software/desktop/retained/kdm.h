@@ -304,6 +304,14 @@ int kdm_sprite_set(kdm *m, int s, int x, int y, int color);   // 1 changed, 0 no
 int kdm_sprite_set_many(kdm *m, int s, const uint8_t *xyc, int n);   // pixels changed
 int kdm_sprite_load(kdm *m, int s, const uint8_t data[KD_SPRITE_BYTES]);   // pixels changed
 int kdm_sprite_fill(kdm *m, int s, int color);
+// A line graph across a grid of sprites, drawn in C: sprites[] holds cols x
+// rows sprite slots (row-major), together a canvas of 16 cols x 16 rows
+// pixels. v[] holds n signed values (-127..127, e.g. kagura_audio.render);
+// they are spread over the canvas width, 0 at the middle row, and joined
+// by vertical segments in colour fg on bg. Each sprite is then loaded as
+// kdm_sprite_load does, so only what changed is redrawn. Returns the
+// pixels changed; nothing changes on an error.
+int kdm_sprite_trace(kdm *m, const int *sprites, int cols, int rows, const int8_t *v, int n, int fg, int bg);
 
 // Input and events.
 void kdm_feed(kdm *m, const kd_event *ev);
