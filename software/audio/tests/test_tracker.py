@@ -227,6 +227,125 @@ def _exists(path):
         return False
 
 
+def open_wave_editor(app):
+    app.inst = 4                                    # 04: wave instrument, wave 0
+    app.track = 4                                   # WAVE1
+    app.menu(3, 2)                                  # 音色 > 編集…
+    for _ in range(8):
+        key(app, kd.KEY_DOWN)                       # to 波形を編集…
+    key(app, kd.KEY_ENTER)
+    return app.dialog
+
+
+def signed(b):
+    return b - 256 if b > 127 else b
+
+
+def test_wave_editor_keyboard():
+    desk, audio, app, dev = fresh('wave-keys')
+    d = open_wave_editor(app)
+    check(isinstance(d, T.WaveDialog) and d.index == 0 and d.n == 32, 'the editor opened on wave 0')
+    w = d.wave
+    for _ in range(3):
+        key(app, kd.KEY_RIGHT)
+    before = signed(w[3])
+    key(app, kd.KEY_UP)
+    check(signed(w[3]) == before + 1, 'Up: +1')
+    key(app, kd.KEY_UP, 0, kd.MOD_SHIFT)
+    check(signed(w[3]) == before + 17, 'Shift+Up: +16')
+    key(app, kd.KEY_HOME)
+    check(signed(w[3]) == 127, 'Home: top')
+    key(app, kd.KEY_UP)
+    check(signed(w[3]) == 127, 'clamped at 127')
+    key(app, kd.KEY_END)
+    check(signed(w[3]) == -128, 'End: bottom')
+    for _ in range(4):
+        key(app, kd.KEY_RIGHT, 0, kd.MOD_SHIFT)     # draw: carry -128 along
+    check([signed(w[k]) for k in range(3, 8)] == [-128] * 5 and d.sel == 7, 'Shift+Right draws')
+    key(app, kd.KEY_DELETE)
+    check(w[7] == 0, 'Delete: 0')
+    # What the hardware would play: the HAL holds the edited wave.
+    check(bytes(ka.wave(4)[:32]) == bytes(w), 'the HAL has the edited wave')
+    check(app.modified and app.dirty_song, 'the song is modified')
+    # A single edit redraws one group of the canvas, not all of it.
+    def tiles_after(code, ch=0):
+        desk.key(code, ch, 0)
+        app.handle()
+        return desk.present()
+    desk.present()
+    tiles = tiles_after(kd.KEY_UP)
+    whole = tiles_after(kd.KEY_CHAR, '4')
+    check(0 <= tiles <= 40, 'one edit redraws a few tiles: %d' % tiles)
+    check(whole > 200, 'a preset redraws the canvas: %d' % whole)
+    # Presets.
+    for c, name in (('1', 'sine'), ('2', 'triangle'), ('3', 'saw'), ('4', 'square'), ('0', 'flat')):
+        key(app, kd.KEY_CHAR, c)
+        check(bytes(w) == bytes(T.wave_shape(c, 32)), 'preset %s' % name)
+    check(bytes(T.wave_shape('0', 32)) == bytes(32), 'flat is zero')
+    sq = T.wave_shape('4', 32)
+    check(signed(sq[0]) == 127 and signed(sq[31]) == -127, 'square')
+    # Length: 32 -> 64 -> 128 -> 256 -> 32, resampled.
+    key(app, kd.KEY_CHAR, '3')
+    saw = bytes(w)
+    key(app, kd.KEY_CHAR, 'l')
+    check(d.n == 64 and bytes(d.wave[k] for k in range(0, 64, 2)) == saw, 'L: 64 samples, the same saw')
+    for _ in range(3):
+        key(app, kd.KEY_CHAR, 'l')
+    check(d.n == 32 and bytes(d.wave) == saw, 'back to 32')
+    # Space plays a note with the wave on the wave track.
+    commits = dev.commits
+    key(app, kd.KEY_CHAR, ' ')
+    check(dev.commits > commits, 'Space previews on the hardware')
+    # N: a copy as a new wave for this instrument.
+    key(app, kd.KEY_CHAR, 'n')
+    check(len(app.song.waves) == 3 and app.song.instruments[4][1] == 2 and d.index == 2, 'new wave W2')
+    key(app, kd.KEY_ESCAPE)
+    check(app.dialog is None, 'Esc closes')
+    # A pulse instrument has no wave to edit.
+    app.inst = 0
+    app.menu(3, 2)
+    for _ in range(8):
+        key(app, kd.KEY_DOWN)
+    key(app, kd.KEY_ENTER)
+    check(app.dialog is None and 'だけ' in _msg(app), 'no editor for a pulse instrument')
+    audio.close()
+
+
+def test_wave_editor_pointer_and_files():
+    desk, audio, app, dev = fresh('wave-files')
+    d = open_wave_editor(app)
+    key(app, kd.KEY_CHAR, '0')                      # flat, then draw on it
+    ox, oy = d.win.work()[:2]                       # screen origin of the work area
+    X, Y = T.WAVE_X, T.WAVE_Y
+    desk.pointer(kd.POINTER_DOWN, ox + X + 2, oy + Y + 64 - 40)      # sample 0 to +80
+    app.handle()
+    desk.pointer(kd.POINTER_MOVE, ox + X + 8 * 8 + 2, oy + Y + 64 + 20)   # sample 8 to -40: a line
+    app.handle()
+    desk.pointer(kd.POINTER_UP, ox + X + 8 * 8 + 2, oy + Y + 64 + 20)
+    app.handle()
+    vals = [signed(b) for b in d.wave[:10]]
+    check(vals[0] == 80 and vals[8] == -40 and vals[9] == 0, 'pointer press and drag: %r' % (vals,))
+    check(all(vals[k] >= vals[k + 1] for k in range(8)), 'a falling line between the points')
+    desk.pointer(kd.POINTER_MOVE, ox + X + 200, oy + Y + 10)           # no button: nothing
+    app.handle()
+    check(signed(d.wave[25]) == 0, 'moves without a press do not draw')
+    desk.pointer(kd.POINTER_DOWN, ox + 2, oy + Y + 200)                # outside the canvas
+    app.handle()
+    check(d.drag is None, 'a press outside the canvas does not draw')
+    key(app, kd.KEY_CHAR, 'l')                      # 64 samples
+    edited = bytes(d.wave)
+    key(app, kd.KEY_ENTER)
+    app.save_name('WAVES')
+    data = open(app.files.path('WAVES'), 'rb').read()
+    t = Song.from_bytes(data)
+    check(bytes(t.waves[0]) == edited and len(t.waves[0]) == 64, 'the wave reloads without loss')
+    check(t.to_bytes() == data, 'and the song round-trips')
+    app.new()
+    app.open_name('WAVES')
+    check(bytes(app.song.waves[0]) == edited, 'reopened in the tracker')
+    audio.close()
+
+
 def test_demo_song():
     """The scripted tour composes the demo; check what it wrote."""
     path = folder + '/demo'
@@ -255,7 +374,8 @@ def test_demo_song():
 
 
 for name in ('test_note_entry', 'test_rows_tracks_orders', 'test_playback_and_live_edit',
-             'test_files_and_guards', 'test_demo_song'):
+             'test_files_and_guards', 'test_wave_editor_keyboard', 'test_wave_editor_pointer_and_files',
+             'test_demo_song'):
     globals()[name]()
 print('desktop_tracker: %d failures' % len(failures))
 if failures:

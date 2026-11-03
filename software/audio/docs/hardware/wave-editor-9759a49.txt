@@ -1,0 +1,17 @@
+HOST_START wave 2026-11-03T22:48:34
+FREE 139488
+MPY desktop_tracker.mpy 22400 bytes
+TRACKER_LOADED free 70992
+WAVE sine 45722 001931475a6a757d7f7d756a5a47311900e7cfb9a6968b8381838b96a6b9cfe7
+WAVE triangle 45722 8190a0b0c0d0e0f0000f1f2f3f4f5f6f7f6f5f4f3f2f1f0f00f0e0d0c0b0a090
+WAVE saw 45722 80889098a0a9b1b9c1cad2dae2eaf3fb030b141c242c343d454d555e666e767f
+WAVE square 45722 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f81818181818181818181818181818181
+WAVE staircase 45722 6060606060606060e0e0e0e0e0e0e0e02020202020202020a0a0a0a0a0a0a0a0
+WAVE_END error_code 0 audio_status 0x00
+NOTES recorded 5, tables 5
+WAVE sine     len  32 at 9.20 s, 0.95 s long: correlation 0.9990 ok
+WAVE triangle len  32 at 11.91 s, 0.95 s long: correlation 0.9992 ok
+WAVE saw      len  32 at 14.61 s, 0.95 s long: correlation 0.9964 ok
+WAVE square   len  32 at 17.33 s, 0.95 s long: correlation 0.9799 ok
+WAVE staircase len  32 at 23.51 s, 0.95 s long: correlation 0.9746 ok
+RESULT ok
