@@ -56,8 +56,9 @@ def _exists(path):
 
 class Documents:
     """Plain text files in one folder. Every name is checked: no paths."""
-    def __init__(self, folder=DOC_DIR):
+    def __init__(self, folder=DOC_DIR, label=None):
         self.folder = folder.rstrip('/') or '/'
+        self.label = label or self.folder      # shown in dialogs
         if self.folder == '/':
             raise ValueError('documents need their own folder')
 
@@ -339,7 +340,7 @@ class Editor:
         self.load_text('', None)
 
     def open(self):
-        self.confirm_discard(lambda: self.ask_name('開く', 'ファイル名 (' + self.docs.folder + ')',
+        self.confirm_discard(lambda: self.ask_name('開く', 'ファイル名 (' + self.docs.label + ')',
                                                    self.name or '', self.open_name, listing=True))
 
     def open_name(self, name):
@@ -358,7 +359,7 @@ class Editor:
         self.write(self.name, then)
 
     def save_as(self, then=None):
-        self.ask_name('名前を付けて保存', 'ファイル名 (' + self.docs.folder + ')', self.name or 'メモ.txt',
+        self.ask_name('名前を付けて保存', 'ファイル名 (' + self.docs.label + ')', self.name or 'メモ.txt',
                       lambda name: self.save_name(name, then))
 
     def save_name(self, name, then=None):

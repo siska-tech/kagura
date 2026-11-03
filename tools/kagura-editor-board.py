@@ -114,6 +114,20 @@ gc.collect()
 print('CLOSED free', gc.mem_free(), 'console_paused', kagura_console.paused)
 '''
 
+SHOWCASE_NS = '''
+class _NS:
+    pass
+de = _NS()
+for _k, _v in list(globals().items()):
+    setattr(de, _k, _v)
+'''
+
+SHOWCASE = r'''
+print('\n' * 30)                     # a clean console before the desktop opens
+main(pace=%r)
+print('SHOWCASE done; console paused', kagura_console.paused)
+'''
+
 TEXT = ('神楽メモ帳でキーボードから入力しています。\n'
         'RP2040とFPGAの小さなコンピュータ、KAGURA-9です。\n'
         'Shift+矢印で選択、Ctrl+Sで保存します。\n')
@@ -136,7 +150,9 @@ def units(text):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('phase', choices=('bench', 'live'))
+    p.add_argument('phase', choices=('bench', 'live', 'showcase'))
+    p.add_argument('--pace', type=float, default=1.0, help='showcase pacing (1.0: about 2 minutes)')
+    p.add_argument('--reset', action='store_true', help='soft reset first: a clean heap and console')
     p.add_argument('--out', type=Path)
     p.add_argument('--cps', type=float, default=8.0, help='characters per second (live)')
     p.add_argument('--video', type=Path)
@@ -145,6 +161,12 @@ def main():
     p.add_argument('--expected-serial')
     args = p.parse_args()
     kbd.dev.resolve_device(args)
+    if args.reset:                      # the console starts again after a soft reset
+        try:
+            kbd.dev.micropython_exec(args.port, 'import machine\nmachine.soft_reset()\n', timeout=5)
+        except BaseException:           # the reset ends the session on purpose
+            pass
+        time.sleep(5)
     logf = args.out.open('w', encoding='utf8', newline='\n') if args.out else None
 
     def log(line):
@@ -156,14 +178,28 @@ def main():
     b = kbd.Board(args.port, log)
     rec = None
     try:
+        if args.video and args.phase != 'bench':
+            rec = subprocess.Popen([args.ffmpeg, '-y'] + kbd_input() + ['-c:v', 'libx264', '-preset', 'veryfast',
+                                   '-crf', '18', '-pix_fmt', 'yuv420p', str(args.video)],
+                                   stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(3)
         if args.phase == 'bench':
             b.run(lib + BENCH, timeout=300)
+        elif args.phase == 'showcase':
+            # desktop_showcase imports desktop_editor; from RAM, the editor's
+            # globals (sent just before) stand in for that module.
+            show = example('desktop_showcase.py').replace('import desktop_editor as de\n', SHOWCASE_NS)
+            # One exec per module: compiling everything at once needs the
+            # source, parse and code together and fragments the heap.
+            free = "import gc\ngc.collect()\nprint('FREE', gc.mem_free())\n"
+            b.run(free)
+            b.run(lib)
+            b.run(free)
+            b.run(show)
+            b.run(free)
+            b.run(SHOWCASE % args.pace, timeout=900)
+            time.sleep(4)
         else:
-            if args.video:
-                rec = subprocess.Popen([args.ffmpeg, '-y'] + kbd_input() + ['-c:v', 'libx264', '-preset', 'veryfast',
-                                       '-crf', '18', '-pix_fmt', 'yuv420p', str(args.video)],
-                                       stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                time.sleep(3)
             b.start(lib + LIVE)
             b.lines('READY', timeout=30)
             time.sleep(2)
