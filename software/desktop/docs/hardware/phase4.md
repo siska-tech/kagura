@@ -1,4 +1,4 @@
-# Phase 4 on the board: firmware ff59e7e
+# Phase 4 on the board: firmware ff59e7e and 1eb6544
 
 RP2040 with KAGURA-9 (FPGA ABI 0.6), HDMI captured with a UGREEN 15390.
 
@@ -43,17 +43,85 @@ The real `desktop_editor` keyboard loop ran on the board. It took terminal bytes
 4. Ctrl+N cleared the document, and Ctrl+O reopened `kagura.txt` unchanged.
 5. F10 > 終了 quit, and the console came back.
 
-## After this run
+## Firmware 1eb6544: faster keystrokes
 
-Commit ef?? (PR D) made three changes, found by the timing above, that need the next build on the board:
+The timing above showed most of a keystroke going into compose. Commit 1eb6544 on PR D made three changes, none of which alters a pixel (the `desktop_ja` and showcase CRCs are unchanged):
 - glyphs outside the clip skip the font lookup;
 - line counting uses `memchr`;
 - a caret moving along one row invalidates only its columns, not the whole row.
 
-On the host the frames are unchanged (the `desktop_ja` CRCs are identical), and the composed area per key is smaller.
+Separately, the editor's status line now redraws only the digits that changed.
+
+The build was flashed on 2026-11-03, with the user's approval, over ff59e7e. Before flashing, the tool checked that the flash held exactly ff59e7e. Afterwards the filesystem was unchanged, the new image read back byte for byte, and 144,000 B of heap was free.
+
+Editor timing (log `phase4-editor-1eb6544.txt`):
+
+| key | p50 before → after | compose (p50) before → after |
+|---|---|---|
+| type ASCII at a line end | 15.7 → **11.9 ms** | 5.0 → 1.9 ms |
+| type Japanese | 16.8 → **12.1 ms** | 6.0 → 2.0 ms |
+| caret left | 15.8 → **10.5 ms** | 6.3 → 1.6 ms |
+| caret up/down | 19.1 → 17.7 ms | 7.3 → 6.6 ms |
+| Enter / Backspace joining lines | 42.7 / 38.6 → 41.1 / 37.3 ms | about 23 ms |
+| PgDn / PgUp | 44.1 → 42.0 ms | 29.5 ms |
+| insert at the start of an 8 KB document | 13.9 ms | 4.0 ms |
+
+- For a typed character, the link transfer is now the largest part: 6.3 ms of 12.
+- Line breaks and pages redraw most of the view, at about 1.8 ms per text row.
+
+**Showcase** (`desktop_showcase`, 1 min 47 s, HDMI recorded; frames in `phase4-showcase-1eb6544.png`, CRCs in `phase4-showcase-1eb6544.txt`):
+- All 20 scene CRCs equal the host run's, on both ff59e7e and 1eb6544.
+- The console came back at the end.
+
+**Regression on 1eb6544** (`tools/kagura-desktop-device.py`, log `phase4-regression-1eb6544.txt`):
+- All 11 `desktop_ja` scene CRCs and VRAM readbacks are identical to the reference, with `ERROR_CODE` 0.
+- The soak ran 9,993 updates with 49 checks, 0 failures.
+- The console came back, and the board survived a soft and a hard reset.
+- The free-heap floor (93.5 KB) is lower than on ff59e7e only because this run started right after the showcase, without a soft reset.
 
 ## Not verified yet
 
 - **A physical keyboard:** none is attached, and the XIAO RP2040 HID bridge is planned.
 - **The UART RX path:** the GP1 wiring is unconfirmed.
 - **Writes to the board's own filesystem:** not authorized.
+
+## Reproducing
+
+Windows host for the board tools: uv's CPython with `PYTHONPATH=build\transport-analysis\python-deps` (mpremote, pyserial). The host tests run in WSL. No tool prints the USB serial.
+
+```sh
+# host: every test, then the firmware (WSL, repository root)
+bash software/desktop/tools/test.sh
+bash software/desktop/tools/build_firmware.sh KAGURA_PICO build-KAGURA_PICO-phase4
+# board: read-only check, then a checked flash (only with approval)
+python tools/rp2040-firmware.py check
+python tools/rp2040-firmware.py uf2-info <firmware.uf2>
+python tools/rp2040-firmware.py flash --uf2 <firmware.uf2> --current-uf2 <the UF2 now on the board> --approved
+# board: acceptance, all from RAM (no flash or filesystem writes)
+python tools/kagura-desktop-device.py --out DIR --ffmpeg <ffmpeg.exe> --soak 120
+python tools/kagura-keyboard-device.py --out FILE
+python tools/kagura-editor-device.py
+python tools/kagura-editor-board.py bench --reset --out FILE
+python tools/kagura-editor-board.py live --reset --video editor.mp4 --ffmpeg <ffmpeg.exe>
+python tools/kagura-editor-board.py showcase --reset --video showcase.mp4 --ffmpeg <ffmpeg.exe> [--pace 1.5]
+```
+
+- `--reset` soft-resets the board first, for a clean heap and console.
+- Showcase CRCs are compared with `micropython examples/desktop_showcase.py --host DIR` (run by `tools/test.sh`).
+
+## Phase 4 acceptance criteria
+
+| # | criterion | status |
+|---|---|---|
+| 1 | desktop operable with a physical keyboard, without pointer events | **partial.** The keyboard path (decoder, stdin, focus, menus) is verified on the board, but with terminal bytes sent by a script over USB CDC. No physical keyboard is attached, and the XIAO HID bridge is planned. |
+| 2 | a focused text field accepts, edits and displays text | done: host tests, and the board in the showcase and live session |
+| 3 | Japanese UTF-8 survives editing, storage and reload | done. Byte-exact round trips on the host and on a RAM littlefs on the board; reopened frames equal the saved ones. |
+| 4 | a document can be opened, edited, saved and reopened | done on the board, on a RAM littlefs. Saving to the board's own flash filesystem is not authorized yet. |
+| 5 | window and menu navigation entirely by keyboard | done: F10, arrows, Enter, Esc, F6, Tab, Ctrl+W |
+| 6 | the native editing core is independent of MicroPython | done: `text/kd_edit` is C11 with no dependencies |
+| 7 | no second hardware transport or framebuffer | done: one static framebuffer, and the console's SDK device |
+| 8 | no accumulating resource leak | done: field and editor slot reuse, repeated sessions, soaks with a stable heap |
+| 9 | desktop rendering and console recovery regressions pass | done on ff59e7e and 1eb6544 |
+| 10 | every physical claim is backed by hardware evidence | the logs and frames in this folder |
+
+Phase 4 is therefore **partially complete**: criterion 1 waits for a physical keyboard, and the UART RX path waits for the GP1 wiring to be confirmed.

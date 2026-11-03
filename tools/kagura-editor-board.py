@@ -43,7 +43,7 @@ import gc, time
 from kagura.desktop import Desktop
 desk = Desktop(menus=MENUS, cursor=False)
 try:
-    app = Editor(desk, ram_docs(blocks=40), 'ベンチ')
+    app = Editor(desk, ram_docs(blocks=16), 'ベンチ')   # saves nothing: a small disk
     w, ed = app.win, app.ed
     desk.present()
     def run(name, fn, n):
@@ -186,15 +186,17 @@ def main():
                                    '-crf', '18', '-pix_fmt', 'yuv420p'] + audio + [str(args.video)],
                                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(3)
+        # One exec per module: compiling everything at once needs the source,
+        # parse and code together and fragments the heap.
+        free = "import gc\ngc.collect()\nprint('FREE', gc.mem_free())\n"
         if args.phase == 'bench':
-            b.run(lib + BENCH, timeout=300)
+            b.run(lib)
+            b.run(free)
+            b.run(BENCH, timeout=300)
         elif args.phase == 'showcase':
             # desktop_showcase imports desktop_editor; from RAM, the editor's
             # globals (sent just before) stand in for that module.
             show = example('desktop_showcase.py').replace('import desktop_editor as de\n', SHOWCASE_NS)
-            # One exec per module: compiling everything at once needs the
-            # source, parse and code together and fragments the heap.
-            free = "import gc\ngc.collect()\nprint('FREE', gc.mem_free())\n"
             b.run(free)
             b.run(lib)
             b.run(free)
