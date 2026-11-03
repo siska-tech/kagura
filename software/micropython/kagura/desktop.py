@@ -24,6 +24,11 @@ is centred in the 320x240 output: SCROLL_Y 236 shows map rows 0..24 on lines
 20..219; every other map cell shows pattern 1000, all colour 0, which shows
 BACKDROP (palette entry 0 of the bank, the desk colour).
 
+Music: set desk.audio to a kagura.music.AudioSession and present() pumps it
+at its start and after every run of tiles. (Splitting long runs further was
+measured and did not help: a window move's time is in the compositor, before
+the first run.) The session must use the same device.
+
 Everything else (create_window, sprite, pointer, key, poll, ...) is the
 kagura_desktop.Desktop API, see software/desktop/README.md.
 """
@@ -68,6 +73,7 @@ class Desktop:
         self.device, self.video, self.console, self.palette = device, Video(device), console, palette
         self._row = bytearray(128)
         self._open = False
+        self.audio = None              # kagura.music.AudioSession, pumped by present()
         self._sink = self._write_run   # one bound method, not one per present()
         # The accelerated link's calls, bound once (it is installed at connect()).
         link = device._link()
@@ -125,12 +131,16 @@ class Desktop:
         else:
             d.write_memory(first * 32, data)
             d.fence()
+        if self.audio is not None:
+            self.audio.pump()          # the queue is empty after the FENCE
 
     def present(self):
         """Compose all damage and send the changed patterns. Returns the tile count."""
         d = self.device
         d.busy += 1
         try:
+            if self.audio is not None:
+                self.audio.pump()
             tiles = self._kd.present(self._sink, MAX_GAP)
             if tiles:
                 d.check_errors()

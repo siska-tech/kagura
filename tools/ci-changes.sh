@@ -22,6 +22,11 @@ classify() {
         experiments/*) ;;
         # Native desktop library and its MicroPython module: built into both KAGURA boards.
         software/desktop/*) mark micropython micropython_firmware ;;
+        # Audio HAL, KSNG player and their MicroPython module: built into both boards;
+        # the standalone C player and its transport backend are a Pico SDK build.
+        software/audio/pico/*|software/audio/backend/*) mark pico ;;
+        software/audio/*) mark pico micropython micropython_firmware ;;
+        software/micropython/usermods/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
         spec/registers.json|tools/gen-registers.ps1) all ;;
@@ -62,7 +67,8 @@ classify() {
         tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
         tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
         tools/rp2040-firmware.py|tools/kagura-desktop-device.py|tools/kagura-keyboard-device.py|\
-        tools/kagura-editor-device.py|tools/kagura-editor-board.py) ;;
+        tools/kagura-editor-device.py|tools/kagura-editor-board.py|tools/kagura-audio-board.py|\
+        tools/kagura-audio-timing.py) ;;
         *) all ;;
     esac
 }

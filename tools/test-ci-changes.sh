@@ -22,6 +22,9 @@ files "docs only" "" README.md docs/video.md software/micropython/README.md rtl/
 files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/c-gem-desktop/src/kd_fb.c experiments/c-gem-desktop/CMakeLists.txt
 files "native desktop" "micropython micropython_firmware" software/desktop/core/kd_fb.c software/desktop/binding/micropython.cmake
+files "audio library" "pico micropython micropython_firmware" software/audio/hal/ka_audio.c software/audio/songs/demo.h
+files "standalone audio player" "pico" software/audio/pico/main.c software/audio/backend/ka_kagura_host.c
+files "user C module list" "micropython micropython_firmware" software/micropython/usermods/kagura_audio/micropython.mk
 files "board constraints" "" boards/tang-nano-9k/vdp-720p.sdc boards/tang-nano-9k/phase1.cst
 files "synthesis tools" "" tools/build-nano9k.tcl tools/eval-gowin-hdmi.ps1 tools/run-baseline.ps1
 files "register spec" "$ALL" spec/registers.json

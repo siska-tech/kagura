@@ -170,9 +170,9 @@ class Link:
         self.c[_WAIT] = timeout_us
         self._fast('STATUS', self.k._commit, 1, 3 | (0 if wait else 0x100))
 
-    def audio_commit(self, timeout_us):
+    def audio_commit(self, timeout_us, wait=True):
         self.c[_WAIT] = timeout_us
-        self._fast('AUDIO_COMMIT', self.k._commit, 1, 4)
+        self._fast('AUDIO_COMMIT', self.k._commit, 1, 4 | (0 if wait else 0x100))
 
     def ext_writes(self, pairs, count):
         self._fast('ext', self.k._batch, 3, pairs, count, 0x0a)
