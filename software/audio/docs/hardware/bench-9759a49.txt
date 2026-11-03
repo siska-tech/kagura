@@ -1,0 +1,32 @@
+HOST_START bench 2026-11-03T21:56:49
+FREE 139488
+BUILD v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel)
+SIZES [('frame', 100), ('hal', 672), ('player', 296), ('state', 1968)]
+HEAP before_session 94832 after_session 94368
+NO_ALLOC send yes
+NO_ALLOC pump yes
+SEND voices 1 pitch False pairs_per_frame 2 p50 1049 p95 1314 max 1457
+SEND voices 6 pitch False pairs_per_frame 12 p50 1318 p95 1580 max 1683
+SEND voices 6 pitch True pairs_per_frame 20 p50 1553 p95 1785 max 1883
+PHASE pump ticks 900 late_max_us 5634 late_mean_us 911 folded 0 resyncs 0 loops 20827 present_us p50 0 p95 0 max 0 send_max_us 1381 heap_low 84096 error_code 0 audio_status 0x00
+PHASE desk-idle ticks 900 late_max_us 5793 late_mean_us 641 folded 0 resyncs 0 loops 11680 present_us p50 625 p95 625 max 9470 send_max_us 1178 heap_low 256 error_code 0 audio_status 0x00
+PHASE window-move ticks 902 late_max_us 16363 late_mean_us 1888 folded 0 resyncs 0 loops 515 present_us p50 27125 p95 42125 max 57096 send_max_us 1244 heap_low 5184 error_code 0 audio_status 0x00
+PHASE sprite-edit ticks 901 late_max_us 9294 late_mean_us 702 folded 0 resyncs 0 loops 7840 present_us p50 625 p95 625 max 22088 send_max_us 1297 heap_low 816 error_code 0 audio_status 0x00
+PHASE ja-typing ticks 901 late_max_us 9074 late_mean_us 1282 folded 0 resyncs 0 loops 1859 present_us p50 6125 p95 10125 max 15162 send_max_us 1188 heap_low 1088 error_code 0 audio_status 0x00
+PHASE skk-popup ticks 902 late_max_us 6937 late_mean_us 1066 folded 0 resyncs 0 loops 749 present_us p50 18375 p95 20625 max 27626 send_max_us 1275 heap_low 4160 error_code 0 audio_status 0x00
+PHASE files-ram ticks 902 late_max_us 80916 late_mean_us 28257 folded 502 resyncs 0 loops 349 present_us p50 2375 p95 3375 max 4421 send_max_us 2814 heap_low 7760 error_code 0 audio_status 0x00
+PHASE files-chunked ticks 902 late_max_us 61863 late_mean_us 4910 folded 115 resyncs 0 loops 334 present_us p50 875 p95 1125 max 3578 send_max_us 1608 heap_low 4064 error_code 0 audio_status 0x00
+PHASE gc ticks 900 late_max_us 12838 late_mean_us 3670 folded 0 resyncs 0 loops 1561 present_us p50 875 p95 1875 max 2372 send_max_us 1306 heap_low 84016 error_code 0 audio_status 0x00
+CLOSED error_code 0 audio_status 0x00
+LEGACY tone ok error_code 0 audio_status 0x00
+HEAP end 84624
+FILE build\phase6\bench-9759a49.wav seconds 170.5 rate 48000 onsets 1250 nominal_tick_us 16666.7
+SECTION 0 start 8.68 end 23.57 onsets 150 span_ticks 894 tick_us 16666.511 tempo_error_ppm -9 jitter_us p50 642 p95 3146 max 4380 rms 1270
+SECTION 1 start 26.20 end 41.09 onsets 150 span_ticks 894 tick_us 16666.161 tempo_error_ppm -30 jitter_us p50 408 p95 2722 max 4549 rms 1050
+SECTION 2 start 43.72 end 58.72 onsets 151 span_ticks 900 tick_us 16666.747 tempo_error_ppm +5 jitter_us p50 983 p95 5119 max 8057 rms 2075
+SECTION 3 start 61.27 end 76.26 onsets 151 span_ticks 900 tick_us 16665.971 tempo_error_ppm -42 jitter_us p50 352 p95 3036 max 5165 rms 1119
+SECTION 4 start 78.79 end 93.79 onsets 151 span_ticks 900 tick_us 16666.583 tempo_error_ppm -5 jitter_us p50 791 p95 2073 max 4529 rms 1123
+SECTION 5 start 96.32 end 111.32 onsets 151 span_ticks 900 tick_us 16666.708 tempo_error_ppm +2 jitter_us p50 828 p95 2380 max 3193 rms 1133
+SECTION 6 start 114.36 end 128.76 onsets 64 span_ticks 863 tick_us 16675.615 tempo_error_ppm +537 jitter_us p50 4180 p95 9489 max 10849 rms 5025
+SECTION 7 start 131.41 end 146.40 onsets 132 span_ticks 900 tick_us 16662.350 tempo_error_ppm -259 jitter_us p50 1763 p95 6919 max 8117 rms 2941
+SECTION 8 start 148.95 end 163.85 onsets 150 span_ticks 894 tick_us 16660.338 tempo_error_ppm -380 jitter_us p50 4600 p95 9866 max 11403 rms 5634

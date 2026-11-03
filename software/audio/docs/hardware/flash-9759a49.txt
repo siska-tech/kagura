@@ -1,0 +1,11 @@
+UF2 kagura-phase6-9759a49.uf2: 2286 blocks 0x10000000..0x1008ee00 (filesystem at 0x100a0000), sha256 b2c1a24368b3e586e185ed976efc129f3b59f15230ee2afd13995cdea3ffc53b
+FLASH_BEFORE 6e70edaac5fd0a164b3e8c1d65017e360ec47464ee35265a7b9b940e6328ff93
+CURRENT_FIRMWARE matches kagura-phase6-dev3.uf2
+BOOTSEL UF2 Bootloader v3.0 | Model: Raspberry Pi RP2 | Board-ID: RPI-RP2
+COPIED kagura-phase6-9759a49.uf2
+BUILD v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel) KAGURA Raspberry Pi Pico with RP2040
+HEAP 138736 47888
+FPGA (0, 6) 0x5b 240
+NATIVE kagura_desktop [('desktop', 36960), ('events', 896), ('framebuffer', 32000), ('items', 5760), ('max_items', 320), ('menus', 584), ('sprites', 1088), ('staging', 1280), ('text', 2048), ('total', 58604)]
+FS_UNCHANGED yes
+FIRMWARE_READBACK match

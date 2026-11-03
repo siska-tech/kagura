@@ -177,6 +177,11 @@ The standalone C program ran from SRAM with flash verified unchanged (`pico/`, l
 - **Cost.** A frame takes 130–160 µs to send from C. The demo uses 0.7 % of the CPU.
 
 
+Measured on the board through MicroPython, under desktop load, with the tracker and long playback: [docs/hardware.md](docs/hardware.md).
+- Ordinary desktop work keeps the click probe within about 5 ms of the beat.
+- Window moves keep it within 8 ms.
+- File I/O and GC pauses are the known limits.
+
 ## Tests
 
 ```sh
