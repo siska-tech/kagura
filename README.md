@@ -13,6 +13,15 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 *実機構成: Raspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9K。配線は[Pico firmware](software/pico/README.md)を参照。*
 
+## ショーケース
+
+| | | |
+|---|---|---|
+| ![紹介プレゼンテーションのタイトル](docs/images/showcase/title.png) | ![PROJECT STARFALL](docs/images/showcase/starfall-base.png) | ![トンネル](docs/images/showcase/tunnel.png) |
+| ![神楽デスクトップのスプライト工房](software/desktop/docs/hardware/hdmi-08-paint.png) | ![神楽メモ帳でSKKの候補を選択](docs/images/showcase/skk-popup.png) | ![神楽トラッカーとスコープ](software/audio/docs/hardware/tracker-hdmi-scope.png) |
+
+*すべて実機のHDMI出力のキャプチャです。説明付きの一覧は[ショーケース](docs/showcase.md)にあります。*
+
 ## 仕様
 
 | 分野 | 内容 |
@@ -29,6 +38,15 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## 現在の状態
 
+- **神楽デスクトップ**: [C言語で合成するGEM風デスクトップ](software/desktop/README.md)。MicroPythonから操作する。
+  - 日本語のウィンドウ・メニュー・テキストフィールドを持つ。
+  - 8 KBまでの日本語エディタ「神楽メモ帳」と、SKK日本語入力（候補ポップアップ、メニューバーの入力モード表示）を備える。
+  - 実機で、全シーンの画面とVRAM読戻しのCRCがPCの結果と一致することを検証済み。
+- **音声とトラッカー（Phase 6）**: [ネイティブ音声HAL、KSNG曲フォーマット、決定的なプレイヤー](software/audio/README.md)と、MicroPythonモジュール`kagura_audio`。
+  - その上に、デスクトップ上で動く「神楽トラッカー」、波形エディタ、合成波形のスコープを実装。
+  - 曲はCの配列として書き出し、単体のCゲームでも再生できる。
+  - 実機のHDMI音声を録音して測定した: テンポのずれなし。通常のデスクトップ操作中の発音タイミングのずれは最大でおおむね5 ms、ウィンドウ移動中は8 ms。
+  - 詳細は[実機受入](software/audio/docs/hardware.md)。
 - **KAGURA-UI（Phase 1）**: [MicroPython GUIの設計・API・デモ](docs/kagura-ui.md)。既存Framebufferの排他所有、部分再描画、日本語、USB端末入力を実装。[RP2040のHDMI表示・操作・復帰・5376更新を検証](docs/kagura-ui-validation.md)。
 - **TileFramebuffer**: [320×240・16色の疑似フレームバッファ](docs/framebuffer.md)をMicroPython SDKで提供。全1200セルを独立したpatternへ割り当て、ローカル描画とdirty転送を行う。[実機結果](docs/framebuffer-results.md)は全量読戻し・PCM併用5分負荷・480pのユーザー目視に合格。[Viper描画高速化](docs/framebuffer-viper-results.md)も両backendのCRC一致・各5分負荷で検証済み。[blit・ellipse・paint](docs/framebuffer-primitives.md)もPC参照・実VRAM読戻しとの一致、PCM併用5分負荷、480pのユーザー目視で検証済み。
 - **ABI 0.6（1,200タイル）の数値検証**: 公開タイル数を1,200枚へ拡張。ホスト4構成のP&R/STAとSRAM起動・境界検査、全1200枚の読戻し、PCM併用1時間連続動作、文字キャッシュ1072枠。詳細は[第3段階](docs/tile-1200-stage3.md)。[720pの目視・聴感](docs/tile-1200-visual.md)も確認済み。拡張の経緯は[1,200タイル対応の記録](docs/tile-1200-experiment.md)と[調査書](docs/tile-1200-feasibility.md)。
@@ -62,6 +80,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 
 [実機紹介プレゼンテーション](software/micropython/examples/showcase.md)は、日本語の疑似256色スライドからトンネル・ネオン風の描画、[PROJECT STARFALLのMicroPython移植](software/micropython/examples/starfall.md)、桜吹雪までを自動進行します。480p FULL+PSRAM構成を使用します。
 
+ただし現行のファームウェアでは、描画の章のあと、STARFALLの章を読み込むところでメモリ不足で止まります。桜吹雪も単体で開始時に止まります。STARFALLは単体なら動きます。原因は調査中です（[ショーケースの注記](docs/showcase.md#撮影時の注記)）。
+
 ## リポジトリ
 
 | path | 内容 |
@@ -70,7 +90,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 | `boards/tang-nano-9k/` | board top、CST/SDC、ピン一覧。[ボード資料](boards/tang-nano-9k/README.md) |
 | `sim/` | SystemVerilog testbenchと参照モデル。[試験一覧](sim/README.md) |
 | `spec/` | 機械可読のレジスタ定義と設計予算 |
-| `software/` | 生成ヘッダ（C/ca65）、Pico host firmware |
+| `software/desktop/` | 神楽デスクトップ（C）、日本語テキスト・エディタ、MicroPythonバインディング |
+| `software/audio/` | 音声HAL、KSNG曲フォーマットとプレイヤー、`kagura_audio`、単体Cプレイヤー |
+| `software/micropython/` | MicroPython SDK（`kagura`パッケージ）、ボード定義、例（トラッカー、エディタ、STARFALL等） |
+| `software/pico/`、`software/include/` | Pico host firmware、生成ヘッダ（C/ca65） |
 | `tools/` | ビルド・生成・検査・書込みのscript |
 | `docs/` | 仕様と検証の文書 |
 | `third_party/` | 固定revisionのhdl-util/hdmi |

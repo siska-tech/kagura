@@ -22,3 +22,20 @@ UGREEN 15390の720×480 YUYV入力をFFmpegで640×480・SAR 1へ正規化し、
 # 実機写真
 
 `hardware-pico-tang-nano-9k.jpg`は、ブレッドボード上のRaspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9Kの撮影写真。元画像1448×1086を1200×900へ縮小し、JPEG（品質85）で保存した。トリミングや色補正は行っていない。撮影時の配線は/IRQをpin 49へ移す前のものの可能性があり、現行の配線は[Pico firmware](../../software/pico/README.md)の表を正とする。
+
+# ショーケース
+
+`showcase/`の画像は、2026-11-04にRP2040実機（ファームウェア`e49871e`、480p FULL+PSRAM構成）のHDMI出力を、UGREEN 15390で録画したものから切り出した。
+
+- **取込み:** 1280×960 YUYVで入力し、FFmpegで640×480・SAR 1へ正規化してH.264で録画した。
+- **静止画:** 録画から1フレームを抜き出し、256色のパレットPNGで保存した。ディザはかけていない。
+- **加工:** 描き足しはしていない。
+
+| 画像 | 元 |
+|---|---|
+| `title`、`host`、`colour`、`plasma`、`tunnel`、`hypercube`、`ribbons` | 紹介プレゼンテーション（`showcase.run`、`mpremote mount`から実行） |
+| `starfall-base`、`starfall-boss` | `starfall.run(autoplay=True)`の単体実行 |
+| `wave-sine`、`wave-staircase` | `tools/kagura-audio-board.py wave`（神楽トラッカーの波形エディタ） |
+| `skk-popup` | `software/desktop/docs/hardware/popup-hdmi.png`（受入時の一覧画像）の1コマを切り出したもの |
+
+撮影はすべてRAMとmountで行った。Flashとファイルシステムは変更していない。一覧と説明は[ショーケース](../showcase.md)。
