@@ -6,7 +6,10 @@
 
 | 文書 | 内容 |
 |---|---|
+| [ショーケース](showcase.md) | 実機HDMIキャプチャ集: 紹介プレゼン、STARFALL、デスクトップ・SKK、トラッカー・波形エディタ |
 | [アーキテクチャ](architecture.md) | 仕様の概要、ブロック構成、clock、ビルド構成とCAPS、LED |
+| [神楽デスクトップ](../software/desktop/README.md) | C言語のGEM風デスクトップ、日本語エディタ、SKK入力 |
+| [音声とトラッカー](../software/audio/README.md) | 音声HAL、KSNG曲フォーマット、プレイヤー、神楽トラッカー、[実機受入](../software/audio/docs/hardware.md) |
 | [Viper描画比較](framebuffer-viper-results.md) | Python／ViperのCPU・flush実測、CRC・native実行・guard検証 |
 | [TileFramebuffer](framebuffer.md) | 320×240・16色の自由描画API、dirty転送、Pico診断・性能測定 |
 | [KAGURA-UI](kagura-ui.md) | MicroPython GUIの設計、資源所有権、API、3種類のデモ、[受入状況](kagura-ui-validation.md) |
