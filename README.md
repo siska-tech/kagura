@@ -15,10 +15,18 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## ショーケース
 
-| | | |
-|---|---|---|
-| ![紹介プレゼンテーションのタイトル](docs/images/showcase/title.png) | ![PROJECT STARFALL](docs/images/showcase/starfall-base.png) | ![トンネル](docs/images/showcase/tunnel.png) |
-| ![神楽デスクトップのスプライト工房](software/desktop/docs/hardware/hdmi-08-paint.png) | ![神楽メモ帳でSKKの候補を選択](docs/images/showcase/skk-popup.png) | ![神楽トラッカーとスコープ](software/audio/docs/hardware/tracker-hdmi-scope.png) |
+<table>
+<tr>
+<td><img src="docs/images/showcase/title.png" width="280" alt="紹介プレゼンテーションのタイトル"></td>
+<td><img src="docs/images/showcase/starfall-base.png" width="280" alt="PROJECT STARFALL"></td>
+<td><img src="docs/images/showcase/tunnel.png" width="280" alt="トンネル"></td>
+</tr>
+<tr>
+<td><img src="software/desktop/docs/hardware/hdmi-08-paint.png" width="280" alt="神楽デスクトップのスプライト工房"></td>
+<td><img src="docs/images/showcase/skk-popup.png" width="280" alt="神楽メモ帳でSKKの候補を選択"></td>
+<td><img src="software/audio/docs/hardware/tracker-hdmi-scope.png" width="280" alt="神楽トラッカーとスコープ"></td>
+</tr>
+</table>
 
 *すべて実機のHDMI出力のキャプチャです。説明付きの一覧は[ショーケース](docs/showcase.md)にあります。*
 
