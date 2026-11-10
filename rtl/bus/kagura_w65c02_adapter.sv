@@ -3,7 +3,8 @@
 // clock; PHI2 is a registered output, never an internal clock. One CPU cycle
 // is 16 system cycles (3.375MHz):
 //   phase 0  PHI2 falls; read data/OE of the previous cycle still held
-//   phase 1  OE released (keeps >=18.5ns of read hold after the fall)
+//   phase 2  OE released (keeps >=37.0ns of read hold after the fall; phase 1
+//            left no STA margin with an external PHI2 buffer, docs/timing.md)
 //   phase 3  external IRQ output updated (PHI2 low, outside CPU windows)
 //   phase 6  A/CS/RWB sampled; a selected read issues its request at once
 //   phase 8  PHI2 rises; a selected read starts driving data
@@ -65,8 +66,10 @@ module kagura_w65c02_adapter #(
             // `phase` holds the current phase, so case k acts on the edge that
             // starts phase k+1.
             case(phase)
-                4'd0: cpu_data_oe<=0;
-                4'd1: if(ready && release_count==RELEASE_CYCLES[3:0]) cpu_reset_release<=1;
+                4'd1: begin
+                    cpu_data_oe<=0;   // read hold: released 2 system cycles after the PHI2 fall
+                    if(ready && release_count==RELEASE_CYCLES[3:0]) cpu_reset_release<=1;
+                end
                 4'd2: cpu_irq_drive<=irq_level;
                 4'd5: begin
                     addr_q<=cpu_addr; sel_q<=!cpu_cs_n && cpu_reset_release; read_q<=cpu_rwb;

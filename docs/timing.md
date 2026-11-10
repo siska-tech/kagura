@@ -44,7 +44,7 @@ Gray pointerの第一同期段にはmax-delayを設定し、bus全体を一括fa
 | phase | 動作 |
 |---:|---|
 | 0 | PHI2立下り。前のread cycleの出力データとOEを保持 |
-| 1 | 18.5ns後にOEを解除（read hold 10nsを外部のskew込みで確保） |
+| 2 | 37.0ns後（2 system cycle後）にOEを解除（read hold 10nsを、PHI2の出力遅延・PHI2の外部バッファ・配線のskew込みで確保。phase 1では外部バッファ付きの構成でGowin StandardのSTA上の余裕が残らないため） |
 | 3 | 外部/IRQ出力を更新（PHI2 low、CPUのsetup/hold窓の外） |
 | 6 | 111.1ns後にA[4:0]・/CS・RWBを取り込む。readはここで内部要求 |
 | 8 | PHI2立上り。選択されたreadだけデータの駆動を始める（未選択・writeはHi-Z） |
@@ -53,7 +53,9 @@ Gray pointerの第一同期段にはmax-delayを設定し、bus全体を一括fa
 | 15 | write応答とerrorの確定 |
 
 - address安定（最大40ns）＋外部decode＋配線＋FPGA入力setupを111ns以内に、write data（最大40ns）＋配線＋setupを92.6ns以内に収める。readはphase 10から立下りまでの111.1nsから出力遅延・配線・15nsのsetupを引いた余裕になる。満たせない配線ではCPU分周を落とす。
-- OEを単純に`CS && RWB && PHI2`で作ると立下り直後のholdを失う可能性があるため、cycle stateから作りphase 1まで保持する。外部RAM/ROMはPHI2 lowで出力しないようにdecode/OEを作り、この18.5nsの延長と競合させない。
+- OEを単純に`CS && RWB && PHI2`で作ると立下り直後のholdを失う可能性があるため、cycle stateから作りphase 2まで保持する。外部RAM/ROMはPHI2 lowで出力しないようにdecode/OEを作り、この37.0nsの延長と競合させない（キャリア基板の他のデバイスは、PHI2 lowでは直前のcycleのデバイスだけが駆動する）。
+- PHI2のFPGAピン出力は、system clockのregisterからPLL出力遅延・clock網・clk→Q・配線・出力bufferを経る。`phase2-cpu.sdc`はこれを予算`PHI2_MAX`=16ns（理想edge基準）とし、`cpu_phi2`のoutput delayで実装値が予算を超えるとSTAを不合格にする。CPU入力のinput delayも同じ16nsを前提にする（以前の推定8nsより厳しい）。Gowin V1.9.12.04 Standardでは、phase2bootでslow 14.27ns（余裕+1.73ns）・fast 8.95ns、この制約を使う4構成（phase2・phase2boot、各720p）でslowの最大はphase2boot720の14.88ns（余裕+1.12ns）。
+- CPUピンでのread hold（PHI2立下りから10ns）は、GowinのSTAでは表せない。output holdの検査を、OEを解除するphase 2ではなく立下りと同時のedgeと組にするため。次の式で確認する: `2Tsys + OE Hi-Zの最早（fast、FPGAピン） − PHI2の最遅（slow、FPGAピン） + データ配線の最小 − PHI2の外部遅延の最大（配線・バッファ） − 10ns ≥ 0`。OEは`cpu_d`へのhold report（`bus/cpu_data_oe_s2`起点）、PHI2は`cpu_phi2`へのsetup reportの値を使う。fastのOEとslowのPHI2の組合せは保守側。phase2bootでは、PHI2配線3ns・データ配線0nsとして37.04 + 6.60 − 14.27 − 3 − 10 = +16.36ns、2.0nsの外部PHI2バッファを加えると+14.36ns。Gowinは出力のHi-Zへの遷移に別の遅延を持たず、OEN→IOの値（0.67..0.78ns）はモデル値なので、基板で確認する。
 - /CSが複数のsystem cycleにわたってlowでも、1 CPU cycleを1要求として数える。
 - I/O範囲は通常のload/storeだけで操作する。RMW命令、indexed addressingのdummy read、page境界を跨ぐI/O読出しで副作用（READ_RESULTの消費など）を起こさないようにドライバを書く。
 - RDYは使わない。queueの空きはFIFO_STATUSで確認し、満杯時の書込みは拒否してsticky errorを残す。割込みhandlerはドライバの使うindex・addressを無断で変えない。
