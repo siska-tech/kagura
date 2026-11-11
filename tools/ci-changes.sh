@@ -51,6 +51,11 @@ classify() {
         software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
         software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
         software/micropython/tests/test_driver.py) mark pico micropython ;;
+        # Frozen into, or stored in the ROMFS of, the KAGURA_PICO_SHOWCASE UF2.
+        software/micropython/kagura_ja/*|software/micropython/fonts/*|\
+        software/micropython/examples/showcase*|software/micropython/examples/framebuffer_demo.py|\
+        software/micropython/examples/starfall*|software/micropython/examples/sakura*|\
+        tools/make-showcase-firmware.py) mark micropython micropython_firmware ;;
         # Frozen into the UF2 (software/micropython/manifest.py).
         software/micropython/kagura/*|software/micropython/manifest.py|\
         software/micropython/align_frozen.py|software/micropython/frozen_alignment.cmake|\

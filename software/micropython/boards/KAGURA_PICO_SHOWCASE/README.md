@@ -34,12 +34,14 @@ make -C ports/rp2 BOARD=KAGURA_PICO_SHOWCASE \
   BOARD_DIR="$KAGURA_ROOT/software/micropython/boards/KAGURA_PICO_SHOWCASE" -j4
 ```
 
-続いてROMFSを作り、ファームウェアと1本のUF2にまとめる。mpremoteの`romfs.py`だけを読み込む。
+続いてROMFSを作り、ファームウェアと1本のUF2にまとめる。MicroPythonソースに同梱のmpremoteから`romfs.py`だけを読み込む（CIも同じ手順）。
 
 ```sh
 python3 tools/make-showcase-firmware.py \
-  --firmware ports/rp2/build-KAGURA_PICO_SHOWCASE/firmware.uf2 \
-  --out kagura-pico-showcase.uf2 --romfs-py <mpremote>/romfs.py
+  --firmware "$MPY/ports/rp2/build-KAGURA_PICO_SHOWCASE/firmware.uf2" \
+  --out kagura-pico-showcase.uf2 --romfs-py "$MPY/tools/mpremote/mpremote/romfs.py"
 ```
+
+`$MPY`はMicroPython v1.26.0のソース。
 
 UF2はファームウェアの末尾からROMFSの先頭までを消去済みページで埋め、連続した1つのイメージにしている。間を空けたUF2では、RP2040のBOOTSELでROMFSの大半が書かれなかった（2026-11-12、実機）。
