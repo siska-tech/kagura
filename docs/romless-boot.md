@@ -21,10 +21,10 @@ CPUのリセット中のバスの状態はW65C02Sのデータシートに規定�
 3. FlashのJEDEC IDを読む（000000・FFFFFFや読出し失敗はerror 8）。
 4. `0x100000`から32 byteのheaderを読んで検査し、続けてpayload全体を読んでCRC32を確かめる（1回目の読出し）。
 5. VDPの初期化・line 0の準備・検査の合格がそろうと、PHI2を8周期出してからRESBを解除する。
-6. CPUがresetベクタ`$FFFC/$FFFD`を読む。KAGURAは`$E0 $FF`を返し、スタブ`$FFE0`へ飛ぶ。データポートは`$FFFC`の直後の`$FFFD`の読出し（resetベクタの取得の順序）で初めて有効になり、それまでは読んでも0を返して内容を消費しない。
+6. CPUがresetベクタ`$FFFC/$FFFD`を読む。KAGURAは`$E0 $FF`を返し、スタブ`$FFE0`へ飛ぶ。データポートは`$FFFC`の直後の`$FFFD`の読出し（resetベクタの取得の順序）で初めて有効になり、それまでは読んでも0を返して内容を消費しない。さらに`$FFFC`は、RESB解除後64有効サイクル以内で、直前に窓を選ばない有効サイクル（スタック読出し）が3回以上続いたときだけresetベクタとして扱う（`vector_ok`、[CPUリセット](#cpuリセット方式b)）。
 7. スタブがデータポート`$FFFA`から転送先のページ番号とページ数を読み、ページ単位でSRAMへコピーする（2回目の読出しをそのまま流す）。全byteを渡した後のポートは0を返す。
 8. スタブは`BRK`を実行する。KAGURAはBRK/IRQベクタ`$FFFE/$FFFF`としてheaderのentry addressを返す。
-9. データポートが有効になった後、`$FFFE`の直後の`$FFFF`の読出し（BRKベクタの取得の順序）の後、最初のPHI2 lowで`BOOT_MAP=0`にし、窓をVDPへ戻す。CPUはentryから実行する（I=1、D=0、SPはBRKで3減っている）。
+9. データポートが有効になった後、`$FFFE`（直前に窓を選ばない有効サイクルが3回以上：BRKのpush）の直後の`$FFFF`の読出し（BRKベクタの取得の順序）の後、最初のPHI2 lowで`BOOT_MAP=0`にし、窓をVDPへ戻す。CPUはentryから実行する（I=1、D=0、SPはBRKで3減っている）。
 
 ### ブートスタブ
 
@@ -125,11 +125,28 @@ SRAM_WE_N   = !(PHI2 & !RWB)
 - 書込みは`BOOT_MAP`に関係なくSRAMへ行く（`$9F00`窓への書込みは通常時だけKAGURA）。
 - `BOOT_MAP`はFPGA設定前にlowとなる外付けpull-downを前提にする。RESBの保持回路は[CPUバス](timing.md#irqとcpu-reset)と同じ。
 
+## CPUリセット（方式B）
+
+CPUのリセットはすべてブートのやり直しになる（`kagura_boot_reset_ctl`）。SRAMの内容はリセットで保証されず、`BOOT_MAP=0`のまま`$FFFC`をSRAMから読むと、壊れたベクタで暴走しうるため。
+
+| 入力 | 動作 |
+|---|---|
+| `RESET_REQ_N`（pin 51、low=要求） | キャリアのリセットボタン等（デバウンス・パルス伸長は外部）。2段同期の後、次のphase 2の境界（PHI2 low、CPUの書込みstrobeの後）で受け付ける。CPUを止め（`run_ok=0` → アダプタがRESBを下げる。RESBが下がるのはPHI2 lowの間だけ）、`BOOT_MAP=1`に戻し、要求が続く間ブート制御をresetに保つ。要求が終わるとJEDEC IDからやり直す |
+| `RESB_SENSE`（pin 53、CPUのRESB網） | KAGURAがCPUを解除している間に外部（電源監視・GreenPAK）がRESBを下げたことを検出する。非同期setのflagで、system clockより短いパルスも取りこぼさない。検出するとブートをやり直し、次のphase 2で`BOOT_MAP=1`に戻す。KAGURA自身の解除・保持は外部リセットと見なさない（解除後にRESBのhighを確かめてから検出を有効にする） |
+| アダプタのready低下 | `cpu_reset_release`が下がったときもブートをやり直す |
+
+- ボタン等の要求では、FPGAがRESBを下げる（PHI2 lowの間）のが先で、外部のRESB保持（GreenPAKの`GP_RUN`等）はその後に来る前提。FPGAが応答しないときは外部のRESB保持がCPUを止める（キャリア側の設計）。
+- `RESET_REQ_N`と`RESB_SENSE`のpad・同期はSTAの対象外（`set_false_path`、非同期入力）。
+- `RESB_SENSE`で確実に検出できる最短パルスはGowinのデータシートに規定がない。キャリアの外部リセットはGreenPAKのパルス伸長（10 ms以上）とW65C02SのRESB 2サイクル以上を前提にする。
+- 未確認：W65C02S実機・キャリアでのリセット動作は未測定。
+
 ## ピン
 
 | 信号 | pin | 備考 |
 |---|---:|---|
 | BOOT_MAP | 26 | 出力。外付けpull-down。STAはPHI2と同じ予算（理想edgeから16ns以内、`boot.sdc`）で検査し、キャリアは2つの予算・PHI2のバッファ・配線から切替の窓を確かめる |
+| RESET_REQ_N | 51 | 入力、low=リセット要求。内部pull-up（キャリアにも10k pull-up）。非同期 |
+| RESB_SENSE | 53 | 入力、CPUのRESB網。非同期 |
 | Flash SCLK | 59 | MSPI兼用。`-use_mspi_as_gpio 1`（この構成だけ） |
 | Flash CS# | 60 | |
 | Flash MOSI | 61 | |
@@ -157,6 +174,7 @@ FlashのWP/IO2とRESET/IO3はFPGAへ配線されていないので、単線SPI�
 | `tb_flash_reader_timing` | ボードのCLK_DIV=4、MISO応答0/55ns、取込み前後4周期、byte間停止、Low/High/待機中resetからの復帰 |
 | `tb_boot_image_check` | header・範囲・entry・CRCの各拒否理由 |
 | `tb_boot_window` | スタブ、RESET/BRKベクタ、保護されたデータポートとbackpressure |
+| `tb_boot_reset_ctl` | 16 phaseすべてでのリセット要求（RESBはPHI2 lowの間だけ下がる、BOOT_MAPはphase 2で1）、1 ns・100 nsの外部RESBパルス、誤検出なし、要求の連打、要求と外部RESBの同時、ready低下、`vector_ok` |
 | `tb_boot_controller` | JEDEC確認、二重読出し、CRC検査、先読み、ブート窓までの統合 |
 | `tb_romless_boot_system` | W65C02Sのスタブ命令モデル、SRAM/decodeモデル、Flashモデルで、全payloadのコピー、entry到達、ポートの消費数、KAGURA/SRAMの排他選択 |
 | `test_boot_image.py` | 生成器のCRC、padding、範囲の拒否 |

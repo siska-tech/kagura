@@ -11,7 +11,7 @@ module tb_boot_window_order;
 
     kagura_boot_window dut(clk,reset,prepare,16'h0200,16'h2345,32'd256,
         payload_valid,payload_ready,payload_data,req_valid,req_ready,req_write,
-        req_addr,req_wdata,rsp_valid,rsp_ready,rsp_rdata,rsp_error,vector_high_read);
+        req_addr,req_wdata,rsp_valid,rsp_ready,rsp_rdata,rsp_error,vector_high_read,2'b11);
     always #5 clk=~clk;
     always @(posedge clk) begin
         if(payload_valid && payload_ready) payload_consumed=payload_consumed+1;

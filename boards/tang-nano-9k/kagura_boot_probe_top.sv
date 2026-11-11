@@ -25,7 +25,7 @@ module kagura_boot_probe_top (
     kagura_boot_controller #(.FLASH_CLK_DIV(4)) boot(system_clk,~system_release[3],
         flash_cs_n,flash_sclk,flash_mosi,flash_miso,
         boot_ready,boot_error,error_code,jedec_id,unmap_request,
-        1'b0,req_ready,1'b0,5'b0,8'b0,rsp_valid,1'b1,rsp_rdata,rsp_error);
+        1'b0,req_ready,1'b0,5'b0,8'b0,rsp_valid,1'b1,rsp_rdata,rsp_error,2'b11);
 
     assign boot_map=1'b0;
     assign led_n=~{jedec_id==24'h856016,boot_ready,error_code};

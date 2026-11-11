@@ -108,6 +108,7 @@ run_test tb_flash_reader_timing rtl/boot/kagura_flash_reader.sv sim/tests/tb_fla
 run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
 run_test tb_boot_window rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window.sv
 run_test tb_boot_window_order rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window_order.sv
+run_test tb_boot_reset_ctl rtl/bus/kagura_w65c02_adapter.sv rtl/boot/kagura_boot_reset_ctl.sv sim/tests/tb_boot_reset_ctl.sv
 run_test tb_boot_controller rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
     rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_boot_controller.sv
 run_test tb_romless_boot_system rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \

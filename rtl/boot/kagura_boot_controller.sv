@@ -24,7 +24,8 @@ module kagura_boot_controller #(
     output wire rsp_valid,
     input wire rsp_ready,
     output wire [7:0] rsp_rdata,
-    output wire rsp_error
+    output wire rsp_error,
+    input wire [1:0] vector_ok        // from kagura_boot_reset_ctl (2'b11 if none)
 );
     localparam [3:0] ID_CMD=0, ID_DATA=1, HEADER_CMD=2, HEADER_DATA=3,
         HEADER_RESULT=4, PAYLOAD_CMD=5, PAYLOAD_DATA=6, PAYLOAD_RESULT=7,
@@ -66,7 +67,7 @@ module kagura_boot_controller #(
     kagura_boot_window window(clk,reset,window_prepare,load_addr,entry_addr,payload_length,
         flash_data_valid && transferring,window_payload_ready,flash_data,
         req_valid,req_ready,req_write,req_addr,req_wdata,
-        rsp_valid,rsp_ready,rsp_rdata,rsp_error,vector_high_read);
+        rsp_valid,rsp_ready,rsp_rdata,rsp_error,vector_high_read,vector_ok);
 
     always @(posedge clk) begin
         if(reset) begin

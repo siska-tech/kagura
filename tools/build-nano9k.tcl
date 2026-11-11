@@ -59,7 +59,7 @@ if {$base in {bootprobe magicprobe}} {
         lappend cst phase2-cpu.cst
     }
     if {$base eq "phase2boot"} {
-        set boot {rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv}
+        set boot {rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv rtl/boot/kagura_boot_reset_ctl.sv}
         set local [concat $local $vdp rtl/bus/kagura_w65c02_adapter.sv $boot boards/tang-nano-9k/kagura_phase2_boot_top.sv]
         set top kagura_phase2_boot_top
         set sdc [concat $sdc phase2-cpu.sdc boot.sdc $vdp_sdc]

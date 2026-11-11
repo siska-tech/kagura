@@ -6,6 +6,9 @@
 # budgets, its PHI2 buffer and its board delays (docs/romless-boot.md).
 set_output_delay -clock [get_clocks {system54}] -max 2.518 [get_ports {boot_map}]
 set_output_delay -clock [get_clocks {system54}] -min 0.000 [get_ports {boot_map}]
+# Reset request and RESB sense are asynchronous: two-flop synchronisers, and RESB
+# sense also sets a flag asynchronously (kagura_boot_reset_ctl). No timing relation.
+set_false_path -from [get_ports {cpu_reset_req_n cpu_resb_sense}]
 # P25Q32U MISO changes after an SCLK falling edge and is sampled four system54
 # cycles later; the next change is another four cycles after that sample.
 # setup=4, hold=7 gives relations +4T and -4T (CLK_DIV=4), including the
