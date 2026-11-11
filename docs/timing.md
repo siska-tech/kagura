@@ -33,7 +33,7 @@ Gray pointerの第一同期段にはmax-delayを設定し、bus全体を一括fa
 - 外部reset（S2、pin 4、押下でlow）またはいずれかのPLLのlock喪失で、chip GSRを直ちにassertする。GSRの入力は`reset_n && pixel_lock && system_lock`で、fabric FFを通さない（GSRは全fabric FFをINITへ保持するので、解除源にfabric同期器を使うと自己lockする）。
 - 両PLLがlockするとGSRを解除し、pixel/systemの各domainが4段の同期器でresetを解除する。
 - 4個のOSER10は`GSREN=true`、local RESETは0固定で、GSRの解除で4 lane同時に動き出す。
-- reset解除後: VRAMとline bankの消去 → pixel側の準備の確認 → line 0の描画 → host版はREADYピンを1、W65C02S版はPHI2を8周期以上出してからPHI2 lowの位相でRESBを解除する。
+- reset解除後: VRAMとline bankの消去 → pixel側の準備の確認 → line 0の描画 → host版はREADYピンを1、W65C02S版はPHI2を8周期以上出してからPHI2 lowの位相でRESBを解除する。解除したサイクルはCPUがリセット中に始まったので、アダプタはその次のPHI2立下りから始まるサイクルからアクセスを受け付ける。
 
 ## W65C02Sバス
 

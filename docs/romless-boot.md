@@ -6,6 +6,8 @@ W65C02S構成で外付けROMを使わず、Tang Nano 9K基板上のSPI Flash（P
 
 ## 方式（32 byte窓ブート）
 
+CPUのリセット中のバスの状態はW65C02Sのデータシートに規定がない。そのため、(1) RESBを解除したPHI2サイクル（CPUがリセット中に始まったサイクル）は、アダプタが受け付けない。(2) ブートの窓は単独の読出しではなく、65C02がベクタを読む順序（`$FFFC`→`$FFFD`、`$FFFE`→`$FFFF`、窓へのアクセスとして連続）で状態を進める。リセットシーケンスのダミー読出し（不定のPCを2回読む）や、リセット中のアドレスがどの値でも、データポートの有効化やBOOT_MAPの解除は起きない。
+
 ブートの間だけ、外部decodeが`$FFE0–$FFFF`の**読出し**をKAGURAの32 byte窓へ割り当てる。KAGURAはそこに26 byteのブートスタブ（6502コード）とベクタを返し、スタブがデータポートからFlashの内容を1 byteずつ読んで、**CPU自身が**SRAMへ書き込む。完了するとFPGAが割当てを解除する。
 
 - CPUアダプタのピン（A0〜A4、/CS、RWB、D0〜D7）をそのまま使う。追加はヘッダの`BOOT_MAP`出力1本と、基板上のFlashの4本だけ。
@@ -19,10 +21,10 @@ W65C02S構成で外付けROMを使わず、Tang Nano 9K基板上のSPI Flash（P
 3. FlashのJEDEC IDを読む（000000・FFFFFFや読出し失敗はerror 8）。
 4. `0x100000`から32 byteのheaderを読んで検査し、続けてpayload全体を読んでCRC32を確かめる（1回目の読出し）。
 5. VDPの初期化・line 0の準備・検査の合格がそろうと、PHI2を8周期出してからRESBを解除する。
-6. CPUがresetベクタ`$FFFC/$FFFD`を読む。KAGURAは`$E0 $FF`を返し、スタブ`$FFE0`へ飛ぶ。ベクタの上位byteを読むまでは、データポートを読んでも内容を消費しない。
+6. CPUがresetベクタ`$FFFC/$FFFD`を読む。KAGURAは`$E0 $FF`を返し、スタブ`$FFE0`へ飛ぶ。データポートは`$FFFC`の直後の`$FFFD`の読出し（resetベクタの取得の順序）で初めて有効になり、それまでは読んでも0を返して内容を消費しない。
 7. スタブがデータポート`$FFFA`から転送先のページ番号とページ数を読み、ページ単位でSRAMへコピーする（2回目の読出しをそのまま流す）。全byteを渡した後のポートは0を返す。
 8. スタブは`BRK`を実行する。KAGURAはBRK/IRQベクタ`$FFFE/$FFFF`としてheaderのentry addressを返す。
-9. `$FFFF`の読出し後、最初のPHI2 lowで`BOOT_MAP=0`にし、窓をVDPへ戻す。CPUはentryから実行する（I=1、D=0、SPはBRKで3減っている）。
+9. データポートが有効になった後、`$FFFE`の直後の`$FFFF`の読出し（BRKベクタの取得の順序）の後、最初のPHI2 lowで`BOOT_MAP=0`にし、窓をVDPへ戻す。CPUはentryから実行する（I=1、D=0、SPはBRKで3減っている）。
 
 ### ブートスタブ
 
@@ -127,7 +129,7 @@ SRAM_WE_N   = !(PHI2 & !RWB)
 
 | 信号 | pin | 備考 |
 |---|---:|---|
-| BOOT_MAP | 26 | 出力。外付けpull-down |
+| BOOT_MAP | 26 | 出力。外付けpull-down。STAはPHI2と同じ予算（理想edgeから16ns以内、`boot.sdc`）で検査し、キャリアは2つの予算・PHI2のバッファ・配線から切替の窓を確かめる |
 | Flash SCLK | 59 | MSPI兼用。`-use_mspi_as_gpio 1`（この構成だけ） |
 | Flash CS# | 60 | |
 | Flash MOSI | 61 | |
