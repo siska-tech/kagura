@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        board: [KAGURA_PICO, KAGURA_PICO_W]
+        board: [KAGURA_PICO, KAGURA_PICO_W, KAGURA_PICO_SHOWCASE]
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain and pinned MicroPython
@@ -124,11 +124,19 @@ jobs:
         run: |
           make -C build/micropython-src/ports/rp2 BOARD=${{ matrix.board }} \
             BOARD_DIR="$GITHUB_WORKSPACE/software/micropython/boards/${{ matrix.board }}" -j4
+      - name: Add the showcase ROMFS
+        if: matrix.board == 'KAGURA_PICO_SHOWCASE'
+        run: |
+          python3 tools/make-showcase-firmware.py \
+            --firmware build/micropython-src/ports/rp2/build-KAGURA_PICO_SHOWCASE/firmware.uf2 \
+            --out build/micropython-src/ports/rp2/build-KAGURA_PICO_SHOWCASE/kagura-pico-showcase.uf2 \
+            --romfs-py build/micropython-src/tools/mpremote/mpremote/romfs.py
       - uses: actions/upload-artifact@v4
         with:
           name: micropython-${{ matrix.board }}
           path: |
             build/micropython-src/ports/rp2/build-${{ matrix.board }}/firmware.uf2
+            build/micropython-src/ports/rp2/build-${{ matrix.board }}/kagura-pico-showcase.uf2
             software/micropython/kagura/*.py
             software/micropython/kagura/ui/*.py
             software/micropython/kagura_ja/*.py

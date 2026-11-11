@@ -68,13 +68,18 @@ files "framebuffer transport measurement" "" tools/prepare-framebuffer-transport
     tools/analyze-framebuffer-transport.py tools/plot-framebuffer-transport.py tools/analyze-framebuffer-gap.py
 files "1200 tile hardware fixture" "micropython" software/micropython/examples/tile1200_accept.py software/micropython/tests/test_tile1200_accept.py
 files "live presentation and asset generator" "micropython" tools/gen-showcase-assets.py tools/prepare-showcase.py \
-    software/micropython/examples/showcase.py software/micropython/examples/showcase_assets/opening.kimg \
     software/micropython/tests/test_showcase.py
 files "STARFALL MicroPython port and original C oracle" "micropython" tools/gen-starfall-mpy-assets.py \
-    software/micropython/examples/starfall.py software/micropython/tests/starfall_oracle.c
-# PR #31 without its workflow edit: Python, font and docs only.
-files "kagura_ja and font" "micropython" software/micropython/kagura_ja/__init__.py \
-    software/micropython/fonts/misaki8.kfnt software/micropython/fonts/README.md \
+    software/micropython/tests/starfall_oracle.c
+# Frozen into, or stored in the ROMFS of, KAGURA_PICO_SHOWCASE.
+files "showcase firmware contents" "micropython micropython_firmware" software/micropython/examples/showcase.py \
+    software/micropython/examples/showcase_assets/opening.kimg software/micropython/examples/framebuffer_demo.py \
+    software/micropython/examples/starfall.py software/micropython/examples/starfall_assets/video.bin \
+    software/micropython/examples/sakura.py software/micropython/examples/sakura_assets/piano_c4.pcm \
+    software/micropython/kagura_ja/__init__.py software/micropython/fonts/misaki8.kfnt \
+    software/micropython/boards/KAGURA_PICO_SHOWCASE/kagura_showcase.py tools/make-showcase-firmware.py
+# PR #31 without its workflow edit and the files above: Python, font tool and docs only.
+files "kagura_ja and font" "micropython" \
     software/micropython/examples/ja_menu.py software/micropython/tests/test_kagura_ja.py \
     tools/gen-kagura-ja-font.py README.md THIRD_PARTY.md
 
@@ -106,7 +111,7 @@ c3="$(commit software/micropython/kagura_ja/__init__.py)"
 event "push range" "" GITHUB_EVENT_NAME=push CI_BASE="$c1" CI_HEAD="$c2"
 event "push of two commits" "verilator rtl_sources" GITHUB_EVENT_NAME=push CI_BASE="$c0" CI_HEAD="$c2"
 # Only the topic's own commit; main's later docs commit is not part of it.
-event "pull request since merge base" "micropython" GITHUB_EVENT_NAME=pull_request CI_BASE="$c2" CI_HEAD="$c3"
+event "pull request since merge base" "micropython micropython_firmware" GITHUB_EVENT_NAME=pull_request CI_BASE="$c2" CI_HEAD="$c3"
 event "new branch push" "$ALL" GITHUB_EVENT_NAME=push CI_BASE=0000000000000000000000000000000000000000 CI_HEAD="$c3"
 event "missing base after force push" "$ALL" GITHUB_EVENT_NAME=push CI_BASE=1234567890abcdef1234567890abcdef12345678 CI_HEAD="$c3"
 event "empty base" "$ALL" GITHUB_EVENT_NAME=pull_request CI_BASE= CI_HEAD="$c3"

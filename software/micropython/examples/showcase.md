@@ -37,6 +37,16 @@ RAMの余裕のため、RP2040では`mpy-cross -march=armv6m`で`.mpy`にして�
 SDK・FPGA・ABI・MicroPython本体の変更や、専用のCファームウェアは不要です。
 SDK全体を`/lib`やmountからRAMへ読む構成はメモリ条件が異なり、この紹介プレゼンでは未検証です。
 
+## ショーケース入りファームウェア
+
+[KAGURA_PICO_SHOWCASE](../boards/KAGURA_PICO_SHOWCASE/README.md)は、このプレゼンを組み込んだUF2です。
+モジュールは凍結、素材とフォントはROMFSにあるため、ファイルの配置は不要です。
+
+```python
+import kagura_showcase
+kagura_showcase.run()
+```
+
 ## 起動
 
 Pico上へ配置した場合は、既存コンソールを閉じてPIO資源を解放してから接続します。
