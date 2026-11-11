@@ -22,6 +22,7 @@ ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象�
 | メモリ | `tb_bsram_wrappers` | RAM wrapperのlatency、dual clock、byte RMWの不可分性 |
 | | `tb_vram_init` | 全RAMにpoisonを入れてから、command readで0を確認 |
 | host bus | `tb_w65c02_bus` | 要求回数、OE、read setup/hold、IRQ、reset解除、締切 |
+| | `tb_w65c02_bus_handover` | OE解除がphase 2（PHI2立下りの2 system cycle後）、解除まで出力データ不変、KAGURA read後の他デバイス・CPU write・KAGURAとの重なりなし、ready喪失・system resetでのOE解除 |
 | | `tb_spi_bus`、`tb_qspi_bus` | 10MHzのホストモデル、BUSY、中断、競合（`tb_host_bus.sv`） |
 | | `tb_startup_cpu` | VDPの初期化とline 0の準備からCPU adapterのreset解除まで |
 | register・queue | `tb_vram_core` | 公開registerの検査、領域境界、拒否時の副作用、FILL/FENCE、満杯、順序 |
