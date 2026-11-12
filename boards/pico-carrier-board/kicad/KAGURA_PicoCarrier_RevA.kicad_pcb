@@ -1578,6 +1578,17 @@
 		)
 		(path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293/ca074154-61a9-5dc7-9288-7762445f65b2")
 		(property "Legacy Reference" "J201A" (at 0 0 0) (layer "F.Fab") (hide yes) (uuid "8a7ff392-22b4-5819-aa83-8a1125be38e6") (effects (font (size 1 1) (thickness 0.15))))
+	(model "${KIPRJMOD}/models/Tang_Nano_9K_3672.step"
+  (offset
+    (xyz 1.7744 -62.4838 12.64)
+  )
+  (scale
+    (xyz 1 1 1)
+  )
+  (rotate
+    (xyz 0 0 90)
+  )
+)
 	)
 	(footprint "KAGURA_MANUAL:R7"
 		(layer "F.Cu")
@@ -9088,6 +9099,17 @@
 			)
 		)
 		(path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293/c1daa5e9-27b2-51c0-8148-38c779d89a94")
+	(model "${KIPRJMOD}/models/RaspberryPi_Pico_AddedHeaders_H2.54mm.step"
+  (offset
+    (xyz 8.89 -24.13 8.5)
+  )
+  (scale
+    (xyz 1 1 1)
+  )
+  (rotate
+    (xyz 0 0 0)
+  )
+)
 	)
 	(footprint "KAGURA_MANUAL:J102"
 		(layer "B.Cu")

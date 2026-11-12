@@ -15,13 +15,19 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## Picoキャリアボード
 
-![KAGURA Picoキャリアボード Basic RevAの3Dレンダリング](docs/images/pico-carrier-board-reva-3d.png)
+<table>
+<tr>
+<td><img src="docs/images/pico-carrier-board-reva-3d.png" width="480" alt="Tang Nano 9Kを載せたキャリアボードの表面3D表示"></td>
+<td><img src="docs/images/pico-carrier-board-reva-bottom-3d.png" width="480" alt="Raspberry Pi Picoを載せたキャリアボードの裏面3D表示"></td>
+</tr>
+<tr><td>表面：Tang Nano 9K・XIAO RP2040</td><td>裏面：Raspberry Pi Pico</td></tr>
+</table>
 
 Raspberry Pi Pico・Tang Nano 9K・XIAO RP2040をまとめる、72×48mm・4層の試作キャリアボードです。USB-Cからの5V給電、USB-Aホスト端子、3.3V Grove I2C、GPIO拡張を備えます。表面にTang/XIAO、裏面にPicoを配置する構成です。
 
 [ボード資料と製造データ](boards/pico-carrier-board/README_JP.md)に、KiCadプロジェクト、PCBに同期した回路図、JLCPCB向けガーバー・BOM・CPL、LCSC部品購入ガイドをまとめています。Basic RevAは設計レビュー・実機確認が残る試作版です。
 
-*画像はKiCad設計データから生成した3Dレンダリングです。Pico/Tang本体と一部部品のモデルは含みません。実装済み基板の写真ではありません。*
+*画像はTang Nano 9KとPicoのモデルを載せたKiCadの3Dレンダリングです。Tangは提供された3672版STEPを参考表示しています。一部部品モデルは省略しています。[モデルと積み高さの説明](boards/pico-carrier-board/kicad/models/README_JP.md)。実装済み基板の写真ではありません。*
 
 ## ショーケース
 

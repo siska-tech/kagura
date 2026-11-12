@@ -45,6 +45,8 @@ Gerber・ドリル・CPLは共通のKiCad絶対原点です。CPLの座標はmm�
 
 `SHA256SUMS.txt`はこのフォルダのファイル照合用です。作業途中の画像、ログ、旧版、製造に不要な設計検討データは同梱していません。
 
-同期済みPCB SHA-256：`796165a7377b2b3204bb4c1c27e3a243f639fdb45c2359178ba950efa2eb3fcc`
+同期済みPCB SHA-256：`9dd0a92584edf3da9ac7f21efc96be5e323f3b7a10fe5b99ed095a39bfeff9dd`
 
 同期に伴い参照名・ライブラリ名・ネット表記を整理しました。物理レイアウトと製造図形は従来版を維持しています。
+
+3D表示にはTang Nano 9K（提供3672版STEP）とPicoを追加しています。モデルの参照情報だけの変更で、製造用ガーバー・BOM・CPLは同じです。[モデルの説明](kicad/models/README_JP.md)。
