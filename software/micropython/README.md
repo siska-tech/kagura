@@ -359,6 +359,7 @@ with plane:                   # 1フレーム: deviceのcallbackを止める
 - `read(first, buf)`はパターンの読戻し、`error_code()`はERROR_CODE、`hide()`は表示停止。
 - 元の所有者は復元しない。HDMIコンソール（`kagura.console.active()`）は`pause()`／`resume()`で画面を返す。
 - 試験: `python3 -I software/micropython/tests/test_tileplane.py`（レジスタモデル上で配置・範囲・FENCE・link）。
+- **実機未検証:** TilePlaneはソフトウェア試験（レジスタモデル）のみで、RP2040＋KAGURA-9での転送オーバーヘッド、HDMI表示、VRAM読戻しはまだ測っていない（kagura-desktopのREADME「Validation status」を参照）。
 
 ### Viper描画backend
 
