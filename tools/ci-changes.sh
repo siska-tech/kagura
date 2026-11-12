@@ -28,6 +28,8 @@ classify() {
         tools/build-micropython-unix.sh) mark micropython ;;
         software/micropython/usermods/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
+        # The SDK's public API snapshot (micropython job).
+        software/api-snapshot.txt|tools/api-snapshot.py) mark micropython ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
         spec/registers.json|tools/gen-registers.ps1) all ;;
         rtl/*|sim/*|third_party/*) mark verilator rtl_sources ;;
@@ -44,6 +46,8 @@ classify() {
         software/pico/send_image.py) mark pico micropython ;;
         # test_sakura.py checks the piano asset against this sample.
         software/pico/piano_c4_sample.h) mark pico micropython ;;
+        # The public C headers are part of the API snapshot (tools/api-snapshot.py).
+        software/pico/kagura_host.h|software/pico/tile_fb.h|software/pico/img_quant.h) mark pico micropython ;;
         software/pico/*) mark pico ;;
         # The MicroPython STARFALL oracle links the original C game directly.
         software/starfall/*) mark pico micropython ;;

@@ -23,6 +23,8 @@ files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/new-idea/main.c experiments/new-idea/CMakeLists.txt
 files "unix port build" "micropython" tools/build-micropython-unix.sh
 files "device tools" "" tools/rp2040-firmware.py tools/rp2040_sram_bench.py
+files "API snapshot" "micropython" software/api-snapshot.txt tools/api-snapshot.py
+files "public C header" "pico micropython" software/pico/tile_fb.h
 files "audio library" "pico micropython micropython_firmware" software/audio/hal/ka_audio.c software/audio/songs/demo.h
 files "standalone audio player" "pico" software/audio/pico/main.c software/audio/backend/ka_kagura_host.c
 files "user C module list" "micropython micropython_firmware" software/micropython/usermods/kagura_audio/micropython.mk
