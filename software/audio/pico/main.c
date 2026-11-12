@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Standalone C on KAGURA-9: the audio HAL and the KSNG player over the C host
 // driver, from SRAM (no_flash), loaded and checked by
-// experiments/c-gem-desktop/tools/rp2040_sram_bench.py run (flash unchanged).
+// tools/rp2040_sram_bench.py run (flash unchanged).
 //
 //   1. preflight: ID, ABI 0.6, CAPS, ERROR_CODE (reads only);
 //   2. a test melody through the HAL alone (pulse 0, then wave 4);

@@ -154,6 +154,19 @@ class ConsoleStream(IOBase):
             self.screen.device.deinit()
 
 
+def active():
+    """The console that boot.py started (__main__.kagura_console), or None.
+
+    An application that takes the screen pauses it, and resume() gives the
+    screen back; console.screen.device is the console's KAGURA device.
+    """
+    try:
+        import __main__
+    except ImportError:
+        return None
+    return getattr(__main__, "kagura_console", None)
+
+
 def _open_font(path):
     # Optional: without kagura_ja or the font, non-ASCII stays '?'.
     if not path:

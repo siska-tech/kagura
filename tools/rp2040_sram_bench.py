@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""SRAM-only RP2040 benchmark of the C desktop core (pico/README.md).
+"""RP2040 device helpers and SRAM-only runs (flash unchanged).
 
   verify-uf2 --uf2 F --elf F      offline: every UF2 block targets main SRAM,
                                   matches the ELF load image, enters at its lowest

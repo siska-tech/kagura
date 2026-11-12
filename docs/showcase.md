@@ -33,11 +33,11 @@ C版を移植した[MicroPythonの横スクロールシューティング](../so
 
 ## 神楽デスクトップ
 
-C言語で合成するGEM風のデスクトップです（[software/desktop](../software/desktop/README.md)）。MicroPythonから操作します。
+C言語で合成するGEM風のデスクトップです（[kagura-desktop](https://github.com/siska-tech/kagura-desktop)、別リポジトリ）。MicroPythonから操作します。
 
 | | |
 |---|---|
-| ![スプライト工房でハートを描くデスクトップ](../software/desktop/docs/hardware/hdmi-08-paint.png) | ![神楽メモ帳でSKKの候補を選んでいるところ](images/showcase/skk-popup.png) |
+| ![スプライト工房でハートを描くデスクトップ](images/showcase/desktop-paint.png) | ![神楽メモ帳でSKKの候補を選んでいるところ](images/showcase/skk-popup.png) |
 | 日本語のウィンドウ、メニュー、スプライト工房。 | 神楽メモ帳でSKKの変換候補を選んでいるところ。ポップアップと、メニューバーの入力モード表示。受入記録の一覧画像から1コマを切り出しています。 |
 
 ## 神楽トラッカーと音源

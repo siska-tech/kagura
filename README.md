@@ -46,7 +46,7 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## 現在の状態
 
-- **神楽デスクトップ**: [C言語で合成するGEM風デスクトップ](software/desktop/README.md)。MicroPythonから操作する。
+- **神楽デスクトップ**: [C言語で合成するGEM風デスクトップ](https://github.com/siska-tech/kagura-desktop)。別リポジトリ`kagura-desktop`で開発し、このSDKの公開API（`kagura.tileplane`、`kagura.console`、`kagura_audio`等）だけを使う。MicroPythonから操作する。
   - 日本語のウィンドウ・メニュー・テキストフィールドを持つ。
   - 8 KBまでの日本語エディタ「神楽メモ帳」と、SKK日本語入力（候補ポップアップ、メニューバーの入力モード表示）を備える。
   - 実機で、全シーンの画面とVRAM読戻しのCRCがPCの結果と一致することを検証済み。
@@ -98,9 +98,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 | `boards/tang-nano-9k/` | board top、CST/SDC、ピン一覧。[ボード資料](boards/tang-nano-9k/README.md) |
 | `sim/` | SystemVerilog testbenchと参照モデル。[試験一覧](sim/README.md) |
 | `spec/` | 機械可読のレジスタ定義と設計予算 |
-| `software/desktop/` | 神楽デスクトップ（C）、日本語テキスト・エディタ、MicroPythonバインディング |
 | `software/audio/` | 音声HAL、KSNG曲フォーマットとプレイヤー、`kagura_audio`、単体Cプレイヤー |
-| `software/micropython/` | MicroPython SDK（`kagura`パッケージ）、ボード定義、例（トラッカー、エディタ、STARFALL等） |
+| `software/micropython/` | MicroPython SDK（`kagura`パッケージ）、ボード定義、例（STARFALL、ショーケース等） |
 | `software/pico/`、`software/include/` | Pico host firmware、生成ヘッダ（C/ca65） |
 | `tools/` | ビルド・生成・検査・書込みのscript |
 | `docs/` | 仕様と検証の文書 |

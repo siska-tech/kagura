@@ -5,7 +5,7 @@
 #   cmake -S software/audio/pico -B build/audio-pico -DPICO_SDK_PATH=$HOME/opt/pico-sdk
 #   cmake --build build/audio-pico
 # Run (flash untouched; the watchdog returns the board to MicroPython):
-#   python experiments/c-gem-desktop/tools/rp2040_sram_bench.py run --approved \
+#   python tools/rp2040_sram_bench.py run --approved \
 #       --uf2 build/audio-pico/ka_rp2040_audio.uf2 --elf build/audio-pico/ka_rp2040_audio.elf --log LOG
 cmake_minimum_required(VERSION 3.13)
 set(PICO_BOARD pico)

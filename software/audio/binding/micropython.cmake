@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # kagura_audio user C module for CMake ports (rp2). The KAGURA boards add it
-# with the desktop (boards/KAGURA_PICO/mpconfigboard.cmake).
+# by default (boards/KAGURA_PICO/mpconfigboard.cmake).
 add_library(usermod_kagura_audio INTERFACE)
 
 set(KA_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
