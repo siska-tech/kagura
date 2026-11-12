@@ -42,7 +42,7 @@ HDMI streamのinstance名は全topで`kagura_phase1_top`と揃えてあり、`ph
 | READY | 27 | J5-7 |
 | /IRQ | 49 | J6-20 |
 
-pin 36〜39（TFカード）はHi-Z・pullなし。詳細は[ホストインターフェース](../../docs/host-interface.md)、Picoとの配線は[Pico firmware](../../software/pico/README.md#配線)。
+pin 36〜39（TFカード）はHi-Z・pullなし。詳細は[ホストインターフェース](../../docs/host-interface.md)、Picoとの配線は[Pico firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md#配線)。
 
 ## CPU接続
 

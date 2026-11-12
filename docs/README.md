@@ -6,15 +6,15 @@
 
 | 文書 | 内容 |
 |---|---|
-| [ショーケース](showcase.md) | 実機HDMIキャプチャ集: 紹介プレゼン、STARFALL、デスクトップ・SKK、トラッカー・波形エディタ |
+| [ショーケース](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/showcase.md) | 実機HDMIキャプチャ集: 紹介プレゼン、STARFALL、デスクトップ・SKK、トラッカー・波形エディタ |
 | [アーキテクチャ](architecture.md) | 仕様の概要、ブロック構成、clock、ビルド構成とCAPS、LED |
 | [神楽デスクトップ](https://github.com/siska-tech/kagura-desktop) | C言語のGEM風デスクトップ、日本語エディタ、SKK入力、神楽トラッカー（別リポジトリ） |
-| [音声](../software/audio/README.md) | 音声HAL、KSNG曲フォーマット、プレイヤー、[実機受入](../software/audio/docs/hardware.md) |
-| [Viper描画比較](framebuffer-viper-results.md) | Python／ViperのCPU・flush実測、CRC・native実行・guard検証 |
-| [TileFramebuffer](framebuffer.md) | 320×240・16色の自由描画API、dirty転送、Pico診断・性能測定 |
-| [KAGURA-UI](kagura-ui.md) | MicroPython GUIの設計、資源所有権、API、3種類のデモ、[受入状況](kagura-ui-validation.md) |
-| [blit／ellipse／paint](framebuffer-primitives.md) | 画像転送・楕円・flood fillの方式比較、固定stack、PC／Pico差分と実測 |
-| [プログラミングガイド](programming-guide.md) | ホストからの初期化・転送・sprite・COMMIT・音源・PCMの手順 |
+| [音声](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/audio/README.md) | 音声HAL、KSNG曲フォーマット、プレイヤー、[実機受入](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/audio/docs/hardware.md) |
+| [Viper描画比較](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-viper-results.md) | Python／ViperのCPU・flush実測、CRC・native実行・guard検証 |
+| [TileFramebuffer](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer.md) | 320×240・16色の自由描画API、dirty転送、Pico診断・性能測定 |
+| [KAGURA-UI](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/kagura-ui.md) | MicroPython GUIの設計、資源所有権、API、3種類のデモ、[受入状況](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/kagura-ui-validation.md) |
+| [blit／ellipse／paint](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-primitives.md) | 画像転送・楕円・flood fillの方式比較、固定stack、PC／Pico差分と実測 |
+| [プログラミングガイド](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/programming-guide.md) | ホストからの初期化・転送・sprite・COMMIT・音源・PCMの手順 |
 | [レジスタ仕様](register-map.md) | ABI 0.6の直接窓、command、extended register（規範） |
 | [メモリマップ](memory-map.md) | VRAM/PSRAMのaddress、pattern・map・palette・OAM・waveの形式 |
 | [映像仕様](video.md) | 表示モード、背景・sprite、優先順位、COMMIT、ラスタIRQ・ラスタスクロール |
@@ -44,6 +44,6 @@
 | [1,200タイル対応の記録](tile-1200-experiment.md) | 別リポジトリで行った拡張の段階・検証結果と本流への統合 |
 | [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
 | [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |
-| [Pico host firmware](../software/pico/README.md) | 配線、コマンド、実機確認の記録 |
-| [MicroPython driver / HDMI REPL](../software/micropython/README.md) | SPI/QSPIドライバ、自動検出、UARTキーボード入力、REPL出力・アプリの8×8日本語表示、導入・受入手順 |
+| [Pico host firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md) | 配線、コマンド、実機確認の記録 |
+| [MicroPython driver / HDMI REPL](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/micropython/README.md) | SPI/QSPIドライバ、自動検出、UARTキーボード入力、REPL出力・アプリの8×8日本語表示、導入・受入手順 |
 | [出典](sources.md)、[第三者IP](../THIRD_PARTY.md) | 一次資料と外部ソース |

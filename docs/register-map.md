@@ -2,7 +2,7 @@
 
 KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=6。全bitstreamが同じ0.6を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
 
-offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）、Cヘッダ（`software/include/kagura_regs.h`）、ca65 include（`software/w65c02/kagura_regs.inc`）を生成し、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
+offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）とca65 include（`software/w65c02/kagura_regs.inc`）を生成し（`-SdkDir`を付けると[kagura-sdk](https://github.com/siska-tech/kagura-sdk)のCヘッダ`software/include/kagura_regs.h`とMicroPythonの`regs.py`も）、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
 
 ## 共通規則
 
@@ -145,4 +145,4 @@ ABI 0.xの間は互換性を保証しない。1,200パターン対応を0.6と�
 | 0.5 | 登録sprite 64→256。OAMを009000から00A000へ移し、flagをrecord byte 6からbyte 3へ移動 |
 | 0.6 | 1,200パターン、BG上位bit表、sprite byte 5 bit6をtile bit10に使用、追加pattern窓 |
 
-ソフトはID・ABI_MAJOR/MINOR・CAPSを確認してから使う。手順は[プログラミングガイド](programming-guide.md)。
+ソフトはID・ABI_MAJOR/MINOR・CAPSを確認してから使う。手順は[プログラミングガイド](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/programming-guide.md)。

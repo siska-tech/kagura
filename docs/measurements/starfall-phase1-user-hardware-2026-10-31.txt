@@ -1,9 +1,0 @@
-User-supplied hardware observations, 2026-10-31 (Asia/Tokyo).
-Photo: HDMI starfield and player visible.
-User report: movement and shot both work with keyboard.py via uv/COM5.
-Transport lane and HDMI bitstream mode were not specified in the report.
-
-SF frames=11520 work_avg_us=47 work_max_us=267 work_p95_window_us=71 cpu_last_us=17 wire_avg=4004 wire_max=7744 peak=1 overflow_events=0 audio_fault_frames=0 missed=44 interval_last_us=16671 blank_overruns=0
-SF frames=11776 work_avg_us=47 work_max_us=267 work_p95_window_us=90 cpu_last_us=17 wire_avg=4005 wire_max=7744 peak=1 overflow_events=0 audio_fault_frames=0 missed=45 interval_last_us=16670 blank_overruns=0
-SF frames=12032 work_avg_us=53 work_max_us=671 work_p95_window_us=582 cpu_last_us=57 wire_avg=4005 wire_max=7744 peak=3 overflow_events=0 audio_fault_frames=0 missed=46 interval_last_us=16658blank_overruns=0
-SF frames=12288 work_avg_us=60 work_max_us=671 work_p95_window_us=580 cpu_last_us=17 wire_avg=4005 wire_max=7744 peak=1 overflow_events=0 audio_fault_frames=0 missed=46 interval_last_us=16656blank_overruns=1

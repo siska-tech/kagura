@@ -11,7 +11,7 @@
 | simulation | Verilator 5.032で58試験。参照モデルとの全画素・全sample比較、protocol checker、boot MISO保持窓 | `bash tools/test-verilator.sh`（CIでも実行） |
 | 設計検査 | BSRAM・cycle予算の算術、レジスタ定義と文書・生成物の一致 | `tools/check-design.ps1`、`tools/gen-registers.ps1 -Check` |
 | P&R/STA | Gowin EDAでのbitstream生成とsetup/hold | `tools/run-baseline.ps1`（ローカル。証跡は`reports/`、Git管理外） |
-| 実機 | Tang Nano 9K（シルク3674、chip ID `0x1100481B`）1枚、HDMI sink 2機種、Raspberry Pi Pico | 手順は[実機試験](hardware-test.md)、Picoは[firmware](../software/pico/README.md) |
+| 実機 | Tang Nano 9K（シルク3674、chip ID `0x1100481B`）1枚、HDMI sink 2機種、Raspberry Pi Pico | 手順は[実機試験](hardware-test.md)、Picoは[firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md) |
 
 ## 機能ごとの状況
 

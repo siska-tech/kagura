@@ -1,0 +1,4 @@
+# The siska-tech/kagura-sdk commit that kagura's CI checks the register spec
+# against (tools/check-sdk.sh): the SDK's generated host constants must match
+# spec/registers.json. Test only; nothing in kagura is built from the SDK.
+commit aae8699d8db01ed9825b37443b8ff8f3bb1cd14b
