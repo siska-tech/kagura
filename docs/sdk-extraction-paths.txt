@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+# Paths that move to kagura-sdk (docs/sdk-extraction.md section 3), in
+# git filter-repo --paths-from-file format: a plain line is a path prefix,
+# glob: a glob. Everything else stays with the hardware in kagura.
+# tools/sdk-extraction-check.sh reads this file for its dry run.
+
+# Host software (software/w65c02, the in-FPGA host's constants, stays).
+software/micropython/
+software/audio/
+software/pico/
+software/include/
+software/starfall/
+software/tests/
+software/api-snapshot.txt
+
+# SDK tools
+tools/api-snapshot.py
+tools/build-micropython-unix.sh
+tools/rp2040-firmware.py
+tools/rp2040_sram_bench.py
+tools/test-headers.sh
+tools/gen-kagura-ja-font.py
+tools/gen-showcase-assets.py
+tools/gen-star-runner-audio.py
+tools/gen-starfall-mpy-assets.py
+tools/prepare-showcase.py
+tools/make-showcase-firmware.py
+tools/star-runner-device.ps1
+tools/kagura-upload.ps1
+tools/kagura-audio-timing.py
+tools/kagura-audio-wave.py
+tools/measure-kagura-ui.py
+tools/render-kagura-ui.py
+tools/summarize-kagura-ui.py
+tools/compare-ui-damage.py
+glob:tools/kagura-ui-*.py
+tools/analyze-framebuffer-gap.py
+glob:tools/*-framebuffer-transport.py
+tools/framebuffer-transport-upload.ps1
+
+# SDK documentation and its evidence
+docs/programming-guide.md
+docs/kagura-sdk-fast-path.md
+glob:docs/kagura-ui*.md
+docs/kagura-ui-logs/
+docs/kagura-studio-sprite-editor.md
+glob:docs/framebuffer*
+docs/framebuffer-gap-logs/
+docs/framebuffer-transport-logs/
+glob:docs/micropython-*.md
+docs/showcase.md
+docs/showcase-video.md
+glob:docs/starfall-*.md
+docs/measurements/
+docs/images/showcase/
+glob:docs/images/kagura-ui-*.png
+docs/images/kagura-studio-sprite-editor-hdmi.png
+docs/images/framebuffer-transport-baseline.svg
+glob:docs/images/starfall-*.png

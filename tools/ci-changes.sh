@@ -29,7 +29,7 @@ classify() {
         software/micropython/usermods/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
         # The SDK's public API snapshot (micropython job).
-        software/api-snapshot.txt|tools/api-snapshot.py) mark micropython ;;
+        software/api-snapshot.txt|tools/api-snapshot.py|tools/sdk-extraction-check.py) mark micropython ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
         spec/registers.json|tools/gen-registers.ps1) all ;;
         rtl/*|sim/*|third_party/*) mark verilator rtl_sources ;;

@@ -55,6 +55,23 @@ Findings:
 
 Generated constants: the SDK keeps committed copies of `regs.py`, `kagura_regs.h` and `kagura_regs.inc`, and a pin file `hardware.lock` naming the kagura commit and the SHA-256 of `spec/registers.json` they were generated from. CI regenerates them from that commit and fails on any difference. RTL tests that run SDK code (`starfall/test-rtl.sh`, boot images) stay in kagura and check out kagura-sdk at a pinned commit.
 
+### Dry run (`tools/sdk-extraction-check.py`)
+
+`docs/sdk-extraction-paths.txt` lists what moves, in `git filter-repo --paths-from-file` format. The check reads it and reports every reference that would cross the boundary. On main after #96:
+
+| | |
+|---|---|
+| tracked files | 845: 584 move, 261 stay |
+| kagura-sdk → kagura | 65 references in 25 files |
+| kagura → kagura-sdk | 259 references in 22 files |
+| already broken or generated paths | 46 in 29 files (not caused by the move) |
+
+- **SDK → hardware, code:** only two scripts.
+  - `software/starfall/test-rtl.sh` runs STARFALL against the RTL and testbenches. It is an integration test, so it moves to kagura beside the RTL tests and checks out kagura-sdk at a pin.
+  - `tools/test-headers.sh` regenerates the headers with `tools/gen-registers.ps1`. It runs the generator from the pinned kagura commit.
+- **SDK → hardware, documentation:** links to the hardware specifications (`docs/audio-spec.md`, `host-interface.md`, `memory-map.md`, `register-map.md`, `video.md`). These become links into kagura at the pinned commit. Generated files keep naming `spec/registers.json` as their source.
+- **Hardware → SDK:** 169 of the 259 are CI configuration (`ci-changes.sh`, `test-ci-changes.sh`, workflows), which is split with the move. The rest are README and docs links, which become links into kagura-sdk.
+
 ## 4. Kagura-HD
 
 Kagura-HD is a different graphics architecture, so the SDK does **not** force one graphics model on both:

@@ -45,7 +45,9 @@ jobs:
           git clone --depth 1 --branch v1.26.0 https://github.com/micropython/micropython.git build/micropython-src
           test "$(git -C build/micropython-src rev-parse HEAD)" = 4ce2dd2cdab6e57f3982fc899f15a2103d71b0be
       - name: Public API snapshot (Python, kagura_audio, C headers)
-        run: python3 -I tools/api-snapshot.py --check
+        run: |
+          python3 -I tools/api-snapshot.py --check
+          python3 -I tools/sdk-extraction-check.py
       - name: Check generated constants
         shell: pwsh
         run: ./tools/gen-registers.ps1 -Check
