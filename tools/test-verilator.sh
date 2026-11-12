@@ -102,10 +102,13 @@ CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.s
     rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv rtl/memory/kagura_hyperram_ctrl.sv)
 run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
 run_test tb_w65c02_bus_handover rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus_handover.sv
+run_test tb_w65c02_bus_release rtl/bus/kagura_w65c02_adapter.sv sim/tests/tb_w65c02_bus_release.sv
 run_test tb_flash_reader rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader.sv
 run_test tb_flash_reader_timing rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader_timing.sv
 run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
 run_test tb_boot_window rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window.sv
+run_test tb_boot_window_order rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window_order.sv
+run_test tb_boot_reset_ctl rtl/bus/kagura_w65c02_adapter.sv rtl/boot/kagura_boot_reset_ctl.sv sim/tests/tb_boot_reset_ctl.sv
 run_test tb_boot_controller rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
     rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_boot_controller.sv
 run_test tb_romless_boot_system rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \

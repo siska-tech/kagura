@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // W65C02S-facing endpoint for the temporary $FFE0-$FFFF boot mapping.
 // Addresses are the existing five-bit KAGURA request offsets.
+// The vectors are recognised by the order the 65C02 reads them, not by single
+// reads: the data port arms only on a $FFFD read directly after a $FFFC read
+// (the reset vector), and the unmap pulse (vector_high_read) only on a $FFFF
+// read directly after a $FFFE read (the BRK vector) once armed. "Directly
+// after" = the previous accepted window access. Stray reads while the CPU is
+// in reset or in its reset sequence (dummy reads at an undefined PC read one
+// address twice) therefore cannot arm the port or end the boot.
+// vector_ok (from kagura_boot_reset_ctl, sampled with each access): bit 0 = at
+// least three valid CPU cycles that did not select KAGURA came just before (the
+// 65C02 reads three stack bytes before the reset vector and pushes three before
+// the BRK vector); bit 1 = still within the first cycles after RESB release.
+// The reset vector needs both bits at $FFFC, the BRK vector bit 0 at $FFFE.
+// Unit tests without a reset controller tie it to 2'b11.
 module kagura_boot_window (
     input wire clk,
     input wire reset,
@@ -20,11 +33,15 @@ module kagura_boot_window (
     input wire rsp_ready,
     output reg [7:0] rsp_rdata,
     output reg rsp_error,
-    output reg vector_high_read
+    output reg vector_high_read,
+    input wire [1:0] vector_ok
 );
     reg vector_armed;
     reg [1:0] port_prefix;
     reg [31:0] payload_remaining;
+    reg [4:0] last_read;               // offset of the previous accepted access, if it was a read
+    reg last_was_read;
+    reg [1:0] last_ok;                 // vector_ok sampled with the previous accepted access
     wire port_read=req_valid && !req_write && req_addr==5'h1a;
     wire port_needs_payload=port_read && vector_armed && port_prefix==2 && payload_remaining!=0;
     assign req_ready=!rsp_valid && (!port_needs_payload || payload_valid);
@@ -56,14 +73,17 @@ module kagura_boot_window (
         if(reset) begin
             rsp_valid<=0; rsp_rdata<=0; rsp_error<=0; vector_high_read<=0;
             vector_armed<=0; port_prefix<=0; payload_remaining<=payload_length;
+            last_read<=0; last_was_read<=0; last_ok<=0;
         end else begin
             vector_high_read<=0;
             if(prepare) begin
                 vector_armed<=0; port_prefix<=0; payload_remaining<=payload_length;
+                last_read<=0; last_was_read<=0; last_ok<=0;
             end
             if(rsp_valid && rsp_ready) rsp_valid<=0;
             if(accept) begin
                 rsp_valid<=1; rsp_error<=req_write;
+                last_read<=req_addr; last_was_read<=!req_write; last_ok<=vector_ok;
                 if(req_write) rsp_rdata<=0;
                 else case(req_addr)
                     5'h1a: begin
@@ -78,9 +98,9 @@ module kagura_boot_window (
                         end else rsp_rdata<=0;
                     end
                     5'h1c: rsp_rdata<=8'he0;
-                    5'h1d: begin rsp_rdata<=8'hff; vector_armed<=1; end
+                    5'h1d: begin rsp_rdata<=8'hff; if(last_was_read && last_read==5'h1c && last_ok==2'b11) vector_armed<=1; end
                     5'h1e: rsp_rdata<=entry_addr[7:0];
-                    5'h1f: begin rsp_rdata<=entry_addr[15:8]; vector_high_read<=1; end
+                    5'h1f: begin rsp_rdata<=entry_addr[15:8]; if(vector_armed && last_was_read && last_read==5'h1e && last_ok[0]) vector_high_read<=1; end
                     default: rsp_rdata<=stub_byte(req_addr);
                 endcase
             end

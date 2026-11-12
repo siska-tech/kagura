@@ -16,7 +16,7 @@ module tb_boot_controller;
         flash_cs_n,flash_sclk,flash_mosi,flash_miso,
         boot_ready,boot_error,error_code,jedec_id,unmap_request,
         req_valid,req_ready,req_write,req_addr,req_wdata,
-        rsp_valid,rsp_ready,rsp_rdata,rsp_error);
+        rsp_valid,rsp_ready,rsp_rdata,rsp_error,2'b11);
     always #5 clk=~clk;
 
     function automatic [31:0] crc32_byte(input [31:0] current,input [7:0] value);

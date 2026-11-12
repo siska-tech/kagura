@@ -19,7 +19,7 @@ module tb_romless_boot_system;
         flash_cs_n,flash_sclk,flash_mosi,flash_miso,
         boot_ready,boot_error,error_code,jedec_id,unmap_request,
         req_valid,req_ready,req_write,req_addr,req_wdata,
-        rsp_valid,rsp_ready,rsp_rdata,rsp_error);
+        rsp_valid,rsp_ready,rsp_rdata,rsp_error,2'b11);
     always #5 clk=~clk;
     always @(posedge clk)
         if(dut.window.payload_ready) payload_consumed=payload_consumed+1;

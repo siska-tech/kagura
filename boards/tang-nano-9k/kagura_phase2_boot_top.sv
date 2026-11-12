@@ -13,7 +13,9 @@ module kagura_phase2_boot_top #(
     input wire cpu_cs_n,cpu_rwb,
     inout wire [7:0] cpu_d,
     output wire cpu_irq_n,
-    output reg boot_map,
+    output wire boot_map,
+    input wire cpu_reset_req_n,         // carrier reset request (GreenPAK), active low
+    input wire cpu_resb_sense,          // the CPU RESB net
     output wire flash_cs_n,flash_sclk,flash_mosi,
     input wire flash_miso
 );
@@ -60,29 +62,22 @@ module kagura_phase2_boot_top #(
     wire [7:0] selected_rsp_rdata=boot_map ? b_rsp_rdata : v_rsp_rdata;
     wire selected_rsp_error=boot_map ? b_rsp_error : v_rsp_error;
 
+    wire boot_reset,run_ok; wire [1:0] vector_ok;
     kagura_w65c02_adapter bus(system_clk,sys_reset,
-        pixel_up_sync[1] && vdp_ready && frame_ready && boot_ready,
+        pixel_up_sync[1] && vdp_ready && frame_ready && boot_ready && run_ok,
         cpu_phi2,cpu_reset_release,cpu_a,cpu_cs_n,cpu_rwb,cpu_d,data_out,data_oe,
         irq_drive,boot_map ? 1'b0 : irq,req_valid,selected_req_ready,req_write,req_addr,req_wdata,
         selected_rsp_valid,rsp_ready,selected_rsp_rdata,selected_rsp_error,late);
 
     // boot.sdc assumes four system cycles per SCLK half-period.
-    kagura_boot_controller #(.FLASH_CLK_DIV(4)) boot(system_clk,sys_reset,flash_cs_n,flash_sclk,flash_mosi,flash_miso,
+    kagura_boot_controller #(.FLASH_CLK_DIV(4)) boot(system_clk,boot_reset,flash_cs_n,flash_sclk,flash_mosi,flash_miso,
         boot_ready,boot_error,boot_error_code,jedec_id,unmap_request,
         req_valid && boot_map,b_req_ready,req_write,req_addr,req_wdata,
-        b_rsp_valid,rsp_ready,b_rsp_rdata,b_rsp_error);
+        b_rsp_valid,rsp_ready,b_rsp_rdata,b_rsp_error,vector_ok);
 
-    // The controller requests unmapping after the $FFFF response.  Observe the
-    // following PHI2 fall, then change BOOT_MAP one system cycle later: phase 2.
-    reg phi2_q,unmap_pending;
-    always @(posedge system_clk) begin
-        if(sys_reset) begin boot_map<=1; phi2_q<=0; unmap_pending<=0; end
-        else begin
-            phi2_q<=cpu_phi2;
-            if(phi2_q && !cpu_phi2 && unmap_request) unmap_pending<=1;
-            if(unmap_pending) begin boot_map<=0; unmap_pending<=0; end
-        end
-    end
+    // BOOT_MAP, CPU reset requests and boot restarts (every CPU reset re-runs the boot).
+    kagura_boot_reset_ctl reset_ctl(system_clk,sys_reset,cpu_phi2,cpu_reset_release,cpu_cs_n,
+        cpu_reset_req_n,cpu_resb_sense,unmap_request,boot_map,boot_reset,run_ok,vector_ok);
 
     wire [11:0] render_cycles;
     kagura_vdp #(.CAPS(VIDEO_ID_CODE==4 ? 8'h73 : 8'h53),.VIDEO_ID_CODE(VIDEO_ID_CODE)) vdp(.sys_clk(system_clk),.sys_reset(sys_reset),

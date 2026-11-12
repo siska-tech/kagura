@@ -1,5 +1,14 @@
-# BOOT_MAP changes only after a PHI2 falling edge and is delayed to phase 2.
-set_false_path -to [get_ports {boot_map}]
+# BOOT_MAP changes on the system54 edge that starts phase 2 (two cycles after the
+# PHI2 fall), after the CPU read hold and before the next address decode. It
+# uses the same budget as cpu_phi2 (phase2-cpu.sdc, PHI2_MAX = 16): the STA fails
+# if the pin changes later than 16 ns after its ideal edge. With PHI2 and BOOT_MAP
+# both inside 0..16 ns, a carrier checks its switching window from the two
+# budgets, its PHI2 buffer and its board delays (docs/romless-boot.md).
+set_output_delay -clock [get_clocks {system54}] -max 2.518 [get_ports {boot_map}]
+set_output_delay -clock [get_clocks {system54}] -min 0.000 [get_ports {boot_map}]
+# Reset request and RESB sense are asynchronous: two-flop synchronisers, and RESB
+# sense also sets a flag asynchronously (kagura_boot_reset_ctl). No timing relation.
+set_false_path -from [get_ports {cpu_reset_req_n cpu_resb_sense}]
 # P25Q32U MISO changes after an SCLK falling edge and is sampled four system54
 # cycles later; the next change is another four cycles after that sample.
 # setup=4, hold=7 gives relations +4T and -4T (CLK_DIV=4), including the

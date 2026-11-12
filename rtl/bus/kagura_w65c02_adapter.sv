@@ -15,6 +15,10 @@
 // RESB release: after `ready`, count RELEASE_CYCLES PHI2 rising edges, then
 // release at phase 2 (PHI2 low), so that many complete high pulses ran.
 // Any loss of `ready` asserts reset at once.
+// A CPU cycle is served only if RESB was already released when it began (at
+// its PHI2 fall). The cycle in which RESB is released started while the CPU
+// was held in reset, so its address is not a CPU access and is ignored
+// (whatever the W65C02S drives during reset; the data sheet does not say).
 module kagura_w65c02_adapter #(
     parameter integer RELEASE_CYCLES=8
 ) (
@@ -45,6 +49,7 @@ module kagura_w65c02_adapter #(
     reg [3:0] phase;
     reg [4:0] addr_q;
     reg sel_q, read_q, waiting;
+    reg cycle_valid;                   // RESB released at the PHI2 fall that began this cycle
     reg [3:0] release_count;
     assign rsp_ready=1'b1;
     always @(posedge clk)
@@ -52,12 +57,12 @@ module kagura_w65c02_adapter #(
             phase<=0; phi2<=0; cpu_reset_release<=0; release_count<=0;
             cpu_data_out<=0; cpu_data_oe<=0; cpu_irq_drive<=0;
             req_valid<=0; req_write<=0; req_addr<=0; req_wdata<=0;
-            addr_q<=0; sel_q<=0; read_q<=0; waiting<=0; late<=0;
+            addr_q<=0; sel_q<=0; read_q<=0; waiting<=0; late<=0; cycle_valid<=0;
         end else begin
             phase<=phase+1'b1;
             // phi2 changes on the edge that starts phase 8 (rise) and 0 (fall).
             if(phase==4'd7) phi2<=1;
-            if(phase==4'd15) phi2<=0;
+            if(phase==4'd15) begin phi2<=0; cycle_valid<=cpu_reset_release; end
             if(req_valid && req_ready) req_valid<=0;
             if(rsp_valid && waiting) begin
                 waiting<=0;
@@ -72,8 +77,8 @@ module kagura_w65c02_adapter #(
                 end
                 4'd2: cpu_irq_drive<=irq_level;
                 4'd5: begin
-                    addr_q<=cpu_addr; sel_q<=!cpu_cs_n && cpu_reset_release; read_q<=cpu_rwb;
-                    if(!cpu_cs_n && cpu_reset_release && cpu_rwb) begin
+                    addr_q<=cpu_addr; sel_q<=!cpu_cs_n && cpu_reset_release && cycle_valid; read_q<=cpu_rwb;
+                    if(!cpu_cs_n && cpu_reset_release && cycle_valid && cpu_rwb) begin
                         req_valid<=1; req_write<=0; req_addr<=cpu_addr; waiting<=1;
                     end
                 end
@@ -89,6 +94,6 @@ module kagura_w65c02_adapter #(
                 4'd15: if(waiting && !read_q && !rsp_valid) late<=1;
                 default: ;
             endcase
-            if(!ready) begin cpu_reset_release<=0; release_count<=0; end
+            if(!ready) begin cpu_reset_release<=0; release_count<=0; cycle_valid<=0; end
         end
 endmodule
