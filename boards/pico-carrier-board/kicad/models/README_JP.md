@@ -17,6 +17,12 @@ KiCad 10付属`Module.3dshapes/RaspberryPi_Pico_AddedHeaders_H2.54mm.step`を内
 - 出典：[KiCad Packages3D](https://gitlab.com/kicad/libraries/kicad-packages3D)。帰属・著者情報はSTEPヘッダーを維持しています。
 - ライセンス：[Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/)。[KiCadのライセンス表記](https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/LICENSE.md)。この第三者モデルにはリポジトリのApache-2.0を適用しません。
 
+## USB-Aコネクタ J2
+
+ユーザー提供の`87520-0010BLF.stp`を内容未改変で同梱しました。内部ファイル名は`87520-0010ALF_SW0001`、作成元表記はFCI - ELX Divisionです。モデル追加によって発注型番87520-0010BLFを変更していません。
+
+信号端子4本（間隔2.5／2.0／2.5mm）とシェル取付端子2本（間隔13.14mm、信号列から2.71mm）の中心を現ランドに合わせ、挿入口が基板外側を向くよう配置しました。モデル内の主シェル下面と図面の0.42mmスタンドオフから基板面の高さを合わせています。
+
 ## 表示の範囲
 
 モデルの追加による配線・ランド・銅箔・穴・外形・ネット・参照名・部品数の変更はありません。PCB内と対応するローカルフットプリントにモデルのパス・位置・回転だけを追加しています。製造用ガーバー・BOM・CPLは変更していません。

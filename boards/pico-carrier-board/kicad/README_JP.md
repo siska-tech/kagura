@@ -47,6 +47,6 @@ KiCadのアノテーションに合わせ、末尾が数字となる参照名に
 
 `KAGURA_RevA.kicad_sym`と`sym-lib-table`、`Manual.pretty`、`Basic.pretty`、`BoardExtras.pretty`と`fp-lib-table`はプロジェクト相対パスです。必要な既存ローカル3Dモデルは`models/`に同梱しています。
 
-Tang Nano 9KとPicoの3Dモデルを同梱し、表面のTangと裏面のPicoをソケットに合わせて表示します。モデルの出典・積み高さ・版の違いは[3Dモデルについて](models/README_JP.md)を参照してください。F1・J4等のモデル未設定部品は省略しています。モデルは参考外形であり、購入代替品の嵌合保証には使えません。[部品購入ガイド](../parts-purchase/README_JP.md)の寸法差・実物確認事項を参照してください。
+Tang Nano 9K・Pico・USB-AコネクタJ2の3Dモデルを同梱し、表面のTangと裏面のPicoをソケットに合わせて表示します。モデルの出典・積み高さ・版の違いは[3Dモデルについて](models/README_JP.md)を参照してください。F1・J4等のモデル未設定部品は省略しています。モデルは参考外形であり、購入代替品の嵌合保証には使えません。[部品購入ガイド](../parts-purchase/README_JP.md)の寸法差・実物確認事項を参照してください。
 
 J101/J102・JP1・J4の購入型番は購入ガイドで管理しています。PCBと回路図のValueは設計時の表記を維持し、購入候補を無断で確定品へ変更していません。

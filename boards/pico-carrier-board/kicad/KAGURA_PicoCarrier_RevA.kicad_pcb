@@ -6922,6 +6922,17 @@
 		)
 		(embedded_fonts no)
 		(path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444/7c5097ed-b96a-569d-ab6d-ed1ca4e230d7")
+	(model "${KIPRJMOD}/models/87520-0010BLF.stp"
+  (offset
+    (xyz 3.5 1.01 3.555)
+  )
+  (scale
+    (xyz 1 1 1)
+  )
+  (rotate
+    (xyz -90 0 0)
+  )
+)
 	)
 	(footprint "KAGURA_MANUAL:R10"
 		(layer "F.Cu")

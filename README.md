@@ -27,7 +27,7 @@ Raspberry Pi Pico・Tang Nano 9K・XIAO RP2040をまとめる、72×48mm・4層�
 
 [ボード資料と製造データ](boards/pico-carrier-board/README_JP.md)に、KiCadプロジェクト、PCBに同期した回路図、JLCPCB向けガーバー・BOM・CPL、LCSC部品購入ガイドをまとめています。Basic RevAは設計レビュー・実機確認が残る試作版です。
 
-*画像はTang Nano 9KとPicoのモデルを載せたKiCadの3Dレンダリングです。Tangは提供された3672版STEPを参考表示しています。一部部品モデルは省略しています。[モデルと積み高さの説明](boards/pico-carrier-board/kicad/models/README_JP.md)。実装済み基板の写真ではありません。*
+*画像はTang Nano 9K・Pico・USB-Aコネクタのモデルを載せたKiCadの3Dレンダリングです。Tangは提供された3672版STEPを参考表示しています。一部部品モデルは省略しています。[モデルと積み高さの説明](boards/pico-carrier-board/kicad/models/README_JP.md)。実装済み基板の写真ではありません。*
 
 ## ショーケース
 
