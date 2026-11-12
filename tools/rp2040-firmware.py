@@ -29,8 +29,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'experiments/c-gem-desktop/tools'))
-import rp2040_sram_bench as dev  # noqa: E402  (verified device helpers of stage 1)
+sys.path.insert(0, str(ROOT / 'tools'))
+import rp2040_sram_bench as dev  # noqa: E402  (verified device helpers)
 
 FLASH = 0x10000000
 FLASH_BYTES = 2 * 1024 * 1024

@@ -20,12 +20,12 @@ classify() {
         spec/design-budget.json|tools/check-design.ps1) ;;
         # Self-contained experiments with their own build and test scripts; CI does not run them.
         experiments/*) ;;
-        # Native desktop library and its MicroPython module: built into both KAGURA boards.
-        software/desktop/*) mark micropython micropython_firmware ;;
         # Audio HAL, KSNG player and their MicroPython module: built into both boards;
         # the standalone C player and its transport backend are a Pico SDK build.
         software/audio/pico/*|software/audio/backend/*) mark pico ;;
         software/audio/*) mark pico micropython micropython_firmware ;;
+        # The unix port with the KAGURA modules, for the audio and MicroPython tests.
+        tools/build-micropython-unix.sh) mark micropython ;;
         software/micropython/usermods/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
         # Generated into RTL, both host headers, the Pico build and regs.py.
@@ -71,8 +71,7 @@ classify() {
         tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
         tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
         tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
-        tools/rp2040-firmware.py|tools/kagura-desktop-device.py|tools/kagura-keyboard-device.py|\
-        tools/kagura-editor-device.py|tools/kagura-editor-board.py|tools/kagura-audio-board.py|\
+        tools/rp2040-firmware.py|tools/rp2040_sram_bench.py|\
         tools/kagura-audio-timing.py|tools/kagura-audio-wave.py) ;;
         *) all ;;
     esac

@@ -61,6 +61,8 @@ make -C ports/rp2 BOARD=KAGURA_PICO \
 
 `ports/rp2/build-KAGURA_PICO/firmware.uf2`をBOOTSELで書き込む。Pico WはBOARDとBOARD_DIR末尾を`KAGURA_PICO_W`へ変更する。UF2への書換えは既存のPico用Cホストfirmwareを置き換える。`kagura/`は組込み済みなので、自動コンソール用のboot.pyだけを上の手順で配置する。
 
+ボードの既定のnative moduleは`kagura_audio`だけ。独自のC moduleと凍結moduleを持つプロジェクト（[kagura-desktop](https://github.com/siska-tech/kagura-desktop)）は、同じBOARD_DIRに`USER_C_MODULES`（自分のmoduleとSDKの`software/audio/binding/micropython.cmake`を含むcmake）と`FROZEN_MANIFEST`（先頭で`include("$(BOARD_DIR)/manifest.py")`）を渡してビルドする。
+
 両KAGURAボードのビルドは、生成後の凍結native配列を`align_frozen.py`で4バイト整列する。
 公式v1.26のThumb配列は2バイト整列で、配置次第でPC相対リテラル読出しがずれ、
 Viper描画が破損するため。生成コードのalignment属性だけを補正し、VM・mpy-cross・描画アルゴリズムは変更しない。
@@ -338,6 +340,26 @@ console／TextLayer／sprite用の独立pattern所有者とは同時に使用し
 大転送では既存の`device.transport.accelerate(chunk=512)`も選択可能だが、
 128既定に対して1536byteの追加workspaceを使う。既存accelerationを閉じてから切替え、
 使用後もcloseして所有権を返す。[比較計測と適用範囲](../../docs/framebuffer-gap-optimization.md)を参照。
+
+### ネイティブ描画向けタイル平面（TilePlane）
+
+自前のTILE4画像を持つ描画系（C moduleなど）は`from kagura.tileplane import TilePlane`で、cols×rowsのセルを行優先のパターン番号へ固定したBG平面を所有し、変化したパターンのrunだけを送る。レジスタやVRAMアドレスを直接扱わずに済む公開APIで、神楽デスクトップ（kagura-desktop）はこれだけで画面を使う。
+
+```python
+plane = TilePlane(dev, 40, 25, palette=0, colors=PALETTE)  # 既定は中央配置
+plane.open()                  # 表示停止、map・blank・palette・scroll・BACKDROP
+plane.write(0, first_frame)   # パターンrun（32 B単位）、runごとにFENCE
+plane.show()                  # 表示＋BG、ERROR_CODE確認
+with plane:                   # 1フレーム: deviceのcallbackを止める
+    plane.write(first, run)
+    plane.check()
+```
+
+- グリッドとblankパターン（番号cols×rows、色0＝BACKDROP）は1024未満に収め、runは1回のVRAM書込みになる。高速化済みのlinkがあればそれを使う。
+- `read(first, buf)`はパターンの読戻し、`error_code()`はERROR_CODE、`hide()`は表示停止。
+- 元の所有者は復元しない。HDMIコンソール（`kagura.console.active()`）は`pause()`／`resume()`で画面を返す。
+- 試験: `python3 -I software/micropython/tests/test_tileplane.py`（レジスタモデル上で配置・範囲・FENCE・link）。
+- **実機未検証:** TilePlaneはソフトウェア試験（レジスタモデル）のみで、RP2040＋KAGURA-9での転送オーバーヘッド、HDMI表示、VRAM読戻しはまだ測っていない（kagura-desktopのREADME「Validation status」を参照）。
 
 ### Viper描画backend
 

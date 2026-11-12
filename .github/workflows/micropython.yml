@@ -51,6 +51,8 @@ jobs:
         run: python3 -I software/micropython/tests/test_driver.py --rp2 build/micropython-src/ports/rp2/modules/rp2.py
       - name: Tile framebuffer raster and failure recovery
         run: python3 -I software/micropython/tests/test_framebuffer.py
+      - name: Tile plane for native renderers (kagura-desktop)
+        run: python3 -I software/micropython/tests/test_tileplane.py
       - name: KAGURA-UI ownership, input, reference pixels and recovery
         run: |
           python3 -I software/micropython/tests/test_ui.py
@@ -73,9 +75,7 @@ jobs:
           MICROPYPATH=software/micropython:software/micropython/examples build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_sprite_editor_runtime.py software/micropython/fonts/misaki8.kfnt > build/sprite-editor-micropython.txt
           diff -u build/sprite-editor-cpython.txt build/sprite-editor-micropython.txt
           MICROPYPATH=software/micropython build/micropython-src/ports/unix/build-standard/micropython software/micropython/tests/ui_focus_alloc.py
-      - name: Native desktop library, UTF-8 text and MicroPython binding
-        run: bash software/desktop/tools/test.sh
-      - name: Audio HAL, KSNG player, binding and music tracker
+      - name: Audio HAL, KSNG player and binding
         run: bash software/audio/tools/test.sh
       - name: Numerical hardware fixture contracts
         run: python3 -I software/micropython/tests/test_tile1200_accept.py

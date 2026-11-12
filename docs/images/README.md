@@ -35,7 +35,8 @@ UGREEN 15390の720×480 YUYV入力をFFmpegで640×480・SAR 1へ正規化し、
 |---|---|
 | `title`、`host`、`colour`、`plasma`、`tunnel`、`hypercube`、`ribbons` | 紹介プレゼンテーション（`showcase.run`、`mpremote mount`から実行） |
 | `starfall-base`、`starfall-boss` | `starfall.run(autoplay=True)`の単体実行 |
-| `wave-sine`、`wave-staircase` | `tools/kagura-audio-board.py wave`（神楽トラッカーの波形エディタ） |
-| `skk-popup` | `software/desktop/docs/hardware/popup-hdmi.png`（受入時の一覧画像）の1コマを切り出したもの |
+| `wave-sine`、`wave-staircase` | kagura-desktopの`tools/kagura-audio-board.py wave`（神楽トラッカーの波形エディタ） |
+| `skk-popup` | kagura-desktopの`docs/hardware/popup-hdmi.png`（受入時の一覧画像）の1コマを切り出したもの |
+| `desktop-paint` | kagura-desktopの`docs/hardware/hdmi-08-paint.png`（2026-11-03、ファームウェア`1c9c234`の受入時HDMI静止画）をそのまま複製したもの |
 
 撮影はすべてRAMとmountで行った。Flashとファイルシステムは変更していない。一覧と説明は[ショーケース](../showcase.md)。

@@ -19,7 +19,7 @@
 
 ## Standalone C (SRAM, C host driver)
 
-`software/audio/pico`, loaded by `experiments/c-gem-desktop/tools/rp2040_sram_bench.py run`: flash unchanged, console restored. [Log](hardware/standalone-c-sram.txt).
+`software/audio/pico`, loaded by `tools/rp2040_sram_bench.py run`: flash unchanged, console restored. [Log](hardware/standalone-c-sram.txt).
 
 - **Test melody:** pulse 0, then the same phrase on wave voice 4 with an uploaded table: 22 notes, 35 frames, 6 wave uploads.
 - **Demo song,** 20 s: 1120 of 1120 ticks, lateness at most 8 µs, a frame every 1.4 ticks with 4 register pairs on average. Sending takes 159 µs on average and 419 µs at most; the CPU share is 0.7 %.
@@ -35,6 +35,8 @@
 - Under load, the lateness is bounded by the longest transport transaction.
 
 ## MicroPython: kagura_audio and kagura.music under desktop load
+
+The `tools/kagura-audio-board.py` runs below, and the tracker, now live in [kagura-desktop](https://github.com/siska-tech/kagura-desktop).
 
 `tools/kagura-audio-board.py bench` ([log](hardware/bench-9759a49.txt)), with the click song recorded over HDMI.
 
