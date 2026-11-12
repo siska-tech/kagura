@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # Generate register constants from spec/registers.json:
 #   rtl/core/kagura_abi_pkg.sv       SystemVerilog package
-#   software/include/kagura_regs.h   C header (SPI/QSPI hosts, W65C02S C)
 #   software/w65c02/kagura_regs.inc  ca65 include
+# and, with -SdkDir <kagura-sdk checkout>, the host constants kept there:
+#   software/include/kagura_regs.h   C header (SPI/QSPI hosts, W65C02S C)
 #   software/micropython/kagura/regs.py  MicroPython constants
+# (kagura-sdk records the commit it copied them from in hardware.lock).
 # -Check validates the definition, fails if any output is stale, and compares
 # offsets, names, access, bits and reset values with the document tables
 # (register-map.md, audio-spec.md, memory-map.md). The documents stay the
 # normative prose; this keeps the two from drifting.
 [CmdletBinding()]
-param([switch]$Check)
+param([switch]$Check, [string]$SdkDir)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -246,8 +248,11 @@ foreach ($s in (Sections)) {
 
 $outputs = [ordered]@{
     'rtl/core/kagura_abi_pkg.sv' = $sv.ToString()
-    'software/include/kagura_regs.h' = $c.ToString()
     'software/w65c02/kagura_regs.inc' = $a.ToString()
+}
+# The host constants live in siska-tech/kagura-sdk, at the same paths there.
+$sdkOutputs = [ordered]@{
+    'software/include/kagura_regs.h' = $c.ToString()
     'software/micropython/kagura/regs.py' = $py.ToString()
 }
 
@@ -353,9 +358,16 @@ if ($Check) {
 if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Host "FAIL: $_" }; throw "$($errors.Count) register definition error(s)" }
 $utf8 = New-Object System.Text.UTF8Encoding $false
 $stale = @()
-foreach ($path in $outputs.Keys) {
-    $full = Join-Path $root $path
-    $text = $outputs[$path] -replace "`r`n", "`n"
+$targets = @(foreach ($path in $outputs.Keys) { , @($root, $path, $outputs[$path]) })
+if ($SdkDir) {
+    if (-not (Test-Path -LiteralPath (Join-Path $SdkDir 'hardware.lock'))) { throw "-SdkDir ${SdkDir}: not a kagura-sdk checkout (no hardware.lock)" }
+    $targets += @(foreach ($path in $sdkOutputs.Keys) { , @($SdkDir, $path, $sdkOutputs[$path]) })
+}
+foreach ($target in $targets) {
+    $base, $path = $target[0], $target[1]
+    $full = Join-Path $base $path
+    $text = $target[2] -replace "`r`n", "`n"
+    if ($base -ne $root) { $path = "$SdkDir/$path" }
     if ($Check) {
         # A Windows checkout may convert line endings; compare the text only.
         $current = if (Test-Path -LiteralPath $full) { [IO.File]::ReadAllText($full) -replace "`r`n", "`n" } else { '' }

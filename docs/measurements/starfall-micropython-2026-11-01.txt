@@ -1,4 +1,0 @@
-IMPORT_US 4657763
-STARFALL ready_us 1816430 free 71200
-STARFALL result {'staging_mean_us': 8906, 'sprite_overflow': False, 'present_mean_us': 14463, 'lag_max_ticks': 0, 'cpu_mean_us': 8576, 'present_max_us': 55540, 'map_bytes': 10560, 'step_mean_us': 5723, 'elapsed_us': 45015545, 'cpu_max_us': 61714, 'render_mean_us': 2837, 'frames': 1920, 'ready_us': 1816430, 'audio_fault': 0, 'simulation_ticks': 2697, 'peak_line': 16, 'sound_mean_us': 5518, 'oam_bytes': 305800}
-Local directory build/showcase-live/run is mounted at /remote

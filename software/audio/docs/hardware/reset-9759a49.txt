@@ -1,6 +1,0 @@
-HOST_START reset 2026-11-03T22:01:27
-PLAYING 1
-SOFT_RESET state dropped
-SOFT_RESET init ok 91
-SOFT_RESET silenced, console True
-HARD_RESET alive v1.26.0 on 2026-11-03 (GNU 14.2.1 MinSizeRel) True

@@ -11,24 +11,24 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ![ブレッドボード上のRaspberry Pi PicoとTang Nano 9K。ジャンパ線でSPI/QSPIホスト接続し、Tang Nano 9KからHDMIを出力](docs/images/hardware-pico-tang-nano-9k.jpg)
 
-*実機構成: Raspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9K。配線は[Pico firmware](software/pico/README.md)を参照。*
+*実機構成: Raspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9K。配線は[Pico firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md)を参照。*
 
 ## ショーケース
 
 <table>
 <tr>
-<td><img src="docs/images/showcase/title.png" width="280" alt="紹介プレゼンテーションのタイトル"></td>
-<td><img src="docs/images/showcase/starfall-base.png" width="280" alt="PROJECT STARFALL"></td>
-<td><img src="docs/images/showcase/tunnel.png" width="280" alt="トンネル"></td>
+<td><img src="https://github.com/siska-tech/kagura-sdk/raw/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/images/showcase/title.png" width="280" alt="紹介プレゼンテーションのタイトル"></td>
+<td><img src="https://github.com/siska-tech/kagura-sdk/raw/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/images/showcase/starfall-base.png" width="280" alt="PROJECT STARFALL"></td>
+<td><img src="https://github.com/siska-tech/kagura-sdk/raw/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/images/showcase/tunnel.png" width="280" alt="トンネル"></td>
 </tr>
 <tr>
-<td><img src="software/desktop/docs/hardware/hdmi-08-paint.png" width="280" alt="神楽デスクトップのスプライト工房"></td>
-<td><img src="docs/images/showcase/skk-popup.png" width="280" alt="神楽メモ帳でSKKの候補を選択"></td>
-<td><img src="software/audio/docs/hardware/tracker-hdmi-scope.png" width="280" alt="神楽トラッカーとスコープ"></td>
+<td><img src="https://github.com/siska-tech/kagura-desktop/raw/bc8e92264c41ba81a7fe97dd271aab50647d66b2/docs/hardware/hdmi-08-paint.png" width="280" alt="神楽デスクトップのスプライト工房"></td>
+<td><img src="https://github.com/siska-tech/kagura-sdk/raw/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/images/showcase/skk-popup.png" width="280" alt="神楽メモ帳でSKKの候補を選択"></td>
+<td><img src="https://github.com/siska-tech/kagura-sdk/raw/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/audio/docs/hardware/tracker-hdmi-scope.png" width="280" alt="神楽トラッカーとスコープ"></td>
 </tr>
 </table>
 
-*すべて実機のHDMI出力のキャプチャです。説明付きの一覧は[ショーケース](docs/showcase.md)にあります。*
+*すべて実機のHDMI出力のキャプチャです。説明付きの一覧は[ショーケース](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/showcase.md)にあります。*
 
 ## 仕様
 
@@ -46,17 +46,17 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 ## 現在の状態
 
-- **神楽デスクトップ**: [C言語で合成するGEM風デスクトップ](https://github.com/siska-tech/kagura-desktop)。別リポジトリ`kagura-desktop`で開発し、このSDKの公開API（`kagura.tileplane`、`kagura.console`、`kagura_audio`等）だけを使う。MicroPythonから操作する。
+- **神楽デスクトップ**: [C言語で合成するGEM風デスクトップ](https://github.com/siska-tech/kagura-desktop)。別リポジトリ`kagura-desktop`で開発し、[kagura-sdk](https://github.com/siska-tech/kagura-sdk)の公開API（`kagura.tileplane`、`kagura.console`、`kagura_audio`等）だけを使う。MicroPythonから操作する。
   - 日本語のウィンドウ・メニュー・テキストフィールドを持つ。
   - 8 KBまでの日本語エディタ「神楽メモ帳」と、SKK日本語入力（候補ポップアップ、メニューバーの入力モード表示）を備える。
-  - 実機で、全シーンの画面とVRAM読戻しのCRCがPCの結果と一致することを検証済み。
-- **音声とトラッカー（Phase 6）**: [ネイティブ音声HAL、KSNG曲フォーマット、決定的なプレイヤー](software/audio/README.md)と、MicroPythonモジュール`kagura_audio`。
+  - 分離前のファームウェア（このリポジトリから作成）で、全シーンの画面とVRAM読戻しのCRCがPCの結果と一致することを実機で検証済み。分離後のkagura-desktopのビルドは実機未検証。
+- **音声とトラッカー（Phase 6）**: [ネイティブ音声HAL、KSNG曲フォーマット、決定的なプレイヤー](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/audio/README.md)と、MicroPythonモジュール`kagura_audio`。
   - その上に、デスクトップ上で動く「神楽トラッカー」、波形エディタ、合成波形のスコープを実装。
   - 曲はCの配列として書き出し、単体のCゲームでも再生できる。
   - 実機のHDMI音声を録音して測定した: テンポのずれなし。通常のデスクトップ操作中の発音タイミングのずれは最大でおおむね5 ms、ウィンドウ移動中は8 ms。
-  - 詳細は[実機受入](software/audio/docs/hardware.md)。
-- **KAGURA-UI（Phase 1）**: [MicroPython GUIの設計・API・デモ](docs/kagura-ui.md)。既存Framebufferの排他所有、部分再描画、日本語、USB端末入力を実装。[RP2040のHDMI表示・操作・復帰・5376更新を検証](docs/kagura-ui-validation.md)。
-- **TileFramebuffer**: [320×240・16色の疑似フレームバッファ](docs/framebuffer.md)をMicroPython SDKで提供。全1200セルを独立したpatternへ割り当て、ローカル描画とdirty転送を行う。[実機結果](docs/framebuffer-results.md)は全量読戻し・PCM併用5分負荷・480pのユーザー目視に合格。[Viper描画高速化](docs/framebuffer-viper-results.md)も両backendのCRC一致・各5分負荷で検証済み。[blit・ellipse・paint](docs/framebuffer-primitives.md)もPC参照・実VRAM読戻しとの一致、PCM併用5分負荷、480pのユーザー目視で検証済み。
+  - 詳細は[実機受入](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/audio/docs/hardware.md)。
+- **KAGURA-UI（Phase 1）**: [MicroPython GUIの設計・API・デモ](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/kagura-ui.md)。既存Framebufferの排他所有、部分再描画、日本語、USB端末入力を実装。[RP2040のHDMI表示・操作・復帰・5376更新を検証](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/kagura-ui-validation.md)。
+- **TileFramebuffer**: [320×240・16色の疑似フレームバッファ](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer.md)をMicroPython SDKで提供。全1200セルを独立したpatternへ割り当て、ローカル描画とdirty転送を行う。[実機結果](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-results.md)は全量読戻し・PCM併用5分負荷・480pのユーザー目視に合格。[Viper描画高速化](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-viper-results.md)も両backendのCRC一致・各5分負荷で検証済み。[blit・ellipse・paint](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-primitives.md)もPC参照・実VRAM読戻しとの一致、PCM併用5分負荷、480pのユーザー目視で検証済み。
 - **ABI 0.6（1,200タイル）の数値検証**: 公開タイル数を1,200枚へ拡張。ホスト4構成のP&R/STAとSRAM起動・境界検査、全1200枚の読戻し、PCM併用1時間連続動作、文字キャッシュ1072枠。詳細は[第3段階](docs/tile-1200-stage3.md)。[720pの目視・聴感](docs/tile-1200-visual.md)も確認済み。拡張の経緯は[1,200タイル対応の記録](docs/tile-1200-experiment.md)と[調査書](docs/tile-1200-feasibility.md)。
 - **拡張前ABI 0.5の過去の実機記録**: 480p/720pの映像・音声（PCモニターとテレビの2機種）、内蔵sequencerのシューティングデモ、Raspberry Pi PicoからのSPI/QSPI制御（5MHz）、PSRAMへのupload・COPY・PCM 2chの連続再生。
 - **simulationのみ**: W65C02Sバス接続、SPI FlashからのROM-less boot（Flash読出しとimage検査は実機確認済み）。
@@ -70,8 +70,8 @@ FPGA standaloneの`demo`／`demo720`はdeprecatedです。Picoホスト上のデ
 
 1. [アーキテクチャ](docs/architecture.md)で全体とビルド構成を確認する。
 2. [ビルド・テスト](docs/build-and-test.md)の手順でbitstreamを作り、SRAMへ書き込む。主な動作確認はPicoホストの`qspipsram`／`qspipsram720`構成で行う。
-3. Picoから操作する場合は`qspipsram`（または`spi`/`qspi`）を書き込み、[Pico firmware](software/pico/README.md)の`diag`・`show`・`stress`を実行する。
-4. 自分のホストから使う場合は[プログラミングガイド](docs/programming-guide.md)と[レジスタ仕様](docs/register-map.md)を読む。
+3. Picoから操作する場合は`qspipsram`（または`spi`/`qspi`）を書き込み、[Pico firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md)の`diag`・`show`・`stress`を実行する。
+4. 自分のホストから使う場合は[プログラミングガイド](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/programming-guide.md)と[レジスタ仕様](docs/register-map.md)を読む。
 
 ```sh
 bash tools/test-verilator.sh                 # RTL回帰（WSL/Linux）
@@ -84,13 +84,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 
 文書の一覧は[ドキュメント案内](docs/README.md)にあります。
 
-[MicroPythonドライバ](software/micropython/README.md)は、SPI/QSPI制御とUARTキーボード入力・HDMI REPL、REPL出力とアプリ画面の8×8日本語表示（美咲ゴシック）を提供します。導入方法と実機検証の残作業はリンク先を参照してください。
+[MicroPythonドライバ](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/micropython/README.md)は、SPI/QSPI制御とUARTキーボード入力・HDMI REPL、REPL出力とアプリ画面の8×8日本語表示（美咲ゴシック）を提供します。導入方法と実機検証の残作業はリンク先を参照してください。
 
-[実機紹介プレゼンテーション](software/micropython/examples/showcase.md)は、日本語の疑似256色スライドからトンネル・ネオン風の描画、[PROJECT STARFALLのMicroPython移植](software/micropython/examples/starfall.md)、桜吹雪までを自動進行します。480p FULL+PSRAM構成を使用します。
+[実機紹介プレゼンテーション](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/micropython/examples/showcase.md)は、日本語の疑似256色スライドからトンネル・ネオン風の描画、[PROJECT STARFALLのMicroPython移植](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/micropython/examples/starfall.md)、桜吹雪までを自動進行します。480p FULL+PSRAM構成を使用します。
 
-ただし現行のファームウェアでは、描画の章のあと、STARFALLの章を読み込むところでメモリ不足で止まります。桜吹雪も単体で開始時に止まります。STARFALLは単体なら動きます。原因は調査中です（[ショーケースの注記](docs/showcase.md#撮影時の注記)）。
+ただし現行のファームウェアでは、描画の章のあと、STARFALLの章を読み込むところでメモリ不足で止まります。桜吹雪も単体で開始時に止まります。STARFALLは単体なら動きます。原因は調査中です（[ショーケースの注記](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/showcase.md#撮影時の注記)）。
 
 ## リポジトリ
+
+KAGURA-9は3つのリポジトリに分かれています。依存は一方向です（kagura-desktop → kagura-sdk → kagura）。
+
+| リポジトリ | 内容 |
+|---|---|
+| **siska-tech/kagura**（ここ） | RTL、シミュレーション、ボード、レジスタ定義`spec/registers.json`と生成器、bitstreamとリリース、ハードウェア仕様 |
+| [siska-tech/kagura-sdk](https://github.com/siska-tech/kagura-sdk) | ホストのドライバと公開API（C、MicroPython）、MicroPythonボードとファームウェア統合、UI・日本語・音声ライブラリ、例、SDKの文書。生成したレジスタ定数を写して持ち、元にしたkaguraのcommitを`hardware.lock`で固定する |
+| [siska-tech/kagura-desktop](https://github.com/siska-tech/kagura-desktop) | 神楽デスクトップとアプリ。kagura-sdkの公開APIだけを使い、SDKのcommitを`sdk/kagura.ref`で固定する |
+
+kaguraからkagura-sdkへのビルド依存はありません。CIだけが`sdk.lock`のkagura-sdkを取得し、そのレジスタ定数が`spec/registers.json`から生成したものと一致するかを`tools/check-sdk.sh`で検査します。仕様を変えた場合はkaguraが先に進み、SDKが`tools/gen-registers.ps1 -SdkDir`で再生成して追従します。
 
 | path | 内容 |
 |---|---|
@@ -98,11 +108,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Che
 | `boards/tang-nano-9k/` | board top、CST/SDC、ピン一覧。[ボード資料](boards/tang-nano-9k/README.md) |
 | `sim/` | SystemVerilog testbenchと参照モデル。[試験一覧](sim/README.md) |
 | `spec/` | 機械可読のレジスタ定義と設計予算 |
-| `software/audio/` | 音声HAL、KSNG曲フォーマットとプレイヤー、`kagura_audio`、単体Cプレイヤー |
-| `software/micropython/` | MicroPython SDK（`kagura`パッケージ）、ボード定義、例（STARFALL、ショーケース等） |
-| `software/pico/`、`software/include/` | Pico host firmware、生成ヘッダ（C/ca65） |
-| `tools/` | ビルド・生成・検査・書込みのscript |
-| `docs/` | 仕様と検証の文書 |
+| `software/w65c02/` | FPGA内W65C02Sホスト向けの生成include（ca65） |
+| `tools/` | 合成・生成・検査・書込みのscript |
+| `docs/` | 仕様と検証の文書。[SDK分離の記録](docs/sdk-extraction.md) |
 | `third_party/` | 固定revisionのhdl-util/hdmi |
 
 ## ライセンス

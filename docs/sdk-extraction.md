@@ -1,6 +1,6 @@
 # KAGURA SDK extraction: dependencies and ownership
 
-Status: analysis and plan (2026-11-12). The desktop already lives in siska-tech/kagura-desktop (siska-tech/kagura#96). This document decides what moves to a new **kagura-sdk** repository, what stays with the hardware in **kagura**, and how the two stay compatible. Nothing here changes behaviour; the extraction is a move plus pinning, with functional changes in separate PRs.
+Status: done (2026-11-12). The desktop lives in [siska-tech/kagura-desktop](https://github.com/siska-tech/kagura-desktop) (siska-tech/kagura#96), the host software in [siska-tech/kagura-sdk](https://github.com/siska-tech/kagura-sdk) (§5). Sections 1 to 4 are the analysis as written before the move; paths in them name the files as they were in this repository at c6ae031. Nothing here changed behaviour; the extraction was a move plus pinning, with functional changes in separate PRs.
 
 ## 1. What exists today
 
@@ -83,13 +83,11 @@ Kagura-HD is a different graphics architecture, so the SDK does **not** force on
 
 Each step is its own PR; none mixes a move with functional changes.
 
-1. **Compatibility tests in kagura first** (before any move):
-   - an API snapshot test: the public names and signatures of `kagura.*`, `kagura.ui`, `kagura_ja`, `kagura_audio`, and the public C headers (`kagura_host.h`, `tile_fb.h`, `ka_audio.h`, `ks_player.h`, `ks_song.h`), compared with a committed snapshot;
-   - the generated-constants check against `spec/registers.json` (exists: `gen-registers.ps1 -Check`), extended to write the pin.
-2. **Extract kagura-sdk** with `git filter-repo` (history kept), the same way as kagura-desktop. Paths stay the same (`software/...`), so the C and MicroPython APIs and the board directories are unchanged. Add `hardware.lock` and CI that checks out kagura at the pin.
-3. **Remove the SDK from kagura**: kagura's CI checks out kagura-sdk at a pinned commit for the RTL tests that run SDK code.
-4. **kagura-desktop**: point `sdk/` at kagura-sdk and `KAGURA_SDK_REF` at a pinned commit (today it follows `siska-tech/kagura` main).
-5. **SDK cleanup** (separate PRs): move the background music used by kagura-desktop's showcase from `examples/showcase_music.py` into a public module (or have the showcase use `kagura.music`); split `kagura_ja.Font`'s glyph lookup from its Kagura-9 upload; document the layer of each module.
+1. **Compatibility tests in kagura first.** Done in siska-tech/kagura#97: the API snapshot (`tools/api-snapshot.py`, now in kagura-sdk) and the generated-constants check.
+2. **Extract kagura-sdk.** Done: `git filter-repo` of [sdk-extraction-paths.txt](sdk-extraction-paths.txt) at c6ae031 (211 commits), plus one commit that makes it standalone: `hardware.lock` (this repository's commit and the SHA-256 of `spec/registers.json`), `tools/check-hardware-lock.sh`, its own CI, and links to the hardware documents pinned to c6ae031. `software/starfall/test-rtl.sh` (now `tools/test-starfall-rtl.sh`) and the ca65 include test stayed here.
+3. **Remove the SDK from kagura.** Done in this change. `tools/gen-registers.ps1` writes the SDK's `kagura_regs.h` and `regs.py` only with `-SdkDir <kagura-sdk checkout>`. `sdk.lock` pins kagura-sdk (aae8699) for one CI job, `tools/check-sdk.sh`, which compares that SDK's constants with the current spec. The SDK pins kagura (`hardware.lock`) for its build; kagura pins the SDK only to test it, so a spec change lands here first (the check then warns) and the SDK follows. No RTL test runs SDK code.
+4. **kagura-desktop**: point `sdk/` at kagura-sdk at a pinned commit (siska-tech/kagura-desktop, separate PR).
+5. **SDK cleanup** (separate PRs): the showcase's background music now uses `kagura.music` (siska-tech/kagura-desktop#1). Still open: split `kagura_ja.Font`'s glyph lookup from its Kagura-9 upload; document the layer of each module.
 
 ## 6. Pending hardware validation
 

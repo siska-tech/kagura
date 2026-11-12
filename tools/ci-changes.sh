@@ -8,7 +8,7 @@
 # A path that no rule below names runs every job, so a new kind of file is
 # tested until it is classified here (and in tools/test-ci-changes.sh).
 set -euo pipefail
-keys=(verilator rtl_sources pico micropython micropython_firmware)
+keys=(verilator rtl_sources sdk)
 declare -A need=()
 mark() { local key; for key in "$@"; do need[$key]=true; done; }
 all() { mark "${keys[@]}"; }
@@ -16,22 +16,15 @@ all() { mark "${keys[@]}"; }
 classify() {
     case "$1" in
         # Phase 0 runs on every change: links in all Markdown, design budget.
-        *.md|docs/*|LICENSE|.gitignore|.gitattributes|.vscode/*) ;;
+        *.md|docs/*|LICENSE|.gitignore|.vscode/*) ;;
         spec/design-budget.json|tools/check-design.ps1) ;;
         # Self-contained experiments with their own build and test scripts; CI does not run them.
         experiments/*) ;;
-        # Audio HAL, KSNG player and their MicroPython module: built into both boards;
-        # the standalone C player and its transport backend are a Pico SDK build.
-        software/audio/pico/*|software/audio/backend/*) mark pico ;;
-        software/audio/*) mark pico micropython micropython_firmware ;;
-        # The unix port with the KAGURA modules, for the audio and MicroPython tests.
-        tools/build-micropython-unix.sh) mark micropython ;;
-        software/micropython/usermods/*) mark micropython micropython_firmware ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
-        # The SDK's public API snapshot (micropython job).
-        software/api-snapshot.txt|tools/api-snapshot.py|tools/sdk-extraction-check.py) mark micropython ;;
-        # Generated into RTL, both host headers, the Pico build and regs.py.
+        # Generated into RTL and the ca65 include here, and into the host
+        # constants of the kagura-sdk commit in sdk.lock (tools/check-sdk.sh).
         spec/registers.json|tools/gen-registers.ps1) all ;;
+        sdk.lock|tools/check-sdk.sh) mark sdk ;;
         rtl/*|sim/*|third_party/*) mark verilator rtl_sources ;;
         boards/*.sv) mark verilator ;;
         boards/*.cst|boards/*.sdc|boards/*.csv) ;;
@@ -39,48 +32,14 @@ classify() {
         tools/render-audio-wav.py|tools/make-boot-image.py|tools/gen-demo-art.py) mark verilator ;;
         tools/test-phase1.ps1|tools/check-dependencies.ps1|tools/test-headers.sh|\
         software/tests/*|software/w65c02/*) mark rtl_sources ;;
-        software/include/*) mark rtl_sources pico ;;
-        # The MicroPython driver tests load this PIO timing model.
-        software/pico/tests/test_pio_timing.py) mark pico micropython ;;
-        # test_framebuffer.py frames .kimg pictures with this converter.
-        software/pico/send_image.py) mark pico micropython ;;
-        # test_sakura.py checks the piano asset against this sample.
-        software/pico/piano_c4_sample.h) mark pico micropython ;;
-        # The public C headers are part of the API snapshot (tools/api-snapshot.py).
-        software/pico/kagura_host.h|software/pico/tile_fb.h|software/pico/img_quant.h) mark pico micropython ;;
-        software/pico/*) mark pico ;;
-        # The MicroPython STARFALL oracle links the original C game directly.
-        software/starfall/*) mark pico micropython ;;
-        # The C TileFramebuffer test replays these Python modules and model.
-        software/micropython/kagura/framebuffer.py|software/micropython/kagura/video.py|\
-        software/micropython/kagura/device.py) mark pico micropython micropython_firmware ;;
-        software/micropython/tests/test_driver.py) mark pico micropython ;;
-        # Frozen into, or stored in the ROMFS of, the KAGURA_PICO_SHOWCASE UF2.
-        software/micropython/kagura_ja/*|software/micropython/fonts/*|\
-        software/micropython/examples/showcase*|software/micropython/examples/framebuffer_demo.py|\
-        software/micropython/examples/starfall*|software/micropython/examples/sakura*|\
-        tools/make-showcase-firmware.py) mark micropython micropython_firmware ;;
-        # Frozen into the UF2 (software/micropython/manifest.py).
-        software/micropython/kagura/*|software/micropython/manifest.py|\
-        software/micropython/align_frozen.py|software/micropython/frozen_alignment.cmake|\
-        software/micropython/boards/*) mark micropython micropython_firmware ;;
-        software/micropython/*|tools/gen-kagura-ja-font.py|tools/gen-star-runner-audio.py|\
-        tools/gen-showcase-assets.py|tools/prepare-showcase.py|tools/gen-starfall-mpy-assets.py|\
-        tools/measure-kagura-ui.py|tools/render-kagura-ui.py|tools/kagura-ui-device.py|\
-        tools/kagura-ui-standard.py|tools/kagura-ui-soak.py|tools/summarize-kagura-ui.py|\
-        tools/compare-ui-damage.py|tools/kagura-ui-damage.py|tools/kagura-ui-canvas.py|\
-        tools/kagura-ui-sprite-editor.py) mark micropython ;;
-        # Synthesis, board and hardware measurement tools; CI does not run them.
+        # Synthesis, board and hardware measurement tools, and focused RTL
+        # regressions run by hand; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
-        tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/kagura-upload.ps1|\
-        tools/run-baseline.ps1|tools/star-runner-device.ps1|tools/tile1200-device.ps1|\
-        tools/*-framebuffer-transport.py|tools/framebuffer-transport-upload.ps1|tools/analyze-framebuffer-gap.py|\
-        tools/rp2040-firmware.py|tools/rp2040_sram_bench.py|\
-        tools/kagura-audio-timing.py|tools/kagura-audio-wave.py) ;;
+        tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/run-baseline.ps1|\
+        tools/tile1200-device.ps1|tools/test-starfall-rtl.sh) ;;
         *) all ;;
     esac
 }
-
 full() { echo "full run: $1" >&2; all; }
 
 if [ "${1:-}" = --files ]; then

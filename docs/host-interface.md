@@ -3,7 +3,7 @@
 W65C02Sのパラレルバスの代わりに、32 byteのレジスタ窓をSPI（1bit）またはQSPI（4bit）で操作する。ホストはRP2040/RP2350などのMCUを想定し、QSPIはPIOでの駆動を前提にする。`kagura_spi_adapter`（`LANES=1`/`4`）が[CPU非依存の`req/rsp`](architecture.md#cpu非依存インターフェース)へ変換するので、レジスタABI・queue・VRAM以降はW65C02S版と同じである。
 
 - 構成`spi`・`qspi`・`spipsram`・`qspipsram`（とその`720`版）で使う。W65C02S adapterとは同じピンを共有するため、bitstreamで選ぶ。
-- 参照実装はRaspberry Pi Pico用の[host firmware](../software/pico/README.md)。
+- 参照実装はRaspberry Pi Pico用の[host firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md)。
 
 ## ピン
 

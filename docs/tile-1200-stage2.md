@@ -13,7 +13,7 @@
 - command queueは分散RAM 32×64でdescriptorをまとめてstore／fetchする。容量32・4cycle staging・FIFO_STATUSの数え方は維持し、16bitへの分割muxとheadの組立回路を取り除く。
 - MicroPythonの `Video.tile/tiles/map_entry/map_words/sprite` と公開領域検査を対応。`tiles` は1023／1024境界で転送を分割し、`map_words` は同じbyte内の他entryの上位bitを保持する。複合転送中はdevice.busyを保持する。
 
-データ形式と更新手順は[メモリマップ](memory-map.md)、SDK例は[プログラミングガイド](programming-guide.md)を参照。別表とmapの更新は原子的ではないため、表示停止または安全なblanking期間が必要。既存raw mapを使う場合は上位表を0へ戻す。
+データ形式と更新手順は[メモリマップ](memory-map.md)、SDK例は[プログラミングガイド](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/programming-guide.md)を参照。別表とmapの更新は原子的ではないため、表示停止または安全なblanking期間が必要。既存raw mapを使う場合は上位表を0へ戻す。
 
 ## 検証
 

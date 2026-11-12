@@ -10,7 +10,7 @@
 | 設計検査・生成 | PowerShell（Windows PowerShell 5.1またはpwsh） |
 | FPGAビルド | Gowin EDA（Education V1.9.11.03、またはStandard V1.9.12.04で確認） |
 | 書込み | Gowin Programmer（`programmer_cli.exe`）、基板内蔵のBL702 |
-| Pico firmware | Pico SDK 2.2.0、Arm GNU Toolchain、CMake（[Pico firmware](../software/pico/README.md)） |
+| ホストソフトウェア | [kagura-sdk](https://github.com/siska-tech/kagura-sdk)のREADMEを参照（Pico firmware、MicroPython） |
 | ヘッダ検査（任意） | cc65のca65 |
 
 ## シミュレーション
@@ -39,7 +39,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-dependencies.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Check
 ```
 
-`spec/registers.json`を変えたら、`tools/gen-registers.ps1`（`-Check`なし）でSV package・Cヘッダ・ca65 includeを再生成し、`-Check`で文書の表との一致を確認する。生成物は手で編集しない。`bash tools/test-headers.sh`はCヘッダとca65 includeをコンパイル・アセンブルする（ca65がなければSKIP、CIでは必須）。
+`spec/registers.json`を変えたら、`tools/gen-registers.ps1`（`-Check`なし）でSV package・ca65 includeを再生成し、`-Check`で文書の表との一致を確認する。生成物は手で編集しない。`bash tools/test-headers.sh`はca65 includeをアセンブルする（ca65がなければSKIP、CIでは必須）。
+
+ホスト用のCヘッダとMicroPythonの`regs.py`は[kagura-sdk](https://github.com/siska-tech/kagura-sdk)にある。kagura-sdkのcheckoutを指定して`tools/gen-registers.ps1 -SdkDir ../kagura-sdk`で再生成し、kagura-sdk側で`hardware.lock`（元にしたkaguraのcommitと`spec/registers.json`のSHA-256）を更新する。続いてこのリポジトリの`sdk.lock`をそのSDKのcommitへ進める。`bash tools/check-sdk.sh`は`sdk.lock`のSDKの定数が現在の`spec/registers.json`から生成したものと一致し、Cヘッダがコンパイルできることを検査する。SDKが別の版の定義から生成されている場合は警告を出して合格にする（SDKが追従する）。
 
 ## Gowinビルド
 
@@ -107,7 +109,7 @@ $prog='C:\Gowin\Gowin_V1.9.11.03_Education_x64\Programmer\bin\programmer_cli.exe
 
 ## CI
 
-GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-registers.ps1 -Check`・依存hash、Icarus基礎試験、Verilator回帰（5.032を固定commitからビルドしてキャッシュ）、ヘッダ検査、Pico firmwareのビルドを実行する。失敗時もログ・`summary.tsv`・画像・PCM/WAV・指定したVCDを`verilator-results`、UF2を`pico-firmware`のartifactに残す。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。Gowin P&Rと実機試験はCIでは行わない。
+GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-registers.ps1 -Check`・依存hash、Icarus基礎試験、Verilator回帰（5.032を固定commitからビルドしてキャッシュ）、ca65 includeの検査、`sdk.lock`のkagura-sdkとの定数照合を実行する。失敗時もログ・`summary.tsv`・画像・PCM/WAV・指定したVCDを`verilator-results`のartifactに残す。ホストソフトウェアのテストとビルドはkagura-sdkのCIで行う。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。Gowin P&Rと実機試験はCIでは行わない。
 
 実行条件は次のとおり。
 
@@ -117,13 +119,11 @@ GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-r
   |---|---|
   | RTL・テストベンチ・`third_party/` | Verilator回帰、Icarus基礎試験・ヘッダ検査・依存hash |
   | `spec/registers.json`・`tools/gen-registers.ps1`・workflow・`tools/ci-changes.sh` | すべて |
-  | `software/include/` | ヘッダ検査等、Pico firmware |
-  | `software/pico/` | Pico firmware（`software/pico/tests/test_pio_timing.py`はMicroPythonのテストも） |
-  | `software/micropython/kagura/`・`boards/`・`manifest.py` | MicroPythonのテストとUF2ビルド |
-  | 上記以外の`software/micropython/`・`tools/gen-kagura-ja-font.py` | MicroPythonのテスト |
+  | `software/w65c02/`・`software/tests/`・`tools/test-headers.sh` | Icarus基礎試験・ca65 include検査・依存hash |
+  | `sdk.lock`・`tools/check-sdk.sh` | kagura-sdkとの定数照合 |
   | Markdown・`docs/`・制約ファイル・合成用tool | Phase 0のみ |
 
   どの規則にも当たらないファイルは全jobを実行する。Phase 0（設計検査・link検査）は常に実行する。
 - 手動実行と毎週月曜03:00（JST）の定期実行（`main`）は全jobを実行する。
-- 実行しないjobはskippedになり、各workflowの`Phase 1 result`・`MicroPython result`は常に結果を返す。必須チェックにはこの2つと`design-documents`を指定する。
+- 実行しないjobはskippedになり、各workflowの`Phase 1 result`は常に結果を返す。必須チェックにはこれと`design-documents`を指定する。
 - 規則を変えたら`bash tools/test-ci-changes.sh`を実行する。追跡中の全ファイルがいずれかの規則に当たることも確認する。

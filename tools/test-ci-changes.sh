@@ -16,22 +16,17 @@ expect() {
 files() { local name="$1" want="$2"; shift 2
     expect "$name" "$want" "$(printf '%s\n' "$@" | bash "$script" --files 2> /dev/null | selected)"; }
 
-ALL="verilator rtl_sources pico micropython micropython_firmware"
+ALL="verilator rtl_sources sdk"
 files "no files" ""
-files "docs only" "" README.md docs/video.md software/micropython/README.md rtl/README.md
+files "docs only" "" README.md docs/video.md rtl/README.md software/w65c02/README.md
 files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/new-idea/main.c experiments/new-idea/CMakeLists.txt
-files "unix port build" "micropython" tools/build-micropython-unix.sh
-files "device tools" "" tools/rp2040-firmware.py tools/rp2040_sram_bench.py
-files "API snapshot" "micropython" software/api-snapshot.txt tools/api-snapshot.py tools/sdk-extraction-check.py
-files "public C header" "pico micropython" software/pico/tile_fb.h
-files "audio library" "pico micropython micropython_firmware" software/audio/hal/ka_audio.c software/audio/songs/demo.h
-files "standalone audio player" "pico" software/audio/pico/main.c software/audio/backend/ka_kagura_host.c
-files "user C module list" "micropython micropython_firmware" software/micropython/usermods/kagura_audio/micropython.mk
 files "board constraints" "" boards/tang-nano-9k/vdp-720p.sdc boards/tang-nano-9k/phase1.cst
 files "synthesis tools" "" tools/build-nano9k.tcl tools/eval-gowin-hdmi.ps1 tools/run-baseline.ps1
+files "hand-run RTL regressions and hardware runners" "" tools/test-starfall-rtl.sh tools/tile1200-device.ps1
 files "register spec" "$ALL" spec/registers.json
 files "register generator" "$ALL" tools/gen-registers.ps1
+files "kagura-sdk pin" "sdk" sdk.lock tools/check-sdk.sh
 files "workflow" "$ALL" .github/workflows/phase0.yml
 files "filter itself" "$ALL" tools/ci-changes.sh
 files "unclassified path" "$ALL" software/new-host/main.c
@@ -42,50 +37,8 @@ files "vendored HDMI" "verilator rtl_sources" third_party/hdl-util-hdmi/src/tmds
 files "board RTL" "verilator" boards/tang-nano-9k/kagura_hyperram_pcm_source.sv
 files "Verilator version" "verilator" tools/verilator.version
 files "boot image tool" "verilator" tools/make-boot-image.py
-files "header tests" "rtl_sources" software/tests/regs_c.c tools/test-headers.sh
-files "C header" "rtl_sources pico" software/include/kagura_regs.h
-files "Pico firmware" "pico" software/pico/main.c software/pico/CMakeLists.txt
-files "STARFALL C game and MicroPython oracle" "pico micropython" software/starfall/game.c software/starfall/tests/test_flow.c
-files "PIO timing model" "pico micropython" software/pico/tests/test_pio_timing.py
-files "picture converter" "pico micropython" software/pico/send_image.py
-files "piano sample" "pico micropython" software/pico/piano_c4_sample.h
-files "C framebuffer differential" "pico" software/pico/tile_fb.c software/pico/tests/test_tile_fb.py
-files "framebuffer reference" "pico micropython micropython_firmware" software/micropython/kagura/framebuffer.py
-files "register model" "pico micropython" software/micropython/tests/test_driver.py
-files "frozen driver" "micropython micropython_firmware" software/micropython/kagura/console.py
-files "board definition" "micropython micropython_firmware" software/micropython/boards/KAGURA_PICO/manifest.py
-files "KAGURA-UI frozen core" "micropython micropython_firmware" software/micropython/kagura/ui/app.py
-files "frozen native alignment" "micropython micropython_firmware" software/micropython/align_frozen.py software/micropython/frozen_alignment.cmake
-files "KAGURA-UI tools and tests" "micropython" tools/measure-kagura-ui.py tools/render-kagura-ui.py \
-    tools/kagura-ui-device.py tools/kagura-ui-standard.py tools/kagura-ui-soak.py tools/summarize-kagura-ui.py \
-    tools/compare-ui-damage.py tools/kagura-ui-damage.py tools/kagura-ui-canvas.py software/micropython/tests/test_ui.py \
-    software/micropython/tests/ui_runtime.py software/micropython/tests/ui_canvas_runtime.py \
-    tools/kagura-ui-sprite-editor.py software/micropython/tests/ui_sprite_editor_runtime.py \
-    software/micropython/examples/ui_sprite_editor.py
-files "STAR RUNNER audio assets" "micropython" tools/gen-star-runner-audio.py \
-    software/micropython/examples/shooter.py software/micropython/examples/star_runner_assets/bgm.pcm
-files "STAR RUNNER hardware runner" "" tools/star-runner-device.ps1
 files "1200 tile focused regressions" "verilator" tools/test-tile1200-stage1.sh tools/test-tile1200-stage2.sh
-files "1200 tile hardware runner" "" tools/tile1200-device.ps1
-files "framebuffer transport measurement" "" tools/prepare-framebuffer-transport.py tools/framebuffer-transport-upload.ps1 \
-    tools/analyze-framebuffer-transport.py tools/plot-framebuffer-transport.py tools/analyze-framebuffer-gap.py
-files "1200 tile hardware fixture" "micropython" software/micropython/examples/tile1200_accept.py software/micropython/tests/test_tile1200_accept.py
-files "live presentation and asset generator" "micropython" tools/gen-showcase-assets.py tools/prepare-showcase.py \
-    software/micropython/tests/test_showcase.py
-files "STARFALL MicroPython port and original C oracle" "micropython" tools/gen-starfall-mpy-assets.py \
-    software/micropython/tests/starfall_oracle.c
-# Frozen into, or stored in the ROMFS of, KAGURA_PICO_SHOWCASE.
-files "showcase firmware contents" "micropython micropython_firmware" software/micropython/examples/showcase.py \
-    software/micropython/examples/showcase_assets/opening.kimg software/micropython/examples/framebuffer_demo.py \
-    software/micropython/examples/starfall.py software/micropython/examples/starfall_assets/video.bin \
-    software/micropython/examples/sakura.py software/micropython/examples/sakura_assets/piano_c4.pcm \
-    software/micropython/kagura_ja/__init__.py software/micropython/fonts/misaki8.kfnt \
-    software/micropython/boards/KAGURA_PICO_SHOWCASE/kagura_showcase.py tools/make-showcase-firmware.py
-# PR #31 without its workflow edit and the files above: Python, font tool and docs only.
-files "kagura_ja and font" "micropython" \
-    software/micropython/examples/ja_menu.py software/micropython/tests/test_kagura_ja.py \
-    tools/gen-kagura-ja-font.py README.md THIRD_PARTY.md
-
+files "ca65 include and its test" "rtl_sources" software/w65c02/kagura_regs.inc software/tests/regs_ca65.s tools/test-headers.sh
 # Apart from the files that run everything on purpose, no tracked file may
 # fall through to the catch-all.
 tracked="$(git -C "$root" ls-files)"
@@ -110,11 +63,11 @@ c0="$(commit README.md)"
 c1="$(commit rtl/core/kagura_core.sv)"
 c2="$(commit docs/video.md)"
 g checkout -q -b topic "$c1"
-c3="$(commit software/micropython/kagura_ja/__init__.py)"
+c3="$(commit software/w65c02/kagura_regs.inc)"
 event "push range" "" GITHUB_EVENT_NAME=push CI_BASE="$c1" CI_HEAD="$c2"
 event "push of two commits" "verilator rtl_sources" GITHUB_EVENT_NAME=push CI_BASE="$c0" CI_HEAD="$c2"
 # Only the topic's own commit; main's later docs commit is not part of it.
-event "pull request since merge base" "micropython micropython_firmware" GITHUB_EVENT_NAME=pull_request CI_BASE="$c2" CI_HEAD="$c3"
+event "pull request since merge base" "rtl_sources" GITHUB_EVENT_NAME=pull_request CI_BASE="$c2" CI_HEAD="$c3"
 event "new branch push" "$ALL" GITHUB_EVENT_NAME=push CI_BASE=0000000000000000000000000000000000000000 CI_HEAD="$c3"
 event "missing base after force push" "$ALL" GITHUB_EVENT_NAME=push CI_BASE=1234567890abcdef1234567890abcdef12345678 CI_HEAD="$c3"
 event "empty base" "$ALL" GITHUB_EVENT_NAME=pull_request CI_BASE= CI_HEAD="$c3"
