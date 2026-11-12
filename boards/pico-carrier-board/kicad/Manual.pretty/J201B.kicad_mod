@@ -1,0 +1,160 @@
+(footprint "J201B"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Through hole straight socket strip, 1x06, 2.54mm pitch, single row (from Kicad 4.0.7), script generated")
+	(tags "Through hole socket strip THT 1x06 2.54mm single row")
+	(property "Reference" "REF**"
+		(at 0 -2.77 0)
+		(layer "F.Fab")
+		(uuid "a9ff5e24-207d-4066-9059-15cfeb2c89f2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "SSW-106-01-G-S / Tang J5-6..11"
+		(at 0 15.47 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a98604ce-2597-4d04-8358-c6ba6d286fc5")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "6c168043-d604-43d7-8a60-e6d97f360660")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a47bc1d9-f1ad-4489-a59c-7a3f3bbfc946")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "KiLib_Generator" "connector/pin_header_socket"
+		(at 0 0 0)
+		(layer "F.SilkS")
+		(hide yes)
+		(uuid "6c54348e-6503-46d2-965a-f54db2b76d5b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_rect
+		(start -1.455 -1.775)
+		(end 1.455 14.475)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "a2419861-e350-4004-8a67-a37315c010dd")
+	)
+	(fp_rect
+		(start -1.205 -1.525)
+		(end 1.205 14.225)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "5dd19a1f-358c-4191-bb3e-890d83d52a29")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 6.35 90)
+		(layer "F.Fab")
+		(uuid "f9e36671-9fcb-4374-9f74-99a7579202af")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "6" thru_hole rect
+		(at 0 0)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "945cc569-3558-4a60-b846-ac84dd97ebd7")
+	)
+	(pad "7" thru_hole circle
+		(at 0 2.54)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "65ae8528-3e0a-496c-9377-d5e4a53f795b")
+	)
+	(pad "8" thru_hole circle
+		(at 0 5.08)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "ce1ac0af-6987-4b47-9086-93a33f28325e")
+	)
+	(pad "9" thru_hole circle
+		(at 0 7.62)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "77e2f123-7fdc-4998-ace5-d8ac0f1515c9")
+	)
+	(pad "10" thru_hole circle
+		(at 0 10.16)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "866d4a91-20f4-4291-88e8-17ea66572ebe")
+	)
+	(pad "11" thru_hole circle
+		(at 0 12.7)
+		(size 1.5 1.5)
+		(drill 1.02)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "53045bdd-34ab-4e20-a276-9071387dce4e")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/models/PinSocket_1x06_P2.54mm_Vertical.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)

@@ -13,6 +13,16 @@ Tang Nano 9K（GW1NR-9）1枚で動く、外部ホスト制御のHDMIビデオ�
 
 *実機構成: Raspberry Pi Pico（SPI/QSPIホスト）とTang Nano 9K。配線は[Pico firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md)を参照。*
 
+## Picoキャリアボード
+
+![KAGURA Picoキャリアボード Basic RevAの3Dレンダリング](docs/images/pico-carrier-board-reva-3d.png)
+
+Raspberry Pi Pico・Tang Nano 9K・XIAO RP2040をまとめる、72×48mm・4層の試作キャリアボードです。USB-Cからの5V給電、USB-Aホスト端子、3.3V Grove I2C、GPIO拡張を備えます。表面にTang/XIAO、裏面にPicoを配置する構成です。
+
+[ボード資料と製造データ](boards/pico-carrier-board/README_JP.md)に、KiCadプロジェクト、PCBに同期した回路図、JLCPCB向けガーバー・BOM・CPL、LCSC部品購入ガイドをまとめています。Basic RevAは設計レビュー・実機確認が残る試作版です。
+
+*画像はKiCad設計データから生成した3Dレンダリングです。Pico/Tang本体と一部部品のモデルは含みません。実装済み基板の写真ではありません。*
+
 ## ショーケース
 
 <table>
@@ -105,6 +115,7 @@ kaguraからkagura-sdkへのビルド依存はありません。CIだけが`sdk.
 | path | 内容 |
 |---|---|
 | `rtl/` | RTL（core、vdp、audio、memory、hdmi、bus、boot、platform）。[RTL一覧](rtl/README.md) |
+| `boards/pico-carrier-board/` | PicoキャリアボードのKiCad・同期回路図・製造データ・部品購入ガイド。[ボード資料](boards/pico-carrier-board/README_JP.md) |
 | `boards/tang-nano-9k/` | board top、CST/SDC、ピン一覧。[ボード資料](boards/tang-nano-9k/README.md) |
 | `sim/` | SystemVerilog testbenchと参照モデル。[試験一覧](sim/README.md) |
 | `spec/` | 機械可読のレジスタ定義と設計予算 |

@@ -22,6 +22,7 @@ files "docs only" "" README.md docs/video.md rtl/README.md software/w65c02/READM
 files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/new-idea/main.c experiments/new-idea/CMakeLists.txt
 files "board constraints" "" boards/tang-nano-9k/vdp-720p.sdc boards/tang-nano-9k/phase1.cst
+files "carrier board PCB data" "" boards/pico-carrier-board/kicad/KAGURA_PicoCarrier_RevA.kicad_pcb boards/pico-carrier-board/KAGURA_Basic_RevA_Gerbers.zip
 files "synthesis tools" "" tools/build-nano9k.tcl tools/eval-gowin-hdmi.ps1 tools/run-baseline.ps1
 files "hand-run RTL regressions and hardware runners" "" tools/test-starfall-rtl.sh tools/tile1200-device.ps1
 files "register spec" "$ALL" spec/registers.json

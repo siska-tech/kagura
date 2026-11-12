@@ -1,0 +1,220 @@
+(kicad_sch
+  (version 20260306)
+  (generator "eeschema")
+  (generator_version "10.0")
+  (uuid "519469cd-2229-560c-ba35-ef6de430c8d8")
+  (paper "A4")
+  (title_block
+    (title "KAGURA Pico Carrier - system overview")
+    (date "2026-11-12")
+    (rev "Basic RevA")
+    (comment 1 "PCB-synchronized / physical socket contacts / prototype review pending")
+  )
+  (lib_symbols)
+  (text "KAGURA PICO CARRIER / BASIC REVA"
+    (at 20.32 20.32 0)
+    (effects
+      (font
+        (size 2 2)
+      )
+      (justify left top)
+    )
+    (uuid "724ca2b9-930a-5944-a4d2-af5f3cbb76dd")
+  )
+  (text "72 x 48 mm, 4 layers / top Tang + XIAO, bottom Pico\n44 PCB components; 28 top-side SMT placements at JLCPCB\nNamed global nets connect all four functional sheets."
+    (at 20.32 30.48 0)
+    (effects
+      (font
+        (size 1.1 1.1)
+      )
+      (justify left top)
+    )
+    (uuid "1c00b8a5-9212-54b4-bb7d-2f436ac98df5")
+  )
+  (sheet
+    (at 20.32 66.04)
+    (size 106.68 30.48)
+    (stroke
+      (width 0.254)
+      (type default)
+    )
+    (fill
+      (color 0 0 0 0)
+    )
+    (uuid "6e6cf84f-4c38-570e-bc8d-173703511594")
+    (property "Sheetname" "Power"
+      (at 73.66 63.5 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Sheetfile" "Power.kicad_sch"
+      (at 73.66 99.06 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8"
+          (page "2")
+        )
+      )
+    )
+  )
+  (text "14 components / J3, F1, SW1, Q1, C5, C6, R6, R7, U5, D4, R12, D1, D2, D3"
+    (at 22.86 74.93 0)
+    (effects
+      (font
+        (size 0.85 0.85)
+      )
+      (justify left top)
+    )
+    (uuid "d2d5eb43-06f6-550b-a292-7462c8b3782e")
+  )
+  (sheet
+    (at 147.32 66.04)
+    (size 106.68 30.48)
+    (stroke
+      (width 0.254)
+      (type default)
+    )
+    (fill
+      (color 0 0 0 0)
+    )
+    (uuid "7a9af047-5300-57fb-b75d-3cc9b0cae444")
+    (property "Sheetname" "USB Host"
+      (at 200.66 63.5 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Sheetfile" "USB_Host.kicad_sch"
+      (at 200.66 99.06 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8"
+          (page "3")
+        )
+      )
+    )
+  )
+  (text "14 components / U2, J2, U4, C4, C1, C3, C8, R3, R11, JP1, R4, R5, R1, R2"
+    (at 149.86 74.93 0)
+    (effects
+      (font
+        (size 0.85 0.85)
+      )
+      (justify left top)
+    )
+    (uuid "16532bfd-19e0-5a41-9c2c-c34e5220512d")
+  )
+  (sheet
+    (at 20.32 121.92)
+    (size 106.68 30.48)
+    (stroke
+      (width 0.254)
+      (type default)
+    )
+    (fill
+      (color 0 0 0 0)
+    )
+    (uuid "cb04b2cc-d367-5e28-9003-0d2a23aee293")
+    (property "Sheetname" "Modules"
+      (at 73.66 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Sheetfile" "Modules.kicad_sch"
+      (at 73.66 154.94 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8"
+          (page "4")
+        )
+      )
+    )
+  )
+  (text "10 components / J101, J102, U1, J2012, J2011, J2013, J2014, J2021, J2022, J2023"
+    (at 22.86 130.81 0)
+    (effects
+      (font
+        (size 0.85 0.85)
+      )
+      (justify left top)
+    )
+    (uuid "8d0aa427-0a42-524a-b41b-e7b6cd81a847")
+  )
+  (sheet
+    (at 147.32 121.92)
+    (size 106.68 30.48)
+    (stroke
+      (width 0.254)
+      (type default)
+    )
+    (fill
+      (color 0 0 0 0)
+    )
+    (uuid "c97761e2-f452-5dd8-871a-b5251970f15f")
+    (property "Sheetname" "Expansion"
+      (at 200.66 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Sheetfile" "Expansion.kicad_sch"
+      (at 200.66 154.94 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8"
+          (page "5")
+        )
+      )
+    )
+  )
+  (text "6 components / J4, J5, C7, R10, R8, R9"
+    (at 149.86 130.81 0)
+    (effects
+      (font
+        (size 0.85 0.85)
+      )
+      (justify left top)
+    )
+    (uuid "d286b588-6826-5789-a273-9da2fc06135e")
+  )
+  (sheet_instances
+    (path "/"
+      (page "1")
+    )
+  )
+  (embedded_fonts no)
+)
