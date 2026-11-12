@@ -1,0 +1,2 @@
+# Manufacturing data: keep bytes exact so SHA256SUMS.txt verifies after checkout.
+* -text
