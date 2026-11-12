@@ -1,0 +1,4470 @@
+(kicad_sch
+  (version 20260306)
+  (generator "eeschema")
+  (generator_version "10.0")
+  (uuid "e7d8e698-f668-597c-823a-d0c689445951")
+  (paper "A3")
+  (title_block
+    (title "Pico sockets, Tang split sockets and XIAO")
+    (date "2026-11-12")
+    (rev "Basic RevA")
+    (comment 1 "PCB-synchronized / physical socket contacts / prototype review pending")
+  )
+  (lib_symbols
+    (symbol "KAGURA_RevA:J101_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 17.78 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J101_Socket"
+        (at 0 15.24 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J101_Socket_0_1"
+        (rectangle
+          (start -12.7 13.97)
+          (end 12.7 -13.97)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J101_Socket_1_1"
+        (pin passive line
+          (at -17.78 11.43 0)
+          (length 5.08)
+          (name "GPIO0"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 8.89 0)
+          (length 5.08)
+          (name "GPIO1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 6.35 0)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 3.81 0)
+          (length 5.08)
+          (name "GPIO2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "GPIO3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "5"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "GPIO4"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "6"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -3.81 0)
+          (length 5.08)
+          (name "GPIO5"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "7"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -6.35 0)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -8.89 0)
+          (length 5.08)
+          (name "GPIO6"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "9"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -11.43 0)
+          (length 5.08)
+          (name "GPIO7"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "10"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 11.43 180)
+          (length 5.08)
+          (name "GPIO8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "11"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 8.89 180)
+          (length 5.08)
+          (name "GPIO9"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "12"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 6.35 180)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "13"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 3.81 180)
+          (length 5.08)
+          (name "GPIO10"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "14"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "GPIO11"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "15"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -1.27 180)
+          (length 5.08)
+          (name "GPIO12"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "16"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -3.81 180)
+          (length 5.08)
+          (name "GPIO13"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "17"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -6.35 180)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "18"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -8.89 180)
+          (length 5.08)
+          (name "GPIO14"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "19"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -11.43 180)
+          (length 5.08)
+          (name "GPIO15"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "20"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J102_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 17.78 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J102_Socket"
+        (at 0 15.24 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J102_Socket_0_1"
+        (rectangle
+          (start -12.7 13.97)
+          (end 12.7 -13.97)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J102_Socket_1_1"
+        (pin passive line
+          (at -17.78 11.43 0)
+          (length 5.08)
+          (name "GPIO16"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 8.89 0)
+          (length 5.08)
+          (name "GPIO17"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 6.35 0)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 3.81 0)
+          (length 5.08)
+          (name "GPIO18"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "GPIO19"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "5"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "GPIO20"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "6"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -3.81 0)
+          (length 5.08)
+          (name "GPIO21"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "7"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -6.35 0)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -8.89 0)
+          (length 5.08)
+          (name "GPIO22"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "9"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -11.43 0)
+          (length 5.08)
+          (name "RUN"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "10"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 11.43 180)
+          (length 5.08)
+          (name "GPIO26_ADC0"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "11"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 8.89 180)
+          (length 5.08)
+          (name "GPIO27_ADC1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "12"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 6.35 180)
+          (length 5.08)
+          (name "AGND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "13"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 3.81 180)
+          (length 5.08)
+          (name "GPIO28_ADC2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "14"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "ADC_VREF"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "15"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -1.27 180)
+          (length 5.08)
+          (name "3V3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "16"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -3.81 180)
+          (length 5.08)
+          (name "3V3_EN"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "17"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -6.35 180)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "18"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -8.89 180)
+          (length 5.08)
+          (name "VSYS"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "19"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -11.43 180)
+          (length 5.08)
+          (name "VBUS"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "20"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:XIAO_RP2040"
+      (pin_names
+        (offset 0.508)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "U"
+        (at 0 15.24 0)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Value" "Seeed XIAO RP2040 (standard)"
+        (at 0 -15.24 0)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Footprint" "KAGURA_PicoCarrier:Seeed_XIAO_RP2040_Socket_Provisional"
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (hide yes)
+        )
+      )
+      (property "Datasheet" "https://wiki.seeedstudio.com/XIAO-RP2040/"
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (hide yes)
+        )
+      )
+      (property "Description" "Standard 14-pin XIAO RP2040 only; 5V is USB VBUS and 3V3_OUT is an onboard regulator output."
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (hide yes)
+        )
+      )
+      (symbol "XIAO_RP2040_0_1"
+        (rectangle
+          (start -13.97 10.16)
+          (end 13.97 -10.16)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 7.62 0)
+          (length 3.81)
+          (name "D0/GPIO26"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 5.08 0)
+          (length 3.81)
+          (name "D1/GPIO27"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 2.54 0)
+          (length 3.81)
+          (name "D2/GPIO28"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 0 0)
+          (length 3.81)
+          (name "D3/GPIO29"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 -2.54 0)
+          (length 3.81)
+          (name "D4/GPIO6/USB_D+"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "5"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at -17.78 -5.08 0)
+          (length 3.81)
+          (name "D5/GPIO7/USB_D-"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "6"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin output line
+          (at -17.78 -7.62 0)
+          (length 3.81)
+          (name "D6/GPIO0"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "7"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin input line
+          (at 17.78 -7.62 180)
+          (length 3.81)
+          (name "D7/GPIO1"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "8"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at 17.78 -5.08 180)
+          (length 3.81)
+          (name "D8/GPIO2"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "9"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at 17.78 -2.54 180)
+          (length 3.81)
+          (name "D9/GPIO4"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "10"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at 17.78 0 180)
+          (length 3.81)
+          (name "D10/GPIO3"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "11"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin power_out line
+          (at 17.78 2.54 180)
+          (length 3.81)
+          (name "3V3_OUT"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "12"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin power_in line
+          (at 17.78 5.08 180)
+          (length 3.81)
+          (name "GND"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "13"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 7.62 180)
+          (length 3.81)
+          (name "5V/VBUS"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "14"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J201B_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J201B_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J201B_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J201B_Socket_1_1"
+        (pin passive line
+          (at -17.78 2.54 0)
+          (length 5.08)
+          (name "IOB8B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "6"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 0 0)
+          (length 5.08)
+          (name "IOB11A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "7"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -2.54 0)
+          (length 5.08)
+          (name "IOB11B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 2.54 180)
+          (length 5.08)
+          (name "IOB13A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "9"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 0 180)
+          (length 5.08)
+          (name "IOB13B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "10"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 -2.54 180)
+          (length 5.08)
+          (name "IOB23A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "11"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J201A_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J201A_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J201A_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J201A_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "IOB31B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "IOB31A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "IOB29B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J201C_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J201C_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J201C_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J201C_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "IOB29A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "14"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "IOB41A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "15"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "IOB41B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "16"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J201D_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J201D_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J201D_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J201D_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "IOR14B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "20"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "IOR14A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "21"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "IOR13A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "22"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J202A_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J202A_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J202A_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J202A_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "IOR5A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "IOT8A_1V8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "IOT8B_1V8"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J202B_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J202B_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J202B_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J202B_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "+5V"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "18"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "IOR24B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "19"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "IOR24A"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "20"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:J202C_Socket"
+      (pin_names
+        (offset 0.762)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "J"
+        (at 0 8.89 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (property "Value" "J202C_Socket"
+        (at 0 6.35 0)
+        (effects
+          (font
+            (size 0.95 0.95)
+          )
+        )
+      )
+      (symbol "J202C_Socket_0_1"
+        (rectangle
+          (start -12.7 5.08)
+          (end 12.7 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+      )
+      (symbol "J202C_Socket_1_1"
+        (pin passive line
+          (at -17.78 1.27 0)
+          (length 5.08)
+          (name "IOB15B"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "22"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -17.78 -1.27 0)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "23"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 17.78 1.27 180)
+          (length 5.08)
+          (name "+3V3"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+          (number "24"
+            (effects
+              (font
+                (size 0.85 0.85)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (text "PICO SOCKETS, TANG SPLIT SOCKETS AND XIAO"
+    (at 15.24 12.7 0)
+    (effects
+      (font
+        (size 1.8 1.8)
+      )
+      (justify left top)
+    )
+    (uuid "17bde5fc-0a72-50ce-85fe-9408fc9c9d6a")
+  )
+  (text "Physical carrier socket numbering, not an additional copy of the module circuit.\nTang support contacts marked NC remain physically populated. Pico is on the PCB bottom."
+    (at 15.24 20.32 0)
+    (effects
+      (font
+        (size 1 1)
+      )
+      (justify left top)
+    )
+    (uuid "1af10b83-f67a-56e6-9e0f-07cd3ec2ee47")
+  )
+  (wire
+    (pts
+      (xy 33.02 49.53)
+      (xy 27.94 49.53)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5de39f6a-3fe9-55e8-a85d-c7c6ba9f8297")
+  )
+  (global_label "/PICO_TX_TORII_RX"
+    (shape bidirectional)
+    (at 27.94 49.53 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "4d40de12-dc57-5789-90db-cbb9bbc80eea")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 49.53 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 52.07)
+      (xy 27.94 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "007f1b64-ee76-5161-b42f-969f90bc6d41")
+  )
+  (global_label "/TORII_TX_PICO_RX"
+    (shape bidirectional)
+    (at 27.94 52.07 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "a7fed65c-e6eb-5828-a421-11d09f3acbad")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 52.07 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 54.61)
+      (xy 27.94 54.61)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "fb26091e-0592-59a6-8f7b-6ae1c03c1ac5")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 27.94 54.61 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "4a5b0675-e39e-5880-b169-c946ca03e6c0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 54.61 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 57.15)
+      (xy 27.94 57.15)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "53069f8d-13b3-51ff-84e6-9d15366533a7")
+  )
+  (global_label "/KAG_IO0"
+    (shape bidirectional)
+    (at 27.94 57.15 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "2b6e921d-5b9f-5b38-b8fb-aacd31f299df")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 57.15 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 59.69)
+      (xy 27.94 59.69)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "e5e616a0-30fd-5e31-99bf-fe5a528a6086")
+  )
+  (global_label "/KAG_IO1"
+    (shape bidirectional)
+    (at 27.94 59.69 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "ae0590f2-82c0-5997-8ab3-3ec6861500d5")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 59.69 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 62.23)
+      (xy 27.94 62.23)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "63492d62-26b9-5406-a6e3-992f1939d50a")
+  )
+  (global_label "/KAG_IO2"
+    (shape bidirectional)
+    (at 27.94 62.23 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "63c53109-515d-5966-b68b-e2605bcd19b0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 62.23 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 64.77)
+      (xy 27.94 64.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "0b8beadc-7246-55b8-bf92-a3a42317c0d8")
+  )
+  (global_label "/KAG_IO3"
+    (shape bidirectional)
+    (at 27.94 64.77 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "9e23328d-6b7c-5c6d-a1ad-c9b2fea73dbc")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 64.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 67.31)
+      (xy 27.94 67.31)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "2fd20e6e-4399-5594-b620-263d4b138af5")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 27.94 67.31 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "0e77500b-4bbc-5da7-8268-057a3aba504c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 67.31 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 69.85)
+      (xy 27.94 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "dd660172-75a6-5ed9-85b3-82f7a9f74a33")
+  )
+  (global_label "/KAG_SCK"
+    (shape bidirectional)
+    (at 27.94 69.85 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "278ecb75-e3f1-5260-927a-ba9670706292")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 69.85 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 72.39)
+      (xy 27.94 72.39)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "dbf93e00-e8c9-5e09-8280-249c83cbbc5f")
+  )
+  (global_label "/KAG_CS_N"
+    (shape bidirectional)
+    (at 27.94 72.39 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "1e53e0f3-f7c8-50f9-a78b-774cecff96d4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 72.39 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 49.53)
+      (xy 73.66 49.53)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5c1a106c-53df-5aac-92cb-e19ce3dd08d5")
+  )
+  (global_label "/KAG_BUSY"
+    (shape bidirectional)
+    (at 73.66 49.53 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "ecbf7255-8905-5619-879c-ae600c01d7f1")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 49.53 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 52.07)
+      (xy 73.66 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "1f776d89-9399-5826-9361-c1843c746fc0")
+  )
+  (global_label "/KAG_READY"
+    (shape bidirectional)
+    (at 73.66 52.07 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "80bade5e-2332-5ea7-9a36-9aa0a7211f55")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 52.07 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 54.61)
+      (xy 73.66 54.61)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ce558a3d-0b18-5f35-9e8f-501fadca4125")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 73.66 54.61 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "5514d8a1-6894-521f-9ec1-2723ed4f6562")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 54.61 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 57.15)
+      (xy 73.66 57.15)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ace4a803-5b7f-5c33-8326-3b14aa9c4af1")
+  )
+  (global_label "/KAG_IRQ_N"
+    (shape bidirectional)
+    (at 73.66 57.15 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "cf7f46b1-e811-5d0e-a16b-79fe9741c5b7")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 57.15 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 59.69)
+      (xy 73.66 59.69)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a4ff6d10-6d7c-51a0-8b3e-7e48f092959f")
+  )
+  (global_label "/EXP_GP11"
+    (shape bidirectional)
+    (at 73.66 59.69 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "3f13f4c3-4c6c-5e90-a818-1a7e5a585c70")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 59.69 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 62.23)
+      (xy 73.66 62.23)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "fdd0ba36-85da-5be5-9fa8-1f743b911fd6")
+  )
+  (global_label "/GROVE_SDA"
+    (shape bidirectional)
+    (at 73.66 62.23 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "cd277d9a-9048-514c-9101-873962056805")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 62.23 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 64.77)
+      (xy 73.66 64.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "b8ea9ef5-bd31-5155-91dc-d10774e86059")
+  )
+  (global_label "/GROVE_SCL"
+    (shape bidirectional)
+    (at 73.66 64.77 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "3ce01a31-c13b-50a1-8c8a-8fe0f55ef761")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 64.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 67.31)
+      (xy 73.66 67.31)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "cdcd0b9f-1812-5cc7-91f4-eba7142ff245")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 73.66 67.31 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "79f798c9-0d46-5ca2-a7b7-8a39066b6ee6")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 67.31 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 69.85)
+      (xy 73.66 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "3640910b-c6c8-5ebc-8f12-a8fe3ce0829b")
+  )
+  (global_label "/EXP_GP14"
+    (shape bidirectional)
+    (at 73.66 69.85 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "8695b5b7-a261-5acf-a258-8e0183c458b0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 69.85 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 68.58 72.39)
+      (xy 73.66 72.39)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "302cedd2-c029-5136-be7c-98df5e9034b1")
+  )
+  (global_label "/EXP_GP15"
+    (shape bidirectional)
+    (at 73.66 72.39 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "9268524c-4a56-5e06-81cb-7a0eba75fc50")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 72.39 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J101_Socket")
+    (at 50.8 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c1daa5e9-27b2-51c0-8148-38c779d89a94")
+    (property "Reference" "J101"
+      (at 50.8 40.64 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "20 CONTACT SOCKET"
+      (at 50.8 43.18 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J101"
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "cb0df6cf-e0f1-5adc-bb5f-7c688474f8a7")
+    )
+    (pin "2"
+      (uuid "6bf945b0-c43b-577b-83bc-42fc2358579f")
+    )
+    (pin "3"
+      (uuid "d2973699-b9ee-574e-a66b-b4536a77f38a")
+    )
+    (pin "4"
+      (uuid "7b398ad2-040a-5572-b919-84a34ed90fbf")
+    )
+    (pin "5"
+      (uuid "7c6d1272-7a25-53ef-b01e-6d29740304be")
+    )
+    (pin "6"
+      (uuid "167f92d5-58ef-5637-b888-423d9c74b7ab")
+    )
+    (pin "7"
+      (uuid "45bc8083-cd52-523f-ad5e-c6642bca08e9")
+    )
+    (pin "8"
+      (uuid "94f89e8a-b733-5ee9-9511-f683466ead94")
+    )
+    (pin "9"
+      (uuid "635baf86-4286-5754-aa4c-378cb2d07723")
+    )
+    (pin "10"
+      (uuid "9e765c18-6960-50ad-9dec-2f03abb1abc8")
+    )
+    (pin "11"
+      (uuid "be7bc69c-97d6-595a-bfdf-097adb40e3c5")
+    )
+    (pin "12"
+      (uuid "0bf350ac-0fca-5ea2-aaa5-1729c676a3b9")
+    )
+    (pin "13"
+      (uuid "54b7fb64-bcde-55bd-a7c1-83accf42f27a")
+    )
+    (pin "14"
+      (uuid "4b1cc363-42ec-573e-ae4a-4edc1981306c")
+    )
+    (pin "15"
+      (uuid "1b9b8d01-37e6-5d6f-839d-01a3daed5534")
+    )
+    (pin "16"
+      (uuid "e6807df7-ca6a-5ada-951a-1928d71d0d8b")
+    )
+    (pin "17"
+      (uuid "4b69154c-848e-59fb-8617-975ec71644de")
+    )
+    (pin "18"
+      (uuid "28e93770-63dc-51a3-94a8-ce7879e241fc")
+    )
+    (pin "19"
+      (uuid "d8c2f716-a0ee-5b0e-a21e-211d07cfcfcd")
+    )
+    (pin "20"
+      (uuid "ab447872-e4f7-5f61-ba66-cc9ad8c00be8")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J101")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 49.53)
+      (xy 123.19 49.53)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "197c8640-c62d-52d6-9e65-b2dbb1e5ee3f")
+  )
+  (global_label "/EXP_GP16"
+    (shape bidirectional)
+    (at 123.19 49.53 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "e7c2b247-6e52-52c7-a408-6cc57fb0dcdd")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 49.53 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 52.07)
+      (xy 123.19 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5d4ab6c5-bd53-54c6-9cbb-460462428b49")
+  )
+  (global_label "/EXP_GP17"
+    (shape bidirectional)
+    (at 123.19 52.07 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "bde54479-5de3-5183-ad34-da7ee97ed49e")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 52.07 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 54.61)
+      (xy 123.19 54.61)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "94227f90-c845-5c17-825e-f97177d9734c")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 123.19 54.61 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "ef7ef1e4-1930-55a5-92a3-f794d79031ee")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 54.61 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 57.15)
+      (xy 123.19 57.15)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "2f70e243-06dc-52de-b8d1-f42e0893d6aa")
+  )
+  (global_label "/EXP_GP18"
+    (shape bidirectional)
+    (at 123.19 57.15 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "5954a877-b823-5cf5-8365-5534beb7e8ee")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 57.15 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 59.69)
+      (xy 123.19 59.69)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "fed84bfe-0524-57ca-986a-40b1a1d498ea")
+  )
+  (global_label "/EXP_GP19"
+    (shape bidirectional)
+    (at 123.19 59.69 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "19f91dce-25ad-5f6e-94b3-8dc1b0b96404")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 59.69 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 62.23)
+      (xy 123.19 62.23)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "e5d79a4a-4d3e-51d4-8114-27f277b1c7e4")
+  )
+  (global_label "/EXP_GP20"
+    (shape bidirectional)
+    (at 123.19 62.23 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "fb681688-e27f-56cc-ab6e-64bdad2763ea")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 62.23 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 64.77)
+      (xy 123.19 64.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "3ab052f3-f598-5b28-8d26-e4cdc88ff72f")
+  )
+  (global_label "/EXP_GP21"
+    (shape bidirectional)
+    (at 123.19 64.77 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "c1fe4fda-aa15-5361-8f98-7ff82679c84c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 64.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 67.31)
+      (xy 123.19 67.31)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "2d932026-12db-5925-901f-7e9d61508cd3")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 123.19 67.31 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "0a1c9b21-593d-5f81-89a8-06eac53a0979")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 67.31 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 69.85)
+      (xy 123.19 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5ea3ed6c-79b2-57c2-9973-a31620672877")
+  )
+  (global_label "/EXP_GP22"
+    (shape bidirectional)
+    (at 123.19 69.85 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "fed61081-d705-55dd-8c5f-c020162c8447")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 69.85 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 128.27 72.39)
+    (uuid "4ed464ef-4a0b-561c-b774-3a884299f36d")
+  )
+  (wire
+    (pts
+      (xy 163.83 49.53)
+      (xy 168.91 49.53)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a3e57cea-5bcd-5f4a-984c-09c3cbdb729c")
+  )
+  (global_label "/EXP_GP26_ADC0"
+    (shape bidirectional)
+    (at 168.91 49.53 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "1fcd5ae2-72d6-5d10-8494-0508aee1f748")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 49.53 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 163.83 52.07)
+      (xy 168.91 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "d0e8aadd-d64d-538c-8940-2f08cf3316e0")
+  )
+  (global_label "/EXP_GP27_ADC1"
+    (shape bidirectional)
+    (at 168.91 52.07 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "8b4f83bb-9b76-528a-b234-ee7c7b64824e")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 52.07 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 163.83 54.61)
+    (uuid "fb16f807-c5fe-5089-9fb4-120904fe0ba0")
+  )
+  (wire
+    (pts
+      (xy 163.83 57.15)
+      (xy 168.91 57.15)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "d96a3f72-c5a8-5de9-996a-d1482d9bf899")
+  )
+  (global_label "/EXP_GP28_ADC2"
+    (shape bidirectional)
+    (at 168.91 57.15 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "0f418e02-0ee2-5a56-bc44-e21148191a61")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 57.15 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 163.83 59.69)
+    (uuid "8a45cf38-45c7-598d-9715-cec79c46a705")
+  )
+  (wire
+    (pts
+      (xy 163.83 62.23)
+      (xy 168.91 62.23)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "45f7cbd5-6c8b-5e9f-b10c-4e60e132ff21")
+  )
+  (global_label "/PICO_3V3"
+    (shape bidirectional)
+    (at 168.91 62.23 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "bca10240-af23-519f-8997-4104a736f30c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 62.23 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 163.83 64.77)
+    (uuid "d1d850b4-40b1-58cc-a437-56735aaa86a2")
+  )
+  (wire
+    (pts
+      (xy 163.83 67.31)
+      (xy 168.91 67.31)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "85d3c5af-3d80-548f-b8f8-42243743fb88")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 168.91 67.31 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "78827546-1fc1-53db-9f7b-79e8b8761e53")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 67.31 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 163.83 69.85)
+      (xy 168.91 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "877800fd-4542-5784-b62f-a6745c646034")
+  )
+  (global_label "/PICO_VSYS"
+    (shape bidirectional)
+    (at 168.91 69.85 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "e0403e89-6dfd-5812-b21f-265b4009df7c")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 69.85 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 163.83 72.39)
+    (uuid "935f3900-36aa-5492-8d0c-20f44c15f689")
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J102_Socket")
+    (at 146.05 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b9cc602d-c7b8-5809-a7ae-2b702a6f22e2")
+    (property "Reference" "J102"
+      (at 146.05 40.64 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "20 CONTACT SOCKET"
+      (at 146.05 43.18 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J102"
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "d441f3a2-a7c4-5f6e-a642-868ffd7ef8d8")
+    )
+    (pin "2"
+      (uuid "d0ffb170-5835-52e2-847c-d834d6c15bc4")
+    )
+    (pin "3"
+      (uuid "ecf87b73-9b6c-5b33-9dbb-0ddfe169f18c")
+    )
+    (pin "4"
+      (uuid "b5083657-8025-588a-b9f4-2181d8df586b")
+    )
+    (pin "5"
+      (uuid "c63d75a1-df72-5efe-8f9f-14470f5c4e0e")
+    )
+    (pin "6"
+      (uuid "c8bc0d65-b645-5df8-a719-6f274ae31c65")
+    )
+    (pin "7"
+      (uuid "a4f76368-3a36-5730-a581-383c20fc92c6")
+    )
+    (pin "8"
+      (uuid "dd6ab452-8471-5850-948d-61731a232a43")
+    )
+    (pin "9"
+      (uuid "ace985e2-ae91-5988-9329-ee37d3e4837e")
+    )
+    (pin "10"
+      (uuid "ea8ae6ef-bfbf-56d3-8c70-8c17e3560d83")
+    )
+    (pin "11"
+      (uuid "7601f720-1766-5dbf-9eb0-f0faa96b5d62")
+    )
+    (pin "12"
+      (uuid "833b2dae-a058-5785-9fc8-a2e40f5c2bd1")
+    )
+    (pin "13"
+      (uuid "5cfac01f-0092-5ad5-9ecd-04b090891312")
+    )
+    (pin "14"
+      (uuid "4ab0b1a5-4f8f-5316-9fd9-44ce16326c17")
+    )
+    (pin "15"
+      (uuid "e1a38b1e-24f6-5d29-94d0-8424fb177c46")
+    )
+    (pin "16"
+      (uuid "9a0d577c-26e8-571e-af85-94ad943524bd")
+    )
+    (pin "17"
+      (uuid "760e56b0-6800-5bf5-acdf-7e63aaa164ad")
+    )
+    (pin "18"
+      (uuid "d68e3696-0563-5a9f-9317-04dbc29574b3")
+    )
+    (pin "19"
+      (uuid "d09fe649-52bb-5291-a8f5-f3cb481e735c")
+    )
+    (pin "20"
+      (uuid "59b2ac8c-5212-5c28-8fef-fe48a54f33e8")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J102")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 223.52 53.34)
+    (uuid "0ebfc9a5-ecd3-56a9-95dc-4030f1c0a29e")
+  )
+  (no_connect
+    (at 223.52 55.88)
+    (uuid "dec03f6b-bc57-5ffd-ae5a-7f8fa19cf92e")
+  )
+  (no_connect
+    (at 223.52 58.42)
+    (uuid "22955f19-921d-5227-ad8a-918deeb50f8e")
+  )
+  (no_connect
+    (at 223.52 60.96)
+    (uuid "8443f2f8-bc6e-5c32-bcf6-98b90456a35d")
+  )
+  (wire
+    (pts
+      (xy 223.52 63.5)
+      (xy 218.44 63.5)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "7cb0f37c-a030-53ea-ad0e-887002408ac7")
+  )
+  (global_label "/PIO_DP"
+    (shape bidirectional)
+    (at 218.44 63.5 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "e1baf0ac-d77a-5581-84ae-4bfc7fee737f")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 218.44 63.5 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 223.52 66.04)
+      (xy 218.44 66.04)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "de5f6733-f284-5c49-bdff-44ac9aa24d68")
+  )
+  (global_label "/PIO_DM"
+    (shape bidirectional)
+    (at 218.44 66.04 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "272363f7-3786-5f74-aa61-9b7cf25d49d7")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 218.44 66.04 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 223.52 68.58)
+      (xy 218.44 68.58)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "6cb70a0b-487e-593d-9408-a439d7907535")
+  )
+  (global_label "/TORII_TX_PICO_RX"
+    (shape bidirectional)
+    (at 218.44 68.58 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "89e2ff58-f1f3-53df-a2d6-ed0df910a219")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 218.44 68.58 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 259.08 68.58)
+      (xy 264.16 68.58)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5d4370dd-8529-51d5-911e-638184ef0b4d")
+  )
+  (global_label "/PICO_TX_TORII_RX"
+    (shape bidirectional)
+    (at 264.16 68.58 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "12ca7d9f-46fb-5ee8-9f60-9ce991fd9120")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 264.16 68.58 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 259.08 66.04)
+    (uuid "4780c7ba-d90a-5e34-8771-4058930201ce")
+  )
+  (no_connect
+    (at 259.08 63.5)
+    (uuid "fd4e3a4d-a46c-5f8c-a4fe-254ce57675b0")
+  )
+  (no_connect
+    (at 259.08 60.96)
+    (uuid "336edca8-12cb-5afb-84d6-389bc7915428")
+  )
+  (no_connect
+    (at 259.08 58.42)
+    (uuid "df1a10ac-1412-5031-aef8-3ca870fa7d7b")
+  )
+  (wire
+    (pts
+      (xy 259.08 55.88)
+      (xy 264.16 55.88)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "6ddadb9a-ce32-5fe1-a6ba-3bc75dd43c28")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 264.16 55.88 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "755c91b2-51d3-545c-a654-5d26a0bfe932")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 264.16 55.88 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 259.08 53.34)
+      (xy 264.16 53.34)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "67f6c27b-b2c5-5225-bd06-0ba5630c69e1")
+  )
+  (global_label "/XIAO_VBUS"
+    (shape bidirectional)
+    (at 264.16 53.34 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "f5aaa33c-f5ca-5ef0-aa6a-241ecb3f8820")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 264.16 53.34 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:XIAO_RP2040")
+    (at 241.3 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "6cfe9658-d99e-54ef-8a31-d63e823d81ab")
+    (property "Reference" "U1"
+      (at 241.3 44.45 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "XIAO RP2040 SMD"
+      (at 241.3 46.99 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:U1"
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "05d63ef5-b1b5-5f4b-86da-39595fbc1c06")
+    )
+    (pin "2"
+      (uuid "ebefebe3-85a5-5b66-95f9-edc84479f906")
+    )
+    (pin "3"
+      (uuid "bc7adb4a-daba-57ea-93dd-81b0d9a74ff9")
+    )
+    (pin "4"
+      (uuid "1a0be962-ea1c-5401-9aa4-0e7d7752cd1b")
+    )
+    (pin "5"
+      (uuid "32050d0a-6b79-5744-a82c-63caa3705abd")
+    )
+    (pin "6"
+      (uuid "203639e7-3e4d-5d93-95ec-397262e544e1")
+    )
+    (pin "7"
+      (uuid "a38562c1-8211-536f-8cd7-98e62aa83c28")
+    )
+    (pin "8"
+      (uuid "ff2dbb4c-4656-5b1b-a201-1726bb7841bb")
+    )
+    (pin "9"
+      (uuid "1bb72dcd-1ecc-5a5a-8619-bd1256e5bbdb")
+    )
+    (pin "10"
+      (uuid "8a123088-946b-54f7-b706-1bcc3b85e32d")
+    )
+    (pin "11"
+      (uuid "ae435138-38d8-552d-8f81-58ae9e4a752a")
+    )
+    (pin "12"
+      (uuid "5712c506-ecaf-5669-818f-d1b03acb1165")
+    )
+    (pin "13"
+      (uuid "8a461f80-70ab-5652-b13a-1aff63c1dda2")
+    )
+    (pin "14"
+      (uuid "fe69f093-bbaf-509e-a7b1-ffa30d9599d4")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "U1")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 318.77 58.42)
+      (xy 313.69 58.42)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "cd98a423-83fb-52f0-b267-1d3b33928a7e")
+  )
+  (global_label "/KAG_BUSY"
+    (shape bidirectional)
+    (at 313.69 58.42 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "5a3a0594-1675-5e3e-bd13-d2723e516594")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 313.69 58.42 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 318.77 60.96)
+      (xy 313.69 60.96)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "e1c8fe4e-9117-5789-9109-e5ef5fe2203e")
+  )
+  (global_label "/KAG_READY"
+    (shape bidirectional)
+    (at 313.69 60.96 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "77141136-aaee-58b5-b103-9d924cb331c4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 313.69 60.96 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 318.77 63.5)
+      (xy 313.69 63.5)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "9eeafc01-50ac-501a-9f1a-346823421b39")
+  )
+  (global_label "/KAG_IO0"
+    (shape bidirectional)
+    (at 313.69 63.5 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "e5b58c2a-bbd1-503f-a701-d5ffb27aead1")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 313.69 63.5 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 354.33 58.42)
+      (xy 359.41 58.42)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "cbcb4a99-5175-555a-879e-89f8f9f35031")
+  )
+  (global_label "/KAG_IO1"
+    (shape bidirectional)
+    (at 359.41 58.42 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "f9dcf6ec-43bd-5484-bca0-9d9962602dfc")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 359.41 58.42 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 354.33 60.96)
+      (xy 359.41 60.96)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "23e084c9-94dc-5231-95fa-e889a1093ae7")
+  )
+  (global_label "/KAG_IO2"
+    (shape bidirectional)
+    (at 359.41 60.96 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "5136d6b8-2856-59fd-9b98-fbaea692e5e4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 359.41 60.96 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 354.33 63.5)
+      (xy 359.41 63.5)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ea3e8408-dfae-52bc-bb81-3fb280e7ff01")
+  )
+  (global_label "/KAG_IO3"
+    (shape bidirectional)
+    (at 359.41 63.5 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "e539991e-8cf5-584f-a0d2-ad79cb4acb7d")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 359.41 63.5 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J201B_Socket")
+    (at 336.55 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b4b35994-effb-5697-a50d-12de891ae639")
+    (property "Reference" "J2012"
+      (at 336.55 49.53 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-106-01-G-S / Tang J5-6..11"
+      (at 336.55 52.07 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J201B"
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J201B"
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "6"
+      (uuid "d4e958b2-98b2-5111-8d6c-d068b9e915a6")
+    )
+    (pin "7"
+      (uuid "78e85c36-e138-5c23-ab3e-39cae6a696a7")
+    )
+    (pin "8"
+      (uuid "be55b5ec-bfe2-5fe4-b11b-05cc1ec3f3b9")
+    )
+    (pin "9"
+      (uuid "8673ef76-009f-5672-97ec-504dc59d3c0b")
+    )
+    (pin "10"
+      (uuid "8d610e85-096c-57e2-a4a0-c0702d832263")
+    )
+    (pin "11"
+      (uuid "bb3a32dc-aff8-5d82-862f-af93437b83f8")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2012")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 33.02 120.65)
+    (uuid "9b71aef9-0f32-5118-b2b2-6e32f805ef24")
+  )
+  (no_connect
+    (at 33.02 123.19)
+    (uuid "5c225b53-a5f0-5358-b44e-f1f6e375ea97")
+  )
+  (no_connect
+    (at 68.58 120.65)
+    (uuid "11ba4ef7-84b4-5487-ae5c-87e13cc689e4")
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J201A_Socket")
+    (at 50.8 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "ca074154-61a9-5dc7-9288-7762445f65b2")
+    (property "Reference" "J2011"
+      (at 50.8 111.76 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J5-1..3"
+      (at 50.8 114.3 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J201A"
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J201A"
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "7fec3375-b63b-5c4f-9c7a-a97ce3c3b586")
+    )
+    (pin "2"
+      (uuid "2d8375d9-5838-5714-ae19-a596ed072e53")
+    )
+    (pin "3"
+      (uuid "b1ccf5e5-6563-599e-8203-825ccd2dc94e")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2011")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 128.27 120.65)
+      (xy 123.19 120.65)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "6a90b758-bc84-503c-afca-25691d07ccda")
+  )
+  (global_label "/KAG_SCK"
+    (shape bidirectional)
+    (at 123.19 120.65 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "ef58e233-1832-57b1-95d8-6ad1c06a1f74")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 120.65 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 128.27 123.19)
+    (uuid "96665e6d-5557-5ccf-aa70-a697ca680964")
+  )
+  (wire
+    (pts
+      (xy 163.83 120.65)
+      (xy 168.91 120.65)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "3d43cde6-2e5c-52d9-a7ac-704bac809d01")
+  )
+  (global_label "/KAG_CS_N"
+    (shape bidirectional)
+    (at 168.91 120.65 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "4456cb3e-22c3-5c7a-b445-a3b16cfc3573")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 168.91 120.65 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J201C_Socket")
+    (at 146.05 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8b1bf841-2fde-5c30-a971-2b69043881a9")
+    (property "Reference" "J2013"
+      (at 146.05 111.76 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J5-14..16"
+      (at 146.05 114.3 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J201C"
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J201C"
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "14"
+      (uuid "dec26dfc-8221-5bca-a14a-9fe5ae119f7c")
+    )
+    (pin "15"
+      (uuid "96336eda-d10c-592a-b8ce-6054531cc927")
+    )
+    (pin "16"
+      (uuid "2449c53a-f388-5008-997a-22d57428dcb0")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2013")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 223.52 120.65)
+    (uuid "e0fcda2e-9df0-50f4-b51b-bb0462f0026b")
+  )
+  (no_connect
+    (at 223.52 123.19)
+    (uuid "2221f3e4-3fc0-5187-b7c8-ebf32a73aea4")
+  )
+  (no_connect
+    (at 259.08 120.65)
+    (uuid "8aa0dbdd-c68c-5806-ac21-20e1bafda1a7")
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J201D_Socket")
+    (at 241.3 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "18013cc5-ad8e-5ff5-9efc-106d68114d99")
+    (property "Reference" "J2014"
+      (at 241.3 111.76 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J5-20..22"
+      (at 241.3 114.3 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J201D"
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J201D"
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "20"
+      (uuid "6eca279c-ed8e-5824-b0bf-ec13c6592e00")
+    )
+    (pin "21"
+      (uuid "80893a85-217f-5448-8225-67f83e6b9aaa")
+    )
+    (pin "22"
+      (uuid "4dd2e5e4-1d74-56a5-8eb5-a03eb2a64c33")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2014")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 318.77 120.65)
+    (uuid "48facd34-bc06-57f8-8890-71314b9be6e8")
+  )
+  (no_connect
+    (at 318.77 123.19)
+    (uuid "24eead06-7e62-5849-8326-685ad4cadd10")
+  )
+  (no_connect
+    (at 354.33 120.65)
+    (uuid "f3952ac0-f646-5e14-8eda-72fe0b5b18ef")
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J202A_Socket")
+    (at 336.55 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1cb1403e-1aaa-55d1-8fb7-5ebef935549a")
+    (property "Reference" "J2021"
+      (at 336.55 111.76 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J6-1..3"
+      (at 336.55 114.3 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J202A"
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J202A"
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "c070381e-19ac-5ee3-865a-6317e545007e")
+    )
+    (pin "2"
+      (uuid "7d3d8e75-534f-5990-bf10-e2f2cdae928f")
+    )
+    (pin "3"
+      (uuid "4d2b754e-f1d4-5e09-b698-5836870be0a6")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2021")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 33.02 181.61)
+      (xy 27.94 181.61)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ad69620b-cbbf-5e2a-a395-9fc42e8b1a9f")
+  )
+  (global_label "/TANG_5V"
+    (shape bidirectional)
+    (at 27.94 181.61 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "5da724ae-80ef-5fa5-9850-fdb114b70462")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 27.94 181.61 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 33.02 184.15)
+    (uuid "ddc713fd-e85c-59a3-8300-2e3d1207d2cf")
+  )
+  (wire
+    (pts
+      (xy 68.58 181.61)
+      (xy 73.66 181.61)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "1402d9df-72b5-5771-80e3-a5485bf7654d")
+  )
+  (global_label "/KAG_IRQ_N"
+    (shape bidirectional)
+    (at 73.66 181.61 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "00e8d18c-5106-5471-b9a0-019fda3245a4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 73.66 181.61 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J202B_Socket")
+    (at 50.8 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "1070dfb8-02c4-5bfc-97f5-2f4dabcc8bcd")
+    (property "Reference" "J2022"
+      (at 50.8 172.72 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J6-18..20"
+      (at 50.8 175.26 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J202B"
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J202B"
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "18"
+      (uuid "52e6fa97-8228-513d-831d-28aec7431108")
+    )
+    (pin "19"
+      (uuid "00de85bc-b75b-5d4d-ae00-4587a0ad4f73")
+    )
+    (pin "20"
+      (uuid "0d20dbb8-655f-5e4e-9144-eb6d3afcdbf1")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2022")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 128.27 181.61)
+    (uuid "08e6eebe-2687-513e-a0d6-9df294f0fe3b")
+  )
+  (wire
+    (pts
+      (xy 128.27 184.15)
+      (xy 123.19 184.15)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "babd6f29-589f-5ccd-aeda-af2ed8fa7df1")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 123.19 184.15 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "6ae2726c-68b8-5178-9584-29ff6aee8e4b")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 123.19 184.15 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 163.83 181.61)
+    (uuid "7eada0d9-3908-59d7-9fb1-124237ae3d05")
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:J202C_Socket")
+    (at 146.05 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "5bccb701-251c-59d5-a377-b84c42c5ac51")
+    (property "Reference" "J2023"
+      (at 146.05 172.72 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "SSW-103-01-G-S / Tang J6-22..24"
+      (at 146.05 175.26 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J202C"
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Legacy Reference" "J202C"
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "22"
+      (uuid "ddc512a6-a439-5bf1-bf4f-91600e59e7f1")
+    )
+    (pin "23"
+      (uuid "9e23f531-d8ee-51f0-9982-6662662d615c")
+    )
+    (pin "24"
+      (uuid "a8ebf863-7144-54a8-8cb4-6a8e3bd4ccfc")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/cb04b2cc-d367-5e28-9003-0d2a23aee293"
+          (reference "J2023")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (embedded_fonts no)
+)

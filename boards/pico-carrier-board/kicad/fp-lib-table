@@ -1,0 +1,5 @@
+(fp_lib_table (version 7)
+ (lib (name "KAGURA_MANUAL") (type "KiCad") (uri "${KIPRJMOD}/Manual.pretty") (options "") (descr "Frozen handoff footprints"))
+ (lib (name "KAGURA_BASIC") (type "KiCad") (uri "${KIPRJMOD}/Basic.pretty") (options "") (descr "Basic-parts revision: standard KiCad 1206 capacitor"))
+ (lib (name "KAGURA_BOARD_EXTRAS") (type "KiCad") (uri "${KIPRJMOD}/BoardExtras.pretty") (options "") (descr "Frozen Q1 and R12 footprint definitions"))
+)

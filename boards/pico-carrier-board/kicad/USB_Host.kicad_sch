@@ -1,0 +1,4089 @@
+(kicad_sch
+  (version 20260306)
+  (generator "eeschema")
+  (generator_version "10.0")
+  (uuid "5e97a99f-a54b-5ace-bcd6-2fae485cef5f")
+  (paper "A3")
+  (title_block
+    (title "USB host, eFuse and data protection")
+    (date "2026-11-12")
+    (rev "Basic RevA")
+    (comment 1 "PCB-synchronized / physical socket contacts / prototype review pending")
+  )
+  (lib_symbols
+    (symbol "KAGURA_RevA:TPS259470A_RPW"
+      (pin_names
+        (offset 1.016)
+      )
+      (in_bom yes)
+      (on_board yes)
+      (property "Reference" "U"
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1 1)
+          )
+        )
+      )
+      (property "Value" "TPS259470A_RPW"
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1 1)
+          )
+        )
+      )
+      (property "Datasheet" "https://www.ti.com/lit/ds/symlink/tps25947.pdf"
+        (at 0 0 0)
+        (effects
+          (font
+            (size 1 1)
+          )
+        )
+      )
+      (symbol "TPS259470A_RPW_1_1"
+        (rectangle
+          (start -10.16 15.24)
+          (end 10.16 -15.24)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+        (pin power_in line
+          (at -15.24 12.7 0)
+          (length 5.08)
+          (name "IN"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "5"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin input line
+          (at -15.24 5.08 0)
+          (length 5.08)
+          (name "EN/UVLO"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin input line
+          (at -15.24 0 0)
+          (length 5.08)
+          (name "OVLO"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -15.24 -5.08 0)
+          (length 5.08)
+          (name "ILM"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "9"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -15.24 -10.16 0)
+          (length 5.08)
+          (name "DVDT"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "7"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin power_out line
+          (at 15.24 12.7 180)
+          (length 5.08)
+          (name "OUT"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "6"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin open_collector line
+          (at 15.24 5.08 180)
+          (length 5.08)
+          (name "AUXOFF"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin open_collector line
+          (at 15.24 0 180)
+          (length 5.08)
+          (name "~{FLT}"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 15.24 -5.08 180)
+          (length 5.08)
+          (name "ITIMER"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "10"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+        (pin power_in line
+          (at 0 -20.32 90)
+          (length 5.08)
+          (name "GND"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+          (number "8"
+            (effects
+              (font
+                (size 1 1)
+              )
+            )
+          )
+        )
+      )
+    )
+    (symbol "KAGURA_RevA:USB_A"
+      (pin_names
+        (offset 1.016)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "J"
+        (at -5.08 11.43 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Value" "USB_A"
+        (at -5.08 8.89 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Footprint" ""
+        (at 3.81 -1.27 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" ""
+        (at 3.81 -1.27 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "USB Type A connector"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "connector USB"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "USB*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "USB_A_0_1"
+        (rectangle
+          (start -5.08 -7.62)
+          (end 5.08 7.62)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+        (circle
+          (center -3.81 2.159)
+          (radius 0.635)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.175 2.159)
+            (xy -2.54 2.159)
+            (xy -1.27 3.429)
+            (xy -0.635 3.429)
+          )
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.54 2.159)
+            (xy -1.905 2.159)
+            (xy -1.27 0.889)
+            (xy 0 0.889)
+          )
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start -1.524 4.826)
+          (end -4.318 5.334)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (rectangle
+          (start -1.27 4.572)
+          (end -4.572 5.842)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center -0.635 3.429)
+          (radius 0.381)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (rectangle
+          (start -0.127 -7.62)
+          (end 0.127 -6.858)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start 0.254 1.27)
+          (end -0.508 0.508)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy 0.635 2.794)
+            (xy 0.635 1.524)
+            (xy 1.905 2.159)
+            (xy 0.635 2.794)
+          )
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (rectangle
+          (start 5.08 4.953)
+          (end 4.318 5.207)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start 5.08 -0.127)
+          (end 4.318 0.127)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start 5.08 -2.667)
+          (end 4.318 -2.413)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+      )
+      (symbol "USB_A_1_1"
+        (polyline
+          (pts
+            (xy -1.905 2.159)
+            (xy 0.635 2.159)
+          )
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (pin power_in line
+          (at 7.62 5.08 180)
+          (length 2.54)
+          (name "VBUS"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at 7.62 -2.54 180)
+          (length 2.54)
+          (name "D-"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin bidirectional line
+          (at 7.62 0 180)
+          (length 2.54)
+          (name "D+"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin power_in line
+          (at 0 -10.16 90)
+          (length 2.54)
+          (name "GND"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -2.54 -10.16 90)
+          (length 2.54)
+          (name "Shield"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "SH"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol "KAGURA_RevA:TPD2E2U06DRL"
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "U"
+        (at -3.81 6.35 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Value" "TPD2E2U06DRL"
+        (at 0.508 -6.35 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Footprint" "Package_TO_SOT_SMD:SOT-553"
+        (at -20.32 -6.35 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" "http://www.ti.com/lit/ds/symlink/tpd2e2u06.pdf"
+        (at -5.08 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "Dual-Channel High-Speed ESD Protection, SOT-553"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "TVS"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "SOT?553*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "TPD2E2U06DRL_0_1"
+        (rectangle
+          (start -5.08 5.08)
+          (end 5.08 -5.08)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+        (rectangle
+          (start -3.556 4.318)
+          (end 0 -4.318)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.556 3.81)
+            (xy -4.064 3.048)
+            (xy -3.048 3.048)
+            (xy -3.556 3.81)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center -3.556 2.54)
+          (radius 0.254)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.556 2.54)
+            (xy -5.08 2.54)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.556 2.032)
+            (xy -4.064 1.27)
+            (xy -3.048 1.27)
+            (xy -3.556 2.032)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.048 3.81)
+            (xy -4.064 3.81)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -3.048 2.032)
+            (xy -4.064 2.032)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center -2.032 4.318)
+          (radius 0.254)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.032 -1.27)
+            (xy -2.54 -2.032)
+            (xy -1.524 -2.032)
+            (xy -2.032 -1.27)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center -2.032 -2.54)
+          (radius 0.254)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.032 -2.54)
+            (xy -5.08 -2.54)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.032 -3.048)
+            (xy -2.54 -3.81)
+            (xy -1.524 -3.81)
+            (xy -2.032 -3.048)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center -2.032 -4.318)
+          (radius 0.254)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.032 -4.318)
+            (xy -2.032 4.318)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -1.524 -1.27)
+            (xy -2.54 -1.27)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -1.524 -3.048)
+            (xy -2.54 -3.048)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy 0 1.016)
+            (xy 1.016 -1.016)
+            (xy -1.016 -1.016)
+            (xy 0 1.016)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy 0 -4.318)
+            (xy 0 -5.08)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (circle
+          (center 0 -4.318)
+          (radius 0.254)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+        (polyline
+          (pts
+            (xy 1.016 1.016)
+            (xy -1.016 1.016)
+            (xy -1.016 0.508)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+      )
+      (symbol "TPD2E2U06DRL_1_1"
+        (pin passive line
+          (at 7.62 2.54 180)
+          (length 2.54)
+          (name "NC"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 7.62 -2.54 180)
+          (length 2.54)
+          (name "NC"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -7.62 2.54 0)
+          (length 2.54)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "3"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 0 -7.62 90)
+          (length 2.54)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "4"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -7.62 -2.54 0)
+          (length 2.54)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "5"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol "KAGURA_RevA:C_Polarized"
+      (pin_numbers
+        (hide yes)
+      )
+      (pin_names
+        (offset 0.254)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Value" "C_Polarized"
+        (at 0.635 -2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Footprint" ""
+        (at 0.9652 -3.81 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "Polarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "CP_*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "C_Polarized_0_1"
+        (rectangle
+          (start -2.286 0.508)
+          (end 2.286 1.016)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -1.778 2.286)
+            (xy -0.762 2.286)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -1.27 2.794)
+            (xy -1.27 1.778)
+          )
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start 2.286 -0.508)
+          (end -2.286 -1.016)
+          (stroke
+            (width 0)
+            (type default)
+          )
+          (fill
+            (type outline)
+          )
+        )
+      )
+      (symbol "C_Polarized_1_1"
+        (pin passive line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol "KAGURA_RevA:C"
+      (pin_numbers
+        (hide yes)
+      )
+      (pin_names
+        (offset 0.254)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "C"
+        (at 0.635 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Value" "C"
+        (at 0.635 -2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+          (justify left)
+        )
+      )
+      (property "Footprint" ""
+        (at 0.9652 -3.81 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "Unpolarized capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "cap capacitor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "C_*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "C_0_1"
+        (polyline
+          (pts
+            (xy -2.032 0.762)
+            (xy 2.032 0.762)
+          )
+          (stroke
+            (width 0.508)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (polyline
+          (pts
+            (xy -2.032 -0.762)
+            (xy 2.032 -0.762)
+          )
+          (stroke
+            (width 0.508)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+      )
+      (symbol "C_1_1"
+        (pin passive line
+          (at 0 3.81 270)
+          (length 2.794)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 0 -3.81 90)
+          (length 2.794)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol "KAGURA_RevA:R"
+      (pin_numbers
+        (hide yes)
+      )
+      (pin_names
+        (offset 0)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "R"
+        (at 2.032 0 90)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Value" "R"
+        (at 0 0 90)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Footprint" ""
+        (at -1.778 0 90)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "Resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "R res resistor"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "R_*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "R_0_1"
+        (rectangle
+          (start -1.016 -2.54)
+          (end 1.016 2.54)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+      )
+      (symbol "R_1_1"
+        (pin passive line
+          (at 0 3.81 270)
+          (length 1.27)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at 0 -3.81 90)
+          (length 1.27)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+    (symbol "KAGURA_RevA:Host_Enable"
+      (pin_names
+        (offset 1.016)
+        (hide yes)
+      )
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "J"
+        (at 0 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Value" "Conn_01x02"
+        (at 0 -5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Footprint" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_keywords" "connector"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (property "ki_fp_filters" "Connector*:*_1x??_*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27)
+          )
+        )
+      )
+      (symbol "Host_Enable_1_1"
+        (rectangle
+          (start -1.27 1.27)
+          (end 1.27 -3.81)
+          (stroke
+            (width 0.254)
+            (type default)
+          )
+          (fill
+            (type background)
+          )
+        )
+        (rectangle
+          (start -1.27 0.127)
+          (end 0 -0.127)
+          (stroke
+            (width 0.1524)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (rectangle
+          (start -1.27 -2.413)
+          (end 0 -2.667)
+          (stroke
+            (width 0.1524)
+            (type default)
+          )
+          (fill
+            (type none)
+          )
+        )
+        (pin passive line
+          (at -5.08 0 0)
+          (length 3.81)
+          (name "Pin_1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+        (pin passive line
+          (at -5.08 -2.54 0)
+          (length 3.81)
+          (name "Pin_2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27)
+              )
+            )
+          )
+        )
+      )
+      (embedded_fonts no)
+    )
+  )
+  (text "USB HOST, EFUSE AND DATA PROTECTION"
+    (at 15.24 12.7 0)
+    (effects
+      (font
+        (size 1.8 1.8)
+      )
+      (justify left top)
+    )
+    (uuid "e2dec66f-ea06-5a1f-ac7b-06aa5e606f49")
+  )
+  (text "TPS259470A limits and isolates host VBUS. JP1 open = host power OFF.\nQ1 drive, C4/U2 land patterns, inrush and voltage margins remain prototype checks."
+    (at 15.24 20.32 0)
+    (effects
+      (font
+        (size 1 1)
+      )
+      (justify left top)
+    )
+    (uuid "4958b2d6-af9c-5544-b445-947e38888133")
+  )
+  (wire
+    (pts
+      (xy 35.56 48.26)
+      (xy 30.48 48.26)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "4a4893eb-8611-5ade-bcc7-952fac385251")
+  )
+  (global_label "/CARRIER_5V"
+    (shape bidirectional)
+    (at 30.48 48.26 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "a8ca74f8-f2d1-5ceb-859e-18517aeb6c39")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 30.48 48.26 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 35.56 55.88)
+      (xy 30.48 55.88)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ea748e8f-3eea-5594-a9d5-4b1ba1f8bc92")
+  )
+  (global_label "/PORT_EN"
+    (shape bidirectional)
+    (at 30.48 55.88 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "48ec1f1d-5cbe-522c-a325-feb9ade09151")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 30.48 55.88 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 35.56 60.96)
+      (xy 30.48 60.96)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "b065ab30-b52d-54a7-8988-0f9f80e68431")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 30.48 60.96 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "beb02079-4cfd-5636-a3af-967f45bd06e8")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 30.48 60.96 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 35.56 66.04)
+      (xy 30.48 66.04)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "82830441-cbed-5352-968a-836c3eb98e10")
+  )
+  (global_label "/PORT_ILIM"
+    (shape bidirectional)
+    (at 30.48 66.04 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "aef0c82a-4698-5568-aa9b-9689308f2adc")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 30.48 66.04 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 35.56 71.12)
+      (xy 30.48 71.12)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "fb30dad8-2595-5c85-b33f-a3b2a0cc1314")
+  )
+  (global_label "/PORT_DVDT"
+    (shape bidirectional)
+    (at 30.48 71.12 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "275faa93-89ee-5c68-9515-304c75575f88")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 30.48 71.12 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 66.04 48.26)
+      (xy 71.12 48.26)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "28adb473-8189-5f85-a238-7717d2750f49")
+  )
+  (global_label "/PORT_VBUS"
+    (shape bidirectional)
+    (at 71.12 48.26 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "2e0fecdf-52f5-57b3-8ca2-b9a33b4c6f17")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 71.12 48.26 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (no_connect
+    (at 66.04 55.88)
+    (uuid "c1e04a3e-4fad-5092-934b-d3b4410e5155")
+  )
+  (no_connect
+    (at 66.04 60.96)
+    (uuid "ef962a84-ccd7-53a4-899b-d3b57b48e3d5")
+  )
+  (no_connect
+    (at 66.04 66.04)
+    (uuid "3fca283f-3747-5f6c-ac30-c0ea14e3b308")
+  )
+  (wire
+    (pts
+      (xy 50.8 81.28)
+      (xy 50.8 86.36)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "57c8fd64-ab6e-5294-953c-b74cd31c8e7b")
+  )
+  (wire
+    (pts
+      (xy 50.8 86.36)
+      (xy 58.42 86.36)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "14242434-84e5-5318-8a30-2156b7183ad5")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 58.42 86.36 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "c86a2f73-b7ad-50cc-ad37-afc70da477eb")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 86.36 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:TPS259470A_RPW")
+    (at 50.8 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "2934d2d4-c0db-57ce-9298-d7e9642cb3f0")
+    (property "Reference" "U2"
+      (at 50.8 39.37 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "TPS259470ARPWR / HOST LIMIT+RCB"
+      (at 50.8 41.91 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:U2"
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "5"
+      (uuid "76d5b958-10dc-556f-b94f-ec8875144958")
+    )
+    (pin "1"
+      (uuid "4686630e-9f6e-5579-91da-21007c808f87")
+    )
+    (pin "2"
+      (uuid "69ede01b-1d96-5dfe-a7a6-7838fd1174b6")
+    )
+    (pin "9"
+      (uuid "35854103-3b98-58f5-bd63-862df800f749")
+    )
+    (pin "7"
+      (uuid "0179c3b3-aaf2-594f-bd9d-3b56a302b7a0")
+    )
+    (pin "6"
+      (uuid "b13e833c-5973-5d55-8e5c-8c87fd3fc511")
+    )
+    (pin "3"
+      (uuid "910427d9-c157-5ee3-b45b-7da024b0dc09")
+    )
+    (pin "4"
+      (uuid "cf27f50d-e8f5-5be3-8691-be2e72a196a3")
+    )
+    (pin "10"
+      (uuid "0a2662f2-8a1e-5fea-a9fa-bde974167791")
+    )
+    (pin "8"
+      (uuid "71cb1c2e-0b62-5d6d-9e3b-d31883cd4839")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "U2")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 153.67 55.88)
+      (xy 158.75 55.88)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "6a49741f-c3c9-5898-8a22-e0d8afe6f87e")
+  )
+  (global_label "/PORT_VBUS"
+    (shape bidirectional)
+    (at 158.75 55.88 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "cd42e585-aa7e-58ac-a0d3-686dc8d4bdb3")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 158.75 55.88 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 153.67 63.5)
+      (xy 158.75 63.5)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "16420a9c-0d06-5905-8c3e-a6ed863e2d0e")
+  )
+  (global_label "/USB_DM"
+    (shape bidirectional)
+    (at 158.75 63.5 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "87b89089-b42c-515f-9a62-2e18191c467f")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 158.75 63.5 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 153.67 60.96)
+      (xy 158.75 60.96)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "b2f7889b-37c7-5923-a5d2-dfaf12a8fae2")
+  )
+  (global_label "/USB_DP"
+    (shape bidirectional)
+    (at 158.75 60.96 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "c7bf2b1b-573b-5c2e-8836-5523632e060f")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 158.75 60.96 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 146.05 71.12)
+      (xy 146.05 76.2)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "85f9d7e1-5d46-5baa-8af2-473af3544f19")
+  )
+  (wire
+    (pts
+      (xy 146.05 76.2)
+      (xy 153.67 76.2)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "d7e08ad0-5928-5eeb-9231-10243360bb67")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 153.67 76.2 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "cd4e077d-f4c9-59f2-bb7c-33c82969b3d0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 153.67 76.2 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 143.51 71.12)
+      (xy 143.51 76.2)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "55baa3ef-de45-5d79-bc1b-4781ebe51d91")
+  )
+  (wire
+    (pts
+      (xy 143.51 76.2)
+      (xy 135.89 76.2)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "41a782c5-ab46-59a6-8584-056789812549")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 135.89 76.2 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "5293103e-a2e9-5ba0-b4ee-9a24a0365c31")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 135.89 76.2 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:USB_A")
+    (at 146.05 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "7c5097ed-b96a-569d-ab6d-ed1ca4e230d7")
+    (property "Reference" "J2"
+      (at 146.05 46.99 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "87520-0010BLF / Host"
+      (at 146.05 49.53 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:J2"
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "d2908a3e-203e-5008-9f12-f10dc6482585")
+    )
+    (pin "2"
+      (uuid "dcd63f90-555d-58cc-ad7e-26dac5f71a20")
+    )
+    (pin "3"
+      (uuid "63f77d9e-24f7-5a55-b272-bc81eaf0cd28")
+    )
+    (pin "4"
+      (uuid "e0803b07-e356-50dd-9994-2762b8755c97")
+    )
+    (pin "SH"
+      (uuid "e4c5456b-b0fa-53e4-9447-a4725b934b52")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "J2")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (no_connect
+    (at 248.92 58.42)
+    (uuid "02f9c0fa-1032-58a8-925b-1bf48892009d")
+  )
+  (no_connect
+    (at 248.92 63.5)
+    (uuid "1d1d01d1-662f-5a13-9434-3d625fb40299")
+  )
+  (wire
+    (pts
+      (xy 233.68 58.42)
+      (xy 228.6 58.42)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "9cc3a86c-690a-52db-a7ac-6288dbb4b57d")
+  )
+  (global_label "/USB_DP"
+    (shape bidirectional)
+    (at 228.6 58.42 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "db2433d8-5ff3-5ce8-bf8b-94cf713a5f49")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 228.6 58.42 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 241.3 68.58)
+      (xy 241.3 73.66)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "7ddd8a2d-c2bb-508e-a596-6c76018271e0")
+  )
+  (wire
+    (pts
+      (xy 241.3 73.66)
+      (xy 248.92 73.66)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a33225df-12a2-56ac-b0ec-bc47fa38a603")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 248.92 73.66 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "f5cc825c-a56d-5ced-a491-99fd429126a4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 248.92 73.66 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 233.68 63.5)
+      (xy 228.6 63.5)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "f17d6837-590f-5e1d-994b-4a885f498544")
+  )
+  (global_label "/USB_DM"
+    (shape bidirectional)
+    (at 228.6 63.5 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "1b751b33-22be-5c9c-ab1d-889f2580244d")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 228.6 63.5 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:TPD2E2U06DRL")
+    (at 241.3 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8a0da17e-2fd7-521d-932c-f5455a9de7d4")
+    (property "Reference" "U4"
+      (at 241.3 49.53 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "TPD2E2U06DRLR"
+      (at 241.3 52.07 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:U4"
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 241.3 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "0d010877-d97e-5d93-8d99-b617d7af7ee3")
+    )
+    (pin "2"
+      (uuid "814ae0b9-7bd4-5066-8178-cd342e99cbda")
+    )
+    (pin "3"
+      (uuid "3c9c6e90-3c95-53e2-89ce-6e328e627357")
+    )
+    (pin "4"
+      (uuid "55a5235f-7f8c-5639-81b6-7549b19c5d8e")
+    )
+    (pin "5"
+      (uuid "0ad7b373-3934-53b9-a780-0841099d99dc")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "U4")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 57.15)
+      (xy 336.55 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "dc74aced-46b9-5c73-bec6-ed5c3ac89eeb")
+  )
+  (wire
+    (pts
+      (xy 336.55 52.07)
+      (xy 344.17 52.07)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "f644dce9-e7e1-5165-9840-cee4dc31685c")
+  )
+  (global_label "/PORT_VBUS"
+    (shape bidirectional)
+    (at 344.17 52.07 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "47e6c41c-3bd4-5e28-aa4d-70a02b6dc93f")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 52.07 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 64.77)
+      (xy 336.55 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "c2177ccf-eeeb-558c-a666-d458876fdafe")
+  )
+  (wire
+    (pts
+      (xy 336.55 69.85)
+      (xy 344.17 69.85)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "cb365f97-be32-5fc8-bc9e-ae9d30d2cd39")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 344.17 69.85 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "6d1ba10c-cf10-5878-bd36-60fd92f262e6")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 69.85 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:C_Polarized")
+    (at 336.55 60.96 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b0563293-c61d-5714-96df-eb1b28b48a80")
+    (property "Reference" "C4"
+      (at 354.33 58.42 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "220u / 10V / 20%"
+      (at 354.33 60.96 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:C4"
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 336.55 60.96 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "a5c37cf4-2950-5cce-b163-73f448ec3af8")
+    )
+    (pin "2"
+      (uuid "131eacef-2a0e-50ed-a57f-f7168e09dac4")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "C4")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 118.11)
+      (xy 50.8 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "f94299d1-def5-50a3-b688-e56a1c1870bd")
+  )
+  (wire
+    (pts
+      (xy 50.8 113.03)
+      (xy 58.42 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "8836582e-1b4b-58a7-bd76-7d7ca41edea8")
+  )
+  (global_label "/CARRIER_5V"
+    (shape bidirectional)
+    (at 58.42 113.03 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "05feafc8-67dd-59af-b2f0-5b7134c3ab26")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 113.03 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 125.73)
+      (xy 50.8 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "15d5be94-165c-535a-966c-94b33e9e892a")
+  )
+  (wire
+    (pts
+      (xy 50.8 130.81)
+      (xy 58.42 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "2c3aae9b-69f4-5b54-9283-234b199eed86")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 58.42 130.81 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "6f762915-cd34-5657-bdbb-1fe4138c3565")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 130.81 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:C")
+    (at 50.8 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8c187653-1f9f-5b17-b373-01a8b4273515")
+    (property "Reference" "C1"
+      (at 68.58 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "1u / 50V / X7R / 10%"
+      (at 68.58 121.92 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:C1"
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "2709d814-a9a6-5f72-850d-fa4835a7c73c")
+    )
+    (pin "2"
+      (uuid "4bd7b38d-1107-5d5a-b8f8-801b8e2d2866")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "C1")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 146.05 118.11)
+      (xy 146.05 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "93ca096b-0166-566d-b7d0-9e01da81c61c")
+  )
+  (wire
+    (pts
+      (xy 146.05 113.03)
+      (xy 153.67 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a4f470a5-15b8-5aea-8aed-7a24a5213b15")
+  )
+  (global_label "/PORT_VBUS"
+    (shape bidirectional)
+    (at 153.67 113.03 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "a0791cf5-736d-5acf-ba3e-55faef89562e")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 153.67 113.03 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 146.05 125.73)
+      (xy 146.05 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "56a50712-2a98-5489-bdbf-387d95f6da37")
+  )
+  (wire
+    (pts
+      (xy 146.05 130.81)
+      (xy 153.67 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "12b3a72f-c0c6-5f4f-9245-c511f6a04726")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 153.67 130.81 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "e632c1f6-5fc6-5d6d-8ee7-a586bb026b61")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 153.67 130.81 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:C")
+    (at 146.05 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c4f756a0-a86c-5d47-a29d-241f72abbce7")
+    (property "Reference" "C3"
+      (at 163.83 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "4.7u / 50V / X7R / 10%"
+      (at 163.83 121.92 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_BASIC:C_1206_3216Metric"
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "2c972070-33e7-52e8-ac82-3166314b58b4")
+    )
+    (pin "2"
+      (uuid "84191f3a-6574-5804-89e8-18b466bd7ced")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "C3")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 241.3 118.11)
+      (xy 241.3 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "1cdf7a22-cbee-59c7-b1f5-626978d653d6")
+  )
+  (wire
+    (pts
+      (xy 241.3 113.03)
+      (xy 248.92 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "38accac4-ac42-528a-a910-87346f812463")
+  )
+  (global_label "/PORT_DVDT"
+    (shape bidirectional)
+    (at 248.92 113.03 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "8923b8e5-ecc4-5564-a669-09339797c3fb")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 248.92 113.03 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 241.3 125.73)
+      (xy 241.3 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "188443b8-2f4b-5bb8-8764-b2d225145eff")
+  )
+  (wire
+    (pts
+      (xy 241.3 130.81)
+      (xy 248.92 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "1f9c705c-4665-5df1-861e-42d7b7bfe7a2")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 248.92 130.81 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "5b1322e3-28b3-546b-9902-7352a24515d4")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 248.92 130.81 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:C")
+    (at 241.3 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "c220d5c0-eab6-5f47-a0e5-0f110d5d4e8b")
+    (property "Reference" "C8"
+      (at 259.08 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "4.7n / 50V / X7R / 10% / dVdt"
+      (at 259.08 121.92 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:C8"
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 241.3 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "e203785e-d3ed-5ceb-97e0-94abf5662383")
+    )
+    (pin "2"
+      (uuid "aa5a0da3-84c2-5a85-8657-1b4a0df1f646")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "C8")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 118.11)
+      (xy 336.55 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "c8ede7a8-86b8-582a-bacf-7df85255d467")
+  )
+  (wire
+    (pts
+      (xy 336.55 113.03)
+      (xy 344.17 113.03)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "df994071-0fea-5868-a878-9fa099d82f3a")
+  )
+  (global_label "/PORT_ILIM"
+    (shape bidirectional)
+    (at 344.17 113.03 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "f12934c4-e9fd-5c7a-bf81-4d6e051c5610")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 113.03 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 125.73)
+      (xy 336.55 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "9cab837a-5471-5856-9764-b7dc93c12760")
+  )
+  (wire
+    (pts
+      (xy 336.55 130.81)
+      (xy 344.17 130.81)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a5f03441-8e47-5c6e-8350-2ef2f47c549e")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 344.17 130.81 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "168e4d87-88b0-5faa-ab3d-c258cce18eb0")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 130.81 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 336.55 121.92 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "5bdc0a44-10ed-540f-8aa4-0b6b6be1564e")
+    (property "Reference" "R3"
+      (at 354.33 119.38 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "5.36k / 1% / ILM"
+      (at 354.33 121.92 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R3"
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 336.55 121.92 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "82e8bf1e-e710-5bbf-88c0-c74979107150")
+    )
+    (pin "2"
+      (uuid "edc08762-fc44-5352-98e7-d62428bb13af")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R3")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 179.07)
+      (xy 50.8 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ee267678-c818-5fa1-b611-ba101cc835c0")
+  )
+  (wire
+    (pts
+      (xy 50.8 173.99)
+      (xy 58.42 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "a47cbacf-b3aa-5c15-ae2a-439c74cec717")
+  )
+  (global_label "/CARRIER_5V"
+    (shape bidirectional)
+    (at 58.42 173.99 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "29705bda-e5f3-56db-aaca-3184ffa7e8aa")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 173.99 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 186.69)
+      (xy 50.8 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "4f7c3f81-f915-53be-8e84-9ba3fc34f30e")
+  )
+  (wire
+    (pts
+      (xy 50.8 191.77)
+      (xy 58.42 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "3c09c444-178c-5243-961b-37fdea230684")
+  )
+  (global_label "/PORT_EN_FEED"
+    (shape bidirectional)
+    (at 58.42 191.77 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "e4840d44-1049-50fe-a982-0b3417d747c1")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 191.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 50.8 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "6fe9431d-b349-5384-ae6a-22bb8dd2fa4e")
+    (property "Reference" "R11"
+      (at 68.58 180.34 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "100k / 1% / EN feed"
+      (at 68.58 182.88 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R11"
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "35ddd6ba-ddb0-5948-bfef-d9967e62ebb3")
+    )
+    (pin "2"
+      (uuid "883d6ad2-3753-533d-a912-0425ba5cb280")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R11")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 140.97 182.88)
+      (xy 135.89 182.88)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "02e899d3-fea2-57f7-a1da-e07196684305")
+  )
+  (global_label "/PORT_EN_FEED"
+    (shape bidirectional)
+    (at 135.89 182.88 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "e928154f-5df7-5c4a-a433-dc57661a3736")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 135.89 182.88 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 140.97 185.42)
+      (xy 135.89 185.42)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "de6721d8-d48a-57c6-9e57-fd1ef05f4560")
+  )
+  (global_label "/PORT_EN"
+    (shape bidirectional)
+    (at 135.89 185.42 0)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify right)
+    )
+    (uuid "0f1ab993-b2eb-52f2-8c96-5f2bb4fd2b73")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 135.89 185.42 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:Host_Enable")
+    (at 146.05 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "7b46b676-0182-5d4a-97af-7d130f95d48c")
+    (property "Reference" "JP1"
+      (at 146.05 173.99 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "HOST ENABLE / OPEN OFF"
+      (at 146.05 176.53 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:JP1"
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "c3b9e8f7-234f-5b77-a182-46ba379b34f0")
+    )
+    (pin "2"
+      (uuid "c6c1ac17-bebb-5fdc-9e50-e47396ff3a4f")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "JP1")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 241.3 179.07)
+      (xy 241.3 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "d123c429-a243-544c-87a6-791386fb0832")
+  )
+  (wire
+    (pts
+      (xy 241.3 173.99)
+      (xy 248.92 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "e05e09d2-1f48-5e3e-9b9a-a19495234a5a")
+  )
+  (global_label "/PORT_EN"
+    (shape bidirectional)
+    (at 248.92 173.99 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "a1956a78-44e7-5df4-9793-91bc47f9b971")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 248.92 173.99 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 241.3 186.69)
+      (xy 241.3 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5bb5f5a7-ee19-5037-999f-b54b19357569")
+  )
+  (wire
+    (pts
+      (xy 241.3 191.77)
+      (xy 248.92 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "0b31ba0f-d285-54f0-8ecf-831dedac16c1")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 248.92 191.77 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "04d6553e-b1f9-5f57-a4eb-48633bd28004")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 248.92 191.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 241.3 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "b9753007-cfc7-5a24-8361-9ee2eb196bbb")
+    (property "Reference" "R4"
+      (at 259.08 180.34 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "100k / 1% / EN pulldown"
+      (at 259.08 182.88 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R4"
+      (at 241.3 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 241.3 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 241.3 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "8adb5e8e-0b12-58e7-b0e5-49b3d622d020")
+    )
+    (pin "2"
+      (uuid "1126fe6d-31ae-5af3-894b-6f1d1d10b6c3")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R4")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 179.07)
+      (xy 336.55 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "f01689ff-2e45-57ae-86ae-344e2b5848e5")
+  )
+  (wire
+    (pts
+      (xy 336.55 173.99)
+      (xy 344.17 173.99)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "5acc2d05-b7fa-5a09-ab37-3b48d18af6ef")
+  )
+  (global_label "/PORT_VBUS"
+    (shape bidirectional)
+    (at 344.17 173.99 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "046b57c7-60bb-5d13-bb24-942e2d6347ec")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 173.99 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 336.55 186.69)
+      (xy 336.55 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "cb2324ce-dcb1-57e1-b670-6028ac1cb4c6")
+  )
+  (wire
+    (pts
+      (xy 336.55 191.77)
+      (xy 344.17 191.77)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "6f51d7dc-18d6-5c26-b4db-ade0a9d10fbf")
+  )
+  (global_label "/GND"
+    (shape bidirectional)
+    (at 344.17 191.77 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "36f02b8e-ecf3-587a-96a2-35614661d733")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 344.17 191.77 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 336.55 182.88 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "aa22d9fc-8c65-5761-850c-e35a3d2db3e5")
+    (property "Reference" "R5"
+      (at 354.33 180.34 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "1k / 1% / 0.25W"
+      (at 354.33 182.88 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R5"
+      (at 336.55 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 336.55 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 336.55 182.88 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "c783e982-19a5-5194-993e-2c3fbe6466ef")
+    )
+    (pin "2"
+      (uuid "41f26311-26cc-566e-93b1-6578e2210314")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R5")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 240.03)
+      (xy 50.8 234.95)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "44254d04-452b-5de2-8897-bf4adb0babed")
+  )
+  (wire
+    (pts
+      (xy 50.8 234.95)
+      (xy 58.42 234.95)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "7ead8450-942f-5c26-a59c-3a453c9ff2c8")
+  )
+  (global_label "/PIO_DP"
+    (shape bidirectional)
+    (at 58.42 234.95 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "1bafe674-7a42-5341-8772-620c8d9ddba9")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 234.95 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 50.8 247.65)
+      (xy 50.8 252.73)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "286545c0-fa62-56ec-a25e-cb67dca68754")
+  )
+  (wire
+    (pts
+      (xy 50.8 252.73)
+      (xy 58.42 252.73)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ef8b1db6-2aa2-5a1e-97ff-89d61827f482")
+  )
+  (global_label "/USB_DP"
+    (shape bidirectional)
+    (at 58.42 252.73 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "559592c3-fdcb-5d9f-99ac-c10bf9808ae6")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 58.42 252.73 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 50.8 243.84 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "76bf5ce8-58dc-5547-a9ab-6379bc85100d")
+    (property "Reference" "R1"
+      (at 68.58 241.3 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "22 / 1%"
+      (at 68.58 243.84 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R1"
+      (at 50.8 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 50.8 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 50.8 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "958f4690-9f62-5cca-b489-b5c3d93324a5")
+    )
+    (pin "2"
+      (uuid "d8d15224-2972-5a32-86e0-dfbae7a449cc")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R1")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (wire
+    (pts
+      (xy 146.05 240.03)
+      (xy 146.05 234.95)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "ad6ebe51-3a41-5ae2-b49c-9c68824bf492")
+  )
+  (wire
+    (pts
+      (xy 146.05 234.95)
+      (xy 153.67 234.95)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "e576b8a1-a45f-58ec-aa77-e40ef62eb901")
+  )
+  (global_label "/PIO_DM"
+    (shape bidirectional)
+    (at 153.67 234.95 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "00565ad3-3582-55e9-8510-4aa152977348")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 153.67 234.95 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (wire
+    (pts
+      (xy 146.05 247.65)
+      (xy 146.05 252.73)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "10b6e61c-fac4-502e-bd2b-04134cb29c92")
+  )
+  (wire
+    (pts
+      (xy 146.05 252.73)
+      (xy 153.67 252.73)
+    )
+    (stroke
+      (width 0)
+      (type default)
+    )
+    (uuid "f2cb8f39-1006-50ac-a238-ccfd74ce1019")
+  )
+  (global_label "/USB_DM"
+    (shape bidirectional)
+    (at 153.67 252.73 180)
+    (effects
+      (font
+        (size 0.9 0.9)
+      )
+      (justify left)
+    )
+    (uuid "be3658ff-daed-5cf1-81e0-0c3d5b5e8d6b")
+    (property "Intersheetrefs" "${INTERSHEET_REFS}"
+      (at 153.67 252.73 0)
+      (effects
+        (font
+          (size 0.8 0.8)
+        )
+      )
+      (hide yes)
+    )
+  )
+  (symbol
+    (lib_id "KAGURA_RevA:R")
+    (at 146.05 243.84 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "e2097737-daee-593b-bf0a-55c2de2dc9ce")
+    (property "Reference" "R2"
+      (at 163.83 241.3 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+    )
+    (property "Value" "22 / 1%"
+      (at 163.83 243.84 0)
+      (effects
+        (font
+          (size 0.85 0.85)
+        )
+      )
+    )
+    (property "Footprint" "KAGURA_MANUAL:R2"
+      (at 146.05 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Datasheet" ""
+      (at 146.05 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (property "Description" ""
+      (at 146.05 243.84 0)
+      (effects
+        (font
+          (size 0.95 0.95)
+        )
+      )
+      (hide yes)
+    )
+    (pin "1"
+      (uuid "3d5e15fb-0d42-5861-9adf-ae7acb3bbb9c")
+    )
+    (pin "2"
+      (uuid "da74c7e5-f093-50d1-84a3-97c22407775b")
+    )
+    (instances
+      (project "KAGURA_PicoCarrier_RevA"
+        (path "/519469cd-2229-560c-ba35-ef6de430c8d8/7a9af047-5300-57fb-b75d-3cc9b0cae444"
+          (reference "R2")
+          (unit 1)
+        )
+      )
+    )
+  )
+  (embedded_fonts no)
+)
