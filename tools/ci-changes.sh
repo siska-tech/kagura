@@ -28,6 +28,8 @@ classify() {
         rtl/*|sim/*|third_party/*) mark verilator rtl_sources ;;
         boards/*.sv) mark verilator ;;
         boards/*.cst|boards/*.sdc|boards/*.csv) ;;
+        # PCB design and manufacturing data; no CI job builds or simulates it.
+        boards/pico-carrier-board/*) ;;
         tools/test-verilator.sh|tools/test-tile1200-stage*.sh|tools/verilator.version|tools/prepare-hdmi-stream.py|\
         tools/render-audio-wav.py|tools/make-boot-image.py|tools/gen-demo-art.py) mark verilator ;;
         tools/test-phase1.ps1|tools/check-dependencies.ps1|tools/test-headers.sh|\
