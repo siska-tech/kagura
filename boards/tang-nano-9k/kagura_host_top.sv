@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPI / QSPI host board top (docs/host-interface.md): the Phase 2 VDP and
-// HDMI stream, with kagura_spi_adapter in place of the W65C02S adapter.
+// HDMI stream, driven by kagura_spi_adapter.
 // Instance names of the stream part match kagura_phase1_top so phase1.cst
-// and phase1*.sdc apply. Pins reuse the 3.3V CPU header pins (host.cst).
+// and phase1*.sdc apply. Pins use the 3.3V header pins (host.cst).
 // tools/build-nano9k.tcl writes kagura_build_config (LANES, VIDEO_ID_CODE, PSRAM).
 // PSRAM (spipsram/qspipsram) sets CAPS b3: die 0 of the in-package PSRAM
 // through kagura_hyperram_phy_gowin, with its CK from the system PLL CLKOUTP

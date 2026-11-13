@@ -1,7 +1,6 @@
 {
   "$comment": "Machine-readable register ABI. Normative prose: docs/register-map.md, docs/audio-spec.md, docs/memory-map.md. Generate constants with tools/gen-registers.ps1; -Check verifies outputs and the document tables.",
   "abi": { "major": 0, "minor": 6 },
-  "io_base": { "w65c02": 40704 },
   "direct": [
     { "offset": 0, "name": "STATUS", "access": "RO", "reset": 0,
       "bits": { "INIT_DONE": 0, "CMD_FULL": 1, "READ_READY": 2, "READ_BUSY": 3, "COMMIT_BUSY": 4, "VBLANK_LIVE": 5, "ERROR_PRESENT": 6, "ENGINE_BUSY": 7 } },

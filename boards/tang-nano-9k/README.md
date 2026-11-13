@@ -21,10 +21,7 @@ KAGURA-9の対象ボード。board top（`kagura_*_top.sv`）、ピン制約（`
 | `kagura_phase1_top` | `hdmi`（カラーバー＋固定テスト音） | `phase1.cst` |
 | `kagura_phase1_dvi_top` | `dvi` | `phase1.cst` |
 | `kagura_demo_top`（deprecated） | `demo` | `phase1.cst` |
-| `kagura_phase2_top` | `phase2`（W65C02S） | `phase1.cst`＋`phase2-cpu.cst` |
-| `kagura_phase2_boot_top` | `phase2boot` | 上記＋`boot.cst` |
 | `kagura_host_top` | `spi`・`qspi`・`spipsram`・`qspipsram` | `phase1.cst`＋`host.cst` |
-| `kagura_boot_probe_top`、`kagura_flash_magic_probe_top` | `bootprobe`、`magicprobe` | `boot-probe.cst` |
 
 HDMI streamのinstance名は全topで`kagura_phase1_top`と揃えてあり、`phase1.cst`・`phase1*.sdc`を共有する。他に、BSRAM・PSRAM・HyperRAMの評価用top（`kagura_bsram_eval_top`、`kagura_psram_eval_top`、`kagura_hyperram_*_top`）がある（[PSRAM](../../docs/psram.md#評価用top)）。
 
@@ -44,25 +41,9 @@ HDMI streamのinstance名は全topで`kagura_phase1_top`と揃えてあり、`ph
 
 pin 36〜39（TFカード）はHi-Z・pullなし。詳細は[ホストインターフェース](../../docs/host-interface.md)、Picoとの配線は[Pico firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md#配線)。
 
-## CPU接続
-
-`phase2`・`phase2boot`のW65C02Sバス（`phase2-cpu.cst`）。すべて3.3VのBank 1/2。
-
-| 論理信号 | package pin |
-|---|---|
-| D0..D7 | 28, 29, 30, 33, 34, 40, 35, 41 |
-| A0..A4 | 31, 32, 36, 37, 38 |
-| /CS | 42 |
-| RWB | 48 |
-| PHI2出力 | 25 |
-| CPU reset release | 27（pull-down） |
-| /IRQ（open drain） | 39 |
-
-計18本。/RESETはFPGA出力を直接CPUへつながず、[外部のreset保持回路](../../docs/timing.md#irqとcpu-reset)を通す。`phase2boot`はさらにpin 26を`BOOT_MAP`出力、pin 59〜62をオンボードSPI Flashに使う（[ROM-less boot](../../docs/romless-boot.md#ピン)）。
-
 ## 共有と禁止事項
 
-- pin 31〜35・40〜42はRGB LCD、36〜39はTFカード、48・49はSPI LCDと共有する。CPU版はTFカード未挿入・LCD未接続を条件とする。HDMIとRGB LCDは同時に使わない。
+- pin 31〜35・40〜42はRGB LCD、36〜39はTFカード、48・49はSPI LCDと共有する。ホスト版はTFカード未挿入・LCD未接続を条件とする（TFカードのピンはHi-Zなので、ホストが直接使う場合は挿してよい）。HDMIとRGB LCDは同時に使わない。
 - **J5-23/24とJ6-12〜17にはHDMIのTMDS信号がそのまま出ている**。何も接続しない（stubになり信号品質を損なう）。ブレッドボードに基板ごと挿さない。
 - J6-2〜9はBank 3の1.8V。3.3Vの信号へ接続しない。1.8V側のLED・buttonのピンを3.3Vのバスへ混ぜない。
 - BL702、JTAG、MODE、DONEのピンは転用しない。

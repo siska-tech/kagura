@@ -2,18 +2,18 @@
 
 KAGURA-9のホスト向けレジスタ仕様。この文書を規範とする。ID0/ID1=`'K' '9'`、ABI_MAJOR=0、ABI_MINOR=6。全bitstreamが同じ0.6を返し、機能の有無はCAPSで区別する（[ビルド構成とCAPS](architecture.md#ビルド構成とcaps)）。
 
-offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）とca65 include（`software/w65c02/kagura_regs.inc`）を生成し（`-SdkDir`を付けると[kagura-sdk](https://github.com/siska-tech/kagura-sdk)のCヘッダ`software/include/kagura_regs.h`とMicroPythonの`regs.py`も）、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
+offset・名前・access・bit・reset値の機械可読定義は`spec/registers.json`にある。`tools/gen-registers.ps1`がSystemVerilog package（`rtl/core/kagura_abi_pkg.sv`）を生成し（`-SdkDir`を付けると[kagura-sdk](https://github.com/siska-tech/kagura-sdk)のCヘッダ`software/include/kagura_regs.h`とMicroPythonの`regs.py`も）、`-Check`がこの文書・[音源仕様](audio-spec.md)・[メモリマップ](memory-map.md)の表と定義の一致を検査する。副作用の規範はこの文書の本文である。
 
 ## 共通規則
 
-- 窓は32 byte。W65C02Sでは`$9F00–$9F1F`（`KAGURA_IO_BASE`で変更可）、SPI/QSPIではheaderのoffsetで指定する。
+- 窓は32 byte。SPI/QSPIではheaderのoffsetで指定する。
 - ROへのwrite、WOへのreadはBAD_ACCESS。WOのreadは0を返す。
 - 予約bitはread 0、writeは無視。未定義のEXT index・音源indexはread 0、writeはBAD_ACCESS。
 - reset値は明示したもの（ID、ABI、CAPS、INC、RASTER_LINE、MASTER_GAIN等）を除き0。
 - 読出しの副作用はVRAM_READ_RESULTだけ。STATUS等のstatus読出しは何も変えない。
-- 各要求の応答は受付から2 system cycle後。直前の書込みの検査が終わるまで、次の要求は数cycle待たされる（ホストからは見えない。[アーキテクチャ](architecture.md#cpu非依存インターフェース)）。
+- 各要求の応答は受付から2 system cycle後。直前の書込みの検査が終わるまで、次の要求は数cycle待たされる（ホストからは見えない。[アーキテクチャ](architecture.md#ホスト非依存インターフェース)）。
 
-## 32byte直接窓（CPU base $9F00）
+## 32byte直接窓
 
 | Off | Name | Access | bit/意味・副作用 |
 |---|---|---|---|
@@ -74,7 +74,7 @@ ERROR_CODE: b0 FIFO_FULL、b1 INVALID_ADDRESS、b2 BAD_ACCESS（不正opcode・�
 
 ### 起動
 
-電源投入・reset後、STATUS.INIT_DONEは0。VRAMとline bankの消去（約2048 system cycle）が終わると1になる。それまでVRAM_WRITE・READ_REQUEST・COMMANDはNOT_READYで拒否する。ID・STATUSの読出しなど通常のregister操作はできる。PSRAMの初期化はINIT_DONEに含まれない（[PSRAM](psram.md#初期化と一貫性)）。SPI/QSPI版のREADYピンとW65C02S版のRESB解除は、さらに最初のline 0の準備を待つ。
+電源投入・reset後、STATUS.INIT_DONEは0。VRAMとline bankの消去（約2048 system cycle）が終わると1になる。それまでVRAM_WRITE・READ_REQUEST・COMMANDはNOT_READYで拒否する。ID・STATUSの読出しなど通常のregister操作はできる。PSRAMの初期化はINIT_DONEに含まれない（[PSRAM](psram.md#初期化と一貫性)）。SPI/QSPI版のREADYピンは、さらに最初のline 0の準備を待つ。
 
 ## コマンドと順序
 

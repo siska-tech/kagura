@@ -20,8 +20,7 @@
 | [映像仕様](video.md) | 表示モード、背景・sprite、優先順位、COMMIT、ラスタIRQ・ラスタスクロール |
 | [音源仕様](audio-spec.md) | 6ch音源、PCM 2ch、AUDIO_COMMIT、mixer |
 | [ホストインターフェース](host-interface.md) | SPI/QSPIのピン・timing・transaction・flow制御 |
-| [クロック・リセット・CPUバス](timing.md) | clock、CDC、reset、W65C02Sバス、STAの基準 |
-| [ROM-less boot](romless-boot.md) | SPI FlashからのW65C02S起動（`phase2boot`） |
+| [クロック・リセット](timing.md) | clock、CDC、reset、STAの基準 |
 
 ## 内部と根拠
 
@@ -40,7 +39,6 @@
 | [ビルド・テスト・書込み](build-and-test.md) | simulation、生成、Gowinビルド、SRAM/Flash書込み、CI |
 | [1,200タイル実機数値検証](tile-1200-stage3.md) | Picoでの全量照合・連続動作・文字キャッシュと確認範囲 |
 | [1,200タイル版の目視・聴感](tile-1200-visual.md) | 720p・Picoホストでの追加領域、境界BG／sprite、反転、PCMのユーザー確認 |
-| [1,200タイル版の6502ブート](tile-1200-boot.md) | 480p／720pのbitstream生成・STAとboot simulation |
 | [1,200タイル対応の記録](tile-1200-experiment.md) | 別リポジトリで行った拡張の段階・検証結果と本流への統合 |
 | [検証状況と既知の制約](validation-status.md) | 確認済みの範囲、資源・タイミング、制約、残作業 |
 | [実機試験](hardware-test.md) | HDMI互換性・連続動作の手順と記録表、機材 |

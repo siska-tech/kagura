@@ -57,7 +57,7 @@ Raspberry Pi Pico・Tang Nano 9K・XIAO RP2040をまとめる、72×48mm・4層�
 | 音源 | pulse 3、noise 1、wavetable 2。PSRAM版はPSRAM上のsigned 8bit PCM 2chを追加 |
 | 音声 | 48kHz・16bitステレオ（HDMI） |
 | メモリ | VRAM約49KiB（BSRAM）。PSRAM版は内蔵PSRAM 4MiBを公開し、PCM・COPYの元に使う |
-| ホスト | SPI/QSPI（Raspberry Pi Pico等）、またはW65C02S（3.3V、3.375MHz） |
+| ホスト | SPI/QSPI（Raspberry Pi Pico等） |
 | レジスタABI | 0.6（[レジスタ仕様](docs/register-map.md)） |
 
 ## 現在の状態
@@ -75,8 +75,7 @@ Raspberry Pi Pico・Tang Nano 9K・XIAO RP2040をまとめる、72×48mm・4層�
 - **TileFramebuffer**: [320×240・16色の疑似フレームバッファ](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer.md)をMicroPython SDKで提供。全1200セルを独立したpatternへ割り当て、ローカル描画とdirty転送を行う。[実機結果](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-results.md)は全量読戻し・PCM併用5分負荷・480pのユーザー目視に合格。[Viper描画高速化](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-viper-results.md)も両backendのCRC一致・各5分負荷で検証済み。[blit・ellipse・paint](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/docs/framebuffer-primitives.md)もPC参照・実VRAM読戻しとの一致、PCM併用5分負荷、480pのユーザー目視で検証済み。
 - **ABI 0.6（1,200タイル）の数値検証**: 公開タイル数を1,200枚へ拡張。ホスト4構成のP&R/STAとSRAM起動・境界検査、全1200枚の読戻し、PCM併用1時間連続動作、文字キャッシュ1072枠。詳細は[第3段階](docs/tile-1200-stage3.md)。[720pの目視・聴感](docs/tile-1200-visual.md)も確認済み。拡張の経緯は[1,200タイル対応の記録](docs/tile-1200-experiment.md)と[調査書](docs/tile-1200-feasibility.md)。
 - **拡張前ABI 0.5の過去の実機記録**: 480p/720pの映像・音声（PCモニターとテレビの2機種）、内蔵sequencerのシューティングデモ、Raspberry Pi PicoからのSPI/QSPI制御（5MHz）、PSRAMへのupload・COPY・PCM 2chの連続再生。
-- **simulationのみ**: W65C02Sバス接続、SPI FlashからのROM-less boot（Flash読出しとimage検査は実機確認済み）。
-- **未実施**: 複数sink×ケーブルでの反復・長時間の互換性試験、実W65C02Sとの接続、SPI/QSPIの10MHz動作。
+- **未実施**: 複数sink×ケーブルでの反復・長時間の互換性試験、SPI/QSPIの10MHz動作。
 
 詳細と既知の制約は[検証状況](docs/validation-status.md)を参照してください。
 
@@ -116,16 +115,17 @@ KAGURA-9は3つのリポジトリに分かれています。依存は一方向�
 | [siska-tech/kagura-sdk](https://github.com/siska-tech/kagura-sdk) | ホストのドライバと公開API（C、MicroPython）、MicroPythonボードとファームウェア統合、UI・日本語・音声ライブラリ、例、SDKの文書。生成したレジスタ定数を写して持ち、元にしたkaguraのcommitを`hardware.lock`で固定する |
 | [siska-tech/kagura-desktop](https://github.com/siska-tech/kagura-desktop) | 神楽デスクトップとアプリ。kagura-sdkの公開APIだけを使い、SDKのcommitを`sdk/kagura.ref`で固定する |
 
+[6502対応は別リポジトリに切り出しました](https://github.com/siska-tech/kagura-6502)。
+
 kaguraからkagura-sdkへのビルド依存はありません。CIだけが`sdk.lock`のkagura-sdkを取得し、そのレジスタ定数が`spec/registers.json`から生成したものと一致するかを`tools/check-sdk.sh`で検査します。仕様を変えた場合はkaguraが先に進み、SDKが`tools/gen-registers.ps1 -SdkDir`で再生成して追従します。
 
 | path | 内容 |
 |---|---|
-| `rtl/` | RTL（core、vdp、audio、memory、hdmi、bus、boot、platform）。[RTL一覧](rtl/README.md) |
+| `rtl/` | RTL（core、vdp、audio、memory、hdmi、bus、platform）。[RTL一覧](rtl/README.md) |
 | `boards/pico-carrier-board/` | PicoキャリアボードのKiCad・同期回路図・製造データ・部品購入ガイド。[ボード資料](boards/pico-carrier-board/README_JP.md) |
 | `boards/tang-nano-9k/` | board top、CST/SDC、ピン一覧。[ボード資料](boards/tang-nano-9k/README.md) |
 | `sim/` | SystemVerilog testbenchと参照モデル。[試験一覧](sim/README.md) |
 | `spec/` | 機械可読のレジスタ定義と設計予算 |
-| `software/w65c02/` | FPGA内W65C02Sホスト向けの生成include（ca65） |
 | `tools/` | 合成・生成・検査・書込みのscript |
 | `docs/` | 仕様と検証の文書。[SDK分離の記録](docs/sdk-extraction.md) |
 | `third_party/` | 固定revisionのhdl-util/hdmi |

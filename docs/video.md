@@ -92,7 +92,7 @@ RASTER_LINE（COMMITで反映）が0..LINES−1のとき、その論理ライン
 
 ## 起動時の表示
 
-VRAMとline bankの消去が終わるまで、pixel側は黒を出す。消去直後のpaletteは全色黒、DISPLAY_CTRL=0なので、hostが設定してCOMMITするまで画面は黒のままである。CPU版・ホスト版はhostがなければ黒画面で、demo版だけが内蔵のsequencerで自走する。
+VRAMとline bankの消去が終わるまで、pixel側は黒を出す。消去直後のpaletteは全色黒、DISPLAY_CTRL=0なので、hostが設定してCOMMITするまで画面は黒のままである。ホスト版はhostがなければ黒画面で、demo版だけが内蔵のsequencerで自走する。
 
 ## 検証
 

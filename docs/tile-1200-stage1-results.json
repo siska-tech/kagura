@@ -15,10 +15,6 @@
       "result": "pass"
     },
     {
-      "test": "tb_startup_cpu",
-      "result": "pass"
-    },
-    {
       "test": "tb_vdp_frame",
       "result": "pass"
     },

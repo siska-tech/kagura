@@ -18,7 +18,7 @@ files() { local name="$1" want="$2"; shift 2
 
 ALL="verilator rtl_sources sdk"
 files "no files" ""
-files "docs only" "" README.md docs/video.md rtl/README.md software/w65c02/README.md
+files "docs only" "" README.md docs/video.md rtl/README.md
 files "design budget" "" spec/design-budget.json tools/check-design.ps1
 files "experiments" "" experiments/new-idea/main.c experiments/new-idea/CMakeLists.txt
 files "board constraints" "" boards/tang-nano-9k/vdp-720p.sdc boards/tang-nano-9k/phase1.cst
@@ -37,9 +37,8 @@ files "testbench" "verilator rtl_sources" sim/tests/tb_vdp_frame.sv
 files "vendored HDMI" "verilator rtl_sources" third_party/hdl-util-hdmi/src/tmds_channel.sv
 files "board RTL" "verilator" boards/tang-nano-9k/kagura_hyperram_pcm_source.sv
 files "Verilator version" "verilator" tools/verilator.version
-files "boot image tool" "verilator" tools/make-boot-image.py
 files "1200 tile focused regressions" "verilator" tools/test-tile1200-stage1.sh tools/test-tile1200-stage2.sh
-files "ca65 include and its test" "rtl_sources" software/w65c02/kagura_regs.inc software/tests/regs_ca65.s tools/test-headers.sh
+files "source RTL test tools" "rtl_sources" tools/test-phase1.ps1 tools/check-dependencies.ps1
 # Apart from the files that run everything on purpose, no tracked file may
 # fall through to the catch-all.
 tracked="$(git -C "$root" ls-files)"
@@ -64,7 +63,7 @@ c0="$(commit README.md)"
 c1="$(commit rtl/core/kagura_core.sv)"
 c2="$(commit docs/video.md)"
 g checkout -q -b topic "$c1"
-c3="$(commit software/w65c02/kagura_regs.inc)"
+c3="$(commit tools/test-phase1.ps1)"
 event "push range" "" GITHUB_EVENT_NAME=push CI_BASE="$c1" CI_HEAD="$c2"
 event "push of two commits" "verilator rtl_sources" GITHUB_EVENT_NAME=push CI_BASE="$c0" CI_HEAD="$c2"
 # Only the topic's own commit; main's later docs commit is not part of it.

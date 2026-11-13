@@ -8,7 +8,7 @@
 
 | 種類 | 内容 | 再現方法 |
 |---|---|---|
-| simulation | Verilator 5.032で58試験。参照モデルとの全画素・全sample比較、protocol checker、boot MISO保持窓 | `bash tools/test-verilator.sh`（CIでも実行） |
+| simulation | Verilator 5.032で58試験。参照モデルとの全画素・全sample比較、protocol checker | `bash tools/test-verilator.sh`（CIでも実行） |
 | 設計検査 | BSRAM・cycle予算の算術、レジスタ定義と文書・生成物の一致 | `tools/check-design.ps1`、`tools/gen-registers.ps1 -Check` |
 | P&R/STA | Gowin EDAでのbitstream生成とsetup/hold | `tools/run-baseline.ps1`（ローカル。証跡は`reports/`、Git管理外） |
 | 実機 | Tang Nano 9K（シルク3674、chip ID `0x1100481B`）1枚、HDMI sink 2機種、Raspberry Pi Pico | 手順は[実機試験](hardware-test.md)、Picoは[firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md) |
@@ -24,8 +24,6 @@
 | VRAM・queue・IRQ | byte参照モデル、領域境界、拒否時の副作用、順序 | Picoの`diag`（VRAM照合、FILL/FENCE、IRQ、BUSY） | 長時間の連続更新 |
 | SPI/QSPI | 10MHzのモデルでBUSY・中断・競合を検査 | 5MHzで全診断に合格。10MHzは読戻しにbit化け | オシロでの波形・電気的余裕 |
 | PSRAM・COPY・PCM | 実controllerとCA復号モデルでABI 0.4を縦通し | memtest 1GiB 0 error、upload/COPY照合、PCM約30分の連続再生でfault 0 | die 1、温度・電圧変動 |
-| W65C02Sバス | 要求回数、OE、read setup/hold、IRQ、reset解除をモデル検査 | 未接続 | 実CPU、外部reset保持回路、decode/OE |
-| ROM-less boot | Flashモデル＋6502スタブモデルで全payloadのコピーとentry到達 | Flash読出し、image検査、CRC誤りの検出 | 外部decode、実CPUでの起動 |
 | reset | 起動時のRAM消去、systemだけのreset | S2 resetからの復帰（デモ・Pico診断） | chip GSR版での多数回の反復 |
 
 ### 実機で確認した主な結果
@@ -37,23 +35,21 @@
 
 ## 資源とタイミング
 
-Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。下表はRASTER最終ラインの修正とタイミング改善を含むRTLでの`run-baseline.ps1`全16構成の結果（Education V1.9.11.03、2026-10-27）。P&R optionは`tools/build-nano9k.tcl`の既定値で、環境変数の上書きは使っていない。
+Gowinの`Logic`はLUT単独ではない。版・構成の違う数値を単純に比較しない。下表は以前の`run-baseline.ps1`構成のうち、現在のホスト構成に該当する結果を抜き出したもの（Education V1.9.11.03、2026-10-27）。P&R optionは当時の`tools/build-nano9k.tcl`既定値で、環境変数の上書きは使っていない。
 
 | 構成 | Logic | Register | BSRAM | 最悪setup | 最悪hold |
 |---|---:|---:|---:|---:|---:|
 | hdmi / hdmi720 | 837 / 848 | 666 / 668 | 0 | +7.020 / +4.665ns | +0.708 / +0.562ns |
 | dvi | 93 | 55 | 0 | +33.104ns | +0.708ns |
-| phase2 / phase2720 | 5072 / 5092 | 4165 / 4166 | 25/26 | +0.612 / +1.689ns | +0.552 / +0.552ns |
-| phase2boot / phase2boot720 | 5897 / 5886 | 4543 / 4544 | 25/26 | +2.087 / +1.929ns | +0.562 / +0.558ns |
 | demo / demo720 | 6874 / 6885 | 4555 / 4556 | 26/26 | +0.269 / +0.190ns | +0.561 / +0.555ns |
 | spi / spi720 | 5096 / 5150 | 4198 / 4199 | 25/26 | +1.487 / +1.186ns | +0.408 / +0.559ns |
 | qspi / qspi720 | 5143 / 5105 | 4200 / 4201 | 25/26 | +0.760 / +1.615ns | +0.408 / +0.555ns |
 | spipsram | 6719 | 5149 | 25/26 | +2.137ns | +0.552ns |
 | qspipsram / qspipsram720 | 6724 / 6666 | 5151 / 5152 | 25/26 | +1.103 / +1.479ns | +0.552 / +0.552ns |
 
-全16構成でsetup/hold違反0、TNS=0、recovery/removalの負slackなし。すべて開発下限の+0.10nsを満たす。最小はdemo720の+0.190ns（demo sequencerの`count[5]`→`count[8]`）で、目標の+0.20nsには0.010ns届かないが、今回の受入値とする。改善前に下限未達だった5構成はphase2720 +0.020、spi720 +0.035、qspi720 +0.063、demo +0.068、demo720 +0.076nsで、RASTERの追加logicを通らない既存経路だった。
+当時の全16構成でsetup/hold違反0、TNS=0、recovery/removalの負slackなし。表に示す現行ホスト構成を含め、開発下限の+0.10nsを満たす。最小はdemo720の+0.190ns（demo sequencerの`count[5]`→`count[8]`）で、目標の+0.20nsには0.010ns届かないが、当時の受入値とする。改善前に下限未達だった構成のうち、現行のものはspi720 +0.035、qspi720 +0.063、demo +0.068、demo720 +0.076nsで、RASTERの追加logicを通らない既存経路だった。
 
-Standard V1.9.12.04では同じRTL/SDCで14構成が合格し、boot系2構成はMISO入力のholdが−3.526nsとなったため、2026-10-27のStandard版Release ZIPから除外した。その後、SPI受信の保持期間に基づきMISO受信2レジスタのhold制約を3→7へ修正した。全経路の最小setup/holdはStandardでphase2boot +0.848/+0.527ns、phase2boot720 +0.834/+0.530ns。Educationも+2.087/+0.562ns、+1.929/+0.558nsで合格した。両版のbootprobe・magicprobeを含む8ビルドで違反0、TNS=0、負のrecovery/removalなし。[boot STA監査と実装検証](boot-sta-audit.md)を参照。Standardの計測用bootprobeではJEDEC ID 0x856016・既存imageのCRC検査を16回連続で確認した。製品用boot構成、外部CPUでの起動、冷間起動と波形実測、Releaseへの追加は未実施。
+Standard V1.9.12.04では当時の標準リリース対象構成でsetup/hold違反0、TNS=0、負のrecovery/removalなし。現在このリポジトリで公開している構成のビットストリームは現行リリースを参照する。
 
 構造的な対策は次の3点。Verilator 5.032の全57試験が合格し、HDMIのpacket開始位置は480p/720pで毎pixel照合した。
 
@@ -70,11 +66,9 @@ Standard V1.9.12.04では同じRTL/SDCで14構成が合格し、boot系2構成�
 ## 既知の制約
 
 - **SPI/QSPIの速度**: ブレッドボード配線では5MHzが上限。10MHzは設計上の値で、実機では未達。
-- **内蔵Flashの照合表示**: programmerが`Verify Failed at 0`を表示する。電源再投入後の起動は確認済みだが、Flashのreadback照合とは扱わない。
 - **TCL製テレビ**: 480pで無信号（Sipeed公式のDVIサンプルでも同じ）。原因は未特定。
 - **タイミングの余裕**: PSRAM版は資源の使用率が高く、配置の変動でslackが大きく動く。一部の720p構成はP&R optionを個別に指定している。
 - **PSRAMの範囲**: die 0（4MiB）だけを使う。外部端子タイミングを含む完全なSTAではない。
-- **W65C02S**: 実CPUでの動作は未確認。CPU用の外部回路（RESB保持、RAM/ROMのdecode/OE、bus turnaround）も未製作。
 - **計測していないもの**: TMDSの信号品質・規格適合、実周波数・jitter、消費電流、実機音声のsample完全性。
 
 ## 保守上の注意
@@ -93,6 +87,4 @@ Standard V1.9.12.04では同じRTL/SDCで14構成が合格し、boot系2構成�
 | HDMI互換性 | 2機種以上×2ケーブルで起動20回・抜挿10回・各1時間（[実機試験](hardware-test.md)） |
 | chip GSR版のreset反復 | S1/S2で720pのreset 20回ずつ |
 | タイミングの余裕の維持 | 今後の変更でも全16構成でWNS ≥ +0.10nsを維持 |
-| W65C02S接続 | 外部回路の製作、実CPUでID読出し・VRAM・IRQ・音源、バス波形のsetup/hold実測 |
-| ROM-less boot | 実CPUでの起動（[ROM-less boot](romless-boot.md)） |
 | SPI/QSPIの高速化 | 配線の改善またはSCK直接clock化で10MHz以上 |

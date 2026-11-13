@@ -27,19 +27,11 @@
       "result": "pass"
     },
     {
-      "test": "tb_w65c02_bus",
-      "result": "pass"
-    },
-    {
       "test": "tb_spi_bus",
       "result": "pass"
     },
     {
       "test": "tb_qspi_bus",
-      "result": "pass"
-    },
-    {
-      "test": "tb_startup_cpu",
       "result": "pass"
     },
     {
@@ -89,7 +81,7 @@
       "skipped": 0
     }
   ],
-  "header_check": "C passed; ca65 unavailable (skipped)",
+  "header_check": "C passed",
   "gowin": "Education V1.9.11.03",
   "minimum_setup_slack_ns": 0.1,
   "source_sha256": {

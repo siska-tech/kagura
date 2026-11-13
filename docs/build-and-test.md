@@ -11,7 +11,6 @@
 | FPGAビルド | Gowin EDA（Education V1.9.11.03、またはStandard V1.9.12.04で確認） |
 | 書込み | Gowin Programmer（`programmer_cli.exe`）、基板内蔵のBL702 |
 | ホストソフトウェア | [kagura-sdk](https://github.com/siska-tech/kagura-sdk)のREADMEを参照（Pico firmware、MicroPython） |
-| ヘッダ検査（任意） | cc65のca65 |
 
 ## シミュレーション
 
@@ -34,12 +33,12 @@ Icarus Verilogがあれば`tools/test-phase1.ps1`で基礎的なsource/TMDS試�
 ## 設計検査とレジスタ定義の生成
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-design.ps1        # BSRAM・cycle予算、文書link、直接窓、boot分周契約
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-design.ps1        # BSRAM・cycle予算、文書link、直接窓
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-dependencies.ps1  # third_partyのhash
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-registers.ps1 -Check
 ```
 
-`spec/registers.json`を変えたら、`tools/gen-registers.ps1`（`-Check`なし）でSV package・ca65 includeを再生成し、`-Check`で文書の表との一致を確認する。生成物は手で編集しない。`bash tools/test-headers.sh`はca65 includeをアセンブルする（ca65がなければSKIP、CIでは必須）。
+`spec/registers.json`を変えたら、`tools/gen-registers.ps1`（`-Check`なし）でSV packageを再生成し、`-Check`で文書の表との一致を確認する。生成物は手で編集しない。
 
 ホスト用のCヘッダとMicroPythonの`regs.py`は[kagura-sdk](https://github.com/siska-tech/kagura-sdk)にある。kagura-sdkのcheckoutを指定して`tools/gen-registers.ps1 -SdkDir ../kagura-sdk`で再生成し、kagura-sdk側で`hardware.lock`（元にしたkaguraのcommitと`spec/registers.json`のSHA-256）を更新する。続いてこのリポジトリの`sdk.lock`をそのSDKのcommitへ進める。`bash tools/check-sdk.sh`は`sdk.lock`のSDKの定数が現在の`spec/registers.json`から生成したものと一致し、Cヘッダがコンパイルできることを検査する。SDKが別の版の定義から生成されている場合は警告を出して合格にする（SDKが追従する）。
 
@@ -64,7 +63,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-nano9k-timing.ps
   -BuildDir build/nano9k-qspipsram -BaseName kagura_qspi_psram -ReportOnly
 ```
 
-- 第1引数は構成名（`hdmi`、`dvi`、`demo`、`phase2`、`phase2boot`、`spi`、`qspi`、`spipsram`、`qspipsram`、`bootprobe`、`magicprobe`）。`720`を付けると16:9版（dvi・bootprobe・magicprobeを除く）。
+- 第1引数は構成名（`hdmi`、`dvi`、`demo`、`spi`、`qspi`、`spipsram`、`qspipsram`）。`720`を付けると16:9版（dviを除く）。
 - `demo`／`demo720`はdeprecated。明示指定のためのソースは残すが、1,200タイル版のビルド成功や動作は保証しない。Picoホストのデモ・診断を利用する。
 - 第2引数`bars`（既定）/`stress`はカラーバー版の映像sourceの選択で、デモ・ホスト版の描画には関係しない。
 - bitstreamは`impl/pnr/<basename>.fs`。CST/SDCの断片とビルド設定package（`kagura_build_config`）はscriptがbuildディレクトリに生成する。
@@ -80,7 +79,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-baseline.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-baseline.ps1 -Configs spipsram,qspipsram720
 ```
 
-保守対象の14構成（deprecatedの`demo`／`demo720`を除く）をビルドし、構成ごとのmanifest（command、source/bitstream hash、CST/SDC、資源、slack、合否）を`reports/<revision>/<tool>/<構成>/`へ保存する。既定のgateはWNS ≥ +0.10ns。未コミットの変更があるときは差分hashを含む別のディレクトリへ保存する。`reports/`はGit管理外。
+保守対象の10構成（deprecatedの`demo`／`demo720`を除く）をビルドし、構成ごとのmanifest（command、source/bitstream hash、CST/SDC、資源、slack、合否）を`reports/<revision>/<tool>/<構成>/`へ保存する。既定のgateはWNS ≥ +0.10ns。未コミットの変更があるときは差分hashを含む別のディレクトリへ保存する。`reports/`はGit管理外。
 
 ## SRAMへの書込み
 
@@ -100,8 +99,6 @@ $prog='C:\Gowin\Gowin_V1.9.11.03_Education_x64\Programmer\bin\programmer_cli.exe
 
 内蔵Flashへの書込みでは`Verify Failed at 0`が表示されることがある。原因は未特定で、この表示を照合成功とは扱わない（再構成・電源再投入後の動作は確認している）。SRAMの照合は成功する。
 
-外部SPI Flash（ROM-less boot用）への書込みは[ROM-less boot](romless-boot.md#flashへの書込み)。
-
 ## programmerの注意
 
 - BL702はWindowsでFTDI互換（VID 0403/PID 6010）として見える。
@@ -109,7 +106,7 @@ $prog='C:\Gowin\Gowin_V1.9.11.03_Education_x64\Programmer\bin\programmer_cli.exe
 
 ## CI
 
-GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-registers.ps1 -Check`・依存hash、Icarus基礎試験、Verilator回帰（5.032を固定commitからビルドしてキャッシュ）、ca65 includeの検査、`sdk.lock`のkagura-sdkとの定数照合を実行する。失敗時もログ・`summary.tsv`・画像・PCM/WAV・指定したVCDを`verilator-results`のartifactに残す。ホストソフトウェアのテストとビルドはkagura-sdkのCIで行う。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。Gowin P&Rと実機試験はCIでは行わない。
+GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-registers.ps1 -Check`・依存hash、Icarus基礎試験、Verilator回帰（5.032を固定commitからビルドしてキャッシュ）、`sdk.lock`のkagura-sdkとの定数照合を実行する。失敗時もログ・`summary.tsv`・画像・PCM/WAV・指定したVCDを`verilator-results`のartifactに残す。ホストソフトウェアのテストとビルドはkagura-sdkのCIで行う。手動実行（workflow_dispatch）では`force_fail`と`trace`を指定できる。Gowin P&Rと実機試験はCIでは行わない。
 
 実行条件は次のとおり。
 
@@ -117,9 +114,8 @@ GitHub Actions（`.github/workflows/`）は、設計検査・link検査・`gen-r
 
   | 変更 | 実行するjob |
   |---|---|
-  | RTL・テストベンチ・`third_party/` | Verilator回帰、Icarus基礎試験・ヘッダ検査・依存hash |
+  | RTL・テストベンチ・`third_party/` | Verilator回帰、Icarus基礎試験・依存hash |
   | `spec/registers.json`・`tools/gen-registers.ps1`・workflow・`tools/ci-changes.sh` | すべて |
-  | `software/w65c02/`・`software/tests/`・`tools/test-headers.sh` | Icarus基礎試験・ca65 include検査・依存hash |
   | `sdk.lock`・`tools/check-sdk.sh` | kagura-sdkとの定数照合 |
   | Markdown・`docs/`・制約ファイル・合成用tool | Phase 0のみ |
 

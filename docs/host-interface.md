@@ -1,8 +1,8 @@
 # ホストインターフェース: SPI / QSPI
 
-W65C02Sのパラレルバスの代わりに、32 byteのレジスタ窓をSPI（1bit）またはQSPI（4bit）で操作する。ホストはRP2040/RP2350などのMCUを想定し、QSPIはPIOでの駆動を前提にする。`kagura_spi_adapter`（`LANES=1`/`4`）が[CPU非依存の`req/rsp`](architecture.md#cpu非依存インターフェース)へ変換するので、レジスタABI・queue・VRAM以降はW65C02S版と同じである。
+32 byteのレジスタ窓をSPI（1bit）またはQSPI（4bit）で操作する。ホストはRP2040/RP2350などのMCUを想定し、QSPIはPIOでの駆動を前提にする。`kagura_spi_adapter`（`LANES=1`/`4`）が[ホスト非依存の`req/rsp`](architecture.md#ホスト非依存インターフェース)へ変換する。
 
-- 構成`spi`・`qspi`・`spipsram`・`qspipsram`（とその`720`版）で使う。W65C02S adapterとは同じピンを共有するため、bitstreamで選ぶ。
+- 構成`spi`・`qspi`・`spipsram`・`qspipsram`（とその`720`版）で使う。
 - 参照実装はRaspberry Pi Pico用の[host firmware](https://github.com/siska-tech/kagura-sdk/blob/aae8699d8db01ed9825b37443b8ff8f3bb1cd14b/software/pico/README.md)。
 
 ## ピン
@@ -19,7 +19,7 @@ W65C02Sのパラレルバスの代わりに、32 byteのレジスタ窓をSPI（
 | BUSY | 26 | out | queueの空きが少ない（下記） |
 | READY | 27 | out | VRAM・line bankの初期化と最初のline 0の準備が終わると1 |
 
-すべて3.3VのBank 1/2。pin 36〜39（J5-1〜4、TFカードのSCLK/MOSI/CS/MISO）はFPGAから駆動せずpullなしのHi-Zにしてあり、ホストがTFカードを直接使える。pin 49はSPI LCDのRSと共有するので、SPI LCDは接続しない。READYはCPUのRESBを駆動しない。ホストはREADY=1を待つか、ID0/ID1とSTATUS.INIT_DONEをpollしてから操作する。
+すべて3.3VのBank 1/2。pin 36〜39（J5-1〜4、TFカードのSCLK/MOSI/CS/MISO）はFPGAから駆動せずpullなしのHi-Zにしてあり、ホストがTFカードを直接使える。pin 49はSPI LCDのRSと共有するので、SPI LCDは接続しない。ホストはREADY=1を待つか、ID0/ID1とSTATUS.INIT_DONEをpollしてから操作する。
 
 ## 電気・タイミング
 

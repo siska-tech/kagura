@@ -224,9 +224,8 @@
   "rtl_regression": {
     "verilator": "5.032",
     "seed": 1,
-    "passed": 61,
+    "passed": 53,
     "failed": 0,
-    "summary_sha256": "653b24eb6dc54c579c61a1ab7bc261a507b762841a7535d3fa33b4242e833fed",
     "tests": [
       {
         "test": "tb_phase1_sources",
@@ -275,41 +274,6 @@
       },
       {
         "test": "tb_bsram_wrappers",
-        "result": "pass",
-        "seconds": "0"
-      },
-      {
-        "test": "tb_w65c02_bus",
-        "result": "pass",
-        "seconds": "1"
-      },
-      {
-        "test": "tb_flash_reader",
-        "result": "pass",
-        "seconds": "0"
-      },
-      {
-        "test": "tb_flash_reader_timing",
-        "result": "pass",
-        "seconds": "0"
-      },
-      {
-        "test": "tb_boot_image_check",
-        "result": "pass",
-        "seconds": "0"
-      },
-      {
-        "test": "tb_boot_window",
-        "result": "pass",
-        "seconds": "0"
-      },
-      {
-        "test": "tb_boot_controller",
-        "result": "pass",
-        "seconds": "1"
-      },
-      {
-        "test": "tb_romless_boot_system",
         "result": "pass",
         "seconds": "0"
       },
@@ -469,11 +433,6 @@
         "seconds": "1"
       },
       {
-        "test": "tb_startup_cpu",
-        "result": "pass",
-        "seconds": "2"
-      },
-      {
         "test": "tb_audio_synth",
         "result": "pass",
         "seconds": "34"
@@ -548,9 +507,7 @@
     "bytecode": "all SDK and examples, armv6m mpy-cross"
   },
   "headers": {
-    "c": "pass",
-    "ca65": "pass",
-    "ca65_version": "Ubuntu cc65 2.19-2build1, local extraction"
+    "c": "pass"
   },
   "pico_c_build": "pass; no firmware deployment",
   "preflight_recovery": {

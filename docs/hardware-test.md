@@ -13,7 +13,6 @@ HDMIの実機互換性と連続動作の受入試験。受入条件は**2機種�
 | C1, C2 | HDMIケーブル | 2m×2本（型番未記録） | |
 | H1 | SPI/QSPI host | Raspberry Pi Pico（RP2040） | 5MHzで診断合格 |
 | M1 | オシロスコープ | Siglent SDS1202X-E（200MHz・2ch） | |
-| U1 | CPU | W65C02S（3.3V） | 未調達 |
 
 試験記録には機材IDを使い、sinkの入力端子と画質・音声の設定（ゲームモード等）も書く。電源（PCのUSBポート/USB電源）も記録する。
 
