@@ -7,7 +7,7 @@
 [CmdletBinding()]
 param(
     [string]$Gowin='C:\Gowin\Gowin_V1.9.11.03_Education_x64\IDE\bin\gw_sh.exe',
-    [string[]]$Configs=@('hdmi','dvi','phase2','spi','qspi','spipsram','qspipsram','hdmi720','phase2720','spi720','qspi720','qspipsram720','phase2boot','phase2boot720'),
+    [string[]]$Configs=@('hdmi','dvi','spi','qspi','spipsram','qspipsram','hdmi720','spi720','qspi720','qspipsram720'),
     [string]$Pattern='bars',
     [double]$MinSetupSlack=0.10
 )
@@ -46,7 +46,7 @@ $rows=@()
 foreach($config in $Configs) {
     $wide=$config -match '720$'
     $base=$config -replace '720$',''
-    $name=@{hdmi='kagura_phase1';dvi='kagura_phase1_dvi';phase2='kagura_phase2';phase2boot='kagura_phase2boot';demo='kagura_demo';spi='kagura_spi';qspi='kagura_qspi';spipsram='kagura_spi_psram';qspipsram='kagura_qspi_psram'}[$base]
+    $name=@{hdmi='kagura_phase1';dvi='kagura_phase1_dvi';demo='kagura_demo';spi='kagura_spi';qspi='kagura_qspi';spipsram='kagura_spi_psram';qspipsram='kagura_qspi_psram'}[$base]
     if(!$name -or ($wide -and $base -eq 'dvi')) { throw "Unknown configuration $config" }
     if($wide) { $name= if($base -eq 'hdmi') { 'kagura_hdmi720' } else { "${name}720" } }
     $dir="build/baseline/$config"

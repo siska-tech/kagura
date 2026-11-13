@@ -21,7 +21,7 @@
 
 根拠：[メモリ配置](memory-map.md)、[VRAM RTL](../rtl/vdp/kagura_vram.sv)、[BG RTL](../rtl/vdp/kagura_bg_renderer.sv)、[sprite RTL](../rtl/vdp/kagura_sprite_row.sv)。
 
-[既存P&R結果](validation-status.md#資源とタイミング)ではホスト・CPU構成がBSRAM 25/26、demoが26/26。単純に3 bank追加すると28/26、29/26となり収まらない。設計モデルの未使用8,640 Bは複数の用途・ポートに分散しており、そのままパターン領域として利用できる空きではない。
+[既存P&R結果](validation-status.md#資源とタイミング)ではホスト構成がBSRAM 25/26、demoが26/26。単純に3 bank追加すると28/26となり収まらない。設計モデルの未使用8,640 Bは複数の用途・ポートに分散しており、そのままパターン領域として利用できる空きではない。
 
 ## RAM確保案
 

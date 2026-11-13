@@ -40,7 +40,6 @@ run_test() {
 verilator --version
 run_test tb_vram_core "${core[@]}" sim/tests/tb_vram_core.sv
 run_test tb_psram_core "${core[@]}" sim/support/kagura_hyperram_pair_model.sv sim/tests/tb_psram_core.sv
-run_test tb_startup_cpu "${core[@]}" "${vdp[@]}" rtl/bus/kagura_w65c02_adapter.sv sim/tests/tb_startup_cpu.sv
 for top in tb_vdp_frame tb_vdp_sprites tb_vdp_frame720 tb_vdp_sprites720; do
     run_test "$top" "${core[@]}" "${vdp[@]}" sim/tests/tb_vdp_frame.sv sim/tests/tb_vdp_sprites.sv
 done

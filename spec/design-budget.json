@@ -1,7 +1,7 @@
 {
   "abi": "0.1",
   "evidence": "tile1200-stage2-bsram-budget-not-synthesis",
-  "clocks": {"reference_hz":27000000,"system_hz":54000000,"pixel_hz":25200000,"serializer_hz":126000000,"cpu_divisor":16,"sample_divisor":1125},
+  "clocks": {"reference_hz":27000000,"system_hz":54000000,"pixel_hz":25200000,"serializer_hz":126000000,"sample_divisor":1125},
   "video": {"width":320,"height":240,"scale":2,"h_total":800,"v_total":525},
   "capacity": {"lut":8640,"ff":6480,"bsram":26,"pll":2,"dsp":20},
   "resources": [
@@ -28,5 +28,5 @@
   ],
   "renderer": {"registered_sprites":256,"line_sprites":16,"sprite_width":16,"oam_cycles_per_sprite":1,"oam_hit_cycles":4,"bg_tiles":41,"bg_cycles_per_tile":17,"sprite_setup_fetch_cycles":14,"sprite_cycles_per_pixel":5,"control_cycles":64,"cdc_guard_cycles":64},
   "acr": {"n":6144,"cts":25200},
-  "expected": {"bsram_blocks":26,"payload_bytes":50176,"mode_unused_bytes":3072,"renderer_cycles":2585,"available_cycles":3428,"cpu_cycles":779,"lut":6700,"ff":4700}
+  "expected": {"bsram_blocks":26,"payload_bytes":50176,"mode_unused_bytes":3072,"renderer_cycles":2585,"available_cycles":3428,"spare_cycles":779,"lut":6700,"ff":4700}
 }

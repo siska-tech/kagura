@@ -6,7 +6,7 @@
 - 波形は`KAGURA_TRACE`で指定したtopだけ、`support/kagura_trace.sv`をbindして出力する。
 - 専用のC++ harness、`verilator/`・`reference/`ディレクトリは使っていない（空）。
 
-ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象と確認済み結果は[第2段階の記録](../docs/tile-1200-stage2.md)を参照。
+ABI 0.6の集中回帰は`bash tools/test-tile1200-stage2.sh`（13件）。対象と確認済み結果は[第2段階の記録](../docs/tile-1200-stage2.md)を参照。
 
 ## 試験一覧
 
@@ -21,11 +21,7 @@ ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象�
 | | `tb_async_fifo` | 深さ16の満杯、1024語の順序・wrap、非空reset、空pop |
 | メモリ | `tb_bsram_wrappers` | RAM wrapperのlatency、dual clock、byte RMWの不可分性 |
 | | `tb_vram_init` | 全RAMにpoisonを入れてから、command readで0を確認 |
-| host bus | `tb_w65c02_bus` | 要求回数、OE、read setup/hold、IRQ、reset解除、締切 |
-| | `tb_w65c02_bus_release` | RESBを解除したサイクル（リセット中に選択された`$FFFF`の読出しを保持）を受け付けない、次のサイクルのphase 6から1サイクル1要求、ready喪失後も同じ |
-| | `tb_w65c02_bus_handover` | OE解除がphase 2（PHI2立下りの2 system cycle後）、解除まで出力データ不変、KAGURA read後の他デバイス・CPU write・KAGURAとの重なりなし、ready喪失・system resetでのOE解除 |
-| | `tb_spi_bus`、`tb_qspi_bus` | 10MHzのホストモデル、BUSY、中断、競合（`tb_host_bus.sv`） |
-| | `tb_startup_cpu` | VDPの初期化とline 0の準備からCPU adapterのreset解除まで |
+| host bus | `tb_spi_bus`、`tb_qspi_bus` | 10MHzのホストモデル、BUSY、中断、競合（`tb_host_bus.sv`） |
 | register・queue | `tb_vram_core` | 公開registerの検査、領域境界、拒否時の副作用、FILL/FENCE、満杯、順序 |
 | | `tb_command_queue` | 32件の満杯・staging、256個の64bit descriptor順序、8回wrap、reset |
 | | `tb_register_abi` | 生成ABI packageとregister RTLのreset値・access可否 |
@@ -48,7 +44,5 @@ ABI 0.6の集中回帰はash tools/test-tile1200-stage2.sh（15件）。対象�
 | | `tb_hyperram_ctrl` | cycle単位のHyperRAM protocol checker（CS high時間、競合、mask、register空間） |
 | | `tb_psram_pcm_chain`、`tb_hyperram_pcm_chain`、`tb_hyperram_pcm_source` | controller（modelまたは実RTL）からPCM出力までの縦通し |
 | | `tb_psram_core` | CAPS b3の`kagura_core`を公開ABIで検査（upload、FILL、COPY、PCMのPREPARE〜DONE、一時停止、STOP、CLEAR） |
-| boot | `tb_flash_reader`、`tb_flash_reader_timing`、`tb_boot_image_check`、`tb_boot_window`、`tb_boot_window_order`（リセット中・ダミー読出しの単独／反復の読出しでポートが有効にならずBOOT_MAPも解除されない）、`tb_boot_controller`、`tb_romless_boot_system` | [ROM-less boot](../docs/romless-boot.md#検証) |
-| | `test_boot_image.py` | boot image生成器（Python） |
 
 `support/kagura_hyperram_pair_model.sv`はCAを独立に復号するbyte-pair境界のPSRAM modelで、Gowin PHYやCKの位相、実機timingは対象外。

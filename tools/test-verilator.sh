@@ -28,7 +28,6 @@ fi
 seed="${KAGURA_SEED:-1}"
 test_timeout="${KAGURA_TEST_TIMEOUT:-1800}"
 echo "seed $seed, per-test timeout ${test_timeout}s"
-python3 sim/tests/test_boot_image.py
 # Stale outputs would be mistaken for this run's evidence.
 rm -f build/verilator/*.run.log build/verilator/*.raw build/verilator/*.wav build/verilator/*.ppm build/verilator/*.vcd
 summary=build/verilator/summary.tsv
@@ -100,19 +99,6 @@ CORE_SOURCES=(rtl/audio/kagura_audio_registers.sv rtl/audio/kagura_audio_synth.s
     rtl/core/kagura_raster_scroll.sv rtl/core/kagura_core.sv rtl/vdp/kagura_bg_renderer.sv rtl/vdp/kagura_sprite_selector.sv rtl/vdp/kagura_sprite_row.sv rtl/vdp/kagura_sprite_renderer.sv
     rtl/audio/kagura_pcm_control.sv rtl/audio/kagura_pcm_prefetch.sv rtl/memory/kagura_psram_arbiter.sv rtl/memory/kagura_psram_read_path.sv
     rtl/memory/kagura_psram_read_cdc.sv rtl/memory/kagura_psram_byte_bridge.sv rtl/memory/kagura_hyperram_ctrl.sv)
-run_test tb_w65c02_bus rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus.sv
-run_test tb_w65c02_bus_handover rtl/bus/kagura_w65c02_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_w65c02_bus_handover.sv
-run_test tb_w65c02_bus_release rtl/bus/kagura_w65c02_adapter.sv sim/tests/tb_w65c02_bus_release.sv
-run_test tb_flash_reader rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader.sv
-run_test tb_flash_reader_timing rtl/boot/kagura_flash_reader.sv sim/tests/tb_flash_reader_timing.sv
-run_test tb_boot_image_check rtl/boot/kagura_boot_image_check.sv sim/tests/tb_boot_image_check.sv
-run_test tb_boot_window rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window.sv
-run_test tb_boot_window_order rtl/boot/kagura_boot_window.sv sim/tests/tb_boot_window_order.sv
-run_test tb_boot_reset_ctl rtl/bus/kagura_w65c02_adapter.sv rtl/boot/kagura_boot_reset_ctl.sv sim/tests/tb_boot_reset_ctl.sv
-run_test tb_boot_controller rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
-    rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_boot_controller.sv
-run_test tb_romless_boot_system rtl/boot/kagura_flash_reader.sv rtl/boot/kagura_boot_image_check.sv \
-    rtl/boot/kagura_boot_window.sv rtl/boot/kagura_boot_controller.sv sim/tests/tb_romless_boot_system.sv
 for host_test in tb_spi_bus tb_qspi_bus; do
     run_test "$host_test" rtl/bus/kagura_spi_adapter.sv "${CORE_SOURCES[@]}" sim/tests/tb_host_bus.sv
 done
@@ -163,8 +149,6 @@ run_test tb_fill_timing rtl/core/kagura_registers.sv sim/tests/tb_fill_timing.sv
 run_test tb_register_abi rtl/core/kagura_abi_pkg.sv rtl/core/kagura_registers.sv rtl/audio/kagura_audio_registers.sv \
     sim/tests/tb_register_abi.sv
 run_test tb_vram_init rtl/memory/kagura_ram_sp.sv rtl/memory/kagura_ram_rmw16.sv rtl/vdp/kagura_vram.sv sim/tests/tb_vram_init.sv
-run_test tb_startup_cpu "${CORE_SOURCES[@]}" rtl/bus/kagura_w65c02_adapter.sv rtl/memory/kagura_ram_tdp.sv \
-    rtl/vdp/kagura_line_display.sv rtl/vdp/kagura_vdp.sv sim/tests/tb_startup_cpu.sv
 run_test tb_audio_synth rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_synth.sv
 run_test tb_audio_pcm_mix rtl/audio/kagura_audio_synth.sv sim/tests/tb_audio_pcm_mix.sv
 run_test tb_pcm_prefetch rtl/audio/kagura_pcm_prefetch.sv sim/tests/tb_pcm_prefetch.sv

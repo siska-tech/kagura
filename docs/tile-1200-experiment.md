@@ -1,6 +1,6 @@
 # 1,200タイル対応の記録
 
-> 1,200タイル対応（ABI 0.6）は[PR #38](https://github.com/siska-tech/kagura/pull/38)で本流の`main`へマージ済み（`63f2685`）。現在はこのリポジトリの標準構成であり、以下は別リポジトリで実験として進めた当時の経緯と記録。各段階の文書（第1～第3段階・目視・6502ブート）の「実験」「実験用SDK」等の表記も当時のものとして保持する。
+> 1,200タイル対応（ABI 0.6）は[PR #38](https://github.com/siska-tech/kagura/pull/38)で本流の`main`へマージ済み（`63f2685`）。現在はこのリポジトリの標準構成であり、以下は別リポジトリで実験として進めた当時の経緯と記録。各段階の文書（第1～第3段階・目視）の「実験」「実験用SDK」等の表記も当時のものとして保持する。
 
 2026-10-29開始。元リポジトリ `C:\Users\Shion\Documents\Projects\Kagura` の `e909cacd87c207383924b8c15313147940fc14bc` をローカルcloneし、独立したGitリポジトリ `C:\Users\Shion\Documents\Projects\Kagura-tile1200` を作成した。ブランチは `experiment/tile-1200`。元の履歴を保持し、source remoteは元リポジトリの参照用とする。GitHubへの新規作成・公開は行っていない。
 
@@ -23,7 +23,7 @@ Verilator 5.032、seed 1。再実行はリポジトリ直下で以下を実行�
 bash tools/test-tile1200-stage1.sh
 ```
 
-対象は `tb_vram_core`、`tb_psram_core`、`tb_startup_cpu`、`tb_vdp_frame`、`tb_vdp_sprites`、`tb_vdp_frame720`、`tb_vdp_sprites720`。ログは `build/tile1200-stage1/` に保存する。
+対象は `tb_vram_core`、`tb_psram_core`、`tb_vdp_frame`、`tb_vdp_sprites`、`tb_vdp_frame720`、`tb_vdp_sprites720`。ログは `build/tile1200-stage1/` に保存する。
 
 P&R/STAはGowin Education V1.9.11.03、既定のboard制約・P&R optionで行う。
 
@@ -37,7 +37,7 @@ python3 tools/prepare-hdmi-stream.py
 ./tools/gen-registers.ps1 -Check
 ```
 
-7試験すべて合格。480p/720pそれぞれBGのみ・spriteありの全画素比較、起動時RAM汚染からのクリア、pixelを動かしたままのsystem単独resetを確認した。この段階では全58試験の一括回帰は未実施。第3段階の最終版では追加試験込み61件すべて合格。
+6試験すべて合格。480p/720pそれぞれBGのみ・spriteありの全画素比較、起動時RAM汚染からのクリア、pixelを動かしたままのsystem単独resetを確認した。この段階では全58試験の一括回帰は未実施。第3段階の記録は53件。
 
 4構成すべて `sta_pass`、setup/hold違反0、負のrecovery/removal解析なし。開発下限のsetup +0.10nsを満たした。
 
@@ -63,7 +63,3 @@ python3 tools/prepare-hdmi-stream.py
 FPGA standaloneのdemo／demo720はdeprecatedとし、既定のP&R対象から除外した。以降はPicoホストを中心に検証する。ソースと旧試験・過去の証跡は保持する。
 
 実機にはSRAMだけを書き換えて数値検証を実施した。FPGA FlashとPico firmwareは変更していない。既存の[検証状況](validation-status.md)は元設計の過去の証跡であり、実験版の動作保証とは区別する。
-
-## W65C02Sの将来実装に向けた確認
-
-1,200枚版の`phase2boot`／`phase2boot720`もbitstream生成・P&R／STAとboot／CPU simulationに合格した。[検証記録](tile-1200-boot.md)を参照。W65C02S実機でのbootは未確認。

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Hardware test top without a CPU: kagura_demo_sequencer writes VRAM through
+// Hardware test top without a host: kagura_demo_sequencer writes VRAM through
 // the register window, animates the shooter scene every frame and plays the
 // demo song, shown with the Phase 1 HDMI/48kHz stream. Instance names of the
-// stream and VDP match kagura_phase2_top so phase1*.sdc/phase3-vdp.sdc and
+// stream and VDP match kagura_host_top so phase1*.sdc/phase3-vdp.sdc and
 // the CST apply.
 // VIDEO_ID_CODE comes from kagura_build_config (tools/build-nano9k.tcl).
 // LEDs (active low): 5 pixel lock, 4 system lock, 3 map read-back mismatch or

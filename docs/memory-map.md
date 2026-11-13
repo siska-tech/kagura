@@ -6,7 +6,7 @@
 
 addressは24bit。下表の範囲だけを実装し、上位bitを無視したaliasはしない。表にない範囲へのアクセスはINVALID_ADDRESS（読出し結果は0）。多byte値はlittle endian。
 
-| VRAM address | 用途 | CPUアクセス |
+| VRAM address | 用途 | ホストアクセス |
 |---|---|---|
 | 000000–007FFF | pattern、1024個×32 byte | RW。描画と時分割 |
 | 008000–008FFF | 背景map下位word、64×32 entry×2 byte | RW。描画と時分割 |

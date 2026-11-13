@@ -31,13 +31,13 @@ python3 -I software/micropython/tests/test_shooter.py
 ./tools/gen-registers.ps1 -Check
 ```
 
-RTLの対象は15試験：queue、ABI、VRAM初期化・転送、PSRAM／COPY／PCM、CPU起動、SPI／QSPI／W65C02バス、既存BG／sprite（480p・720p）、追加タイルを使うBG／sprite（480p・720p）。追加タイルの試験は全画素比較を行い、1023/1024、1087/1088、1151/1152、1199、無効番号1200/2047、16×16最終グループ、palette／flip、clipping、system単独resetを含む。
+RTLの対象は13試験：queue、ABI、VRAM初期化・転送、PSRAM／COPY／PCM、SPI／QSPIバス、既存BG／sprite（480p・720p）、追加タイルを使うBG／sprite（480p・720p）。追加タイルの試験は全画素比較を行い、1023/1024、1087/1088、1151/1152、1199、無効番号1200/2047、16×16最終グループ、palette／flip、clipping、system単独resetを含む。
 
 既定のP&R設定はplace option 1。qspi／qspipsram／qspipsram720はroute option 2、qspi720はroute option 1を使う。クロック・SDCと開発下限0.10nsは変更していない。環境変数の上書きなしで再現する。
 
-15件のRTL試験すべて合格。VRAMは8541件のモデル読出し照合、初期化は92672件のゼロ読出し、queueは256個のランダム64bit descriptorと8回のwrapを確認した。SPI／QSPI／W65C02のバスモデル、COPY／PCM併用、既存・拡張BG／spriteの全画素比較、system単独resetも合格。
+13件のRTL試験すべて合格。VRAMは8541件のモデル読出し照合、初期化は92672件のゼロ読出し、queueは256個のランダム64bit descriptorと8回のwrapを確認した。SPI／QSPIのバスモデル、COPY／PCM併用、既存・拡張BG／spriteの全画素比較、system単独resetも合格。
 
-SDKは114件を実行し、112件合格・外部依存の2件skip。生成Cヘッダのcompile検査は合格、ca65は未導入のためskip。ABI生成物・文書・設計算術とdiffの整合性も合格。
+SDKは114件を実行し、112件合格・外部依存の2件skip。生成Cヘッダのcompile検査、ABI生成物・文書・設計算術とdiffの整合性も合格。
 
 4構成すべてsetup/hold違反0、TNS=0、負のrecovery/removal解析なし。最悪setupは開発下限の+0.10ns以上。下表は現在のRTL・build scriptとhash一致を確認した最終結果。
 

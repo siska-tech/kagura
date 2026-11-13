@@ -7,7 +7,7 @@ Status: done (2026-11-12). The desktop lives in [siska-tech/kagura-desktop](http
 | Path | Size | Talks to | Kind |
 |---|---|---|---|
 | `spec/registers.json` | | | **the hardware contract**: register ABI 0.6, the source of all generated constants |
-| `tools/gen-registers.ps1` | | spec → `regs.py`, `kagura_regs.h`, `kagura_regs.inc` (+ RTL package) | generator, shared by both sides |
+| `tools/gen-registers.ps1` | | spec → `regs.py`, `kagura_regs.h` (+ RTL package) | generator, shared by both sides |
 | `software/micropython/kagura` | 2.6 MB with examples | FPGA through `regs`, `device` | MicroPython SDK (see §2) |
 | `software/micropython/kagura/ui`, `kagura_ja` | | `kagura.framebuffer`, `kagura.video` | UI toolkit, Japanese text |
 | `software/micropython/boards`, `manifest.py`, `align_frozen.py`, `usermods/` | | MicroPython v1.26.0 rp2 port | firmware packaging |
@@ -16,13 +16,11 @@ Status: done (2026-11-12). The desktop lives in [siska-tech/kagura-desktop](http
 | `software/pico` | 584 KB | PIO transport, `kagura_regs.h` | C host driver (`kagura_host`), `tile_fb`, diagnostics firmware, demos |
 | `software/include` | | generated | `kagura_regs.h` |
 | `software/starfall` | 209 KB | `backend.h` (host or Pico) | the original C game; also an RTL test (`test-rtl.sh`) |
-| `software/w65c02` | | generated | `kagura_regs.inc` for the W65C02S host inside the FPGA |
-| `software/tests` | | generated headers | header compile tests (`tools/test-headers.sh`) |
 | `rtl`, `sim`, `boards`, bitstream tools | | | the hardware |
 
 Cross references (grep, 2026-11-12):
-- Hardware → software: `sim`/RTL tests use `software/starfall` (`test-rtl.sh`), the boot image tools and `software/w65c02`; CI's `phase1.yml` builds `software/pico`, `software/starfall` and `software/audio/pico`.
-- Software → hardware: only the generated constants (`regs.py`, `kagura_regs.h`, `kagura_regs.inc`) and documentation links into `docs/` (register map, host interface, audio spec).
+- Hardware → software: `sim`/RTL tests use `software/starfall` (`test-rtl.sh`); CI's `phase1.yml` builds `software/pico`, `software/starfall` and `software/audio/pico`.
+- Software → hardware: only the generated constants (`regs.py`, `kagura_regs.h`) and documentation links into `docs/` (register map, host interface, audio spec).
 - 22 tools in `tools/` touch `software/` (UI measurement, asset generators, showcase packaging, the CI filter).
 
 ## 2. Layers inside the SDK
@@ -49,11 +47,11 @@ Findings:
 
 | Repository | Owns | Why |
 |---|---|---|
-| **kagura** (hardware) | `rtl`, `sim`, `boards`, `spec/registers.json`, `tools/gen-registers.ps1`, synthesis and bitstream tools, releases and known-good bitstreams, hardware docs (register map, host interface, audio spec), `software/w65c02` (in-FPGA host constants) | the ABI is defined with the RTL; releases stay where they are |
-| **kagura-sdk** | `software/micropython`, `software/audio`, `software/pico`, `software/include`, `software/starfall`, `software/tests`, the SDK tools (UI measurement, asset generators, showcase packaging, `build-micropython-unix.sh`, `rp2040-firmware.py`, `rp2040_sram_bench.py`) and the SDK docs | everything a host program links against |
+| **kagura** (hardware) | `rtl`, `sim`, `boards`, `spec/registers.json`, `tools/gen-registers.ps1`, synthesis and bitstream tools, releases and known-good bitstreams, hardware docs (register map, host interface, audio spec) | the ABI is defined with the RTL; releases stay where they are |
+| **kagura-sdk** | `software/micropython`, `software/audio`, `software/pico`, `software/include`, `software/starfall`, the SDK tools (UI measurement, asset generators, showcase packaging, `build-micropython-unix.sh`, `rp2040-firmware.py`, `rp2040_sram_bench.py`) and the SDK docs | everything a host program links against |
 | **kagura-desktop** | the desktop, editor, SKK, tracker | an application of the SDK (done) |
 
-Generated constants: the SDK keeps committed copies of `regs.py`, `kagura_regs.h` and `kagura_regs.inc`, and a pin file `hardware.lock` naming the kagura commit and the SHA-256 of `spec/registers.json` they were generated from. CI regenerates them from that commit and fails on any difference. RTL tests that run SDK code (`starfall/test-rtl.sh`, boot images) stay in kagura and check out kagura-sdk at a pinned commit.
+Generated constants: the SDK keeps committed copies of `regs.py` and `kagura_regs.h`, and a pin file `hardware.lock` naming the kagura commit and the SHA-256 of `spec/registers.json` they were generated from. CI regenerates them from that commit and fails on any difference. RTL tests that run SDK code (`starfall/test-rtl.sh`) stay in kagura and check out kagura-sdk at a pinned commit.
 
 ### Dry run (`tools/sdk-extraction-check.py`)
 
@@ -68,7 +66,6 @@ Generated constants: the SDK keeps committed copies of `regs.py`, `kagura_regs.h
 
 - **SDK → hardware, code:** only two scripts.
   - `software/starfall/test-rtl.sh` runs STARFALL against the RTL and testbenches. It is an integration test, so it moves to kagura beside the RTL tests and checks out kagura-sdk at a pin.
-  - `tools/test-headers.sh` regenerates the headers with `tools/gen-registers.ps1`. It runs the generator from the pinned kagura commit.
 - **SDK → hardware, documentation:** links to the hardware specifications (`docs/audio-spec.md`, `host-interface.md`, `memory-map.md`, `register-map.md`, `video.md`). These become links into kagura at the pinned commit. Generated files keep naming `spec/registers.json` as their source.
 - **Hardware → SDK:** 169 of the 259 are CI configuration (`ci-changes.sh`, `test-ci-changes.sh`, workflows), which is split with the move. The rest are README and docs links, which become links into kagura-sdk.
 
@@ -84,7 +81,7 @@ Kagura-HD is a different graphics architecture, so the SDK does **not** force on
 Each step is its own PR; none mixes a move with functional changes.
 
 1. **Compatibility tests in kagura first.** Done in siska-tech/kagura#97: the API snapshot (`tools/api-snapshot.py`, now in kagura-sdk) and the generated-constants check.
-2. **Extract kagura-sdk.** Done: `git filter-repo` of [sdk-extraction-paths.txt](sdk-extraction-paths.txt) at c6ae031 (211 commits), plus one commit that makes it standalone: `hardware.lock` (this repository's commit and the SHA-256 of `spec/registers.json`), `tools/check-hardware-lock.sh`, its own CI, and links to the hardware documents pinned to c6ae031. `software/starfall/test-rtl.sh` (now `tools/test-starfall-rtl.sh`) and the ca65 include test stayed here.
+2. **Extract kagura-sdk.** Done: `git filter-repo` of [sdk-extraction-paths.txt](sdk-extraction-paths.txt) at c6ae031 (211 commits), plus one commit that makes it standalone: `hardware.lock` (this repository's commit and the SHA-256 of `spec/registers.json`), `tools/check-hardware-lock.sh`, its own CI, and links to the hardware documents pinned to c6ae031. `software/starfall/test-rtl.sh` (now `tools/test-starfall-rtl.sh`) stayed here.
 3. **Remove the SDK from kagura.** Done in this change. `tools/gen-registers.ps1` writes the SDK's `kagura_regs.h` and `regs.py` only with `-SdkDir <kagura-sdk checkout>`. `sdk.lock` pins kagura-sdk (aae8699) for one CI job, `tools/check-sdk.sh`, which compares that SDK's constants with the current spec. The SDK pins kagura (`hardware.lock`) for its build; kagura pins the SDK only to test it, so a spec change lands here first (the check then warns) and the SDK follows. No RTL test runs SDK code.
 4. **kagura-desktop**: point `sdk/` at kagura-sdk at a pinned commit (siska-tech/kagura-desktop, separate PR).
 5. **SDK cleanup** (separate PRs): the showcase's background music now uses `kagura.music` (siska-tech/kagura-desktop#1). Still open: split `kagura_ja.Font`'s glyph lookup from its Kagura-9 upload; document the layer of each module.

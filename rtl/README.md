@@ -9,8 +9,7 @@
 | audio | 音源レジスタ・snapshot、6ch＋PCM合成器、PCMの先読みと制御、HDMI向けの音声転送 |
 | memory | BSRAM wrapper、非同期FIFO、PSRAM controller・PHY・仲裁・read path |
 | hdmi | 音声packet scheduler、TMDS encoder・packet assemblerの置換実装、HDMI streamのwrapper |
-| bus | W65C02S adapter、SPI/QSPI adapter |
-| boot | ROM-less boot（SPI Flash reader、image検査、boot窓、controller） |
+| bus | SPI/QSPI adapter |
 | platform | Gowin用のPLL/CLKDIV/GSRとOSER10 serializer |
 
 ## 主なmodule
@@ -23,7 +22,7 @@
 | `core/kagura_vram_engine` | descriptorを順に実行する（WRITE/READ/FILL/FENCE/COMMIT/AUDIO_COMMIT/COPY） |
 | `core/kagura_raster_scroll` | active表を引いて、各ラインの背景scrollを決める |
 | `core/kagura_abi_pkg` | `tools/gen-registers.ps1`の生成物。合成topには含めず、`tb_register_abi`がregister RTLとの一致を照合する |
-| `core/kagura_demo_sequencer`、`kagura_demo_art` | deprecatedの`demo`構成で、CPUの代わりにレジスタ窓を操作するsequencerと、そのtile art（`tools/gen-demo-art.py`の生成物） |
+| `core/kagura_demo_sequencer`、`kagura_demo_art` | deprecatedの`demo`構成で、ホストの代わりにレジスタ窓を操作するsequencerと、そのtile art（`tools/gen-demo-art.py`の生成物） |
 | `vdp/kagura_vram` | pattern 19 bank（末尾の空きにBG上位bit表を同居）、map 2 lane、OAM・palette（RMW）、wave。描画器への占有許可とcommand portを管理し、起動時に全RAMを0にする |
 | `vdp/kagura_bg_renderer` | 背景1ライン。fetchとemitの2段で1画素1 cycle |
 | `vdp/kagura_sprite_selector`、`kagura_sprite_row`、`kagura_sprite_renderer` | 256件のOAM走査と16件の選択、pattern取得と優先順位付きの合成 |

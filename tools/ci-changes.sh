@@ -21,7 +21,7 @@ classify() {
         # Self-contained experiments with their own build and test scripts; CI does not run them.
         experiments/*) ;;
         .github/workflows/*|tools/ci-changes.sh|tools/test-ci-changes.sh) all ;;
-        # Generated into RTL and the ca65 include here, and into the host
+        # Generated into RTL here, and into the host
         # constants of the kagura-sdk commit in sdk.lock (tools/check-sdk.sh).
         spec/registers.json|tools/gen-registers.ps1) all ;;
         sdk.lock|tools/check-sdk.sh) mark sdk ;;
@@ -31,13 +31,12 @@ classify() {
         # PCB design and manufacturing data; no CI job builds or simulates it.
         boards/pico-carrier-board/*) ;;
         tools/test-verilator.sh|tools/test-tile1200-stage*.sh|tools/verilator.version|tools/prepare-hdmi-stream.py|\
-        tools/render-audio-wav.py|tools/make-boot-image.py|tools/gen-demo-art.py) mark verilator ;;
-        tools/test-phase1.ps1|tools/check-dependencies.ps1|tools/test-headers.sh|\
-        software/tests/*|software/w65c02/*) mark rtl_sources ;;
+        tools/render-audio-wav.py|tools/gen-demo-art.py) mark verilator ;;
+        tools/test-phase1.ps1|tools/check-dependencies.ps1) mark rtl_sources ;;
         # Synthesis, board and hardware measurement tools, and focused RTL
         # regressions run by hand; CI does not run them.
         tools/*.tcl|tools/eval-gowin-*|tools/check-nano9k-timing.ps1|tools/compare-nano9k-variants.ps1|\
-        tools/check-boot-miso-timing.ps1|tools/read-hyperram-uart.ps1|tools/run-baseline.ps1|\
+        tools/read-hyperram-uart.ps1|tools/run-baseline.ps1|\
         tools/tile1200-device.ps1|tools/test-starfall-rtl.sh) ;;
         *) all ;;
     esac

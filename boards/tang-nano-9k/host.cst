@@ -1,4 +1,4 @@
-// SPI / QSPI host pins (docs/host-interface.md), reusing 3.3V CPU header pins.
+// SPI / QSPI host pins (docs/host-interface.md), on the 3.3V header pins.
 IO_LOC "host_sck" 35;
 IO_LOC "host_cs_n" 42;
 IO_LOC "host_io[0]" 28;

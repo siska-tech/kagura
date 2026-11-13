@@ -35,7 +35,7 @@ RAMの読出しlatencyは1 cycle。描画中は描画器がpattern・map・palet
 
 ### hostの帯域
 
-hostに残る枠は、16bit RAMのbyte RMW（3 cycle）換算で最大259 byte操作/論理ライン（約4.08MB/s）の局所的な理論値で、保証値ではない。実際にはhost interface（SPI/QSPIのbyte速度、W65C02Sの3.375M access/s）、命令fetch、FIFO制御が律速する。実測は[ホストインターフェース](host-interface.md)と[PSRAM](psram.md#copy)を参照。
+hostに残る枠は、16bit RAMのbyte RMW（3 cycle）換算で最大259 byte操作/論理ライン（約4.08MB/s）の局所的な理論値で、保証値ではない。実際にはhost interface（SPI/QSPIのbyte速度）、命令fetch、FIFO制御が律速する。実測は[ホストインターフェース](host-interface.md)と[PSRAM](psram.md#copy)を参照。
 
 ## 仲裁
 

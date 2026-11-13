@@ -20,7 +20,7 @@
 
 ## 実測結果（2026-10-29）
 
-QSPI 5MHz、CPU 125MHz、既存custom MicroPython 1.26.0で実施。全4構成のSRAM Program and Verifyが成功した。画面・音質を観測したという判定は含めない。
+QSPI 5MHz、Pico 125MHz、既存custom MicroPython 1.26.0で実施。全4構成のSRAM Program and Verifyが成功した。画面・音質を観測したという判定は含めない。
 
 | 構成 | 連続区間 | pattern読戻し | PCM | 結果 |
 |---|---:|---|---|---|
@@ -37,7 +37,7 @@ QSPI 5MHz、CPU 125MHz、既存custom MicroPython 1.26.0で実施。全4構成�
 
 480p PSRAMの短時間試験の初回は、fixtureの4096 byte iterable生成中にPicoのMemoryErrorで中断した。FPGAのfaultは観測されていない。128 byte周期を32回繰り返す同一データへ変更し、終了済みfixtureを解放して再実行した。1時間の主試験は変更前fixtureで正常終了しており、その結果を差し替えていない。
 
-全RTL回帰61件、SDK 122件がすべて合格。公式MicroPython v1.26.0のPIO assemblerと美咲フォント原本を利用し、skipは0。C／ca65ヘッダ検査、全SDK・exampleのarmv6m bytecode compile、Pico CホストのRelease build、生成物・設計検査・CI分類も成功した。旧FILL timing試験の「0x9000は未実装」という期待を更新し、新領域・穴跨ぎの境界検査を追加した。RTLは第2段階から変更していない。
+当時の回帰記録ではRTL 53件、SDK 122件がすべて合格。公式MicroPython v1.26.0のPIO assemblerと美咲フォント原本を利用し、skipは0。全SDK・exampleのarmv6m bytecode compile、Pico CホストのRelease build、生成物・設計検査・CI分類も成功した。旧FILL timing試験の「0x9000は未実装」という期待を更新し、新領域・穴跨ぎの境界検査を追加した。RTLは第2段階から変更していない。
 
 生ログは`reports/tile1200-hardware/`、回帰ログは`build/tile1200-*.log`と`build/verilator/`（Git管理外）。
 

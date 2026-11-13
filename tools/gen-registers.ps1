@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Generate register constants from spec/registers.json:
 #   rtl/core/kagura_abi_pkg.sv       SystemVerilog package
-#   software/w65c02/kagura_regs.inc  ca65 include
 # and, with -SdkDir <kagura-sdk checkout>, the host constants kept there:
-#   software/include/kagura_regs.h   C header (SPI/QSPI hosts, W65C02S C)
+#   software/include/kagura_regs.h   C header (SPI/QSPI hosts)
 #   software/micropython/kagura/regs.py  MicroPython constants
 # (kagura-sdk records the commit it copied them from in hardware.lock).
 # -Check validates the definition, fails if any output is stale, and compares
@@ -187,30 +186,6 @@ if ($pcm) {
 [void]$c.AppendLine('')
 [void]$c.AppendLine('#endif')
 
-$a = New-Object System.Text.StringBuilder
-[void]$a.AppendLine('; SPDX-License-Identifier: Apache-2.0')
-[void]$a.AppendLine("; $header")
-[void]$a.AppendLine("; KAGURA register $abi for ca65. Define KAGURA_IO_BASE before .include to")
-[void]$a.AppendLine('; relocate the register window; the default is the W65C02S board base.')
-[void]$a.AppendLine('; IRQ_ENABLE uses the IRQ_STATUS bit masks. Do not use RMW instructions on I/O.')
-[void]$a.AppendLine('.ifndef KAGURA_IO_BASE')
-[void]$a.AppendLine(('KAGURA_IO_BASE = ${0:X4}' -f $spec.io_base.w65c02))
-[void]$a.AppendLine('.endif')
-foreach ($s in (Sections)) {
-    [void]$a.AppendLine(''); [void]$a.AppendLine("; $($s.Name)")
-    foreach ($r in $s.Group) { $digits = if ($r.width -gt 8) { 6 } else { 2 }; [void]$a.AppendLine(('KAGURA_{0,-36} = ${1}' -f $r.name, (("{0:X$digits}") -f $r.value))) }
-}
-[void]$a.AppendLine(''); [void]$a.AppendLine('; Absolute register addresses')
-foreach ($r in $direct) { [void]$a.AppendLine(('KAGURA_IO_{0,-33} = KAGURA_IO_BASE + KAGURA_REG_{0}' -f $r.name)) }
-[void]$a.AppendLine('')
-[void]$a.AppendLine('; AUDIO_REG_INDEX value for channel ch (0..5) and per-channel offset off.')
-[void]$a.AppendLine('.define KAGURA_AUDIO_INDEX(ch, off) ((ch) * KAGURA_AUDIO_CH_STRIDE + (off))')
-if ($pcm) {
-    [void]$a.AppendLine('')
-    [void]$a.AppendLine('; AUDIO_REG_INDEX value for PCM channel p (0..1) and per-channel offset off.')
-    [void]$a.AppendLine('.define KAGURA_AUDIO_PCM_INDEX(p, off) (KAGURA_AUDIO_PCM_BASE + (p) * KAGURA_AUDIO_PCM_STRIDE + (off))')
-}
-
 $sv = New-Object System.Text.StringBuilder
 [void]$sv.AppendLine('// SPDX-License-Identifier: Apache-2.0')
 [void]$sv.AppendLine("// $header")
@@ -248,7 +223,6 @@ foreach ($s in (Sections)) {
 
 $outputs = [ordered]@{
     'rtl/core/kagura_abi_pkg.sv' = $sv.ToString()
-    'software/w65c02/kagura_regs.inc' = $a.ToString()
 }
 # The host constants live in siska-tech/kagura-sdk, at the same paths there.
 $sdkOutputs = [ordered]@{
