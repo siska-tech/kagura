@@ -115,7 +115,7 @@ KAGURA-9は3つのリポジトリに分かれています。依存は一方向�
 | [siska-tech/kagura-sdk](https://github.com/siska-tech/kagura-sdk) | ホストのドライバと公開API（C、MicroPython）、MicroPythonボードとファームウェア統合、UI・日本語・音声ライブラリ、例、SDKの文書。生成したレジスタ定数を写して持ち、元にしたkaguraのcommitを`hardware.lock`で固定する |
 | [siska-tech/kagura-desktop](https://github.com/siska-tech/kagura-desktop) | 神楽デスクトップとアプリ。kagura-sdkの公開APIだけを使い、SDKのcommitを`sdk/kagura.ref`で固定する |
 
-6502対応は別リポジトリに切り出しました。
+[6502対応は別リポジトリに切り出しました](https://github.com/siska-tech/kagura-6502)。
 
 kaguraからkagura-sdkへのビルド依存はありません。CIだけが`sdk.lock`のkagura-sdkを取得し、そのレジスタ定数が`spec/registers.json`から生成したものと一致するかを`tools/check-sdk.sh`で検査します。仕様を変えた場合はkaguraが先に進み、SDKが`tools/gen-registers.ps1 -SdkDir`で再生成して追従します。
 

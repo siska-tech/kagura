@@ -51,7 +51,10 @@ $files += @(Get-ChildItem -LiteralPath (Join-Path $root 'docs') -Filter '*.md' -
 $files += @(Get-ChildItem -LiteralPath (Join-Path $root 'boards') -Filter '*.md' -File -Recurse)
 $files += @(Get-ChildItem -LiteralPath (Join-Path $root 'rtl') -Filter '*.md' -File -Recurse)
 $files += @(Get-ChildItem -LiteralPath (Join-Path $root 'sim') -Filter '*.md' -File -Recurse)
-$files += @(Get-ChildItem -LiteralPath (Join-Path $root 'software') -Filter '*.md' -File -Recurse)
+$softwareDocs = Join-Path $root 'software'
+if (Test-Path -LiteralPath $softwareDocs) {
+    $files += @(Get-ChildItem -LiteralPath $softwareDocs -Filter '*.md' -File -Recurse)
+}
 foreach ($file in $files) {
     $body = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8
     foreach ($match in [regex]::Matches($body, '\[[^\]]*\]\(([^)]+)\)')) {
